@@ -1,0 +1,30 @@
+{
+  "master": {
+    "file": "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_master.mp4",
+    "width": 1080,
+    "height": 1920,
+    "duration": 31.916667,
+    "size": 23597874,
+    "bitrate": 5914871,
+    "codec": "h264"
+  },
+  "clean": {
+    "file": "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_clean.mp4",
+    "width": 1080,
+    "height": 1920,
+    "duration": 31.916667,
+    "size": 22745445,
+    "bitrate": 5701208,
+    "codec": "h264"
+  },
+  "visual": {
+    "file": "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_visual.mp4",
+    "width": 1080,
+    "height": 1920,
+    "duration": 31.916667,
+    "size": 23178331,
+    "bitrate": 5809712,
+    "codec": "h264"
+  },
+  "vo_duration": 31.774792
+}

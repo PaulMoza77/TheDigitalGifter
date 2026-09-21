@@ -1,0 +1,95 @@
+{
+  "status": "VOICE_READY",
+  "project": "Lauren \u2014 Christmas Overwhelm Story 01",
+  "provider": "openai",
+  "model": "gpt-4o-mini-tts",
+  "voice": "coral",
+  "speed": 1.22,
+  "instructions": "You are a warm American English woman in her mid-thirties telling a friend's story. Calm, relatable, slightly conversational, emotionally responsive. Not a commercial, not a salesperson, not a movie trailer, not a TikTok AI voice. Speak as if sitting across from someone with cocoa, gently explaining Lauren's Christmas overwhelm and then the relief when she finds a simpler way. Natural pacing, small breaths between thoughts. Soften on the stress, lift slightly on the discovery, and end warm and resolved. Do not over-act.",
+  "script": "This is Lauren. She loves Christmas\u2026 but every year, she has the same problem. Gifts. Dinner. Decorations. School events. Family plans\u2026 and somehow, she\u2019s supposed to remember all of it. And the closer Christmas gets, the longer the list becomes\u2026 and the more expensive everything feels. She\u2019s planning Christmas for everyone else\u2026 but she\u2019s running out of time to actually enjoy it herself. Then Lauren finds a simpler way to keep Christmas together. Now the gifts, budget, meals and plans finally have a place\u2026 so Lauren can enjoy Christmas too. Plan less. Enjoy Christmas more.",
+  "cues": [
+    {
+      "id": "s1",
+      "text": "This is Lauren. She loves Christmas\u2026 but every year, she has the same problem.",
+      "target": 4.85,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s1.wav",
+      "duration": 4.832792,
+      "size": 232052,
+      "bitrate": 384129
+    },
+    {
+      "id": "s2",
+      "text": "Gifts. Dinner. Decorations. School events. Family plans\u2026 and somehow, she\u2019s supposed to remember all of it.",
+      "target": 4.95,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s2.wav",
+      "duration": 5.311917,
+      "size": 255050,
+      "bitrate": 384117
+    },
+    {
+      "id": "s3",
+      "text": "And the closer Christmas gets, the longer the list becomes\u2026 and the more expensive everything feels.",
+      "target": 4.95,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s3.wav",
+      "duration": 4.933833,
+      "size": 236902,
+      "bitrate": 384126
+    },
+    {
+      "id": "s4",
+      "text": "She\u2019s planning Christmas for everyone else\u2026 but she\u2019s running out of time to actually enjoy it herself.",
+      "target": 4.55,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s4.wav",
+      "duration": 4.694125,
+      "size": 225396,
+      "bitrate": 384132
+    },
+    {
+      "id": "s5",
+      "text": "Then Lauren finds a simpler way to keep Christmas together.",
+      "target": 4.7,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s5.wav",
+      "duration": 3.617708,
+      "size": 173694,
+      "bitrate": 384097
+    },
+    {
+      "id": "s6",
+      "text": "Now the gifts, budget, meals and plans finally have a place\u2026 so Lauren can enjoy Christmas too.",
+      "target": 4.55,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_s6.wav",
+      "duration": 5.158667,
+      "size": 247694,
+      "bitrate": 384120
+    },
+    {
+      "id": "cta",
+      "text": "Plan less. Enjoy Christmas more.",
+      "target": 2.1,
+      "path": "public/assets/christmas/lauren-overwhelm/audio/vo_cta.wav",
+      "duration": 2.08575,
+      "size": 100194,
+      "bitrate": 384299
+    }
+  ],
+  "preview": {
+    "path": "public/assets/christmas/lauren-overwhelm/audio/vo_preview_coral.wav",
+    "duration": 5.376958,
+    "size": 258138,
+    "bitrate": 384065
+  },
+  "full_wav": {
+    "path": "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.wav",
+    "duration": 31.774792,
+    "size": 3050458,
+    "bitrate": 768019
+  },
+  "full_mp3": {
+    "path": "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.mp3",
+    "duration": 31.8,
+    "size": 337317,
+    "bitrate": 84859
+  },
+  "estimated_usd": 0.08,
+  "created_at": "2026-09-21T17:49:46.653058+00:00"
+}

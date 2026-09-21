@@ -1,0 +1,147 @@
+{
+  "status": "INGESTED",
+  "project": "Lauren \u2014 Christmas Overwhelm Story 01",
+  "count": 6,
+  "order_verified": [
+    "lauren_01_intro",
+    "lauren_02_phone",
+    "lauren_03_receipt",
+    "lauren_04_peak",
+    "lauren_05_discovery",
+    "lauren_06_payoff"
+  ],
+  "assets": [
+    {
+      "id": "lauren_01_intro",
+      "src": "8DFDB6FB-1386-445D-BA56-002D9FDCA39F_L0_001.jpg",
+      "filename": "lauren_01_intro_kitchen_worried.jpg",
+      "gen": "lauren_01_intro_1080x1920.png",
+      "title": "Photo \u00b7 Lauren intro, kitchen worry",
+      "description": "Lauren leans on the kitchen island, mildly overloaded, family wrapping gifts behind her.",
+      "scene": 1,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_01_intro_kitchen_worried.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_01_intro_1080x1920.png",
+      "original_bytes": 431681,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4064203,
+      "created_at": "2026-09-21T17:44:29.760042+00:00"
+    },
+    {
+      "id": "lauren_02_phone",
+      "src": "F24A5584-7353-4176-B2FE-62D36EF93106_L0_001.jpg",
+      "filename": "lauren_02_phone_mental_load.jpg",
+      "gen": "lauren_02_phone_1080x1920.png",
+      "title": "Photo \u00b7 Lauren mental load, phone",
+      "description": "Lauren checks her phone in the kitchen with a worried look as Christmas prep continues.",
+      "scene": 2,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_02_phone_mental_load.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_02_phone_1080x1920.png",
+      "original_bytes": 430406,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4036520,
+      "created_at": "2026-09-21T17:44:30.054267+00:00"
+    },
+    {
+      "id": "lauren_03_receipt",
+      "src": "8853D787-3F22-4834-B292-0D729E88DAC7_L0_001.jpg",
+      "filename": "lauren_03_receipt_tasks.jpg",
+      "gen": "lauren_03_receipt_1080x1920.png",
+      "title": "Photo \u00b7 Lauren receipt and to-do list",
+      "description": "Lauren studies a long receipt beside a Christmas to-do list and wrapping paper.",
+      "scene": 3,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_03_receipt_tasks.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_03_receipt_1080x1920.png",
+      "original_bytes": 469210,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4256350,
+      "created_at": "2026-09-21T17:44:30.360225+00:00"
+    },
+    {
+      "id": "lauren_04_peak",
+      "src": "DDA156BC-C915-48E2-8357-80ABF0F42D6B_L0_001.jpg",
+      "filename": "lauren_04_peak_stress_living_room.jpg",
+      "gen": "lauren_04_peak_1080x1920.png",
+      "title": "Photo \u00b7 Lauren peak stress",
+      "description": "Lauren stands in a messy living room with both hands in her hair, wrapping chaos around her.",
+      "scene": 4,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_04_peak_stress_living_room.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_04_peak_1080x1920.png",
+      "original_bytes": 480899,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4415723,
+      "created_at": "2026-09-21T17:44:30.675662+00:00"
+    },
+    {
+      "id": "lauren_05_discovery",
+      "src": "16039ED0-9235-4A9D-AF28-15DC449A6D8C_L0_001.jpg",
+      "filename": "lauren_05_discovery_phone.jpg",
+      "gen": "lauren_05_discovery_1080x1920.png",
+      "title": "Photo \u00b7 Lauren discovers the planner",
+      "description": "Lauren looks at her phone with a small surprised smile in the decorated kitchen.",
+      "scene": 5,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_05_discovery_phone.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_05_discovery_1080x1920.png",
+      "original_bytes": 427160,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4131057,
+      "created_at": "2026-09-21T17:44:30.973853+00:00"
+    },
+    {
+      "id": "lauren_06_payoff",
+      "src": "3AF1D226-79B6-4144-A017-34773800EEBC_L0_001.jpg",
+      "filename": "lauren_06_payoff_relaxed.jpg",
+      "gen": "lauren_06_payoff_1080x1920.png",
+      "title": "Photo \u00b7 Lauren relaxed Christmas",
+      "description": "Lauren sits calmly with cocoa and a laptop, smiling as her family enjoys Christmas.",
+      "scene": 6,
+      "original": "public/assets/christmas/lauren-overwhelm/stills/lauren_06_payoff_relaxed.jpg",
+      "generation_still": "public/assets/christmas/lauren-overwhelm/source/lauren_06_payoff_1080x1920.png",
+      "original_bytes": 412602,
+      "source_wh": [
+        1024,
+        1536
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4092975,
+      "created_at": "2026-09-21T17:44:31.270006+00:00"
+    }
+  ]
+}
