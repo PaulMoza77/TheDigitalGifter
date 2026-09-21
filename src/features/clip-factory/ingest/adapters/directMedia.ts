@@ -46,7 +46,7 @@ export const directMediaAdapter: VideoSourceAdapter = {
       fallback: fullImport ? null : "upload",
       privacy: "public",
       message: fullImport
-        ? "Authorized media is available. Find Viral Moments will ingest this URL automatically."
+        ? "Authorized media is available. Generate Clips will ingest this URL automatically."
         : "This URL is not a direct media file. Paste an https video file, Library item, or supported source.",
       metadata: { host: url.hostname, ownedLibrary: owned },
     });

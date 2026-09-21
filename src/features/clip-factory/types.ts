@@ -26,7 +26,7 @@ export const CLIP_FACTORY_STAGES = [
 
 export type ClipFactoryStage = (typeof CLIP_FACTORY_STAGES)[number];
 
-export const CLIP_COUNT_OPTIONS = [5, 10, 20, "auto"] as const;
+export const CLIP_COUNT_OPTIONS = [10, 20, 30, "auto"] as const;
 export type ClipCountOption = (typeof CLIP_COUNT_OPTIONS)[number];
 
 export const DURATION_OPTIONS = ["auto", "10-20", "20-30", "30-60"] as const;
@@ -147,38 +147,35 @@ export const DEFAULT_CLIP_FACTORY_OPTIONS: ClipFactoryOptions = {
 
 export const STAGE_LABELS: Record<string, string> = {
   queued: "Queued",
-  importing: "Importing source...",
-  downloading: "Importing source...",
-  extracting_audio: "Extracting audio",
+  importing: "Importing source",
+  downloading: "Importing source",
+  extracting_audio: "Transcribing",
   transcribing: "Transcribing",
-  analyzing: "Analyzing transcript...",
-  selecting_moments: "Selecting strongest moments",
+  analyzing: "Finding moments",
+  selecting_moments: "Finding moments",
   rendering: "Rendering clips",
-  captioning: "Adding captions",
-  saving: "Saving to Library",
-  finalizing: "Finalizing",
-  uploading: "Uploading video",
-  ingesting: "Importing source...",
-  analyzing_audio: "Extracting audio",
-  understanding_scenes: "Analyzing transcript...",
-  finding_hooks: "Finding candidate moments",
-  scoring: "Selecting strongest moments",
+  captioning: "Rendering clips",
+  saving: "Uploading to Library",
+  finalizing: "Uploading to Library",
+  uploading: "Importing source",
+  ingesting: "Importing source",
+  analyzing_audio: "Transcribing",
+  understanding_scenes: "Finding moments",
+  finding_hooks: "Finding moments",
+  scoring: "Finding moments",
   creating_clips: "Rendering clips",
-  generating_captions: "Adding captions",
+  generating_captions: "Rendering clips",
   optimizing_vertical: "Rendering clips",
-  ready: "Ready",
-  completed: "Completed",
+  ready: "Complete",
+  completed: "Complete",
   partial: "Partially completed",
   failed: "Failed",
 };
 
 export const ANALYSIS_STAGE_ORDER = [
   "importing",
-  "extracting_audio",
   "transcribing",
-  "analyzing",
   "selecting_moments",
   "rendering",
-  "captioning",
   "saving",
 ] as const;

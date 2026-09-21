@@ -30,10 +30,9 @@ import { resolveDefaultTimezone } from "@/features/social-publisher/timezone";
 import type { LibraryVideo } from "@/features/admin-library/catalog";
 
 const COUNT_CHIPS: Array<{ id: ClipFactoryOptions["clipCount"]; label: string }> = [
-  { id: 5, label: "5" },
   { id: 10, label: "10" },
   { id: 20, label: "20" },
-  { id: "auto", label: "Auto" },
+  { id: 30, label: "30" },
 ];
 const DURATION_CHIPS: Array<{ id: ClipFactoryOptions["duration"]; label: string }> = [
   { id: "auto", label: "Auto" },
@@ -351,7 +350,7 @@ export default function AdminClipFactoryPage() {
                   onChange={(e) => {
                     setUrl(e.target.value);
                   }}
-                  placeholder="https://…/video.mp4"
+                  placeholder="Paste a video URL you own or are authorized to use"
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-indigo-400/60"
                 />
               </label>
@@ -376,7 +375,7 @@ export default function AdminClipFactoryPage() {
                       </p>
                       <p className="mt-3 text-sm leading-6 text-slate-200">
                         {urlPreview.ingestionCapability === "FULL_IMPORT"
-                          ? "Ready. Find Viral Moments will ingest this URL automatically — no file upload."
+                          ? "Ready. Generate Clips will ingest this URL automatically — no file upload."
                           : urlPreview.message || "YouTube source detected. Provide the original media to continue."}
                       </p>
                     </div>
@@ -386,12 +385,13 @@ export default function AdminClipFactoryPage() {
               {urlIssue ? <p className="text-sm text-rose-300">{urlIssue}</p> : null}
               {url.trim() ? (
                 <p className="text-xs leading-5 text-slate-500">
-                  Pressing Find Viral Moments confirms you own this content or have permission to use it.
+                  Pressing Generate Clips confirms you own this content or have permission to use it.
                 </p>
               ) : null}
               {urlPreview && urlPreview.ingestionCapability !== "FULL_IMPORT" ? (
                 <p className="text-sm font-medium text-slate-200">Automatic media import is not available for this source. Provide the original video:</p>
               ) : null}
+              {!(urlPreview?.ingestionCapability === "FULL_IMPORT" && url.trim() && !file && !libraryId) ? (
               <div className={`flex flex-wrap gap-3 ${urlPreview?.ingestionCapability === "FULL_IMPORT" ? "opacity-80" : ""}`}>
                 <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${urlPreview && urlPreview.ingestionCapability !== "FULL_IMPORT" ? "border-indigo-400/70 bg-indigo-500/10" : "border-slate-700 bg-slate-950"}`}>
                   <Upload className="h-4 w-4" />
@@ -422,6 +422,7 @@ export default function AdminClipFactoryPage() {
                   ))}
                 </select>
               </div>
+              ) : null}
             </div>
 
             <div className="mt-8 grid gap-6">
@@ -508,7 +509,7 @@ export default function AdminClipFactoryPage() {
               className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 py-3.5 text-base font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60 sm:w-auto"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              Find Viral Moments
+              Generate Clips
             </button>
           </section>
         ) : null}
@@ -522,10 +523,10 @@ export default function AdminClipFactoryPage() {
               ) : null}
               <div>
                 <h2 className="text-xl font-semibold">{job?.source_label}</h2>
-            <p className="mt-2 text-sm text-slate-300">{job?.error_message || job?.progress_label || "YouTube source detected. Provide the original media to continue."}</p>
+            <p className="mt-2 text-sm text-slate-300">{job?.error_message || job?.progress_label || "We couldn't import this source video. No clips were created."}</p>
               </div>
             </div>
-            <p className="mt-5 text-sm font-medium text-slate-200">To create clips, provide the original video:</p>
+            <p className="mt-5 text-sm font-medium text-slate-200">If you have the original file, you can attach it and retry:</p>
             <div className="mt-3 flex flex-wrap gap-3">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 text-sm font-semibold">
                 <Upload className="h-4 w-4" />
@@ -568,14 +569,20 @@ export default function AdminClipFactoryPage() {
             </div>
             <ol className="mt-6 grid gap-2">
               {ANALYSIS_STAGE_ORDER.map((stage) => {
-                const currentIndex = ANALYSIS_STAGE_ORDER.indexOf(job.stage as (typeof ANALYSIS_STAGE_ORDER)[number]);
+                const mappedStage = (() => {
+                  const s = job.stage;
+                  if (["queued", "importing", "ingesting", "downloading", "uploading"].includes(s)) return "importing";
+                  if (["extracting_audio", "transcribing", "analyzing_audio"].includes(s)) return "transcribing";
+                  if (["analyzing", "selecting_moments", "finding_hooks", "scoring", "understanding_scenes"].includes(s)) return "selecting_moments";
+                  if (["rendering", "captioning", "creating_clips"].includes(s)) return "rendering";
+                  if (["saving", "finalizing", "completed"].includes(s)) return "saving";
+                  return s;
+                })();
+                const currentIndex = ANALYSIS_STAGE_ORDER.indexOf(mappedStage as (typeof ANALYSIS_STAGE_ORDER)[number]);
                 const thisIndex = ANALYSIS_STAGE_ORDER.indexOf(stage);
                 const done = currentIndex > thisIndex;
-                const active = job.stage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting" || job.stage === "downloading"));
-                const label =
-                  stage === "analyzing" && job.media?.duration_seconds
-                    ? `Analyzing ${formatClock(job.media.duration_seconds)} of content`
-                    : STAGE_LABELS[stage];
+                const active = mappedStage === stage || (stage === "importing" && (job.stage === "queued" || job.stage === "ingesting" || job.stage === "downloading"));
+                const label = STAGE_LABELS[stage];
                 return (
                   <li key={stage} className="flex items-center gap-3 rounded-2xl border border-slate-800 px-4 py-3">
                     {done ? <Check className="h-4 w-4 text-emerald-300" /> : active ? <Loader2 className="h-4 w-4 animate-spin text-indigo-300" /> : <span className="h-4 w-4 rounded-full border border-slate-700" />}

@@ -120,14 +120,14 @@ describe("clip factory ingest urls", () => {
     expect(classifyMediaUrl("https://cdn.example.com/talk.mp4").ok).toBe(true);
   });
 
-  it("classifies YouTube as reference-only without an authorized importer", () => {
+  it("classifies YouTube as importable when origin ingest is enabled", () => {
     const classified = classifyVideoUrl("https://youtube.com/watch?v=dQw4w9wgGcI");
     expect(classified.ok).toBe(true);
     if (classified.ok) {
       expect(classified.provider).toBe("youtube");
       expect(classified.normalizedUrl).toBe("https://www.youtube.com/watch?v=dQw4w9wgGcI");
-      expect(classified.canImport).toBe(false);
-      expect(classified.ingestionCapability).toBe("REFERENCE_ONLY");
+      expect(classified.canImport).toBe(true);
+      expect(classified.ingestionCapability).toBe("FULL_IMPORT");
     }
     expect(extractYoutubeId("https://youtu.be/dQw4w9wgGcI")).toBe("dQw4w9wgGcI");
     expect(normalizeYoutubeUrl("dQw4w9wgGcI")).toContain("watch?v=");
@@ -194,7 +194,7 @@ describe("clip factory job creation", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.waitingForMedia).toBe(false);
-      expect(result.ingestionCapability).toBe("REFERENCE_ONLY");
+      expect(result.ingestionCapability).toBe("FULL_IMPORT");
       expect(result.sourceKind).toBe("youtube");
       expect(String(result.sourcePayload.referenceUrl || result.sourcePayload.url)).toContain("dQw4w9wgGcI");
     }

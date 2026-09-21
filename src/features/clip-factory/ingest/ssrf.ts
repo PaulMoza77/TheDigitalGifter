@@ -61,6 +61,6 @@ export function looksLikeDirectMediaPath(pathname: string): boolean {
   return /\.(mp4|mov|m4v|webm)(\?|$)/i.test(pathname);
 }
 
-export const MAX_INGEST_BYTES = 500 * 1024 * 1024;
+export const MAX_INGEST_BYTES = 2 * 1024 * 1024 * 1024;
 export const MAX_REDIRECTS = 4;
-export const DOWNLOAD_TIMEOUT_MS = 180_000;
+export const DOWNLOAD_TIMEOUT_MS = 40 * 60_000;

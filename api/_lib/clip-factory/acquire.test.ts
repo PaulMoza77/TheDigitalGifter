@@ -49,7 +49,7 @@ describe("acquireSourceMedia", () => {
       }),
     ).rejects.toMatchObject({
       code: "import_unavailable",
-      message: expect.stringMatching(/original MP4|YouTube Data API v3|disabled/i),
+      message: expect.stringMatching(/couldn't import this source video|original MP4|YouTube Data API v3|disabled/i),
     });
     vi.unstubAllEnvs();
   });

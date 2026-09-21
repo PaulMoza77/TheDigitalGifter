@@ -156,7 +156,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         return apiError(res, 400, "unsupported_codec", "Upload MP4, MOV, or WebM.");
       }
       if (!Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_UPLOAD_BYTES) {
-        return apiError(res, 400, "huge_file", "File must be under 500MB.");
+        return apiError(res, 400, "huge_file", "File must be under 2GB.");
       }
       const objectPath = `uploads/${admin.email.replace(/[^a-z0-9@._-]/g, "_")}/${randomUUID()}-${sanitizeFilename(asString(body.file_name))}`;
       const { data, error } = await service.storage.from(BUCKET).createSignedUploadUrl(objectPath);
@@ -383,6 +383,16 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
           kickClipFactoryWorker();
           return res.status(200).json({ job: await hydrateJob(service, existing), duplicate: true });
         }
+      }
+
+      const rateWindow = new Date(Date.now() - 15 * 60_000).toISOString();
+      const { count: recentCount } = await service
+        .from("clip_factory_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("created_by_email", admin.email)
+        .gte("created_at", rateWindow);
+      if ((recentCount || 0) >= 8) {
+        return apiError(res, 429, "rate_limited", "Please wait a few minutes before starting another job.");
       }
 
       const inserted = await service
