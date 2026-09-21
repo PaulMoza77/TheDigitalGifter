@@ -687,7 +687,7 @@ function ShopPanel({
                       <p className="tdg-concierge-meta">
                         Arrives {product.deliveryStart || ""}
                         {product.deliveryEnd && product.deliveryStart !== product.deliveryEnd
-                          ? `–${product.deliveryEnd}`
+                          ? ` - ${product.deliveryEnd}`
                           : product.deliveryEnd && !product.deliveryStart
                             ? product.deliveryEnd
                             : ""}

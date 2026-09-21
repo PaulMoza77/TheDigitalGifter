@@ -147,7 +147,7 @@ export default function ChristmasPlannerWelcomePage() {
       />
       <p className="tdg-planner__kicker">The Digital Gifter</p>
       {status === "loading" ? <p>Checking your purchase…</p> : null}
-      {status === "pending" ? <p>Payment is still confirming. Refresh this page in a moment — your purchase is saved.</p> : null}
+      {status === "pending" ? <p>Payment is still confirming. Refresh this page in a moment - your purchase is saved.</p> : null}
       {status === "missing" ? (
         <>
           <p>

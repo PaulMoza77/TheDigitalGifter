@@ -1,5 +1,5 @@
 /**
- * Christmas Planner commerce — server-authoritative packages and add-ons.
+ * Christmas Planner commerce - server-authoritative packages and add-ons.
  * Seed numbers exist for tests / Admin bootstrap. Runtime checkout must
  * resolve from DB rows mapped into this shape and must ignore client amounts.
  */
@@ -106,7 +106,7 @@ export const ADDON_ENTITLEMENTS: Record<PlannerAddonKey, PlannerEntitlementKey> 
   addon_photo_credits: "planner.photo_credits_bonus",
 };
 
-/** Add-ons already covered by a package — never auto-charge. */
+/** Add-ons already covered by a package - never auto-charge. */
 export function addonsIncludedInPackage(packageKey: PlannerPackageKey): PlannerAddonKey[] {
   const owned = new Set(PACKAGE_ENTITLEMENTS[packageKey]);
   return PLANNER_ADDON_KEYS.filter((key) => owned.has(ADDON_ENTITLEMENTS[key]));

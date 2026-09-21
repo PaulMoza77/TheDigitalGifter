@@ -16,7 +16,7 @@ export type PlannerCheckoutSelection = {
   packageName: string;
 };
 
-/** In-app upgrade sheet — uses funnel commerce (`christmas_planner_2026`). */
+/** In-app upgrade sheet - uses funnel commerce (`christmas_planner_2026`). */
 export function PlannerCheckoutSheet({
   open,
   onClose,

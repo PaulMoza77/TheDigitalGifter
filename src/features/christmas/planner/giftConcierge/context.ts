@@ -19,8 +19,8 @@ export const CONCIERGE_VIBE_CHIPS = [
 
 export const CONCIERGE_PRICE_CHIPS = [
   { key: "under_25", label: "Under €25" },
-  { key: "25_50", label: "€25–50" },
-  { key: "50_100", label: "€50–100" },
+  { key: "25_50", label: "€25 - 50" },
+  { key: "50_100", label: "€50 - 100" },
   { key: "custom", label: "Custom" },
 ] as const;
 
@@ -204,7 +204,7 @@ export function suggestionBudgetFit(
 export function typicalPriceLabel(idea: Pick<GiftIdea, "budget_min" | "budget_max">): string | null {
   if (idea.budget_min == null && idea.budget_max == null) return null;
   if (idea.budget_min != null && idea.budget_max != null) {
-    return `Typically €${idea.budget_min}–${idea.budget_max}`;
+    return `Typically €${idea.budget_min} - ${idea.budget_max}`;
   }
   const n = idea.budget_max ?? idea.budget_min;
   return n != null ? `Typically around €${n}` : null;

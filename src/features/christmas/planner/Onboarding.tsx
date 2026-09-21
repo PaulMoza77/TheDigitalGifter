@@ -338,7 +338,7 @@ export function PlannerOnboarding() {
         <span className="tdg-planner-muted">{step + 1}/{questions.length}</span>
       </div>
       <h1>A few details and your Christmas is organized.</h1>
-      <p className="tdg-planner-muted">We’ll build a plan that matches today’s date — not a generic checklist.</p>
+      <p className="tdg-planner-muted">We’ll build a plan that matches today’s date - not a generic checklist.</p>
       <div className="tdg-planner-card" style={{ marginTop: 18 }}>
         <h2>{q.title}</h2>
         {q.body}

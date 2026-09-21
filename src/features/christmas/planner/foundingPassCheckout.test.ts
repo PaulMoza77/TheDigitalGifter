@@ -162,7 +162,8 @@ describe("Founding Pass unlock CTA", () => {
   it("keeps Apple Pay on Stripe capability callbacks and does not fake a wallet button", () => {
     const checkout = readSrc("src/features/pet/components/CustomStripeCheckout.tsx");
     expect(checkout).toContain("walletCapabilityOnly");
-    expect(checkout).toContain('applePay: "auto" as const');
+    expect(checkout).toContain('applePay: "always" as const');
+    expect(checkout).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
     expect(checkout).toContain("availablePaymentMethods");
     expect(checkout).toContain("walletCapabilityOnly ? null : <ApplePayButton disabled />");
     expect(readSrc("supabase/functions/christmas-checkout/index.ts")).toContain(
