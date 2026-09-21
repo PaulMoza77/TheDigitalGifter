@@ -561,7 +561,7 @@ export default function ChristmasPlannerPage() {
         </div>
       </header>
 
-      <section className="tdg-pl__section" id="demo" ref={demoRef}>
+      <section className="tdg-pl__section tdg-pl__section--soft" id="demo" ref={demoRef}>
         <div className="tdg-pl__shell">
           <h2>Less to remember. More already organised.</h2>
           <div className="tdg-pl__demo-full" data-testid="planner-demo">
