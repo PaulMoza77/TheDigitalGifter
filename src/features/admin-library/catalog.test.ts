@@ -49,7 +49,12 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-np-journey-01");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lauren-overwhelm-master");
+    expect(
+      searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
+        (video) => video.id === "reel-lauren-overwhelm-master",
+      ),
+    ).toBe(true);
     expect(
       searchLibraryVideos("North Pole Santa", "christmas_reels", "reel").some((video) => video.id === "reel-north-pole-santa"),
     ).toBe(true);
@@ -115,6 +120,13 @@ describe("admin video library", () => {
 
   it("keeps Christmas media files on public downloadable paths", () => {
     const publicFiles = [
+      "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_master.mp4",
+      "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_clean.mp4",
+      "public/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_visual.mp4",
+      "public/assets/christmas/lauren-overwhelm/masters/lauren_01_intro.mp4",
+      "public/assets/christmas/lauren-overwhelm/masters/lauren_06_payoff.mp4",
+      "public/assets/christmas/lauren-overwhelm/stills/lauren_01_intro_kitchen_worried.jpg",
+      "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.wav",
       "public/assets/christmas/cozy-reel/final_reel.mp4",
       "public/assets/christmas/cozy-reel/clip1.mp4",
       "public/assets/christmas/instagram-reel/source/clip_06.jpg",

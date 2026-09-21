@@ -1,0 +1,220 @@
+{
+  "created_at": "2026-09-21T17:50:27.326078+00:00",
+  "project": "Lauren \u2014 Christmas Overwhelm Story 01",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.6800000000000002,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "lauren_01_intro",
+      "title": "Lauren intro \u2014 kitchen worry",
+      "source_image": "lauren_01_intro_kitchen_worried.jpg",
+      "job_id": "708c1d74-a04d-46f3-80c9-4498d948e536",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. Emotion: mildly worried, mentally overloaded, tired but still holding everything together. Subtle breathing, natural blinking, eyes briefly glance around the festive kitchen, slight tension in the eyebrows, tiny head movement, her hand stays naturally at her temple. Background children at the dining table make small wrapping motions. The golden retriever breathes. Christmas tree lights twinkle softly. Slow cinematic camera push-in.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_01_intro.mp4",
+      "probe": {
+        "filename": "lauren_01_intro.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_01_intro.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 18807501,
+        "size": 11852645
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_01_intro_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_01_intro_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_01_intro_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:52:04.030626+00:00"
+    },
+    {
+      "id": "lauren_02_phone",
+      "title": "Lauren mental load \u2014 phone",
+      "source_image": "lauren_02_phone_mental_load.jpg",
+      "job_id": "96b144fb-be98-4185-9c3c-f407866df625",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. She looks at the phone. Emotion moves from concern to quiet realization to a small 'oh no' \u2014 not hysterical. Eyes widen slightly, then she glances toward the Christmas preparations behind her. A small worried exhale. Natural idle motion in the hand in her hair. Subtle background family activity. Very gentle camera. Phone stays a phone.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_02_phone.mp4",
+      "probe": {
+        "filename": "lauren_02_phone.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_02_phone.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 16832216,
+        "size": 10607804
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_02_phone_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_02_phone_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_02_phone_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:53:05.708575+00:00"
+    },
+    {
+      "id": "lauren_03_receipt",
+      "title": "Lauren receipt and tasks",
+      "source_image": "lauren_03_receipt_tasks.jpg",
+      "job_id": "13818a98-0f53-4daa-8d4f-81df9f384b1f",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. Emotion: concerned and increasingly overwhelmed. Eyes scan down the long receipt. Slight eyebrow tension. A small sigh. She looks from the receipt toward the surrounding Christmas wrapping chaos. Keep the receipt, notebook list, mug, and gifts stable \u2014 they may shift slightly with natural hand motion but must not melt or spawn extra objects. Subtle cinematic camera. Background kids move a little.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_03_receipt.mp4",
+      "probe": {
+        "filename": "lauren_03_receipt.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_03_receipt.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 17617518,
+        "size": 11102708
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_03_receipt_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_03_receipt_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_03_receipt_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:53:09.558892+00:00"
+    },
+    {
+      "id": "lauren_04_peak",
+      "title": "Lauren peak stress",
+      "source_image": "lauren_04_peak_stress_living_room.jpg",
+      "job_id": "80143846-6a82-4c41-a56a-b88ecfa82b08",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. Emotional peak: genuinely overwhelmed and exhausted, not crazy, not screaming, not slapstick. Shoulders slightly tense. Hands rest in her hair with tiny natural adjustment. Worried eyes. Brief tired blink/exhale, then she looks around at the wrapping mess she still has to finish. The dog stays sleeping. Tree lights twinkle. Slow camera push closer.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_04_peak.mp4",
+      "probe": {
+        "filename": "lauren_04_peak.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_04_peak.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 20651869,
+        "size": 13014981
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_04_peak_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_04_peak_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_04_peak_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:53:13.557752+00:00"
+    },
+    {
+      "id": "lauren_05_discovery",
+      "title": "Lauren discovers the planner",
+      "source_image": "lauren_05_discovery_phone.jpg",
+      "job_id": "9bd92b66-c7f6-4c83-bad3-b1d5648ae9ab",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. Turning point. She looks at the phone. Expression transitions subtly: curiosity into realization into genuine relief. Eyebrows relax, eyes brighten, a small natural smile appears, shoulders drop slightly. Keep the starting face identity. No giant grin. No talking. Background family and dog have tiny life. Camera gently moves closer. Phone remains a realistic phone.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_05_discovery.mp4",
+      "probe": {
+        "filename": "lauren_05_discovery.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_05_discovery.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 18026348,
+        "size": 11360356
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_05_discovery_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_05_discovery_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_05_discovery_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:53:17.406541+00:00"
+    },
+    {
+      "id": "lauren_06_payoff",
+      "title": "Lauren relaxed payoff",
+      "source_image": "lauren_06_payoff_relaxed.jpg",
+      "job_id": "1346b4ed-daf9-4c4f-abf3-efc33009ddca",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Animate this exact 9:16 illustrated still. Keep Lauren the same woman throughout: mid-30s mother, warm fair skin, light freckles, large brown eyes, auburn-brown messy high bun with loose wisps, cream oversized knit V-neck sweater, dusty-rose lounge pants, delicate gold necklace. Do not redesign her face, age, hair, or proportions. She does NOT speak. No lip-sync. Mouth stays naturally closed except tiny breathing. Subtle high-quality animated film style matching the still. Natural physics, natural five-finger hands, readable facial acting that is subtle and human, not cartoonish. Calm, warm, present, happy. The mental weight has lifted. Natural relaxed smile, soft blinking, slight breathing. She may glance toward her children by the Christmas tree with quiet affection, then back. Warm Christmas lights move softly. Cocoa steam drifts. Gentle slow camera pull-back. Keep her face identical. No talking.  Avoid face morphing, identity drift, distorted hands, extra fingers, warped objects, unnatural eye movement, crossed eyes, frozen expression, giant smile, exaggerated sadness, random talking, lip movement, mouth moving as if speaking, sudden head jerks, rubbery body motion, aggressive camera motion, fake-looking AI motion, objects appearing or disappearing, extra people, text mutation.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_06_payoff.mp4",
+      "probe": {
+        "filename": "lauren_06_payoff.mp4",
+        "path": "/workspace/public/assets/christmas/lauren-overwhelm/masters/lauren_06_payoff.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 15930053,
+        "size": 10039253
+      },
+      "qc_frames": [
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_06_payoff_first.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_06_payoff_mid.jpg",
+        "/workspace/public/assets/christmas/lauren-overwhelm/qc/lauren_06_payoff_last.jpg"
+      ],
+      "created_at": "2026-09-21T17:53:21.429976+00:00"
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "qa": [
+    {
+      "id": "lauren_01_intro",
+      "result": "PASS",
+      "notes": "Identity stable; readable mild worry; subtle glance/sigh. Mid mouth open is a breath, not speech."
+    },
+    {
+      "id": "lauren_02_phone",
+      "result": "PASS",
+      "notes": "Concern to oh-no then glance to family. Last-frame turn is intended look-away. Hands intact."
+    },
+    {
+      "id": "lauren_03_receipt",
+      "result": "PASS",
+      "notes": "Receipt and list stable. Scanning + sigh. Hands five fingers."
+    },
+    {
+      "id": "lauren_04_peak",
+      "result": "PASS",
+      "notes": "Overwhelmed not slapstick. Hands drop from hair at end while looking around."
+    },
+    {
+      "id": "lauren_05_discovery",
+      "result": "PASS",
+      "notes": "Surprise to closed-eye relief smile to warm smile. Identity holds."
+    },
+    {
+      "id": "lauren_06_payoff",
+      "result": "PASS",
+      "notes": "Calm contrast to scene 4. Looks toward family then back. Soft smile."
+    }
+  ],
+  "status": "ASSEMBLED",
+  "actual_cost_usd": 1.68,
+  "success_count": 6,
+  "failed_count": 0,
+  "voiceover_provider": "openai gpt-4o-mini-tts coral",
+  "total_cost_usd": 1.76
+}

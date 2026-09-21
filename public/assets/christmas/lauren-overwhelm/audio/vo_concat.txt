@@ -1,0 +1,7 @@
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s1.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s2.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s3.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s4.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s5.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_s6.wav'
+file '/workspace/public/assets/christmas/lauren-overwhelm/audio/vo_cta.wav'
