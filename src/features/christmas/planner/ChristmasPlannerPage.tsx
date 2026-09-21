@@ -631,7 +631,17 @@ export default function ChristmasPlannerPage() {
                       clientSecret={checkout.clientSecret}
                       publishableKey={checkout.publishableKey}
                       dueDisplay={money(checkout.amountCents, checkout.currency || "usd")}
-                      appearanceTheme="night"
+                      appearanceTheme="stripe"
+                      appearanceVariables={{
+                        colorPrimary: "#6b1420",
+                        colorBackground: "#fffaf1",
+                        colorText: "#14080b",
+                        colorTextSecondary: "#3a241c",
+                        colorDanger: "#8b1a1a",
+                        borderRadius: "12px",
+                        fontFamily: 'system-ui, "Segoe UI", sans-serif',
+                        fontSizeBase: "16px",
+                      }}
                       walletCapabilityOnly
                       payButtonLabel={(due) => `Pay ${due}`}
                       onWalletAvailability={(info) => {

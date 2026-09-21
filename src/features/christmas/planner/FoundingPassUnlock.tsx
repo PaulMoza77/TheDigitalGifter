@@ -146,7 +146,15 @@ export function FoundingPassUnlockButton({
                 clientSecret={session.clientSecret}
                 publishableKey={session.publishableKey}
                 dueDisplay={money(session.amountCents, session.currency)}
-                appearanceTheme="night"
+                appearanceTheme="stripe"
+                appearanceVariables={{
+                  colorPrimary: "#6b1420",
+                  colorBackground: "#fffaf1",
+                  colorText: "#14080b",
+                  colorTextSecondary: "#3a241c",
+                  colorDanger: "#8b1a1a",
+                  borderRadius: "12px",
+                }}
                 walletCapabilityOnly
                 payButtonLabel={(value) => `Pay ${value}`}
                 onPaymentInteraction={() => {
