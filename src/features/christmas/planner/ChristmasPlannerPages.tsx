@@ -211,7 +211,7 @@ export default function ChristmasPlannerTodayPage() {
     giftsWithoutPlan > 0 ? { to: "/account/christmas/gifts", label: `${giftsWithoutPlan} gift${giftsWithoutPlan === 1 ? "" : "s"} left to buy` } : null,
     menuIncomplete ? { to: "/account/christmas/food", label: mealsCount === 0 ? "Dinner menu not started" : "Dinner menu incomplete" } : null,
     groceryNeed > 0 ? { to: "/account/christmas/grocery", label: `${groceryNeed} grocery items remaining` } : null,
-    remaining != null && remaining < 0 ? { to: "/account/christmas/budget", label: "Christmas budget is a little over — easy to ease back" } : null,
+    remaining != null && remaining < 0 ? { to: "/account/christmas/budget", label: "Christmas budget is a little over - easy to ease back" } : null,
     remaining != null && remaining >= 0 && (profile.total_budget_minor || 0) > 0
       ? { to: "/account/christmas/budget", label: `${formatPlannerMoney(remaining, profile.currency)} left in your Christmas budget` }
       : null,
@@ -293,7 +293,7 @@ export default function ChristmasPlannerTodayPage() {
           >
             {todayTasks.length === 0 ? (
               <PlannerEmptyState
-                title="A quiet start — keep the season moving."
+                title="A quiet start - keep the season moving."
                 body="Add a gift person, schedule a meal, or drop a task onto today."
                 action={
                   <div className="tdg-planner-actions">
@@ -366,7 +366,7 @@ export default function ChristmasPlannerTodayPage() {
           />
           <PlannerSnapshotRow
             label="Upcoming"
-            title={nextDeadline ? `${formatPlannerDate(nextDeadline.due_on)} — ${nextDeadline.title}` : "No dated tasks yet"}
+            title={nextDeadline ? `${formatPlannerDate(nextDeadline.due_on)} - ${nextDeadline.title}` : "No dated tasks yet"}
             action="Open calendar →"
             to="/account/christmas/calendar"
           />
@@ -376,7 +376,7 @@ export default function ChristmasPlannerTodayPage() {
       {!hasFeature(access, "planner_core") ? (
         <PlannerPaywall
           feature="planner_core"
-          title="Free planner is ready — Core unlocks the full season"
+          title="Free planner is ready - Core unlocks the full season"
           body="You have countdown, Today, a short plan, and up to 3 gift people. Core adds unlimited gifts, budget, rescue mode, and the date-aware plan."
         />
       ) : null}
@@ -414,7 +414,7 @@ export default function ChristmasPlannerTodayPage() {
 
       <section className="tdg-planner-section tdg-copilot-today">
         <h2>Christmas Copilot</h2>
-        <p className="tdg-planner-muted">Uses your current plan — Engine facts, then plain language. Notes never go to ads.</p>
+        <p className="tdg-planner-muted">Uses your current plan - Engine facts, then plain language. Notes never go to ads.</p>
         <div className="tdg-planner-prompt">
           {(giftsWithoutPlan > 0
             ? ["What gifts am I still missing?", "What should I do this weekend?", "What am I forgetting?"]
@@ -517,7 +517,7 @@ export function ChristmasPlannerPlanPage() {
       <PlannerPageHeader title="Plan" lede="Your season, step by step." />
       {profile.prepared_level === "rescue" || daysUntilChristmas(new Date(), profile.timezone) <= 7 ? (
         <p className="tdg-intel-kicker" style={{ marginBottom: 12 }}>
-          Rescue focus is on — nice-to-have tasks stay listed, just lower.
+          Rescue focus is on - nice-to-have tasks stay listed, just lower.
         </p>
       ) : null}
       <div className="tdg-planner-seg" role="tablist" aria-label="Plan views">
@@ -662,7 +662,7 @@ export function ChristmasPlannerGiftsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Gifts" lede="Plan everyone you’re buying for — privately, in one place.">
+      <PlannerPageHeader title="Gifts" lede="Plan everyone you’re buying for - privately, in one place.">
         {!hasFeature(access, "gift_planner") ? <p className="tdg-planner-muted">Free includes up to 3 people.</p> : null}
       </PlannerPageHeader>
       <div className="tdg-planner-summary">
@@ -733,7 +733,7 @@ export function ChristmasPlannerGiftsPage() {
                   <div className="tdg-planner-recipient-summary">
                     <PlannerStat
                       label="Budget"
-                      value={row?.budgetMinor != null ? formatPlannerMoney(row.budgetMinor, profile.currency) : "—"}
+                      value={row?.budgetMinor != null ? formatPlannerMoney(row.budgetMinor, profile.currency) : "-"}
                       hint="for this person"
                     />
                     <PlannerStat
@@ -743,7 +743,7 @@ export function ChristmasPlannerGiftsPage() {
                     />
                     <PlannerStat
                       label="Remaining"
-                      value={remaining == null ? "—" : formatPlannerMoney(Math.max(0, remaining), profile.currency)}
+                      value={remaining == null ? "-" : formatPlannerMoney(Math.max(0, remaining), profile.currency)}
                       hint={remaining != null && remaining < 0 ? "over budget" : "left to spend"}
                     />
                     <PlannerStat label="Gifts" value={String(personGifts.length)} hint={personGifts.length === 1 ? "on their list" : "on their list"} />

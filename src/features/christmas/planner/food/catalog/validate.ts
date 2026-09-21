@@ -68,8 +68,8 @@ function slugOk(slug: string) {
 export function validateCatalogRecipe(recipe: CatalogRecipe): CatalogIssue[] {
   const issues: CatalogIssue[] = [];
   const push = (field: string, message: string) => issues.push({ slug: recipe.slug || "(missing)", field, message });
-  if (!slugOk(recipe.slug || "")) push("slug", "Slug must be 2–80 kebab-case characters.");
-  if (!recipe.title || recipe.title.length < 3 || recipe.title.length > 120) push("title", "Title must be 3–120 characters.");
+  if (!slugOk(recipe.slug || "")) push("slug", "Slug must be 2 - 80 kebab-case characters.");
+  if (!recipe.title || recipe.title.length < 3 || recipe.title.length > 120) push("title", "Title must be 3 - 120 characters.");
   if (!recipe.description || recipe.description.length < 24) push("description", "Description is too short.");
   if (!recipe.country) push("country", "Country is required.");
   if (!recipe.course) push("course", "Course is required.");

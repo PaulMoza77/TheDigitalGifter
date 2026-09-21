@@ -303,7 +303,7 @@ export function generateInitialPlan(input: GeneratePlanInput): GeneratedTask[] {
   });
 }
 
-/** Keep the generated plan useful — do not dump every seasonal task at once. */
+/** Keep the generated plan useful - do not dump every seasonal task at once. */
 export function progressiveSurface(tasks: GeneratedTask[], todayIso: string, mode: PlanMode): GeneratedTask[] {
   const windowDays = mode === "rescue" ? 8 : mode === "sprint" ? 16 : mode === "standard" ? 32 : 50;
   const cap = mode === "rescue" ? 7 : mode === "sprint" ? 10 : mode === "wrap" ? 4 : 14;

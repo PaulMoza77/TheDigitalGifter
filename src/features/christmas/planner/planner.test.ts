@@ -307,8 +307,9 @@ describe("christmas planner wiring", () => {
     expect(readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx")).toContain("onWalletAvailability");
     expect(readSrc("src/features/christmas/planner/ChristmasPlannerPage.tsx")).toContain("walletCapabilityOnly");
     expect(checkout).toContain("walletCapabilityOnly");
-    expect(checkout).toContain('applePay: "auto" as const');
+    expect(checkout).toContain('applePay: "always" as const');
     expect(checkout).toContain('googlePay: "auto" as const');
+    expect(checkout).toContain('paymentMethodOrder: ["applePay", "googlePay"]');
     expect(checkout).toContain('walletsReady && !walletsAvailable ? "hidden"');
     expect(checkout).toContain("Or pay with card");
     expect(checkout).toContain("lightRules");
@@ -443,7 +444,7 @@ describe("christmas planner season dates", () => {
     expect(formatPlannerDate("2026-09-26")).toBe("Sep 26");
   });
 
-  it("switches to 5–8 week plan in November", () => {
+  it("switches to 5 - 8 week plan in November", () => {
     const now = new Date("2026-11-10T12:00:00Z");
     expect(daysUntilChristmas(now, "UTC")).toBe(45);
     expect(resolvePlanMode(45, "some")).toBe("standard");

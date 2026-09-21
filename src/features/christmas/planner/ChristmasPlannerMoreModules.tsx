@@ -345,15 +345,15 @@ export function ChristmasPlannerHostingPage() {
   if (!hasFeature(access, "hosting")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house — no extra sensitive data." />
-        <PlannerPaywall feature="hosting" title="Hosting, beautifully organized." body="Guests, RSVP, dietary notes, and rooms — no extra sensitive data." />
+        <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
+        <PlannerPaywall feature="hosting" title="Hosting, beautifully organized." body="Guests, RSVP, dietary notes, and rooms - no extra sensitive data." />
       </div>
     );
   }
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house — no extra sensitive data." />
+      <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
       <section className="tdg-planner-section">
         <h2>Guests</h2>
         <input className="tdg-planner-input" placeholder="Name or household" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
@@ -675,7 +675,7 @@ export function ChristmasPlannerTraditionsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Traditions" lede="Make time for what matters — family, kindness, and the small rituals." />
+      <PlannerPageHeader title="Traditions" lede="Make time for what matters - family, kindness, and the small rituals." />
       {Object.entries(TRADITION_IDEAS).map(([section, ideas]) => (
         <section key={section} className="tdg-planner-section">
           <h2>{section}</h2>
@@ -865,8 +865,8 @@ export function ChristmasPlannerClubPage() {
   }, []);
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Christmas Club" lede="Countdown community — the Planner stays private." />
-      <p>Community posts aren’t live yet — we won’t fake an active feed. Join the existing Christmas Club for countdown updates.</p>
+      <PlannerPageHeader title="Christmas Club" lede="Countdown community - the Planner stays private." />
+      <p>Community posts aren’t live yet - we won’t fake an active feed. Join the existing Christmas Club for countdown updates.</p>
       <div className="tdg-planner-actions" style={{ marginTop: 16 }}>
         <Link className="tdg-planner-btn primary" to={CHRISTMAS_CLUB_ROUTE}>
           Open Christmas Club
@@ -906,7 +906,7 @@ export function ChristmasPlannerSettingsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Settings" lede="Season preferences. This Planner is private — there is no share setting." />
+      <PlannerPageHeader title="Settings" lede="Season preferences. This Planner is private - there is no share setting." />
       <div className="tdg-planner-card">
         <select className="tdg-planner-select" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
           {["eur", "usd", "gbp", "ron"].map((c) => (

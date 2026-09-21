@@ -82,7 +82,7 @@ function CheckoutBody({
   confirmDisabled?: boolean;
   payButtonClassName?: string;
   surface?: "light" | "dark";
-  /** When true, Apple Pay / Google Pay use Stripe `auto` — no reserved/fake wallet buttons. */
+  /** When true, Apple Pay / Google Pay use Stripe `auto` - no reserved/fake wallet buttons. */
   walletCapabilityOnly?: boolean;
 }) {
   const checkoutState = useCheckoutElements();
@@ -258,14 +258,21 @@ function CheckoutBody({
   }
 
   const payLabel = dueDisplay.replace(" USD", "");
-  const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel} — Get portraits`;
+  const buttonText = payButtonLabel ? payButtonLabel(payLabel) : `Pay ${payLabel} - Get portraits`;
   const expressOptions = walletCapabilityOnly
     ? {
         ...(surface === "dark" ? DARK_EXPRESS_OPTIONS : PET_EXPRESS_CHECKOUT_OPTIONS),
+        // Apple Pay first, above card fields. Hide the whole wallet block if none resolve.
+        buttonHeight: surface === "dark" ? 52 : 55,
+        buttonTheme:
+          surface === "dark"
+            ? { applePay: "white" as const, googlePay: "white" as const }
+            : { applePay: "black" as const, googlePay: "black" as const },
         layout: { maxColumns: 1, maxRows: 2, overflow: "never" as const },
+        paymentMethodOrder: ["applePay", "googlePay"],
         paymentMethods: {
           ...PET_EXPRESS_CHECKOUT_OPTIONS.paymentMethods,
-          applePay: "auto" as const,
+          applePay: "always" as const,
           googlePay: "auto" as const,
           link: "never" as const,
         },

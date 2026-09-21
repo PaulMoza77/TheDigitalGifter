@@ -31,7 +31,7 @@ const HomePage: React.FC = () => {
               Plan gifts, budget, and meals in one place.
             </h2>
             <p className="mt-3 max-w-xl text-base leading-7 text-[#f6efe3]/70">
-              An online Christmas planner — separate from card and video generators —
+              An online Christmas planner - separate from card and video generators - 
               so the family organiser can keep the holiday moving without juggling notes.
             </p>
           </div>
