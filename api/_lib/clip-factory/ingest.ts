@@ -81,7 +81,7 @@ export async function downloadDirectMedia(
       throw new IngestError("unsupported_codec", `Unsupported media type: ${contentType}`);
     }
     const length = Number(response.headers.get("content-length") || 0);
-    if (length > MAX_BYTES) throw new IngestError("huge_file", "Video is larger than 500MB.");
+    if (length > MAX_BYTES) throw new IngestError("huge_file", "Video is larger than the 2GB import limit.");
     const nodeStream = Readable.fromWeb(response.body as import("node:stream/web").ReadableStream);
     let bytes = 0;
     nodeStream.on("data", (chunk) => {
@@ -93,7 +93,7 @@ export async function downloadDirectMedia(
     await pipeline(nodeStream, createWriteStream(dest));
     if (bytes > MAX_BYTES) {
       await fs.rm(dest, { force: true });
-      throw new IngestError("huge_file", "Video is larger than 500MB.");
+      throw new IngestError("huge_file", "Video is larger than the 2GB import limit.");
     }
     const stat = await fs.stat(dest);
     return { contentType, bytes: stat.size };

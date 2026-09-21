@@ -20,6 +20,7 @@ export type ClipFactoryJob = {
   created_at: string;
   updated_at: string;
   progress_label?: string | null;
+  import_device_online?: boolean;
   provider?: string;
   rights_confirmed?: boolean;
   source_metadata?: {

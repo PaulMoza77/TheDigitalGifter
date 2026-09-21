@@ -124,7 +124,7 @@ export function snapClipBoundaries(
   return { start: s, end: Math.max(s + 1, e) };
 }
 
-export function desiredClipCount(option: 5 | 10 | 20 | "auto", sourceDuration: number): number {
-  if (option === "auto") return Math.max(4, Math.min(10, Math.round(sourceDuration / 45) || 4));
+export function desiredClipCount(option: 5 | 10 | 20 | 30 | "auto", sourceDuration: number): number {
+  if (option === "auto") return Math.max(4, Math.min(30, Math.round(sourceDuration / 90) || 4));
   return option;
 }

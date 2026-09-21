@@ -1,7 +1,7 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getServiceClient } from "../christmas/supabaseClient";
 import { buildAssCaptions, resolveCaptionStyle } from "../../../src/features/clip-factory/captions";
@@ -12,8 +12,16 @@ import { acquireSourceMedia } from "./acquire";
 import { IngestError, sanitizeFilename } from "./ingest";
 import { desiredClipCount } from "../../../src/features/clip-factory/boundaries";
 import { isKnownInvalidMediaHash } from "../../../src/features/clip-factory/mediaQuality";
+import { USER_SOURCE_IMPORT_FAILED } from "../../../src/features/clip-factory/ingest/providerConfig";
 import { transcribeWhisperLong, describeFrames, openaiConfigured, proposeMoments } from "./openai";
 import { assertUsableRenderedClip, assertUsableSourceMedia } from "./validateMedia";
+import {
+  downloadStorageStreaming,
+  hashFileStreaming,
+  sourceDomain,
+  unknownErrorMessage,
+  uploadFileStreaming,
+} from "./storageIo";
 import {
   detectScenes,
   extractAudioMp3,
@@ -22,6 +30,8 @@ import {
   renderVerticalClip,
 } from "./ffmpeg";
 import { signedPlaybackPath } from "./mediaSign";
+import { resolveMediaPath } from "./vpsMedia";
+import { SUPABASE_OBJECT_LIMIT_BYTES, renderRelpath } from "../../../src/features/clip-factory/vpsTransfer";
 
 const BUCKET = "clip-factory";
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..");
@@ -48,23 +58,37 @@ async function patchJob(id: string, patch: Record<string, unknown>) {
 }
 
 async function hashFile(path: string): Promise<string> {
-  const buf = await fs.readFile(path);
-  return createHash("sha256").update(buf).digest("hex");
+  return hashFileStreaming(path);
 }
 
 async function uploadBytes(path: string, dest: string, contentType: string) {
-  const service = getServiceClient();
-  const bytes = await fs.readFile(path);
-  const { error } = await service.storage.from(BUCKET).upload(dest, bytes, { contentType, upsert: true });
-  if (error) throw error;
-  return bytes.length;
+  return uploadFileStreaming(path, dest, contentType);
 }
 
 async function downloadStorage(storagePath: string, dest: string) {
-  const service = getServiceClient();
-  const { data, error } = await service.storage.from(BUCKET).download(storagePath);
-  if (error || !data) throw error || new Error("storage_download_failed");
-  await fs.writeFile(dest, Buffer.from(await data.arrayBuffer()));
+  await downloadStorageStreaming(storagePath, dest);
+}
+
+async function materializeSource(media: { storage_backend?: string | null; local_relpath?: string | null; storage_path?: string | null }, dest: string): Promise<string> {
+  if (media.storage_backend === "vps" && media.local_relpath) {
+    const abs = resolveMediaPath(media.local_relpath);
+    await fs.access(abs);
+    return abs;
+  }
+  await downloadStorage(String(media.storage_path || ""), dest);
+  return dest;
+}
+
+async function publishArtifact(localPath: string, supabaseKey: string, vpsRel: string, contentType: string, prefer: "auto" | "vps" = "auto") {
+  const info = await fs.stat(localPath);
+  if (prefer !== "vps" && info.size <= SUPABASE_OBJECT_LIMIT_BYTES) {
+    const bytes = await uploadBytes(localPath, supabaseKey, contentType);
+    return { bytes, backend: "supabase" as const, path: supabaseKey, localRelpath: null as string | null };
+  }
+  const abs = resolveMediaPath(vpsRel);
+  await fs.mkdir(dirname(abs), { recursive: true });
+  await fs.copyFile(localPath, abs);
+  return { bytes: info.size, backend: "vps" as const, path: vpsRel, localRelpath: vpsRel };
 }
 
 function resolveLocalLibrary(src: string): string | null {
@@ -111,7 +135,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     null;
   const workDir = join(tmpdir(), `tdg-clip-${jobId}`);
   await fs.mkdir(workDir, { recursive: true });
-  const sourcePath = join(workDir, "source.mp4");
+  let sourcePath = join(workDir, "source.mp4");
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
@@ -119,6 +143,22 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       await patchJob(jobId, { media_id: null, media_hash: null });
       job.media_id = null;
       job.media_hash = null;
+    }
+    const payloadPreview = (job.source_payload || {}) as Record<string, unknown>;
+    const hasAttachedFile = String(payloadPreview.objectPath || "").startsWith("uploads/") || Boolean(payloadPreview.libraryAssetId);
+    const importLease = job.import_lease_expires_at ? Date.parse(String(job.import_lease_expires_at)) : 0;
+    if (job.source_kind === "youtube" && !job.media_id && !hasAttachedFile) {
+      if (job.status === "importing" && importLease > Date.now()) return;
+      await patchJob(jobId, {
+        status: "waiting_for_import",
+        stage: "waiting_for_import",
+        progress: 4,
+        progress_label: "Waiting for import device",
+        error_message: null,
+        error_code: null,
+        lease_expires_at: null,
+      });
+      return;
     }
     if (
       ["queued", "ingesting", "importing", "downloading", "uploading", "failed", "waiting_for_media", "source_detected"].includes(
@@ -130,14 +170,14 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         status: "importing",
         stage: "importing",
         progress: 8,
-        progress_label: "Importing source...",
+        progress_label: "Importing source",
         error_message: null,
         failed_stage: null,
       });
       await recordEvent(jobId, "clip_factory_source_added", { source_kind: job.source_kind });
       const payload = job.source_payload || {};
       if (job.source_kind === "direct_media_url" || job.source_kind === "youtube" || job.source_kind === "vimeo") {
-        await patchJob(jobId, { status: "importing", stage: "importing", progress: 12, progress_label: "Importing source..." });
+        await patchJob(jobId, { status: "importing", stage: "importing", progress: 12, progress_label: "Importing source" });
       }
       const ingested = await acquireSourceMedia({
         sourceKind: job.source_kind,
@@ -236,8 +276,22 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
         media_id: mediaId,
         media_hash: mediaHash,
         progress: 18,
-        progress_label: "Importing source...",
+        progress_label: "Importing source",
         cost: { ...cost, estimated_usd: estimateCost(cost) },
+        source_payload: {
+          ...payload,
+          ingestProvider: ingested.ingestProvider,
+          ingestAttempts: ingested.ingestAttempts,
+        },
+      });
+      await recordEvent(jobId, "clip_factory_ingest_completed", {
+        ingest_provider: ingested.ingestProvider,
+        source_domain: sourceDomain(String(payload.url || ingested.sourceUrl || "")),
+        source_duration: probe.duration,
+        source_file_size: probe.fileSize || size,
+        width: probe.width,
+        height: probe.height,
+        attempts: ingested.ingestAttempts,
       });
       job.media_id = mediaId;
       job.media_hash = mediaHash;
@@ -254,13 +308,42 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     try {
       await fs.access(sourcePath);
     } catch {
-      await downloadStorage(media.storage_path, sourcePath);
+      sourcePath = await materializeSource(media, sourcePath);
     }
-    await assertUsableSourceMedia({
+    const verified = await assertUsableSourceMedia({
       path: sourcePath,
       expectedDurationSeconds: expectedDuration || Number(media.duration_seconds || 0),
       mediaHash: media.media_hash,
     });
+    if (verified.hasAudio !== media.has_audio || Math.abs(verified.duration - Number(media.duration_seconds || 0)) > 1.5) {
+      await service
+        .from("clip_factory_media")
+        .update({
+          has_audio: verified.hasAudio,
+          duration_seconds: verified.duration,
+          width: verified.width,
+          height: verified.height,
+          codec_video: verified.videoCodec,
+          codec_audio: verified.audioCodec,
+          probe: verified,
+        })
+        .eq("id", media.id);
+      media.has_audio = verified.hasAudio;
+      media.duration_seconds = verified.duration;
+      media.width = verified.width;
+      media.height = verified.height;
+    }
+    const importSha = String((job.source_payload || {}).importSha256 || "");
+    if (importSha) {
+      const actualHash = await hashFile(sourcePath);
+      if (actualHash !== importSha) {
+        await service
+          .from("clip_factory_media")
+          .update({ invalidated_at: new Date().toISOString(), invalid_reason: "Uploaded bytes do not match the import hash." })
+          .eq("id", media.id);
+        throw new IngestError("corrupt_file", "Imported file hash does not match the upload.");
+      }
+    }
 
     await recordEvent(jobId, "clip_factory_analysis_started", { media_hash: media.media_hash });
     await patchJob(jobId, {
@@ -328,11 +411,16 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       }
     }
 
+    await recordEvent(jobId, "clip_factory_transcript_completed", {
+      source_duration: Number(media.duration_seconds || 0),
+      transcript_segments: transcript.segments.length,
+      transcript_chars: transcript.fullText.length,
+    });
     await patchJob(jobId, {
       status: "analyzing",
       stage: "analyzing",
       progress: 52,
-      progress_label: "Analyzing transcript...",
+      progress_label: "Finding moments",
       cost: { ...cost, estimated_usd: estimateCost(cost) },
     });
 
@@ -476,6 +564,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     });
     await recordEvent(jobId, "clip_factory_analysis_completed", {
       moments_found: proposed.candidates.length,
+      selected_clip_count: want,
       estimated_usd: estimateCost(cost),
     });
 
@@ -536,6 +625,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
           candidateId,
           captionStyle: options.captionStyle,
           aiHook: options.aiHook,
+          sourceFile: sourcePath,
         });
       } catch {
         /* a single failed render must not destroy the job */
@@ -546,7 +636,23 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       .select("id", { count: "exact", head: true })
       .eq("job_id", jobId)
       .eq("status", "completed");
+    const { count: pendingCount } = await service
+      .from("clip_factory_renders")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId)
+      .in("status", ["queued", "rendering"]);
     const readyCount = completedCount || 0;
+    if ((pendingCount || 0) > 0 && readyCount === 0) {
+      await patchJob(jobId, {
+        status: "rendering",
+        stage: "rendering",
+        progress: 90,
+        progress_label: "Rendering clips",
+        clips_generated: readyCount,
+        lease_expires_at: null,
+      });
+      return;
+    }
     await patchJob(jobId, {
       status: readyCount ? (readyCount === renderIds.length ? "completed" : "partial") : "failed",
       stage: readyCount ? "completed" : "failed",
@@ -562,17 +668,18 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     });
   } catch (err) {
     const code = err instanceof IngestError ? err.code : "analysis_failed";
-    const message = err instanceof Error
-      ? err.message
-      : typeof err === "object" && err && "message" in err
-        ? String((err as { message: unknown }).message)
-        : String(err);
-    const waiting =
+    const rawMessage = unknownErrorMessage(err);
+    const importFailed =
       code === "import_unavailable" ||
       code === "source_auth_required" ||
       code === "duration_mismatch" ||
       code === "synthetic_or_empty" ||
-      code === "uniform_frames";
+      code === "uniform_frames" ||
+      code === "import_failed" ||
+      code === "video_unavailable" ||
+      code === "video_private";
+    const message = importFailed ? USER_SOURCE_IMPORT_FAILED : rawMessage;
+    const waiting = importFailed && !job.media_id;
     await patchJob(jobId, {
       status: waiting ? "waiting_for_media" : "failed",
       stage: waiting ? "source_detected" : "failed",
@@ -581,9 +688,15 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
       error_message: message.slice(0, 500),
       lease_expires_at: null,
       progress: waiting ? 5 : 100,
-      progress_label: waiting ? message.slice(0, 180) : message.slice(0, 120),
+      progress_label: waiting ? "We couldn't import this source video. No clips were created." : message.slice(0, 120),
     });
-    await recordEvent(jobId, waiting ? "clip_factory_waiting_for_media" : "clip_factory_analysis_failed", { code, message: message.slice(0, 400) });
+    await recordEvent(jobId, waiting ? "clip_factory_waiting_for_media" : "clip_factory_analysis_failed", {
+      code,
+      message: message.slice(0, 400),
+      provider_error: rawMessage.slice(0, 400),
+      failure_stage: waiting ? "importing" : job.stage || "analysis",
+      source_domain: sourceDomain(String((job.source_payload || {}).url || (job.source_payload || {}).mediaUrl || "")),
+    });
     if (!waiting) throw err;
   } finally {
     await fs.rm(workDir, { recursive: true, force: true }).catch(() => undefined);
@@ -597,6 +710,7 @@ export async function renderClipFactoryCandidate(input: {
   aiHook?: boolean;
   startTime?: number;
   endTime?: number;
+  sourceFile?: string;
 }): Promise<void> {
   const service = getServiceClient();
   const { data: job } = await service.from("clip_factory_jobs").select("*").eq("id", input.jobId).maybeSingle();
@@ -637,13 +751,16 @@ export async function renderClipFactoryCandidate(input: {
 
   const workDir = join(tmpdir(), `tdg-render-${renderId}`);
   await fs.mkdir(workDir, { recursive: true });
-  const sourcePath = join(workDir, "source.mp4");
+  const downloadedSource = join(workDir, "source.mp4");
+  let sourcePath = input.sourceFile && existsSync(input.sourceFile) ? input.sourceFile : downloadedSource;
   const outPath = join(workDir, "clip.mp4");
   const thumbPath = join(workDir, "thumb.jpg");
   const assPath = join(workDir, "captions.ass");
   const started = Date.now();
   try {
-    await downloadStorage(media.storage_path, sourcePath);
+    if (sourcePath === downloadedSource) {
+      sourcePath = await materializeSource(media, sourcePath);
+    }
     const { data: transcriptRow } = await service
       .from("clip_factory_transcripts")
       .select("*")
@@ -696,29 +813,43 @@ export async function renderClipFactoryCandidate(input: {
 
     const videoKey = `renders/${input.jobId}/${candidate.id}.mp4`;
     const thumbKey = `renders/${input.jobId}/${candidate.id}.jpg`;
-    const videoBytes = await uploadBytes(outPath, videoKey, "video/mp4");
-    await uploadBytes(thumbPath, thumbKey, "image/jpeg");
+    const videoStored = await publishArtifact(outPath, videoKey, renderRelpath(input.jobId, renderId, "mp4"), "video/mp4");
+    const thumbStored = await publishArtifact(
+      thumbPath,
+      thumbKey,
+      renderRelpath(input.jobId, renderId, "jpg"),
+      "image/jpeg",
+      videoStored.backend === "vps" ? "vps" : "auto",
+    );
+    const videoBytes = videoStored.bytes;
     const filename = sanitizeFilename(`${candidate.title || "clip"}-${candidate.id.slice(0, 8)}.mp4`);
+    const stableSrc = `/api/clip-factory?action=media&kind=render&id=${renderId}`;
+    const stablePoster = `/api/clip-factory?action=media&kind=thumb&id=${renderId}`;
     const libraryInsert = await service
       .from("library_assets")
       .insert({
         title: candidate.title,
         description: candidate.suggested_post_caption || candidate.summary,
-        src: signedPlaybackPath("render", renderId),
+        src: stableSrc,
         filename,
         category: "clip_factory",
         kind: "reel",
         duration_seconds: probe.duration,
         width: 1080,
         height: 1920,
-        poster_src: signedPlaybackPath("thumb", renderId),
-        storage_bucket: BUCKET,
-        storage_path: videoKey,
+        poster_src: stablePoster,
+        storage_bucket: videoStored.backend === "vps" ? "vps" : BUCKET,
+        storage_path: videoStored.path,
         thumbnail_path: thumbKey,
         provenance: {
           source_asset: media.library_asset_id || media.source_label,
           source_url: media.source_url,
+          source_title: media.source_label,
+          source_duration: media.duration_seconds,
           source_timestamps: { start, end },
+          clip_start: start,
+          clip_end: end,
+          clip_duration: probe.duration,
           clip_factory_job: input.jobId,
           candidate_id: candidate.id,
           generated_at: new Date().toISOString(),
@@ -727,6 +858,7 @@ export async function renderClipFactoryCandidate(input: {
           hashtags: candidate.hashtags,
           platform_recommendations: candidate.suggested_platforms,
           hook: candidate.hook,
+          summary: candidate.summary,
           category: candidate.category,
           explanation: candidate.reason,
         },
@@ -740,9 +872,11 @@ export async function renderClipFactoryCandidate(input: {
       .update({
         status: "completed",
         library_asset_id: libraryInsert.data.id,
-        storage_bucket: BUCKET,
-        storage_path: videoKey,
-        thumbnail_path: thumbKey,
+        storage_bucket: videoStored.backend === "vps" ? "vps" : BUCKET,
+        storage_path: videoStored.path,
+        storage_backend: videoStored.backend,
+        local_relpath: videoStored.localRelpath,
+        thumbnail_path: thumbStored.path,
         width: 1080,
         height: 1920,
         duration_seconds: probe.duration,
@@ -779,7 +913,7 @@ export async function renderClipFactoryCandidate(input: {
     await recordEvent(input.jobId, "clip_factory_render_completed", { render_id: renderId, library_asset_id: libraryInsert.data.id });
     await recordEvent(input.jobId, "clip_factory_saved_to_library", { library_asset_id: libraryInsert.data.id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = unknownErrorMessage(err);
     await service
       .from("clip_factory_renders")
       .update({ status: "failed", error_message: message.slice(0, 500), updated_at: new Date().toISOString() })

@@ -1,4 +1,5 @@
 import { capabilityMessage } from "../capability";
+import { clipIngestEndpoint, youtubeCanAttemptFileImport } from "../providerConfig";
 import { IngestFailure, normalizeSourceMetadata, type SourceMetadata, type VideoSourceAdapter } from "../types";
 import { parsePublicHttpUrl } from "../ssrf";
 
@@ -33,7 +34,7 @@ export function youtubeApiKey(): string {
 }
 
 export function youtubeAuthorizedImportConfigured(): boolean {
-  return Boolean(String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim());
+  return Boolean(clipIngestEndpoint());
 }
 
 function youtubeFallbackMessage(): string {
@@ -41,7 +42,7 @@ function youtubeFallbackMessage(): string {
 }
 
 function youtubeCapability() {
-  return youtubeAuthorizedImportConfigured() ? ("FULL_IMPORT" as const) : ("REFERENCE_ONLY" as const);
+  return youtubeCanAttemptFileImport() ? ("FULL_IMPORT" as const) : ("REFERENCE_ONLY" as const);
 }
 
 function mapYoutubePrivacy(status?: string): SourceMetadata["privacy"] {
@@ -97,7 +98,11 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
       canImport: ingestionCapability === "FULL_IMPORT",
       ingestionCapability,
       mediaUrl: null,
-      importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+      importMode: youtubeAuthorizedImportConfigured()
+        ? "authorized_api"
+        : ingestionCapability === "FULL_IMPORT"
+          ? "origin_ingest"
+          : "unavailable",
       fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
       message: capabilityMessage(ingestionCapability, "youtube"),
       metadata: { privacy, embeddable: item.status?.embeddable ?? null },
@@ -130,7 +135,11 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
         canImport: ingestionCapability === "FULL_IMPORT",
         ingestionCapability,
         mediaUrl: null,
-        importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+        importMode: youtubeAuthorizedImportConfigured()
+        ? "authorized_api"
+        : ingestionCapability === "FULL_IMPORT"
+          ? "origin_ingest"
+          : "unavailable",
         fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
         message: capabilityMessage(ingestionCapability, "youtube"),
         metadata: { oembed: true },
@@ -155,7 +164,11 @@ export async function fetchYoutubeMetadata(id: string): Promise<SourceMetadata> 
     canImport: ingestionCapability === "FULL_IMPORT",
     ingestionCapability,
     mediaUrl: null,
-    importMode: ingestionCapability === "FULL_IMPORT" ? "authorized_api" : "unavailable",
+    importMode: youtubeAuthorizedImportConfigured()
+      ? "authorized_api"
+      : ingestionCapability === "FULL_IMPORT"
+        ? "origin_ingest"
+        : "unavailable",
     fallback: ingestionCapability === "FULL_IMPORT" ? null : "upload",
     message: capabilityMessage(ingestionCapability, "youtube"),
     metadata: { oembed: false },
@@ -214,7 +227,7 @@ export const youtubeAdapter: VideoSourceAdapter = {
     return fetchYoutubeMetadata(id);
   },
   canImport(metadata) {
-    return metadata.ingestionCapability === "FULL_IMPORT" && youtubeAuthorizedImportConfigured();
+    return metadata.ingestionCapability === "FULL_IMPORT" && youtubeCanAttemptFileImport();
   },
   async import() {
     throw new IngestFailure(

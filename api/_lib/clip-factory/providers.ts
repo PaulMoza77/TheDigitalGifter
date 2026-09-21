@@ -1,7 +1,12 @@
 import { extractVimeoId, vimeoAccessToken } from "../../../src/features/clip-factory/ingest/adapters/vimeo";
 import { extractYoutubeId, youtubeAuthorizedImportConfigured } from "../../../src/features/clip-factory/ingest/adapters/youtube";
+import { clipIngestEndpoint } from "../../../src/features/clip-factory/ingest/providerConfig";
 import { IngestFailure } from "../../../src/features/clip-factory/ingest/types";
 import { downloadDirectMedia, IngestError } from "./ingest";
+
+function ingestApiKey(): string {
+  return String(process.env.CLIP_INGEST_API_KEY || process.env.CLIP_FACTORY_YOUTUBE_IMPORT_SECRET || "").trim();
+}
 
 function asIngestError(error: unknown): never {
   if (error instanceof IngestError) throw error;
@@ -13,10 +18,10 @@ function asIngestError(error: unknown): never {
  * Optional authorized YouTube *file* importer. This is not YouTube Data API v3
  * (metadata only) and is not yt-dlp.
  *
- * CLIP_FACTORY_YOUTUBE_IMPORT_URL must accept:
+ * CLIP_INGEST_ENDPOINT / CLIP_FACTORY_YOUTUBE_IMPORT_URL must accept:
  *   POST application/json
  *   { "video_id": "<11 chars>", "url": "https://www.youtube.com/watch?v=<id>" }
- *   Authorization: Bearer CLIP_FACTORY_YOUTUBE_IMPORT_SECRET  (if set)
+ *   Authorization: Bearer CLIP_INGEST_API_KEY or CLIP_FACTORY_YOUTUBE_IMPORT_SECRET (if set)
  * 200 JSON: { "download_url": "https://..." } or { "url": "https://..." }
  * The URL must be a directly fetchable video the origin can download.
  * 401/403 → source_auth_required; 404 → video_unavailable.
@@ -24,7 +29,7 @@ function asIngestError(error: unknown): never {
 export async function importYoutubeAuthorized(url: string, dest: string): Promise<{ contentType: string; bytes: number }> {
   const id = extractYoutubeId(url);
   if (!id) throw new IngestError("invalid_url", "That YouTube URL is missing a video id.");
-  const endpoint = String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim();
+  const endpoint = clipIngestEndpoint();
   if (!endpoint || !youtubeAuthorizedImportConfigured()) {
     throw new IngestError(
       "import_unavailable",
@@ -32,7 +37,7 @@ export async function importYoutubeAuthorized(url: string, dest: string): Promis
     );
   }
   try {
-    const secret = String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_SECRET || "").trim();
+    const secret = ingestApiKey();
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {

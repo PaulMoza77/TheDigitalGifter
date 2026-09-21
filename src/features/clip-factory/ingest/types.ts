@@ -48,7 +48,7 @@ export type SourceMetadata = {
   ingestionCapability: IngestionCapability;
   mediaUrl?: string | null;
   mediaAsset?: { kind: "upload" | "library" | "storage"; id?: string; path?: string } | null;
-  importMode: "direct_download" | "authorized_api" | "library" | "upload" | "unavailable";
+  importMode: "direct_download" | "authorized_api" | "origin_ingest" | "library" | "upload" | "unavailable";
   fallback?: "upload" | null;
   message?: string | null;
   metadata?: Record<string, unknown>;

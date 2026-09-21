@@ -92,7 +92,7 @@ export async function detectScenes(input: string): Promise<number[]> {
     const { stderr, stdout } = await runCommand(
       "ffmpeg",
       ["-i", input, "-filter:v", "select='gt(scene,0.32)',showinfo", "-an", "-f", "null", "-"],
-      240_000,
+      20 * 60_000,
     );
     const text = `${stdout}\n${stderr}`;
     const times: number[] = [];

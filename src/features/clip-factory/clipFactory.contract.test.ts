@@ -27,13 +27,14 @@ describe("clip factory production wiring", () => {
     expect(read("api/_lib/clip-factory/providers.ts")).toContain("CLIP_FACTORY_YOUTUBE_IMPORT_URL");
     expect(read("api/_lib/clip-factory/providers.ts")).toContain("download_url");
     expect(read("api/_lib/clip-factory/providers.ts")).toContain("video_id");
+    expect(read("api/_lib/clip-factory/providers.ts")).toContain("CLIP_INGEST_API_KEY");
     expect(read("api/clip-factory.ts")).toContain("rights_confirmed");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("VideoSourceAdapter");
     expect(read("src/features/clip-factory/ingest/types.ts")).toContain("ingestionCapability");
     expect(read("src/features/clip-factory/ingest/capability.ts")).toContain("FULL_IMPORT");
-    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("Find Viral Moments");
+    expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("Generate Clips");
     expect(read("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("ingest this URL automatically");
-    expect(read("api/_lib/clip-factory/worker.ts")).toContain("Importing source...");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain("Importing source");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("clip_factory_analysis_started");
     expect(read("api/_lib/clip-factory/worker.ts")).toContain("acquireSourceMedia");
     expect(read("api/_lib/clip-factory/acquire.ts")).toContain("NormalizedIngest");

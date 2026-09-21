@@ -4,6 +4,7 @@ import { extractYoutubeId } from "../../../src/features/clip-factory/ingest/adap
 import { isKnownInvalidMediaHash } from "../../../src/features/clip-factory/mediaQuality";
 import { downloadDirectMedia, IngestError } from "./ingest";
 import { importVimeoAuthorized } from "./providers";
+import { assertEnoughDisk } from "./storageIo";
 import { importYoutubeMedia } from "./youtubeImport";
 
 export type NormalizedIngest = {
@@ -14,6 +15,8 @@ export type NormalizedIngest = {
   duration: number | null;
   mediaAsset: { localPath: string; contentType: string; bytes: number };
   status: "ingested";
+  ingestProvider?: string | null;
+  ingestAttempts?: Array<{ provider: string; ok: boolean; durationMs: number; errorCode?: string; providerError?: string }>;
 };
 
 export type StoredMediaHit = {
@@ -53,6 +56,7 @@ function done(
   dest: string,
   contentType: string,
   bytes: number,
+  extra?: { ingestProvider?: string | null; ingestAttempts?: NormalizedIngest["ingestAttempts"] },
 ): NormalizedIngest {
   return {
     sourceType,
@@ -62,6 +66,8 @@ function done(
     duration: null,
     mediaAsset: { localPath: dest, contentType, bytes },
     status: "ingested",
+    ingestProvider: extra?.ingestProvider || sourceType,
+    ingestAttempts: extra?.ingestAttempts || [{ provider: sourceType, ok: true, durationMs: 0 }],
   };
 }
 
@@ -75,6 +81,7 @@ function storedLooksReusable(hit: StoredMediaHit, expectedDuration: number | nul
 }
 
 export async function acquireSourceMedia(input: AcquireInput): Promise<NormalizedIngest> {
+  await assertEnoughDisk(input.dest, 256 * 1024 * 1024);
   const payload = input.sourcePayload || {};
   const objectPath = String(payload.objectPath || "");
   const libraryAssetId = String(payload.libraryAssetId || "");
@@ -124,7 +131,10 @@ export async function acquireSourceMedia(input: AcquireInput): Promise<Normalize
     }
     try {
       const downloaded = await importYoutubeMedia(url, input.dest);
-      return done("youtube", url, title, input.dest, downloaded.contentType, downloaded.bytes);
+      return done("youtube", url, title, input.dest, downloaded.contentType, downloaded.bytes, {
+        ingestProvider: downloaded.provider,
+        ingestAttempts: downloaded.attempts,
+      });
     } catch (error) {
       if (error instanceof IngestError) throw error;
       throw youtubeLimitation(error instanceof Error ? error.message : undefined);
