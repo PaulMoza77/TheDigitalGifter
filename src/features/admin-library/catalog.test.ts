@@ -190,8 +190,13 @@ describe("admin video library", () => {
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Share / Schedule");
-    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/social-accounts");
-    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/publishing");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/social-accounts");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/publishing");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/studio");
+    expect(page).toContain('/admin/social-accounts');
+    expect(page).toContain('/admin/publishing');
+    expect(page).toContain("Social Accounts");
+    expect(page).toContain("Publishing");
     expect(readSrc("src/App.tsx")).toContain("path=\"social-accounts\"");
     expect(readSrc("src/App.tsx")).toContain("path=\"publishing\"");
   });
