@@ -26,6 +26,12 @@ fi
 [[ -f "${TDG_REPO}/Dockerfile" ]] || die "missing ${TDG_REPO}/Dockerfile"
 [[ -f "${TDG_COMPOSE}" ]] || die "missing TDG compose file"
 mkdir -p "${TDG_RELEASES}"
+LONG_FORM_DATA="${TDG_DIR}/data/long-form"
+mkdir -p "${LONG_FORM_DATA}/productions"
+chmod 0775 "${TDG_DIR}/data" "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" || true
+chown -R 100:101 "${LONG_FORM_DATA}" 2>/dev/null || chmod 0777 "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" || true
+[[ -d "${LONG_FORM_DATA}" ]] || die "missing persistent long-form data directory ${LONG_FORM_DATA}"
+log "long-form persistent data dir ready ${LONG_FORM_DATA}"
 
 for k in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
   val="$(grep -E "^${k}=" "${TDG_SECRETS}" | head -1 | cut -d= -f2- || true)"

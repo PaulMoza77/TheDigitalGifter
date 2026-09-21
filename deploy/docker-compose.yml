@@ -47,6 +47,9 @@ services:
       HF_API_KEY_SECRET: ${HF_API_KEY_SECRET:-}
       VERCEL_ENV: production
       TDG_RELEASE: ${TDG_RELEASE:-latest}
+      LONG_FORM_DATA_DIR: /data/long-form
+    volumes:
+      - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
     expose:
       - "8080"
     volumes:

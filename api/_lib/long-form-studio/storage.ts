@@ -1,12 +1,95 @@
-import { createReadStream } from "node:fs";
-import { open, stat } from "node:fs/promises";
+import { createReadStream, existsSync } from "node:fs";
+import { access, copyFile, mkdir, open, rename, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import { dirname, join, resolve as resolvePath } from "node:path";
 import { getServiceClient, requiredEnv } from "../christmas/supabaseClient";
 
 export const LONG_FORM_BUCKET = "long-form";
+export const LONG_FORM_VPS_BUCKET = "vps";
+/** Stay under Supabase Free's global 50 MB cap. Do not retry 413 uploads. */
+export const SUPABASE_SAFE_OBJECT_BYTES = 40 * 1024 * 1024;
 
 export function longFormLocalAllowed(): boolean {
   return process.env.LONG_FORM_ALLOW_LOCAL === "1" || process.env.VITEST === "true";
+}
+
+export function longFormDataDir(): string {
+  return String(process.env.LONG_FORM_DATA_DIR || "").trim();
+}
+
+export function vpsStorageReady(): boolean {
+  const root = longFormDataDir();
+  if (!root || root.includes("..")) return false;
+  return existsSync(root);
+}
+
+export async function assertVpsStorageWritable(): Promise<string> {
+  const root = longFormDataDir();
+  if (!root || root.includes("..")) {
+    throw new Error("Persistent VPS storage is not configured (LONG_FORM_DATA_DIR).");
+  }
+  await mkdir(root, { recursive: true });
+  await access(root);
+  return root;
+}
+
+export type StorageBackend = "vps" | "supabase" | "local";
+
+export function chooseStorageBackend(bytes: number): StorageBackend {
+  if (vpsStorageReady()) return "vps";
+  if (bytes > SUPABASE_SAFE_OBJECT_BYTES) {
+    if (longFormLocalAllowed()) return "local";
+    throw new Error(
+      "This video exceeds the Supabase Free storage cap. Persistent VPS storage is not mounted.",
+    );
+  }
+  if (longFormLocalAllowed() && !process.env.SUPABASE_SERVICE_ROLE_KEY) return "local";
+  if (longFormLocalAllowed()) return "local";
+  return "supabase";
+}
+
+export function isPermanentSupabaseReject(message: string, status?: number): boolean {
+  if (status === 413) return true;
+  return /413|payload too large|maximum size exceeded|exceeds the supabase free/i.test(message);
+}
+
+export async function persistObjectToVps(localPath: string, objectPath: string): Promise<{ bytes: number; absolutePath: string }> {
+  const root = await assertVpsStorageWritable();
+  const dest = resolveVpsAbsolutePath(objectPath, root);
+  const info = await stat(localPath);
+  if (resolvePath(localPath) === dest) {
+    return { bytes: info.size, absolutePath: dest };
+  }
+  await mkdir(dirname(dest), { recursive: true });
+  const tmp = `${dest}.tmp.${process.pid}`;
+  await copyFile(localPath, tmp);
+  await rename(tmp, dest);
+  const stored = await stat(dest);
+  if (Math.abs(stored.size - info.size) > 0) {
+    throw new Error(`Durable file size ${stored.size} does not match local size ${info.size}.`);
+  }
+  return { bytes: stored.size, absolutePath: dest };
+}
+
+export function resolveVpsAbsolutePath(objectPath: string, root = longFormDataDir()): string {
+  const safe = assertSafeObjectPath(objectPath);
+  if (!root) throw new Error("Persistent VPS storage is not configured.");
+  const base = resolvePath(root);
+  const dest = resolvePath(join(base, safe));
+  if (dest !== base && !dest.startsWith(`${base}/`)) {
+    throw Object.assign(new Error("Invalid storage path."), { status: 400 });
+  }
+  return dest;
+}
+
+export async function verifyDurableFile(absolutePath: string, expectedBytes?: number): Promise<{ ok: boolean; size: number; message: string }> {
+  if (!existsSync(absolutePath)) return { ok: false, size: 0, message: "Durable file is missing." };
+  const info = await stat(absolutePath);
+  if (!info.isFile() || info.size < 1) return { ok: false, size: info.size, message: "Durable file is empty." };
+  if (expectedBytes && Math.abs(info.size - expectedBytes) > 0) {
+    return { ok: false, size: info.size, message: `Durable size ${info.size} does not match ${expectedBytes}.` };
+  }
+  return { ok: true, size: info.size, message: "ok" };
 }
 
 export async function hashFile(path: string): Promise<string> {
@@ -26,6 +109,11 @@ export async function uploadObjectStreaming(input: {
   contentType: string;
 }): Promise<{ bytes: number; sha256: string }> {
   const info = await stat(input.localPath);
+  if (info.size > SUPABASE_SAFE_OBJECT_BYTES) {
+    throw new Error(
+      `Storage upload failed (413). Object exceeds the Supabase Free size cap (${info.size} bytes).`,
+    );
+  }
   const sha256 = await hashFile(input.localPath);
   if (info.size > 5_000_000) {
     await uploadObjectResumable(input.objectPath, input.localPath, input.contentType, info.size);
@@ -156,7 +244,10 @@ export async function bucketHeadroom(neededBytes: number): Promise<void> {
   if (neededBytes > limit) {
     throw new Error("This video would exceed the 8 GiB file size limit. Keep the 1 hour length for now.");
   }
-  if (longFormLocalAllowed()) return;
+  if (vpsStorageReady() || longFormLocalAllowed()) return;
+  if (neededBytes > SUPABASE_SAFE_OBJECT_BYTES) {
+    throw new Error("Persistent VPS storage is not mounted; this file exceeds the Supabase Free storage cap.");
+  }
   getServiceClient();
 }
 
