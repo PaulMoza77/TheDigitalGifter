@@ -89,6 +89,8 @@ function CheckoutBody({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [walletsReady, setWalletsReady] = useState(false);
+  const [walletsAvailable, setWalletsAvailable] = useState(false);
   const readyFired = useRef(false);
   const interactionFired = useRef(false);
   const initErrorHandled = useRef(false);
@@ -281,33 +283,70 @@ function CheckoutBody({
 
   return (
     <div className="space-y-4">
-      <div className="min-h-[52px]">
-        <div onPointerDown={markInteraction}>
-        <ExpressCheckoutElement
-          options={expressOptions}
-          onReady={(event) => {
-            const methods = (event?.availablePaymentMethods || {}) as Record<string, boolean>;
-            const applePay = Boolean(methods.applePay);
-            const googlePay = Boolean(methods.googlePay);
-            const link = Boolean(methods.link);
-            onWalletAvailability?.({
-              applePay,
-              googlePay,
-              link,
-              any: applePay || googlePay || link,
-            });
-          }}
-          onConfirm={(event) => void confirm(event)}
-          onCancel={() => setError(null)}
-        />
+      {walletCapabilityOnly ? (
+        <div className={walletsReady && !walletsAvailable ? "hidden" : undefined} aria-hidden={walletsReady && !walletsAvailable}>
+          <div className={walletsReady && walletsAvailable ? "min-h-[52px]" : undefined}>
+            <div onPointerDown={markInteraction}>
+              <ExpressCheckoutElement
+                options={expressOptions}
+                onReady={(event) => {
+                  const methods = (event?.availablePaymentMethods || {}) as Record<string, boolean>;
+                  const applePay = Boolean(methods.applePay);
+                  const googlePay = Boolean(methods.googlePay);
+                  const link = Boolean(methods.link);
+                  const any = applePay || googlePay || link;
+                  setWalletsReady(true);
+                  setWalletsAvailable(any);
+                  onWalletAvailability?.({
+                    applePay,
+                    googlePay,
+                    link,
+                    any,
+                  });
+                }}
+                onConfirm={(event) => void confirm(event)}
+                onCancel={() => setError(null)}
+              />
+            </div>
+          </div>
+          {walletsReady && walletsAvailable ? (
+            <div className="mt-4 flex items-center gap-3">
+              <span className={`h-px flex-1 ${rule}`} />
+              <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
+              <span className={`h-px flex-1 ${rule}`} />
+            </div>
+          ) : null}
         </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <span className={`h-px flex-1 ${rule}`} />
-        <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
-        <span className={`h-px flex-1 ${rule}`} />
-      </div>
+      ) : (
+        <>
+          <div className="min-h-[52px]">
+            <div onPointerDown={markInteraction}>
+              <ExpressCheckoutElement
+                options={expressOptions}
+                onReady={(event) => {
+                  const methods = (event?.availablePaymentMethods || {}) as Record<string, boolean>;
+                  const applePay = Boolean(methods.applePay);
+                  const googlePay = Boolean(methods.googlePay);
+                  const link = Boolean(methods.link);
+                  onWalletAvailability?.({
+                    applePay,
+                    googlePay,
+                    link,
+                    any: applePay || googlePay || link,
+                  });
+                }}
+                onConfirm={(event) => void confirm(event)}
+                onCancel={() => setError(null)}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`h-px flex-1 ${rule}`} />
+            <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
+            <span className={`h-px flex-1 ${rule}`} />
+          </div>
+        </>
+      )}
 
       <div onFocusCapture={markInteraction} onChangeCapture={markInteraction}>
         <PaymentElement
@@ -428,9 +467,48 @@ export function CustomStripeCheckout({
           fontSizeBase: "16px",
         }
       : {
-          colorPrimary: "#1a140e",
+          colorPrimary: "#6b1420",
+          colorBackground: "#fffaf1",
+          colorText: "#14080b",
+          colorTextSecondary: "#3a241c",
+          colorDanger: "#8b1a1a",
           borderRadius: "12px",
+          fontFamily: 'system-ui, "Segoe UI", sans-serif',
+          fontSizeBase: "16px",
         });
+
+  const lightRules = {
+    ".Label": {
+      color: "#14080b",
+      fontWeight: "600",
+      fontSize: "13px",
+    },
+    ".Input": {
+      backgroundColor: "#ffffff",
+      color: "#14080b",
+      border: "1px solid rgba(20, 8, 11, 0.22)",
+    },
+    ".Input:focus": {
+      border: "1px solid rgba(107, 20, 32, 0.65)",
+      boxShadow: "0 0 0 1px rgba(107, 20, 32, 0.25)",
+    },
+    ".Input::placeholder": {
+      color: "rgba(58, 36, 28, 0.55)",
+    },
+    ".Tab": {
+      color: "#3a241c",
+      border: "1px solid rgba(20, 8, 11, 0.14)",
+      backgroundColor: "#fffaf1",
+    },
+    ".Tab--selected": {
+      color: "#fffaf1",
+      backgroundColor: "#6b1420",
+      border: "1px solid #6b1420",
+    },
+    ".Error": {
+      color: "#8b1a1a",
+    },
+  } as const;
 
   return (
     <CheckoutElementsProvider
@@ -470,7 +548,7 @@ export function CustomStripeCheckout({
                     border: "1px solid #e0c078",
                   },
                 }
-              : undefined,
+              : { ...lightRules },
           },
         },
       }}

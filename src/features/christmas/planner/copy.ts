@@ -12,7 +12,7 @@ export const PLANNER_FAQS = [
   },
   {
     q: "Is $17 a subscription, and how long does access last?",
-    a: `No subscription. The Founding Pass is a one-time ${FOUNDING_PASS_PRICE_LABEL} USD payment. Access is for the Christmas 2026 Planner season on your account. It is not lifetime access.`,
+    a: `No subscription. The Founding Pass is a one-time ${FOUNDING_PASS_PRICE_LABEL} USD payment. Access is granted for the Christmas 2026 Planner season (season year 2026 on your account). No separate calendar end date is configured beyond that season scope, and this is not lifetime access. What happens to a saved plan after the season ends is not separately defined in the current product terms.`,
   },
   {
     q: "What happens after I pay?",
@@ -79,3 +79,16 @@ export const BUDGET_DEMO = {
 } as const;
 
 export const BUDGET_DEMO_REMAINING = BUDGET_DEMO.season - BUDGET_DEMO.gifts - BUDGET_DEMO.foodDecor;
+
+/** Local demo recipe — scaled with the same helper as the product recipe catalog. */
+export const MEAL_DEMO_RECIPE = {
+  title: "Herb-butter roast turkey",
+  baseServings: 8,
+  ingredients: [
+    { name: "whole turkey", quantity: 1, unit: "piece" },
+    { name: "unsalted butter", quantity: 150, unit: "g" },
+    { name: "fresh thyme", quantity: 12, unit: "g" },
+    { name: "onion", quantity: 2, unit: "piece" },
+    { name: "lemon", quantity: 1, unit: "piece" },
+  ],
+} as const;

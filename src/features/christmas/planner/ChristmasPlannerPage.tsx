@@ -17,11 +17,13 @@ import {
   BUDGET_DEMO_REMAINING,
   GIFT_DEMO_PEOPLE,
   GIFT_DEMO_STATUSES,
+  MEAL_DEMO_RECIPE,
   PLANNER_FAQS,
   PLANNER_HOW_STEPS,
   PLANNER_INCLUDED_GROUPS,
   type GiftDemoStatus,
 } from "./copy";
+import { scaleIngredientList } from "./food/recipeCatalog";
 import {
   FOUNDING_PASS_CURRENCY,
   FOUNDING_PASS_PACKAGE_KEY,
@@ -156,21 +158,71 @@ function statusLabel(status: GiftDemoStatus) {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+function formatDemoQty(quantity: unknown, unit: unknown) {
+  const qty = typeof quantity === "number" ? quantity : null;
+  const u = typeof unit === "string" ? unit : "";
+  if (qty == null) return u || "—";
+  const n = Number.isInteger(qty) ? String(qty) : String(Math.round(qty * 100) / 100);
+  return u ? `${n} ${u}` : n;
+}
+
+function HeroProductSummary() {
+  return (
+    <aside className="tdg-pl__panel tdg-pl__panel--compact tdg-pl__summary" aria-label="Planner summary">
+      <div className="tdg-pl__panel-head">
+        <span>Christmas Planner</span>
+        <span className="tdg-pl__example">At a glance</span>
+      </div>
+      <ul className="tdg-pl__summary-list">
+        <li>
+          <strong>Gifts</strong>
+          <span>People, ideas, and present status in one list</span>
+        </li>
+        <li>
+          <strong>Budget</strong>
+          <span>Season total, spending, and what’s left</span>
+        </li>
+        <li>
+          <strong>Meals</strong>
+          <span>Menu portions that become a shopping list</span>
+        </li>
+      </ul>
+      <p className="tdg-pl__summary-note">See the full example below — tap statuses and change portions.</p>
+    </aside>
+  );
+}
+
 function PlannerDemoPanel({
   tab,
   onTab,
   gifts,
   onCycleGift,
-  compact,
+  mealServings,
+  onMealServings,
+  groceryAdded,
+  onAddGrocery,
 }: {
   tab: DemoTab;
   onTab: (id: DemoTab) => void;
   gifts: Array<{ name: string; gift: string; status: GiftDemoStatus }>;
   onCycleGift: (name: string) => void;
-  compact?: boolean;
+  mealServings: number;
+  onMealServings: (value: number) => void;
+  groceryAdded: boolean;
+  onAddGrocery: () => void;
 }) {
+  const scaled = useMemo(
+    () =>
+      scaleIngredientList(
+        MEAL_DEMO_RECIPE.ingredients,
+        MEAL_DEMO_RECIPE.baseServings,
+        mealServings,
+      ) as Array<{ name?: string; quantity?: number; unit?: string }>,
+    [mealServings],
+  );
+
   return (
-    <div className={`tdg-pl__panel${compact ? " tdg-pl__panel--compact" : ""}`} aria-label="Planner example">
+    <div className="tdg-pl__panel" aria-label="Planner example">
       <div className="tdg-pl__panel-head">
         <span>Christmas Planner</span>
         <span className="tdg-pl__example">Example plan</span>
@@ -238,7 +290,9 @@ function PlannerDemoPanel({
             <li className="is-remain">
               <div>
                 <strong>Remaining</strong>
-                <span>{moneyUsd(BUDGET_DEMO.season)} − {moneyUsd(BUDGET_DEMO.gifts)} − {moneyUsd(BUDGET_DEMO.foodDecor)}</span>
+                <span>
+                  {moneyUsd(BUDGET_DEMO.season)} − {moneyUsd(BUDGET_DEMO.gifts)} − {moneyUsd(BUDGET_DEMO.foodDecor)}
+                </span>
               </div>
               <span>{moneyUsd(BUDGET_DEMO_REMAINING)}</span>
             </li>
@@ -248,20 +302,40 @@ function PlannerDemoPanel({
 
       {tab === "meals" ? (
         <div className="tdg-pl__body">
-          <ol className="tdg-pl__flow">
-            <li>
-              <strong>Recipe</strong>
-              <span>Herb-butter roast turkey</span>
-            </li>
-            <li>
-              <strong>Portions</strong>
-              <span>8 people</span>
-            </li>
-            <li>
-              <strong>Shopping list</strong>
-              <span>Turkey · butter · thyme · onions · citrus</span>
-            </li>
-          </ol>
+          <div className="tdg-pl__meal-head">
+            <div>
+              <strong>{MEAL_DEMO_RECIPE.title}</strong>
+              <span>Written for {MEAL_DEMO_RECIPE.baseServings} portions</span>
+            </div>
+            <label className="tdg-pl__portions">
+              Portions
+              <input
+                type="number"
+                min={2}
+                max={20}
+                value={mealServings}
+                onChange={(e) => onMealServings(Math.min(20, Math.max(2, Number(e.target.value) || mealServings)))}
+              />
+            </label>
+          </div>
+          <ul className="tdg-pl__list tdg-pl__list--ingredients">
+            {scaled.map((item) => (
+              <li key={String(item.name)}>
+                <div>
+                  <strong>{item.name}</strong>
+                </div>
+                <span>{formatDemoQty(item.quantity, item.unit)}</span>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="tdg-pl__status tdg-pl__add-grocery" onClick={onAddGrocery}>
+            {groceryAdded ? "Added to shopping list" : "Add to shopping list"}
+          </button>
+          {groceryAdded ? (
+            <p className="tdg-pl__hint" role="status">
+              Demo list updated for {mealServings} portions — nothing is saved to an account.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -284,6 +358,8 @@ export default function ChristmasPlannerPage() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<DemoTab>("gifts");
   const [gifts, setGifts] = useState(() => GIFT_DEMO_PEOPLE.map((p) => ({ ...p })));
+  const [mealServings, setMealServings] = useState(MEAL_DEMO_RECIPE.baseServings);
+  const [groceryAdded, setGroceryAdded] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
   const [nearFooter, setNearFooter] = useState(false);
   const [offerSeen, setOfferSeen] = useState(false);
@@ -415,6 +491,17 @@ export default function ChristmasPlannerPage() {
       prev.map((person) => (person.name === name ? { ...person, status: nextStatus(person.status) } : person)),
     );
     void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: "gifts", action: "status_cycle" } });
+  }, []);
+
+  const onMealServings = useCallback((value: number) => {
+    setMealServings(value);
+    setGroceryAdded(false);
+    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: "meals", action: "servings", servings: value } });
+  }, []);
+
+  const onAddGrocery = useCallback(() => {
+    setGroceryAdded(true);
+    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: "meals", action: "add_grocery" } });
   }, []);
 
   const startPay = useCallback(
@@ -556,7 +643,7 @@ export default function ChristmasPlannerPage() {
             {!paidAccess ? <p className="tdg-pl__micro">One-time payment. No subscription.</p> : null}
           </div>
           <div className="tdg-pl__hero-product">
-            <PlannerDemoPanel tab={tab} onTab={onDemoTab} gifts={gifts} onCycleGift={onCycleGift} compact />
+            <HeroProductSummary />
           </div>
         </div>
       </header>
@@ -565,7 +652,16 @@ export default function ChristmasPlannerPage() {
         <div className="tdg-pl__shell">
           <h2>Less to remember. More already organised.</h2>
           <div className="tdg-pl__demo-full" data-testid="planner-demo">
-            <PlannerDemoPanel tab={tab} onTab={onDemoTab} gifts={gifts} onCycleGift={onCycleGift} />
+            <PlannerDemoPanel
+              tab={tab}
+              onTab={onDemoTab}
+              gifts={gifts}
+              onCycleGift={onCycleGift}
+              mealServings={mealServings}
+              onMealServings={onMealServings}
+              groceryAdded={groceryAdded}
+              onAddGrocery={onAddGrocery}
+            />
           </div>
         </div>
       </section>
@@ -644,37 +740,41 @@ export default function ChristmasPlannerPage() {
               ) : !checkout ? (
                 buyButton("offer", "planner-buy-cta-offer")
               ) : (
-                <Suspense fallback={<p className="tdg-pl__micro tdg-pl__micro--on-dark">Loading secure payment…</p>}>
-                  <CustomStripeCheckout
-                    clientSecret={checkout.clientSecret}
-                    publishableKey={checkout.publishableKey}
-                    dueDisplay={money(checkout.amountCents, checkout.currency || "usd")}
-                    appearanceTheme="stripe"
-                    appearanceVariables={{ ...STRIPE_LIGHT }}
-                    walletCapabilityOnly
-                    payButtonLabel={(due) => `Pay ${due}`}
-                    onWalletAvailability={(info) => {
-                      void trackPlannerFunnel("planner_wallet_presented", {
-                        packageKey: FOUNDING_PASS_PACKAGE_KEY,
-                        metadata: { applePay: info.applePay, googlePay: info.googlePay },
-                      });
-                    }}
-                    onPaymentInteraction={() => {
-                      void trackPlannerFunnel("planner_payment_submitted", {
-                        packageKey: FOUNDING_PASS_PACKAGE_KEY,
-                        orderId: checkout.orderId,
-                        amountCents: checkout.amountCents,
-                      });
-                    }}
-                    onReady={() => {
-                      trackPlannerMetaInitiateCheckout(
-                        checkout.orderId,
-                        checkout.amountCents,
-                        checkout.currency || "usd",
-                      );
-                    }}
-                  />
-                </Suspense>
+                <div className="tdg-pl__pay-surface" data-testid="planner-pay-surface">
+                  <p className="tdg-pl__pay-surface-title">Secure checkout</p>
+                  <Suspense fallback={<p className="tdg-pl__pay-loading">Loading secure payment…</p>}>
+                    <CustomStripeCheckout
+                      clientSecret={checkout.clientSecret}
+                      publishableKey={checkout.publishableKey}
+                      dueDisplay={money(checkout.amountCents, checkout.currency || "usd")}
+                      appearanceTheme="stripe"
+                      appearanceVariables={{ ...STRIPE_LIGHT }}
+                      walletCapabilityOnly
+                      payButtonClassName="tdg-pl__pay-btn"
+                      payButtonLabel={(due) => `Pay ${due}`}
+                      onWalletAvailability={(info) => {
+                        void trackPlannerFunnel("planner_wallet_presented", {
+                          packageKey: FOUNDING_PASS_PACKAGE_KEY,
+                          metadata: { applePay: info.applePay, googlePay: info.googlePay },
+                        });
+                      }}
+                      onPaymentInteraction={() => {
+                        void trackPlannerFunnel("planner_payment_submitted", {
+                          packageKey: FOUNDING_PASS_PACKAGE_KEY,
+                          orderId: checkout.orderId,
+                          amountCents: checkout.amountCents,
+                        });
+                      }}
+                      onReady={() => {
+                        trackPlannerMetaInitiateCheckout(
+                          checkout.orderId,
+                          checkout.amountCents,
+                          checkout.currency || "usd",
+                        );
+                      }}
+                    />
+                  </Suspense>
+                </div>
               )}
             </div>
             <Link className="tdg-pl__refund-link" to="/refunds">
