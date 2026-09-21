@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useId, useState, type ComponentType, type ReactNo
 import { Link, NavLink } from "react-router-dom";
 import { TASK_CATEGORIES, type PlannerFeatureKey, type PlannerTask, type TaskCategory } from "./types";
 import { deleteTask, patchTask } from "./api";
+import { bumpPlannerWorkspace } from "./workspaceSync";
 import { trackPlannerEvent } from "./analytics";
 import { formatPlannerDate, taskCategoryLabel, taskPriorityLabel } from "./date";
 import { PlannerMark, type PlannerMarkKind } from "./plannerMarks";
@@ -323,12 +324,14 @@ export function PlannerTaskRow({
     if (status === "done") setLeaving(true);
     await patchTask(task.id, { status, completed_at: status === "done" ? new Date().toISOString() : null } as Partial<PlannerTask>);
     onChange({ ...task, status });
+    bumpPlannerWorkspace();
     if (status === "done") trackPlannerEvent("planner_task_completed", { module: "plan" });
   }
 
   async function skip() {
     await patchTask(task.id, { status: "skipped" });
     onChange({ ...task, status: "skipped" });
+    bumpPlannerWorkspace();
     setOpen(false);
   }
 
@@ -350,8 +353,9 @@ export function PlannerTaskRow({
       category,
       priority,
       notes,
-      status: "open",
+      status: moved ? "rescheduled" : task.status === "rescheduled" ? "open" : task.status,
     });
+    bumpPlannerWorkspace();
     setOpen(false);
   }
 
@@ -440,6 +444,7 @@ export function PlannerTaskRow({
                   onClick={async () => {
                     await deleteTask(task.id);
                     onChange(null);
+                    bumpPlannerWorkspace();
                   }}
                 >
                   Delete

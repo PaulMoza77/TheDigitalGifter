@@ -1,4 +1,5 @@
 import { recommendedToday } from "../planGenerator";
+import { plannerWeekEndFromToday } from "../taskSchedule";
 import { computeBudgetTotals } from "./budgetIntelligence";
 import { deriveCalendarItems } from "./calendarIntelligence";
 import { detectFoodCompleteness, mergeGroceryList, buildPrepTimeline, servingHints } from "./foodIntelligence";
@@ -32,7 +33,7 @@ export function runPlannerIntelligence(
 
   const openTasks = snapshot.tasks.filter((t) => t.status === "open" || t.status === "rescheduled");
   const ranked = rescue.active ? prioritizeRescueTasks(openTasks, rescue) : openTasks;
-  const todayPriorities = recommendedToday(ranked, snapshot.today, 5);
+  const todayPriorities = recommendedToday(ranked, snapshot.today, 3, plannerWeekEndFromToday(snapshot.today));
 
   return {
     snapshot,

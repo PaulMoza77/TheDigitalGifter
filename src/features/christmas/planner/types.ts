@@ -271,12 +271,17 @@ export type BudgetEntry = {
   source_ref?: string | null;
 };
 
+export type PlannerAccessSource = "stripe" | "qa_grant" | "admin" | "free";
+
 export type PlannerAccess = {
   ok: boolean;
   season_year: number;
   features: PlannerFeatureKey[];
   package_keys: string[];
   paid: boolean;
+  /** True only when an order is paid and not refunded. QA grants stay false. */
+  payment_fulfilled?: boolean;
+  access_source?: PlannerAccessSource;
 };
 
 export const FREE_LIMITS = {

@@ -7,6 +7,7 @@ import type { PlannerIntelligence } from "../intelligence/types";
 import { usePlannerBundle } from "../Onboarding";
 import { ASSISTANT_PROMPTS } from "../plannerUi";
 import { askCopilot, copilotEnabled, tryApplyCopilotPlan, type CopilotCard, type CopilotResponse } from "./ask";
+import { bumpPlannerWorkspace } from "../workspaceSync";
 
 function CopilotCardView({ card }: { card: CopilotCard }) {
   if (card.type === "insight") {
@@ -122,7 +123,7 @@ export function CopilotSheet({
             <h2 id="tdg-copilot-title">Using your current Christmas plan</h2>
             {intel ? (
               <p className="tdg-planner-muted">
-                {intel.readiness.percent}% ready · {intel.snapshot.daysLeft} days left · Engine facts - notes stay in the planner
+                {intel.readiness.percent}% ready · {intel.snapshot.daysLeft} days left · based on your saved plan
               </p>
             ) : (
               <p className="tdg-planner-muted">Reading your plan…</p>
@@ -174,7 +175,7 @@ export function CopilotSheet({
             ))}
             {reply.actionPlan?.steps.length ? (
               <div className="tdg-copilot-confirm">
-                <p>Preview - nothing is written yet:</p>
+                <p>Suggestion only. Nothing is saved until you confirm.</p>
                 <ul>
                   {reply.actionPlan.steps.map((step) => (
                     <li key={step.preview}>{step.preview}</li>
@@ -196,7 +197,12 @@ export function CopilotSheet({
                             request,
                           ),
                       });
-                      setApplyNote(result.ok ? `Applied ${result.applied} change${result.applied === 1 ? "" : "s"}` : result.message);
+                      setApplyNote(
+                        result.ok
+                          ? `Saved ${result.applied} change${result.applied === 1 ? "" : "s"} to your planner.`
+                          : result.message,
+                      );
+                      if (result.ok) bumpPlannerWorkspace();
                     })();
                   }}
                 >

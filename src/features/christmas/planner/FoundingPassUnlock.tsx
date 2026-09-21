@@ -14,7 +14,7 @@ import {
 } from "./types";
 import { upgradePackageForFeature } from "./entitlements";
 
-const OFFER_CTA = `Unlock your complete Christmas plan - ${FOUNDING_PASS_PRICE_LABEL} one-time`;
+const OFFER_CTA = `Get my Christmas Planner - ${FOUNDING_PASS_PRICE_LABEL}`;
 
 const CustomStripeCheckout = lazy(() =>
   import("@/features/pet/components/CustomStripeCheckout").then((mod) => ({
@@ -128,7 +128,7 @@ export function FoundingPassUnlockButton({
                 Close
               </button>
             </div>
-            <h2 id="founding-pass-checkout-title">Christmas 2026 Founding Pass</h2>
+            <h2 id="founding-pass-checkout-title">Christmas Planner</h2>
             <p className="tdg-planner-muted">Due today: {due}</p>
             {error ? (
               <p className="tdg-planner-launch" role="alert" data-testid="planner-checkout-error">

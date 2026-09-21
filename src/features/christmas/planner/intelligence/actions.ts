@@ -66,8 +66,14 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
   }
 
   if (request.type === "add_recipient") {
-    const { count } = await supabase.from("christmas_gift_recipients").select("id", { count: "exact", head: true }).eq("profile_id", profileId);
-    const gate = canAddRecipient(ctx.access, count || 0);
+    const { data: existingPeople } = await supabase
+      .from("christmas_gift_recipients")
+      .select("display_name")
+      .eq("profile_id", profileId);
+    const giftPeople = (existingPeople || []).filter(
+      (row) => String(row.display_name || "").trim().toLowerCase() !== "household",
+    ).length;
+    const gate = canAddRecipient(ctx.access, giftPeople);
     if (!gate.ok) return { ok: false, error: "Recipient limit reached.", code: "entitlement" };
     const { data, error } = await supabase
       .from("christmas_gift_recipients")
