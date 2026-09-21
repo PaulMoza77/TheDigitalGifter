@@ -374,9 +374,40 @@ const FALLBACK_OCCASIONS: OccasionRow[] = [
   { slug: "pet-loss", title: "Pet Loss", active: true, sort_order: 24 },
 ];
 
+function mergeOccasionRows(fetched: OccasionRow[]) {
+  const merged = fetched.filter((item) => item?.slug && item?.title);
+
+  for (const fallback of FALLBACK_OCCASIONS) {
+    const exists = merged.some(
+      (item) =>
+        normalizeOccasionKey(item.slug) === normalizeOccasionKey(fallback.slug)
+    );
+    if (!exists) merged.push(fallback);
+  }
+
+  return merged.length > 0 ? merged : FALLBACK_OCCASIONS;
+}
+
+function imageMapFromTemplates(templateRows: TemplateImageRow[]) {
+  const imageMap: Record<string, string> = {};
+
+  for (const template of templateRows) {
+    const occasion = String(template.occasion || "").trim();
+    const image = getTemplateImage(template);
+    if (!occasion || !image) continue;
+
+    const key = normalizeOccasionKey(occasion);
+    const slugKey = normalizeOccasionSlug(occasion);
+    if (!imageMap[key]) imageMap[key] = image;
+    if (!imageMap[slugKey]) imageMap[slugKey] = image;
+  }
+
+  return imageMap;
+}
+
 export default function OccasionGrid() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<OccasionRow[] | null>(null);
+  const [rows, setRows] = useState<OccasionRow[]>(FALLBACK_OCCASIONS);
   const [templateImagesByOccasion, setTemplateImagesByOccasion] = useState<
     Record<string, string>
   >({});
@@ -385,84 +416,65 @@ export default function OccasionGrid() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 4000);
 
-    async function load() {
-      const [occasionsResult, templatesResult] = await Promise.all([
-        supabase
-          .from("occasions")
-          .select("id, slug, title, active, sort_order, updated_at")
-          .eq("active", true)
-          .order("sort_order", { ascending: true }),
-
-        supabase
-          .from("templates")
-          .select(
-            "title, occasion, category, previewurl, preview_url, preview_image_url, thumbnailurl, thumbnail_url, isactive, is_active, created_at"
-          )
-          .not("occasion", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(300),
-      ]);
+    async function loadOccasions() {
+      const occasionsResult = await supabase
+        .from("occasions")
+        .select("id, slug, title, active, sort_order, updated_at")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
+        .abortSignal(controller.signal);
 
       if (cancelled) return;
 
       if (occasionsResult.error) {
-        console.error("[OccasionGrid] occasions error:", occasionsResult.error);
-        setRows(FALLBACK_OCCASIONS);
-      } else {
-        const safeRows = ((occasionsResult.data as OccasionRow[]) || []).filter(
-          (item) => item?.slug && item?.title
-        );
-
-        const merged = [...safeRows];
-
-        for (const fallback of FALLBACK_OCCASIONS) {
-          const exists = merged.some(
-            (item) =>
-              normalizeOccasionKey(item.slug) ===
-              normalizeOccasionKey(fallback.slug)
-          );
-
-          if (!exists) merged.push(fallback);
+        if (occasionsResult.error.name !== "AbortError") {
+          console.error("[OccasionGrid] occasions error:", occasionsResult.error);
         }
-
-        setRows(merged.length > 0 ? merged : FALLBACK_OCCASIONS);
-      }
-
-      if (templatesResult.error) {
-        console.error("[OccasionGrid] templates error:", templatesResult.error);
-        setTemplateImagesByOccasion({});
         return;
       }
 
-      const imageMap: Record<string, string> = {};
-      const templateRows = (templatesResult.data as TemplateImageRow[]) || [];
-
-      for (const template of templateRows) {
-        const occasion = String(template.occasion || "").trim();
-        const image = getTemplateImage(template);
-
-        if (!occasion || !image) continue;
-
-        const key = normalizeOccasionKey(occasion);
-        const slugKey = normalizeOccasionSlug(occasion);
-
-        if (!imageMap[key]) imageMap[key] = image;
-        if (!imageMap[slugKey]) imageMap[slugKey] = image;
-      }
-
-      setTemplateImagesByOccasion(imageMap);
+      setRows(mergeOccasionRows((occasionsResult.data as OccasionRow[]) || []));
     }
 
-    void load();
+    async function loadTemplateImages() {
+      const templatesResult = await supabase
+        .from("templates")
+        .select(
+          "title, occasion, category, previewurl, preview_url, preview_image_url, thumbnailurl, thumbnail_url, isactive, is_active, created_at"
+        )
+        .not("occasion", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(300)
+        .abortSignal(controller.signal);
+
+      if (cancelled) return;
+
+      if (templatesResult.error) {
+        if (templatesResult.error.name !== "AbortError") {
+          console.error("[OccasionGrid] templates error:", templatesResult.error);
+        }
+        return;
+      }
+
+      setTemplateImagesByOccasion(
+        imageMapFromTemplates((templatesResult.data as TemplateImageRow[]) || [])
+      );
+    }
+
+    void Promise.allSettled([loadOccasions(), loadTemplateImages()]);
 
     return () => {
       cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
     };
   }, []);
 
   const occasions = useMemo<OccasionItem[]>(() => {
-    const source = rows ?? FALLBACK_OCCASIONS;
+    const source = rows.length > 0 ? rows : FALLBACK_OCCASIONS;
 
     return [...source]
       .map((item) => ({
@@ -482,32 +494,6 @@ export default function OccasionGrid() {
     () => occasions.filter((item) => item.group === selectedCategory),
     [occasions, selectedCategory]
   );
-
-  if (rows === null) {
-    return (
-      <section id="categories" className="w-full px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-10 h-40 rounded-[2rem] border border-white/10 bg-white/[0.04]" />
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
-              >
-                <div className="h-64 bg-white/10" />
-                <div className="space-y-3 p-4">
-                  <div className="h-7 w-40 rounded-lg bg-white/10" />
-                  <div className="h-4 w-72 rounded-lg bg-white/10" />
-                  <div className="h-10 w-full rounded-xl bg-white/10" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section id="categories" className="w-full px-4 py-14 sm:px-6 lg:px-8">
