@@ -14,7 +14,13 @@ export function longFormLocalAllowed(): boolean {
 }
 
 export function longFormDataDir(): string {
-  return String(process.env.LONG_FORM_DATA_DIR || "").trim();
+  const explicit = String(process.env.LONG_FORM_DATA_DIR || "").trim();
+  if (explicit && !explicit.includes("..") && existsSync(explicit)) return explicit;
+  const clipRoot = String(process.env.CLIP_FACTORY_MEDIA_ROOT || "").trim();
+  if (clipRoot && !clipRoot.includes("..") && existsSync(clipRoot)) {
+    return join(clipRoot, "long-form");
+  }
+  return explicit;
 }
 
 export function vpsStorageReady(): boolean {
