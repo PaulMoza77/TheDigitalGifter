@@ -2494,6 +2494,32 @@
   color: var(--pl-ink-soft);
 }
 
+.tdg-pl__portions-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tdg-pl__portion-btn {
+  appearance: none;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid rgba(26, 16, 12, 0.2);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--pl-ink);
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tdg-pl__portion-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .tdg-pl__portions input {
   width: 4.5rem;
   min-height: 2.75rem;
@@ -2505,6 +2531,7 @@
   font-size: 1rem;
   font-weight: 650;
   padding: 0.35rem 0.55rem;
+  text-align: center;
 }
 
 .tdg-pl__list--ingredients li > span:last-child {

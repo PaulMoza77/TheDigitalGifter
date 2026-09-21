@@ -305,18 +305,46 @@ function PlannerDemoPanel({
           <div className="tdg-pl__meal-head">
             <div>
               <strong>{MEAL_DEMO_RECIPE.title}</strong>
-              <span>Written for {MEAL_DEMO_RECIPE.baseServings} portions</span>
+              <span>Written for {MEAL_DEMO_RECIPE.baseServings} portions · scaled to {mealServings}</span>
             </div>
-            <label className="tdg-pl__portions">
-              Portions
-              <input
-                type="number"
-                min={2}
-                max={20}
-                value={mealServings}
-                onChange={(e) => onMealServings(Math.min(20, Math.max(2, Number(e.target.value) || mealServings)))}
-              />
-            </label>
+            <div className="tdg-pl__portions">
+              <span id="tdg-pl-portions-label">Portions</span>
+              <div className="tdg-pl__portions-controls" role="group" aria-labelledby="tdg-pl-portions-label">
+                <button
+                  type="button"
+                  className="tdg-pl__portion-btn"
+                  aria-label="Fewer portions"
+                  disabled={mealServings <= 2}
+                  onClick={() => onMealServings(mealServings - 1)}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={2}
+                  max={20}
+                  inputMode="numeric"
+                  value={mealServings}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") return;
+                    const next = Number(raw);
+                    if (!Number.isFinite(next)) return;
+                    onMealServings(Math.min(20, Math.max(2, Math.round(next))));
+                  }}
+                  aria-label="Number of portions"
+                />
+                <button
+                  type="button"
+                  className="tdg-pl__portion-btn"
+                  aria-label="More portions"
+                  disabled={mealServings >= 20}
+                  onClick={() => onMealServings(mealServings + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
           <ul className="tdg-pl__list tdg-pl__list--ingredients">
             {scaled.map((item) => (
