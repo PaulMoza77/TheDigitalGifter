@@ -17,6 +17,19 @@ export type SceneInput = {
 
 export type RenderProgress = (stage: string, progress: number, label: string) => Promise<void> | void;
 
+async function resolveSceneSource(scene: SceneInput, root: string, dir: string): Promise<string> {
+  const local = publicPath(scene.src, root);
+  if (existsSync(local)) return local;
+  const base = String(process.env.TDG_PUBLIC_ORIGIN || process.env.VITE_APP_URL || "https://www.thedigitalgifter.com").replace(/\/$/, "");
+  const url = scene.src.startsWith("http") ? scene.src : `${base}${scene.src.startsWith("/") ? scene.src : `/${scene.src}`}`;
+  const dest = join(dir, `source-${scene.id}-${scene.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Scene file missing: ${scene.title}`);
+  await writeFile(dest, Buffer.from(await response.arrayBuffer()));
+  if (!existsSync(dest)) throw new Error(`Scene file missing: ${scene.title}`);
+  return dest;
+}
+
 function publicPath(src: string, root: string): string {
   const clean = src.split("?")[0] || src;
   if (clean.startsWith("/")) return resolve(root, "public", clean.slice(1));
@@ -213,8 +226,7 @@ export async function renderLongFormVideo(input: {
   const sceneList = input.scenes.length ? input.scenes : [];
   if (!sceneList.length) throw new Error("Choose a scene from the Library first.");
   for (const scene of sceneList) {
-    const source = publicPath(scene.src, root);
-    if (!existsSync(source)) throw new Error(`Scene file missing: ${scene.title}`);
+    const source = await resolveSceneSource(scene, root, dir);
     const isImage = scene.kind === "photo" || /\.(jpe?g|png|webp)$/i.test(scene.filename);
     for (let copy = 0; copy < 2; copy += 1) {
       const dest = join(dir, `seg-${variant}.mp4`);
@@ -227,7 +239,7 @@ export async function renderLongFormVideo(input: {
     const extra = join(dir, "seg-extra.mp4");
     const first = sceneList[0];
     const isImage = first.kind === "photo" || /\.(jpe?g|png|webp)$/i.test(first.filename);
-    await encodeSegment(publicPath(first.src, root), extra, 16, 3, isImage);
+    await encodeSegment(await resolveSceneSource(first, root, dir), extra, 16, 3, isImage);
     segments.push(extra);
   }
 
