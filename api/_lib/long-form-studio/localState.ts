@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { ORIGINAL_MUSIC_SEED } from "../../../src/features/long-form-studio/seedMusic";
 import type { MusicTrack } from "../../../src/features/long-form-studio/types";
@@ -11,7 +11,8 @@ export type LocalState = {
   jobs: Array<Record<string, unknown>>;
 };
 
-const STATE_PATH = () => join(process.cwd(), "output/long-form/state.json");
+const STATE_PATH = () =>
+  process.env.LONG_FORM_STATE_PATH || join(process.cwd(), "output/long-form/state.json");
 
 export async function loadLocalState(): Promise<LocalState> {
   const path = STATE_PATH();
@@ -29,7 +30,7 @@ export async function loadLocalState(): Promise<LocalState> {
 
 export async function saveLocalState(state: LocalState): Promise<void> {
   const path = STATE_PATH();
-  await mkdir(join(process.cwd(), "output/long-form"), { recursive: true });
+  await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(state, null, 2), "utf8");
 }
 

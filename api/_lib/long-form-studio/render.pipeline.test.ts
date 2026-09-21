@@ -10,6 +10,7 @@ describe("long-form render pipeline", () => {
   it("renders a short 16:9 ambience with cleared original music and a rights manifest", async () => {
     await ensureAllOriginalMusic();
     const dir = await mkdtemp(join(tmpdir(), "tdg-lf-"));
+    process.env.LONG_FORM_STATE_PATH = join(dir, "state.json");
     try {
       const result = await createAndRenderProduction(
         {
@@ -34,6 +35,7 @@ describe("long-form render pipeline", () => {
       expect(probe.audioCodec).toMatch(/aac/i);
       expect(result.rights.manifest.music[0]?.source).toBe("original_owned");
     } finally {
+      delete process.env.LONG_FORM_STATE_PATH;
       await rm(dir, { recursive: true, force: true });
     }
   }, 180_000);
