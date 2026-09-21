@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getServiceClient } from "../christmas/supabaseClient";
 import { buildAssCaptions, resolveCaptionStyle } from "../../../src/features/clip-factory/captions";
@@ -30,6 +30,8 @@ import {
   renderVerticalClip,
 } from "./ffmpeg";
 import { signedPlaybackPath } from "./mediaSign";
+import { resolveMediaPath } from "./vpsMedia";
+import { SUPABASE_OBJECT_LIMIT_BYTES, renderRelpath } from "../../../src/features/clip-factory/vpsTransfer";
 
 const BUCKET = "clip-factory";
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../..");
@@ -65,6 +67,28 @@ async function uploadBytes(path: string, dest: string, contentType: string) {
 
 async function downloadStorage(storagePath: string, dest: string) {
   await downloadStorageStreaming(storagePath, dest);
+}
+
+async function materializeSource(media: { storage_backend?: string | null; local_relpath?: string | null; storage_path?: string | null }, dest: string): Promise<string> {
+  if (media.storage_backend === "vps" && media.local_relpath) {
+    const abs = resolveMediaPath(media.local_relpath);
+    await fs.access(abs);
+    return abs;
+  }
+  await downloadStorage(String(media.storage_path || ""), dest);
+  return dest;
+}
+
+async function publishArtifact(localPath: string, supabaseKey: string, vpsRel: string, contentType: string, prefer: "auto" | "vps" = "auto") {
+  const info = await fs.stat(localPath);
+  if (prefer !== "vps" && info.size <= SUPABASE_OBJECT_LIMIT_BYTES) {
+    const bytes = await uploadBytes(localPath, supabaseKey, contentType);
+    return { bytes, backend: "supabase" as const, path: supabaseKey, localRelpath: null as string | null };
+  }
+  const abs = resolveMediaPath(vpsRel);
+  await fs.mkdir(dirname(abs), { recursive: true });
+  await fs.copyFile(localPath, abs);
+  return { bytes: info.size, backend: "vps" as const, path: vpsRel, localRelpath: vpsRel };
 }
 
 function resolveLocalLibrary(src: string): string | null {
@@ -111,7 +135,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     null;
   const workDir = join(tmpdir(), `tdg-clip-${jobId}`);
   await fs.mkdir(workDir, { recursive: true });
-  const sourcePath = join(workDir, "source.mp4");
+  let sourcePath = join(workDir, "source.mp4");
   const cost: Record<string, number> = { ...(job.cost || {}) };
 
   try {
@@ -284,7 +308,7 @@ export async function processClipFactoryJob(jobId: string): Promise<void> {
     try {
       await fs.access(sourcePath);
     } catch {
-      await downloadStorage(media.storage_path, sourcePath);
+      sourcePath = await materializeSource(media, sourcePath);
     }
     const verified = await assertUsableSourceMedia({
       path: sourcePath,
@@ -728,14 +752,14 @@ export async function renderClipFactoryCandidate(input: {
   const workDir = join(tmpdir(), `tdg-render-${renderId}`);
   await fs.mkdir(workDir, { recursive: true });
   const downloadedSource = join(workDir, "source.mp4");
-  const sourcePath = input.sourceFile && existsSync(input.sourceFile) ? input.sourceFile : downloadedSource;
+  let sourcePath = input.sourceFile && existsSync(input.sourceFile) ? input.sourceFile : downloadedSource;
   const outPath = join(workDir, "clip.mp4");
   const thumbPath = join(workDir, "thumb.jpg");
   const assPath = join(workDir, "captions.ass");
   const started = Date.now();
   try {
     if (sourcePath === downloadedSource) {
-      await downloadStorage(media.storage_path, sourcePath);
+      sourcePath = await materializeSource(media, sourcePath);
     }
     const { data: transcriptRow } = await service
       .from("clip_factory_transcripts")
@@ -789,24 +813,33 @@ export async function renderClipFactoryCandidate(input: {
 
     const videoKey = `renders/${input.jobId}/${candidate.id}.mp4`;
     const thumbKey = `renders/${input.jobId}/${candidate.id}.jpg`;
-    const videoBytes = await uploadBytes(outPath, videoKey, "video/mp4");
-    await uploadBytes(thumbPath, thumbKey, "image/jpeg");
+    const videoStored = await publishArtifact(outPath, videoKey, renderRelpath(input.jobId, renderId, "mp4"), "video/mp4");
+    const thumbStored = await publishArtifact(
+      thumbPath,
+      thumbKey,
+      renderRelpath(input.jobId, renderId, "jpg"),
+      "image/jpeg",
+      videoStored.backend === "vps" ? "vps" : "auto",
+    );
+    const videoBytes = videoStored.bytes;
     const filename = sanitizeFilename(`${candidate.title || "clip"}-${candidate.id.slice(0, 8)}.mp4`);
+    const stableSrc = `/api/clip-factory?action=media&kind=render&id=${renderId}`;
+    const stablePoster = `/api/clip-factory?action=media&kind=thumb&id=${renderId}`;
     const libraryInsert = await service
       .from("library_assets")
       .insert({
         title: candidate.title,
         description: candidate.suggested_post_caption || candidate.summary,
-        src: signedPlaybackPath("render", renderId),
+        src: stableSrc,
         filename,
         category: "clip_factory",
         kind: "reel",
         duration_seconds: probe.duration,
         width: 1080,
         height: 1920,
-        poster_src: signedPlaybackPath("thumb", renderId),
-        storage_bucket: BUCKET,
-        storage_path: videoKey,
+        poster_src: stablePoster,
+        storage_bucket: videoStored.backend === "vps" ? "vps" : BUCKET,
+        storage_path: videoStored.path,
         thumbnail_path: thumbKey,
         provenance: {
           source_asset: media.library_asset_id || media.source_label,
@@ -839,9 +872,11 @@ export async function renderClipFactoryCandidate(input: {
       .update({
         status: "completed",
         library_asset_id: libraryInsert.data.id,
-        storage_bucket: BUCKET,
-        storage_path: videoKey,
-        thumbnail_path: thumbKey,
+        storage_bucket: videoStored.backend === "vps" ? "vps" : BUCKET,
+        storage_path: videoStored.path,
+        storage_backend: videoStored.backend,
+        local_relpath: videoStored.localRelpath,
+        thumbnail_path: thumbStored.path,
         width: 1080,
         height: 1920,
         duration_seconds: probe.duration,

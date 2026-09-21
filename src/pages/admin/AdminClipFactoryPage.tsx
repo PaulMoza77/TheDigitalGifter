@@ -251,7 +251,7 @@ export default function AdminClipFactoryPage() {
     }
   }
 
-  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed", "waiting_for_media", "source_detected"].includes(job.status) && !(job.clips_generated > 0));
+  const analyzing = Boolean(job && !["ready", "completed", "partial", "failed", "superseded", "waiting_for_media", "source_detected"].includes(job.status) && !(job.clips_generated > 0));
   const waitingForMedia = Boolean(job && ["waiting_for_media", "source_detected"].includes(job.status) && !job.media_id);
   const showResults = Boolean(job && (["ready", "completed", "partial", "rendering"].includes(job.status) || (job.clips_generated || 0) > 0 || (job.candidates || []).length > 0) && !waitingForMedia && !analyzing);
 
@@ -601,6 +601,13 @@ export default function AdminClipFactoryPage() {
               })}
             </ol>
             <p className="mt-4 text-sm text-slate-500">You can leave this page. Progress is saved.</p>
+          </section>
+        ) : null}
+
+        {job?.status === "superseded" ? (
+          <section className="mt-6 rounded-[28px] border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-xl font-semibold">Duplicate import</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{job.error_message || job.progress_label || "This job uses the same settings as another import."}</p>
           </section>
         ) : null}
 

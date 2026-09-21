@@ -13,6 +13,8 @@ import {
   validDeviceId,
   youtubeWatchUrl,
 } from "../src/features/clip-factory/importDevice";
+import { partialRelpath, sourceRelpath } from "../src/features/clip-factory/vpsTransfer";
+import { decodeSample, dropPartial, fileSize, probeLocal, publishPartial, resolveMediaPath, sha256File } from "./_lib/clip-factory/vpsMedia";
 
 const BUCKET = "clip-factory";
 
@@ -91,9 +93,14 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
 
     if (action === "claim") {
+      const requestedJob = asString(body.job_id);
+      if (requestedJob && !/^[0-9a-f-]{36}$/i.test(requestedJob)) {
+        return apiError(res, 400, "invalid_request", "Job id is invalid.");
+      }
       const claimed = await service.rpc("claim_clip_factory_import", {
         p_worker_id: deviceId,
         p_now: new Date().toISOString(),
+        ...(requestedJob ? { p_job_id: requestedJob } : {}),
       });
       if (claimed.error) throw claimed.error;
       const rows = Array.isArray(claimed.data) ? claimed.data : claimed.data ? [claimed.data] : [];
@@ -133,6 +140,129 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       if (beat.error) throw beat.error;
       if (!beat.data) return apiError(res, 409, "lease_expired", "Import claim is no longer valid.");
       return res.status(200).json({ ok: true });
+    }
+
+    if (action === "transfer_status") {
+      if (!decision.ok) return apiError(res, 409, decision.error, "Import claim is no longer valid.");
+      if (decision.already) return res.status(200).json({ ok: true, already: true, receivedBytes: Number(body.total_bytes) || 0, reuse: true });
+      const total = Number(body.total_bytes);
+      const sha = asString(body.sha256).toLowerCase();
+      const received = await fileSize(resolveMediaPath(partialRelpath(jobId, attemptId))).catch(() => 0);
+      const reusable = /^[a-f0-9]{64}$/.test(sha) && total > 0 && (await fileSize(resolveMediaPath(sourceRelpath(sha))).catch(() => 0)) === total;
+      return res.status(200).json({ ok: true, receivedBytes: reusable ? total : received, reuse: reusable });
+    }
+
+    if (action === "finalize") {
+      if (!decision.ok) return apiError(res, 409, decision.error, "Import claim is no longer valid.");
+      if (decision.already && asString(job.status) !== "importing") {
+        return res.status(200).json({ ok: true, already: true, job_id: jobId });
+      }
+      const bytes = Number(body.bytes);
+      const sha256 = asString(body.sha256).toLowerCase();
+      if (!Number.isFinite(bytes) || bytes <= 0 || bytes > IMPORT_MAX_BYTES || !/^[a-f0-9]{64}$/.test(sha256)) {
+        return apiError(res, 400, "corrupt_file", "Imported file hash is invalid.");
+      }
+      const finalRel = sourceRelpath(sha256);
+      const partialRel = partialRelpath(jobId, attemptId);
+      const finalAbs = resolveMediaPath(finalRel);
+      let publishedNow = false;
+      if ((await fileSize(finalAbs).catch(() => 0)) !== bytes) {
+        const partialAbs = resolveMediaPath(partialRel);
+        if ((await fileSize(partialAbs).catch(() => 0)) !== bytes) {
+          return apiError(res, 409, "corrupt_file", "Uploaded file size does not match the import.", {
+            receivedBytes: await fileSize(partialAbs).catch(() => 0),
+          });
+        }
+        const actual = await sha256File(partialAbs);
+        if (actual !== sha256) {
+          await dropPartial(partialRel);
+          return apiError(res, 409, "corrupt_file", "Imported file hash does not match the bytes on the server.");
+        }
+        await publishPartial(partialRel, finalRel);
+        publishedNow = true;
+      } else if ((await sha256File(finalAbs)) !== sha256) {
+        return apiError(res, 409, "corrupt_file", "Stored source hash does not match this import.");
+      } else {
+        await dropPartial(partialRel);
+      }
+      let probe;
+      try {
+        probe = await probeLocal(finalAbs);
+        if (!probe.videoCodec || probe.duration < 3 || probe.duration > IMPORT_MAX_DURATION_SECONDS || probe.width < 240 || probe.height < 240) {
+          throw new Error("probe");
+        }
+        await decodeSample(finalAbs, probe.hasAudio);
+      } catch {
+        if (publishedNow) await dropPartial(finalRel).catch(() => undefined);
+        return apiError(res, 400, "corrupt_file", "The imported file could not be read as video.");
+      }
+      const existing = await service.from("clip_factory_media").select("id,invalidated_at").eq("media_hash", sha256).maybeSingle();
+      if (existing.error) throw existing.error;
+      let mediaId = existing.data?.id || null;
+      const mediaPatch = {
+        storage_backend: "vps",
+        storage_bucket: "vps",
+        storage_path: finalRel,
+        local_relpath: finalRel,
+        content_type: "video/mp4",
+        file_size_bytes: bytes,
+        duration_seconds: probe.duration,
+        width: probe.width,
+        height: probe.height,
+        fps: probe.fps,
+        codec_video: probe.videoCodec,
+        codec_audio: probe.audioCodec,
+        has_audio: probe.hasAudio,
+        orientation: probe.orientation,
+        probe,
+        invalidated_at: null,
+        invalid_reason: null,
+      };
+      if (mediaId) {
+        const revived = await service.from("clip_factory_media").update(mediaPatch).eq("id", mediaId).select("id").single();
+        if (revived.error) throw revived.error;
+      } else {
+        const payload = (job.source_payload || {}) as { url?: string };
+        const inserted = await service
+          .from("clip_factory_media")
+          .insert({
+            ...mediaPatch,
+            media_hash: sha256,
+            source_kind: "youtube",
+            source_label: job.source_label,
+            source_url: payload.url || null,
+          })
+          .select("id")
+          .single();
+        if (inserted.error) throw inserted.error;
+        mediaId = inserted.data.id;
+      }
+      const payload = { ...((job.source_payload || {}) as Record<string, unknown>), importSha256: sha256, ingestProvider: "mac_vps" };
+      const finished = await service
+        .from("clip_factory_jobs")
+        .update({
+          media_id: mediaId,
+          media_hash: sha256,
+          status: "queued",
+          stage: "queued",
+          progress: 18,
+          progress_label: "Finding moments",
+          source_payload: payload,
+          import_object_path: finalRel,
+          error_code: null,
+          error_message: null,
+          failed_stage: null,
+          lease_expires_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId)
+        .eq("import_attempt_id", attemptId)
+        .eq("status", "importing")
+        .select("id");
+      if (finished.error) throw finished.error;
+      if (!finished.data?.length) return apiError(res, 409, "claim_mismatch", "Import claim is no longer valid.");
+      kickClipFactoryWorker();
+      return res.status(200).json({ ok: true, job_id: jobId, sha256, bytes: probe.fileSize || bytes });
     }
 
     if (action === "upload_url") {

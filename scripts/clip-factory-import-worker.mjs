@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
  * Outbound Clip Factory importer. Pulls YouTube jobs over HTTPS, downloads with
- * yt-dlp, checks the file with ffprobe/ffmpeg, then uploads to the server-fixed path.
- * The token is read from the macOS Keychain and is never written to logs.
+ * yt-dlp, checks the file with ffprobe/ffmpeg, then streams it to the VPS disk.
+ * A validated file in clip-cache is reused. It is not deleted when an upload fails.
+ * Confirmed caches are kept for 72 hours so another job for the same video can reuse them,
+ * then removed on a later start. The token is read from the macOS Keychain and is never logged.
  */
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, promises as fs } from "node:fs";
 import { statfs } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -23,9 +24,12 @@ const LIMITS = {
   minFreeBytes: 4 * 1024 * 1024 * 1024,
   heartbeatMs: 30 * 1000,
   pollMs: 8 * 1000,
+  chunkBytes: 4 * 1024 * 1024,
+  cacheRetentionMs: 72 * 60 * 60 * 1000,
 };
 const SUPPORT = join(homedir(), "Library/Application Support/TheDigitalGifter");
 const CONFIG_PATH = join(SUPPORT, "clip-factory-import.json");
+const CACHE_ROOT = join(SUPPORT, "clip-cache");
 const STATE_PATH = join(SUPPORT, "clip-factory-import-state.json");
 const KEYCHAIN_SERVICE = "com.thedigitalgifter.clip-factory-import";
 const KEYCHAIN_ACCOUNT = "worker-token";
@@ -46,6 +50,7 @@ async function readConfig() {
     ytDlp: raw.ytDlp || raw.ytDlpBin || join(SUPPORT, "bin/yt-dlp"),
     ffmpeg: raw.ffmpeg || raw.ffmpegBin || "/opt/homebrew/bin/ffmpeg",
     ffprobe: raw.ffprobe || raw.ffprobeBin || "/opt/homebrew/bin/ffprobe",
+    onlyJobId: /^[0-9a-f-]{36}$/i.test(String(raw.onlyJobId || "")) ? String(raw.onlyJobId) : "",
   };
 }
 
@@ -244,97 +249,258 @@ async function downloadYoutube(config, url, dest, heartbeat) {
   }
 }
 
-async function uploadFile(uploadUrl, path, contentType) {
-  const stat = await fs.stat(path);
-  const response = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "content-type": contentType,
-      "content-length": String(stat.size),
-    },
-    duplex: "half",
-    body: Readable.toWeb(createReadStream(path)),
-  });
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    const error = new Error(`upload failed ${response.status}`);
-    error.code = response.status === 413 || /EntityTooLarge|exceeded the maximum allowed size/i.test(text) ? "huge_file" : "network";
-    throw error;
-  }
-  return stat.size;
-}
-
 async function saveState(state) {
   await fs.mkdir(SUPPORT, { recursive: true });
-  await fs.writeFile(STATE_PATH, JSON.stringify(state), { mode: 0o600 });
+  const tmp = `${STATE_PATH}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(state), { mode: 0o600 });
+  await fs.rename(tmp, STATE_PATH);
 }
 
 async function clearState() {
   await fs.rm(STATE_PATH, { force: true });
 }
 
-async function removeWork(dir) {
-  if (dir) await fs.rm(dir, { recursive: true, force: true });
+async function writeJsonAtomic(path, value) {
+  const tmp = `${path}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(value), { mode: 0o600 });
+  await fs.rename(tmp, path);
+}
+
+async function pruneCache() {
+  let names = [];
+  try {
+    names = await fs.readdir(CACHE_ROOT);
+  } catch {
+    return;
+  }
+  const cutoff = Date.now() - LIMITS.cacheRetentionMs;
+  for (const name of names) {
+    const metaPath = join(CACHE_ROOT, name, "meta.json");
+    try {
+      const meta = JSON.parse(await fs.readFile(metaPath, "utf8"));
+      const stamp = Date.parse(meta.completedAt || meta.validatedAt || "");
+      if (Number.isFinite(stamp) && stamp < cutoff) await fs.rm(join(CACHE_ROOT, name), { recursive: true, force: true });
+    } catch {
+      /* keep an unreadable cache entry until the next successful validation */
+    }
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function ensureSource(config, url, heartbeat) {
+  const id = youtubeId(url);
+  if (!id) {
+    const error = new Error("missing video id");
+    error.code = "invalid_url";
+    throw error;
+  }
+  const dir = join(CACHE_ROOT, id);
+  await fs.mkdir(dir, { recursive: true });
+  const dest = join(dir, "source.mp4");
+  const metaPath = join(dir, "meta.json");
+  let meta = null;
+  try {
+    meta = JSON.parse(await fs.readFile(metaPath, "utf8"));
+  } catch {
+    meta = null;
+  }
+  let size = 0;
+  try {
+    size = (await fs.stat(dest)).size;
+  } catch {
+    size = 0;
+  }
+  if (size > 0 && size <= LIMITS.maxBytes) {
+    try {
+      if (!(meta?.validated && meta.sha256 && meta.bytes === size)) {
+        const probed = await probeFile(config.ffprobe, config.ffmpeg, dest);
+        await heartbeat();
+        if (probed.duration > LIMITS.maxDurationSeconds) {
+          const error = new Error("duration");
+          error.code = "duration_exceeded";
+          throw error;
+        }
+        const sha256 = await sha256File(dest);
+        await heartbeat();
+        meta = {
+          validated: true,
+          bytes: size,
+          sha256,
+          duration: probed.duration,
+          width: probed.width,
+          height: probed.height,
+          fps: probed.fps,
+          videoCodec: probed.videoCodec,
+          audioCodec: probed.audioCodec,
+          hasAudio: probed.hasAudio,
+          validatedAt: new Date().toISOString(),
+        };
+        await writeJsonAtomic(metaPath, meta);
+      }
+      log("cache_reused", { bytes: size });
+      return { dest, meta };
+    } catch (error) {
+      if (error.code === "duration_exceeded") throw error;
+      await fs.rm(dest, { force: true });
+      await fs.rm(metaPath, { force: true });
+    }
+  }
+  const part = join(dir, "download.mp4");
+  const free = await freeBytes(part);
+  if (free < LIMITS.minFreeBytes) {
+    const error = new Error("low disk");
+    error.code = "network";
+    throw error;
+  }
+  await downloadYoutube(config, url, part, heartbeat);
+  await heartbeat();
+  const stat = await fs.stat(part);
+  if (stat.size <= 0 || stat.size > LIMITS.maxBytes) {
+    await fs.rm(part, { force: true });
+    const error = new Error("size");
+    error.code = "huge_file";
+    throw error;
+  }
+  await fs.rename(part, dest);
+  const probed = await probeFile(config.ffprobe, config.ffmpeg, dest);
+  await heartbeat();
+  if (probed.duration > LIMITS.maxDurationSeconds) {
+    const error = new Error("duration");
+    error.code = "duration_exceeded";
+    throw error;
+  }
+  const sha256 = await sha256File(dest);
+  await heartbeat();
+  const validated = await fs.stat(dest);
+  meta = {
+    validated: true,
+    bytes: validated.size,
+    sha256,
+    duration: probed.duration,
+    width: probed.width,
+    height: probed.height,
+    fps: probed.fps,
+    videoCodec: probed.videoCodec,
+    audioCodec: probed.audioCodec,
+    hasAudio: probed.hasAudio,
+    validatedAt: new Date().toISOString(),
+  };
+  await writeJsonAtomic(metaPath, meta);
+  return { dest, meta };
+}
+
+async function putChunk(config, token, job, offset, total, body) {
+  const response = await fetch(`${config.apiBase}/api/clip-factory-import-bytes`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/octet-stream",
+      "x-device-id": config.deviceId,
+      "x-job-id": job.id,
+      "x-attempt-id": job.attempt_id,
+      "x-offset": String(offset),
+      "x-total-bytes": String(total),
+    },
+    body,
+  });
+  const json = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(json.message || `chunk ${response.status}`);
+    error.code = json.error || "network";
+    error.status = response.status;
+    error.receivedBytes = Number(json.receivedBytes);
+    throw error;
+  }
+  return json;
+}
+
+async function transferSource(config, token, job, file, meta, heartbeat) {
+  const total = meta.bytes;
+  const status = await api(config, token, {
+    action: "transfer_status",
+    job_id: job.id,
+    attempt_id: job.attempt_id,
+    total_bytes: total,
+    sha256: meta.sha256,
+  });
+  if (status.reuse || status.already) return;
+  let offset = Number(status.receivedBytes) || 0;
+  const handle = await fs.open(file, "r");
+  try {
+    while (offset < total) {
+      await heartbeat();
+      const length = Math.min(LIMITS.chunkBytes, total - offset);
+      const buf = Buffer.alloc(length);
+      await handle.read(buf, 0, length, offset);
+      let sent = false;
+      for (let attempt = 0; attempt < 4 && !sent; attempt += 1) {
+        try {
+          const result = await putChunk(config, token, job, offset, total, buf);
+          offset = Number(result.receivedBytes);
+          sent = true;
+        } catch (error) {
+          if (error.status === 409 && error.code === "offset_mismatch" && Number.isFinite(error.receivedBytes) && error.receivedBytes < offset) {
+            offset = error.receivedBytes;
+            continue;
+          }
+          if (error.status === 409 || error.code === "claim_mismatch" || error.code === "lease_expired" || error.code === "huge_file") throw error;
+          if (attempt === 3) throw error;
+          await sleep(2000 * 2 ** attempt);
+        }
+      }
+    }
+  } finally {
+    await handle.close();
+  }
 }
 
 let busy = false;
 
 async function processJob(config, token, job) {
-  const workDir = join(tmpdir(), `tdg-import-${job.id}`);
-  await fs.mkdir(workDir, { recursive: true });
-  const dest = join(workDir, "source.mp4");
-  await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, workDir, phase: "download" });
   const heartbeat = () => api(config, token, { action: "heartbeat", job_id: job.id, attempt_id: job.attempt_id });
+  const beat = setInterval(() => {
+    void heartbeat().catch(() => undefined);
+  }, LIMITS.heartbeatMs);
+  let validated = false;
   try {
-    const free = await freeBytes(dest);
-    if (free < LIMITS.minFreeBytes) {
-      const error = new Error("low disk");
-      error.code = "network";
-      throw error;
-    }
-    await downloadYoutube(config, job.url, dest, heartbeat);
+    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, phase: "download" });
+    const source = await ensureSource(config, job.url, heartbeat);
+    validated = true;
+    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, phase: "validated", sha256: source.meta.sha256, bytes: source.meta.bytes });
     await heartbeat();
-    const stat = await fs.stat(dest);
-    if (stat.size <= 0 || stat.size > LIMITS.maxBytes) {
-      const error = new Error("size");
-      error.code = "huge_file";
-      throw error;
-    }
-    const probed = await probeFile(config.ffprobe, config.ffmpeg, dest);
-    if (probed.duration > LIMITS.maxDurationSeconds) {
-      const error = new Error("duration");
-      error.code = "duration_exceeded";
-      throw error;
-    }
-    const sha256 = await sha256File(dest);
-    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, workDir, phase: "upload" });
-    const upload = await api(config, token, { action: "upload_url", job_id: job.id, attempt_id: job.attempt_id });
-    await uploadFile(upload.uploadUrl, dest, upload.contentType || "video/mp4");
+    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, phase: "uploading", sha256: source.meta.sha256, bytes: source.meta.bytes });
+    await transferSource(config, token, job, source.dest, source.meta, heartbeat);
+    await heartbeat();
+    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, phase: "uploaded", sha256: source.meta.sha256, bytes: source.meta.bytes });
     await api(config, token, {
-      action: "complete",
+      action: "finalize",
       job_id: job.id,
       attempt_id: job.attempt_id,
-      bytes: stat.size,
-      sha256,
-      duration_seconds: probed.duration,
-      width: probed.width,
-      height: probed.height,
-      fps: probed.fps,
-      video_codec: probed.videoCodec,
-      audio_codec: probed.audioCodec,
-      has_audio: probed.hasAudio,
+      bytes: source.meta.bytes,
+      sha256: source.meta.sha256,
     });
-    await removeWork(workDir);
+    source.meta.completedAt = new Date().toISOString();
+    await writeJsonAtomic(join(CACHE_ROOT, youtubeId(job.url), "meta.json"), source.meta);
+    await saveState({ jobId: job.id, attemptId: job.attempt_id, url: job.url, phase: "completed" });
     await clearState();
-    log("import_completed", { job_id: job.id, bytes: stat.size, duration_seconds: Math.round(probed.duration) });
+    log("import_completed", { job_id: job.id, bytes: source.meta.bytes, duration_seconds: Math.round(source.meta.duration || 0) });
   } catch (error) {
     const code = error.code || "import_unavailable";
     log("import_failed", { job_id: job.id, code });
-    if (error.status !== 409 && code !== "claim_mismatch" && code !== "lease_expired") {
+    const lost = error.status === 409 || code === "claim_mismatch" || code === "lease_expired";
+    if (!lost) {
       await api(config, token, { action: "fail", job_id: job.id, attempt_id: job.attempt_id, code }).catch(() => undefined);
     }
-    await removeWork(workDir);
+    if (!validated || code === "invalid_url" || code === "video_private" || code === "video_unavailable" || code === "duration_exceeded") {
+      const id = youtubeId(job.url);
+      if (id && !validated) await fs.rm(join(CACHE_ROOT, id, "download.mp4"), { force: true });
+    }
     await clearState();
+  } finally {
+    clearInterval(beat);
   }
 }
 
@@ -351,7 +517,7 @@ async function tick() {
     } catch {
       state = null;
     }
-    if (state?.jobId && state.attemptId && state.url) {
+    if (state?.jobId && state.attemptId && state.url && state.phase !== "completed") {
       try {
         await api(config, token, { action: "heartbeat", job_id: state.jobId, attempt_id: state.attemptId });
         await processJob(config, token, { id: state.jobId, attempt_id: state.attemptId, url: state.url });
@@ -360,7 +526,7 @@ async function tick() {
         await clearState();
       }
     }
-    const claimed = await api(config, token, { action: "claim" });
+    const claimed = await api(config, token, { action: "claim", ...(config.onlyJobId ? { job_id: config.onlyJobId } : {}) });
     if (!claimed.job) return;
     log("claimed", { job_id: claimed.job.id, attempt: claimed.job.attempt_count });
     await processJob(config, token, claimed.job);
@@ -373,6 +539,7 @@ async function tick() {
 
 async function main() {
   log("worker_started", { concurrency: 1 });
+  await pruneCache();
   await tick();
   setInterval(() => {
     void tick();

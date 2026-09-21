@@ -12,6 +12,7 @@ import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
 import { importDeviceOnline } from "../src/features/clip-factory/importDevice";
 import { isKnownInvalidMediaHash } from "../src/features/clip-factory/mediaQuality";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
+import { streamLocalFile } from "./_lib/clip-factory/vpsMedia";
 
 const BUCKET = "clip-factory";
 
@@ -70,6 +71,31 @@ async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Rec
   };
 }
 
+async function streamStored(
+  req: NodeApiRequest,
+  res: NodeApiResponse,
+  row: { storage_backend?: string | null; local_relpath?: string | null; storage_path?: string | null; thumbnail_path?: string | null },
+  which: "file" | "thumb",
+  contentType: string,
+  method: string,
+) {
+  const rel = which === "thumb" ? row.thumbnail_path : row.local_relpath || row.storage_path;
+  if (row.storage_backend === "vps" && rel) {
+    try {
+      streamLocalFile(req, res, rel, contentType, method);
+    } catch {
+      res.status(404).json({ error: "not_found", message: "Media is not available." });
+    }
+    return;
+  }
+  const storagePath = which === "thumb" ? row.thumbnail_path : row.storage_path;
+  if (!storagePath) {
+    res.status(404).json({ error: "not_found", message: "Media is not available." });
+    return;
+  }
+  await streamStorage(res, storagePath, contentType, method);
+}
+
 async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string, method = "GET") {
   if (method === "HEAD") {
     res.status(200);
@@ -110,27 +136,27 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
     const service = getServiceClient();
     if (kind === "source") {
-      const { data } = await service.from("clip_factory_media").select("storage_path").eq("id", id).maybeSingle();
-      if (!data?.storage_path) return apiError(res, 404, "not_found", "Source video is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4", req.method);
+      const { data } = await service.from("clip_factory_media").select("storage_path,storage_backend,local_relpath").eq("id", id).maybeSingle();
+      if (!data?.storage_path && !data?.local_relpath) return apiError(res, 404, "not_found", "Source video is not available.");
+      await streamStored(req, res, data, "file", "video/mp4", req.method || "GET");
       return;
     }
     if (kind === "render") {
-      const { data } = await service.from("clip_factory_renders").select("storage_path").eq("id", id).maybeSingle();
-      if (!data?.storage_path) return apiError(res, 404, "not_found", "Rendered clip is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4", req.method);
+      const { data } = await service.from("clip_factory_renders").select("storage_path,storage_backend,local_relpath,thumbnail_path").eq("id", id).maybeSingle();
+      if (!data?.storage_path && !data?.local_relpath) return apiError(res, 404, "not_found", "Rendered clip is not available.");
+      await streamStored(req, res, data, "file", "video/mp4", req.method || "GET");
       return;
     }
     if (kind === "thumb") {
       if (id.startsWith("job:")) {
         const { data } = await service.from("clip_factory_jobs").select("source_thumbnail_path").eq("id", id.slice(4)).maybeSingle();
         if (!data?.source_thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-        await streamStorage(res, data.source_thumbnail_path, "image/jpeg", req.method);
+        await streamStorage(res, data.source_thumbnail_path, "image/jpeg", req.method || "GET");
         return;
       }
-      const { data } = await service.from("clip_factory_renders").select("thumbnail_path").eq("id", id).maybeSingle();
+      const { data } = await service.from("clip_factory_renders").select("storage_backend,local_relpath,thumbnail_path,storage_path").eq("id", id).maybeSingle();
       if (!data?.thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-      await streamStorage(res, data.thumbnail_path, "image/jpeg", req.method);
+      await streamStored(req, res, data, "thumb", "image/jpeg", req.method || "GET");
       return;
     }
     return apiError(res, 400, "invalid_request", "Unknown media kind.");
