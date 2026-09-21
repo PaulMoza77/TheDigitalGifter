@@ -264,7 +264,7 @@ export async function processProductionById(productionId: string, workDir?: stri
   production.stage = "preparing_scene";
   await persistProduction(production, { requireRemote: !longFormLocalAllowed() });
 
-  const dir = workDir || join(process.cwd(), "output/long-form", productionId);
+  const dir = workDir || join(process.env.LONG_FORM_WORK_DIR || "/tmp/tdg-long-form", productionId);
   await mkdir(dir, { recursive: true });
   const heartbeat = setInterval(() => {
     void heartbeatJob(jobId).catch(() => undefined);

@@ -27,14 +27,25 @@ function expr(spec: PadSpec): string {
 }
 
 export function originalMusicDirectory(root = process.cwd()): string {
+  if (process.env.LONG_FORM_MUSIC_DIR) return process.env.LONG_FORM_MUSIC_DIR;
   return join(root, "public/assets/long-form/music");
+}
+
+function fallbackMusicDirectory(): string {
+  return process.env.LONG_FORM_MUSIC_DIR || "/tmp/tdg-long-form/music";
 }
 
 export async function ensureOriginalMusicFile(filename: string, root = process.cwd()): Promise<string> {
   const spec = SPECS[filename];
   if (!spec) throw new Error(`No original music recipe for ${filename}`);
-  const dir = originalMusicDirectory(root);
-  await mkdir(dir, { recursive: true });
+  let dir = originalMusicDirectory(root);
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, ".writable"), "ok", { flag: "w" });
+  } catch {
+    dir = fallbackMusicDirectory();
+    await mkdir(dir, { recursive: true });
+  }
   const dest = join(dir, filename);
   if (existsSync(dest)) return dest;
   const lavfi = `aevalsrc=exprs='${expr(spec)}':s=44100:d=${spec.duration}`;
@@ -50,8 +61,9 @@ export async function ensureAllOriginalMusic(root = process.cwd()): Promise<stri
   const files = Object.keys(SPECS);
   const out: string[] = [];
   for (const file of files) out.push(await ensureOriginalMusicFile(file, root));
+  const musicDir = dirname(out[0]!);
   await writeFile(
-    join(originalMusicDirectory(root), "PROVENANCE.txt"),
+    join(musicDir, "PROVENANCE.txt"),
     [
       "TDG Long-Form Studio demo pads.",
       "These files are FFmpeg aevalsrc test tones, not Christmas jazz/piano recordings.",

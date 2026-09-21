@@ -3,10 +3,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { extractThumbnail, runCommand } from "../clip-factory/ffmpeg";
 import { animateStillToAmbience } from "./animate";
-import { ensureOriginalMusicFile } from "./originalMusic";
+import { ensureOriginalMusicFile, isOriginalMusicFilename } from "./originalMusic";
 import { assertLongFormOutput } from "./validate";
 import type { MusicTrack, PlaylistEntry, StylePreset } from "../../../src/features/long-form-studio/types";
-import { ORIGINAL_MUSIC_SEED } from "../../../src/features/long-form-studio/seedMusic";
 
 export type SceneInput = {
   id: string;
@@ -111,10 +110,14 @@ async function loopVideoToDuration(master: string, dest: string, targetSeconds: 
 }
 
 function trackFile(track: MusicTrack, root: string): string {
-  if (track.publicSrc) return publicPath(track.publicSrc, root);
-  if (track.filename && ORIGINAL_MUSIC_SEED.some((t) => t.filename === track.filename)) {
-    return join(root, "public/assets/long-form/music", track.filename);
+  const candidates: string[] = [];
+  if (track.filename) {
+    candidates.push(join("/tmp/tdg-long-form/music", track.filename));
+    candidates.push(join(root, "public/assets/long-form/music", track.filename));
   }
+  if (track.publicSrc) candidates.push(publicPath(track.publicSrc, root));
+  const found = candidates.find((path) => existsSync(path));
+  if (found) return found;
   throw new Error(`No audio file for track ${track.id}`);
 }
 
@@ -129,7 +132,10 @@ async function mixSoundtrack(input: {
   for (const entry of input.entries) {
     const track = input.tracksById.get(entry.trackId);
     if (!track) throw new Error(`Missing track ${entry.trackId}`);
-    if (track.filename) await ensureOriginalMusicFile(track.filename, input.root).catch(() => undefined);
+    if (track.filename && isOriginalMusicFilename(track.filename)) {
+      files.push(await ensureOriginalMusicFile(track.filename, input.root));
+      continue;
+    }
     files.push(trackFile(track, input.root));
   }
   const uniqueFiles = [...new Set(files)];
