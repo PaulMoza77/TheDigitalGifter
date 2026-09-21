@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
@@ -12,13 +12,21 @@ import {
   startPlannerCheckout,
   type PlannerCatalog,
 } from "./api";
-import { PLANNER_FAQS, PLANNER_HOW_STEPS, PLANNER_INCLUDED_GROUPS } from "./copy";
+import {
+  BUDGET_DEMO,
+  BUDGET_DEMO_REMAINING,
+  GIFT_DEMO_PEOPLE,
+  GIFT_DEMO_STATUSES,
+  PLANNER_FAQS,
+  PLANNER_HOW_STEPS,
+  PLANNER_INCLUDED_GROUPS,
+  type GiftDemoStatus,
+} from "./copy";
 import {
   FOUNDING_PASS_CURRENCY,
   FOUNDING_PASS_PACKAGE_KEY,
   FOUNDING_PASS_PRICE_CENTS,
   FOUNDING_PASS_PRICE_LABEL,
-  FREE_LIMITS,
   PLANNER_ACCOUNT_ROUTE,
   PLANNER_WELCOME_ROUTE,
 } from "./types";
@@ -29,7 +37,6 @@ import {
 } from "./guest";
 import { plannerJsonLd, plannerSeo, upsertJsonLd } from "./seo";
 import { trackPlannerMetaInitiateCheckout } from "./meta";
-import { daysUntilChristmas as daysUntilChristmasTz } from "./date";
 import { getChristmasFunnelSessionId, trackPlannerFunnel } from "./funnelTrack";
 import { PlannerHeroScene } from "./PlannerHeroScene";
 import "./planner.css";
@@ -50,6 +57,17 @@ const DEMO_TABS: Array<[DemoTab, string]> = [
   ["meals", "Meals & shopping"],
 ];
 
+const STRIPE_LIGHT = {
+  colorPrimary: "#6b1420",
+  colorBackground: "#fffaf1",
+  colorText: "#14080b",
+  colorTextSecondary: "#3a241c",
+  colorDanger: "#8b1a1a",
+  borderRadius: "12px",
+  fontFamily: 'system-ui, "Segoe UI", sans-serif',
+  fontSizeBase: "16px",
+} as const;
+
 function money(cents: number, currency: string) {
   try {
     return new Intl.NumberFormat("en-US", {
@@ -59,6 +77,14 @@ function money(cents: number, currency: string) {
   } catch {
     return `$${((Number(cents) || 0) / 100).toFixed(2)}`;
   }
+}
+
+function moneyUsd(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 function seedCatalog(): PlannerCatalog {
@@ -121,78 +147,124 @@ function takePurchaseIntent(): boolean {
   }
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="tdg-planner__device-row">
-      <strong>{label}</strong>
-      <span>{value}</span>
-    </div>
-  );
+function nextStatus(current: GiftDemoStatus): GiftDemoStatus {
+  const i = GIFT_DEMO_STATUSES.indexOf(current);
+  return GIFT_DEMO_STATUSES[(i + 1) % GIFT_DEMO_STATUSES.length];
 }
 
-function DeviceShell({
-  title,
-  children,
-  benefit,
+function statusLabel(status: GiftDemoStatus) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function PlannerDemoPanel({
+  tab,
+  onTab,
+  gifts,
+  onCycleGift,
+  compact,
 }: {
-  title: string;
-  children: ReactNode;
-  benefit: string;
+  tab: DemoTab;
+  onTab: (id: DemoTab) => void;
+  gifts: Array<{ name: string; gift: string; status: GiftDemoStatus }>;
+  onCycleGift: (name: string) => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="tdg-planner__device tdg-planner__device--large" aria-label={`${title} example`}>
-      <div className="tdg-planner__device-frame">
-        <div className="tdg-planner__device-screen">
-          <div className="tdg-planner__device-brand">
-            <span>The Digital Gifter · Planner</span>
-            <span className="tdg-planner__example-tag">Example plan</span>
-          </div>
-          <h3>{title}</h3>
-          {children}
-          <p className="tdg-planner__honest">{benefit}</p>
-        </div>
+    <div className={`tdg-pl__panel${compact ? " tdg-pl__panel--compact" : ""}`} aria-label="Planner example">
+      <div className="tdg-pl__panel-head">
+        <span>Christmas Planner</span>
+        <span className="tdg-pl__example">Example plan</span>
       </div>
-    </div>
-  );
-}
+      <div className="tdg-pl__tabs" role="tablist" aria-label="Planner demonstration">
+        {DEMO_TABS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={`tdg-pl__tab${tab === id ? " is-on" : ""}`}
+            onClick={() => onTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-function DemoPreview({ tab }: { tab: DemoTab }) {
-  if (tab === "gifts") {
-    return (
-      <DeviceShell title="Gifts" benefit="Keep every person, idea and present in one place.">
-        <p className="tdg-planner__device-meta">People · ideas · ordered · arrived · wrapped</p>
-        <div className="tdg-planner__device-rows">
-          <Row label="Maya" value="Wireless headphones · Ordered" />
-          <Row label="Dad" value="Wool scarf · Idea" />
-          <Row label="Sam" value="Board game · Arrived" />
-          <Row label="Neighbour" value="Candle set · Wrapped" />
+      {tab === "gifts" ? (
+        <div className="tdg-pl__body">
+          <p className="tdg-pl__hint">Tap a status to advance it.</p>
+          <ul className="tdg-pl__list">
+            {gifts.map((person) => (
+              <li key={person.name}>
+                <div>
+                  <strong>{person.name}</strong>
+                  <span>{person.gift}</span>
+                </div>
+                <button
+                  type="button"
+                  className="tdg-pl__status"
+                  aria-label={`Change status for ${person.name}, currently ${statusLabel(person.status)}`}
+                  onClick={() => onCycleGift(person.name)}
+                >
+                  {statusLabel(person.status)}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-      </DeviceShell>
-    );
-  }
-  if (tab === "budget") {
-    return (
-      <DeviceShell title="Budget" benefit="See what you’ve spent and what’s left.">
-        <p className="tdg-planner__device-meta">Planned · spent · remaining</p>
-        <div className="tdg-planner__device-rows">
-          <Row label="Season budget" value="$800" />
-          <Row label="Gifts spent" value="$312" />
-          <Row label="Food & decor" value="$96" />
-          <Row label="Remaining" value="$392" />
+      ) : null}
+
+      {tab === "budget" ? (
+        <div className="tdg-pl__body">
+          <div className="tdg-pl__budget-total">
+            <span>Season budget</span>
+            <strong>{moneyUsd(BUDGET_DEMO.season)}</strong>
+          </div>
+          <ul className="tdg-pl__list tdg-pl__list--budget">
+            <li>
+              <div>
+                <strong>Gifts</strong>
+                <span>Spent so far</span>
+              </div>
+              <span>{moneyUsd(BUDGET_DEMO.gifts)}</span>
+            </li>
+            <li>
+              <div>
+                <strong>Food &amp; decor</strong>
+                <span>Spent so far</span>
+              </div>
+              <span>{moneyUsd(BUDGET_DEMO.foodDecor)}</span>
+            </li>
+            <li className="is-remain">
+              <div>
+                <strong>Remaining</strong>
+                <span>{moneyUsd(BUDGET_DEMO.season)} − {moneyUsd(BUDGET_DEMO.gifts)} − {moneyUsd(BUDGET_DEMO.foodDecor)}</span>
+              </div>
+              <span>{moneyUsd(BUDGET_DEMO_REMAINING)}</span>
+            </li>
+          </ul>
         </div>
-      </DeviceShell>
-    );
-  }
-  return (
-    <DeviceShell title="Meals & shopping" benefit="Turn your holiday menu into a practical shopping list.">
-      <p className="tdg-planner__device-meta">Recipe → portions → grocery list</p>
-      <div className="tdg-planner__device-rows">
-        <Row label="Christmas Day" value="Herb-butter roast turkey" />
-        <Row label="Portions" value="8 people" />
-        <Row label="Grocery" value="Turkey, butter, thyme, onions…" />
-        <Row label="List status" value="Ready for the shop" />
-      </div>
-    </DeviceShell>
+      ) : null}
+
+      {tab === "meals" ? (
+        <div className="tdg-pl__body">
+          <ol className="tdg-pl__flow">
+            <li>
+              <strong>Recipe</strong>
+              <span>Herb-butter roast turkey</span>
+            </li>
+            <li>
+              <strong>Portions</strong>
+              <span>8 people</span>
+            </li>
+            <li>
+              <strong>Shopping list</strong>
+              <span>Turkey · butter · thyme · onions · citrus</span>
+            </li>
+          </ol>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -211,6 +283,7 @@ export default function ChristmasPlannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<DemoTab>("gifts");
+  const [gifts, setGifts] = useState(() => GIFT_DEMO_PEOPLE.map((p) => ({ ...p })));
   const [heroInView, setHeroInView] = useState(true);
   const [nearFooter, setNearFooter] = useState(false);
   const [offerSeen, setOfferSeen] = useState(false);
@@ -231,7 +304,6 @@ export default function ChristmasPlannerPage() {
     founding && founding.priceCents === FOUNDING_PASS_PRICE_CENTS && currency === FOUNDING_PASS_CURRENCY
       ? FOUNDING_PASS_PRICE_LABEL
       : money(priceCents, currency);
-  const days = daysUntilChristmasTz(new Date());
   const buyLabel = `Get my Christmas Planner — ${priceLabel}`;
 
   useEffect(() => {
@@ -239,12 +311,8 @@ export default function ChristmasPlannerPage() {
     upsertJsonLd("tdg-planner-jsonld", plannerJsonLd());
     void trackPlannerFunnel("planner_landing_view");
     void fetchPlannerCatalog()
-      .then((row) => {
-        setCatalog(row);
-      })
-      .catch(() => {
-        /* seed fallback — checkout still resolves amount on the server */
-      });
+      .then((row) => setCatalog(row))
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -328,7 +396,7 @@ export default function ChristmasPlannerPage() {
   }, [offerSeen, priceCents]);
 
   const scrollToDemo = useCallback(() => {
-    void trackPlannerFunnel("planner_cta_clicked", { metadata: { position: "hero_secondary", action: "see_how" } });
+    void trackPlannerFunnel("planner_cta_clicked", { metadata: { position: "hero_secondary", action: "see_planner" } });
     demoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
@@ -337,6 +405,18 @@ export default function ChristmasPlannerPage() {
     navigate(PLANNER_ACCOUNT_ROUTE);
   }, [navigate]);
 
+  const onDemoTab = useCallback((id: DemoTab) => {
+    setTab(id);
+    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: id } });
+  }, []);
+
+  const onCycleGift = useCallback((name: string) => {
+    setGifts((prev) =>
+      prev.map((person) => (person.name === name ? { ...person, status: nextStatus(person.status) } : person)),
+    );
+    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: "gifts", action: "status_cycle" } });
+  }, []);
+
   const startPay = useCallback(
     async (position: string) => {
       if (paidAccess) {
@@ -344,11 +424,12 @@ export default function ChristmasPlannerPage() {
         return;
       }
       if (!catalog.checkoutLive) {
-        setError("Christmas Planner launch access is opening soon.");
+        setError("Christmas Planner checkout is opening soon.");
         void trackPlannerFunnel("planner_purchase_failed", {
           packageKey: FOUNDING_PASS_PACKAGE_KEY,
           metadata: { reason: "checkout_disabled", position },
         });
+        offerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
       }
       if (starting.current) return;
@@ -356,7 +437,7 @@ export default function ChristmasPlannerPage() {
       setBusy(true);
       setError(null);
       rememberPurchaseIntent();
-      rememberAuthReturnTo(`${PLANNER_WELCOME_ROUTE}`);
+      rememberAuthReturnTo(PLANNER_WELCOME_ROUTE);
       void trackPlannerFunnel("planner_cta_clicked", {
         packageKey: FOUNDING_PASS_PACKAGE_KEY,
         amountCents: priceCents,
@@ -401,13 +482,14 @@ export default function ChristmasPlannerPage() {
         const msg = err instanceof Error ? err.message : "Could not start checkout.";
         setError(
           /not enabled|checkout_disabled/i.test(msg)
-            ? "Christmas Planner launch access is opening soon."
+            ? "Christmas Planner checkout is opening soon."
             : msg,
         );
         void trackPlannerFunnel("planner_purchase_failed", {
           packageKey: FOUNDING_PASS_PACKAGE_KEY,
           metadata: { reason: msg.slice(0, 80), position },
         });
+        offerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       } finally {
         starting.current = false;
         setBusy(false);
@@ -423,179 +505,127 @@ export default function ChristmasPlannerPage() {
     void startPay("auth_resume");
   }, [authLoading, catalog.checkoutLive, paidAccess, startPay]);
 
-  const onDemoTab = (id: DemoTab) => {
-    setTab(id);
-    void trackPlannerFunnel("planner_demo_tab_clicked", { metadata: { tab: id } });
-  };
-
   const seo = useMemo(() => plannerSeo(), []);
   const checkoutOpen = Boolean(checkout) || busy;
   const stickyHidden = heroInView || checkoutOpen || nearFooter || paidAccess;
 
+  const buyButton = (position: string, testId?: string) =>
+    paidAccess ? (
+      <button type="button" className="tdg-pl__btn" onClick={openPlanner} data-testid="open-my-christmas-planner">
+        Open my planner
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="tdg-pl__btn"
+        disabled={busy}
+        data-testid={testId}
+        onClick={() => void startPay(position)}
+      >
+        {busy ? "Starting checkout…" : buyLabel}
+      </button>
+    );
+
   return (
-    <div className="tdg-planner tdg-planner--compact tdg-planner--sales">
+    <div className="tdg-planner tdg-pl">
       <PageHead title={seo.title} description={seo.description} url={seo.url} image={seo.image} exactTitle />
 
-      <header className="tdg-planner__hero tdg-planner__hero--sales" ref={heroRef}>
-        <div className="tdg-planner__media">
-          <PlannerHeroScene alt="A warm Christmas living room — the atmosphere of a calmer holiday" />
+      <header className="tdg-pl__hero" ref={heroRef}>
+        <div className="tdg-pl__hero-atmosphere" aria-hidden="true">
+          <PlannerHeroScene alt="" />
         </div>
-        <div className="tdg-planner__hero-copy tdg-planner__hero-copy--sales">
-          <p className="tdg-planner__kicker">CHRISTMAS PLANNER 2026</p>
-          {days > 0 ? (
-            <p className="tdg-planner__countdown tdg-planner__countdown--soft" aria-hidden="true">
-              <span className="tdg-planner__countdown-digits">{days} days to Christmas</span>
+        <div className="tdg-pl__shell tdg-pl__hero-grid">
+          <div className="tdg-pl__hero-copy">
+            <p className="tdg-pl__eyebrow">CHRISTMAS PLANNER 2026</p>
+            <h1>Christmas is coming. Get it all out of your head.</h1>
+            <p className="tdg-pl__lede">
+              Keep gifts, spending, meals and holiday to-dos in one online planner — so you can enjoy the Christmas
+              you’re organising.
             </p>
-          ) : null}
-          <h1>
-            A little less planning.
-            <br />
-            A lot more Christmas.
-          </h1>
-          <p className="tdg-planner__lede">
-            Keep your gifts, budget, meals and holiday to-dos together in one easy-to-use online planner.
-          </p>
-          <ul className="tdg-planner__hero-benefits">
-            <li>Know who you’re buying for.</li>
-            <li>Keep your Christmas budget in view.</li>
-            <li>Plan meals and build your shopping list.</li>
-          </ul>
-          <div className="tdg-planner__cta-row">
-            {paidAccess ? (
-              <button type="button" className="tdg-planner__btn" onClick={openPlanner} data-testid="open-my-christmas-planner">
-                Open my planner
+            <ul className="tdg-pl__benefits">
+              <li>Every gift, remembered.</li>
+              <li>Your budget, in view.</li>
+              <li>Your menu and shopping list, together.</li>
+            </ul>
+            <div className="tdg-pl__cta-row">
+              {buyButton("hero", "planner-buy-cta-hero")}
+              <button type="button" className="tdg-pl__link" onClick={scrollToDemo}>
+                See the planner
               </button>
-            ) : (
-              <button
-                type="button"
-                className="tdg-planner__btn"
-                disabled={busy}
-                data-testid="planner-buy-cta-hero"
-                onClick={() => void startPay("hero")}
-              >
-                {busy ? "Starting checkout…" : buyLabel}
-              </button>
-            )}
-            <button type="button" className="tdg-planner__btn tdg-planner__btn--ghost" onClick={scrollToDemo}>
-              See how it works
-            </button>
+            </div>
+            {!paidAccess ? <p className="tdg-pl__micro">One-time payment. No subscription.</p> : null}
           </div>
-          {!paidAccess ? (
-            <span className="tdg-planner__micro tdg-planner__micro--on-dark">
-              One-time payment. No subscription.
-            </span>
-          ) : null}
+          <div className="tdg-pl__hero-product">
+            <PlannerDemoPanel tab={tab} onTab={onDemoTab} gifts={gifts} onCycleGift={onCycleGift} compact />
+          </div>
         </div>
       </header>
 
-      <section className="tdg-planner__section tdg-planner__section--cream" id="demo" ref={demoRef}>
-        <div className="tdg-planner__inner">
-          <p className="tdg-planner__kicker tdg-planner__kicker--ink">Inside the Planner</p>
-          <h2>See what a more organised Christmas looks like.</h2>
-          <div className="tdg-planner__demo" data-testid="planner-demo">
-            <div className="tdg-planner__tabs" role="tablist" aria-label="Planner demonstration">
-              {DEMO_TABS.map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === id}
-                  className={`tdg-planner__tab${tab === id ? " is-on" : ""}`}
-                  onClick={() => onDemoTab(id)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="tdg-planner__device-wrap tdg-planner__device-wrap--single">
-              <DemoPreview tab={tab} />
-            </div>
+      <section className="tdg-pl__section" id="demo" ref={demoRef}>
+        <div className="tdg-pl__shell">
+          <h2>Less to remember. More already organised.</h2>
+          <div className="tdg-pl__demo-full" data-testid="planner-demo">
+            <PlannerDemoPanel tab={tab} onTab={onDemoTab} gifts={gifts} onCycleGift={onCycleGift} />
           </div>
         </div>
       </section>
 
-      <section className="tdg-planner__section tdg-planner__section--scene" id="included">
-        <div className="tdg-planner__inner">
-          <p className="tdg-planner__kicker">Full access</p>
-          <h2>Your Christmas essentials, together.</h2>
-          <ul className="tdg-planner__include-grid">
+      <section className="tdg-pl__section tdg-pl__section--soft" id="included">
+        <div className="tdg-pl__shell">
+          <h2>What you keep together</h2>
+          <ul className="tdg-pl__groups">
             {PLANNER_INCLUDED_GROUPS.map((group) => (
               <li key={group.title}>
                 <strong>{group.title}</strong>
-                <span className="tdg-planner__include-benefit">{group.benefit}</span>
-                <span>{group.detail}</span>
+                <p>{group.detail}</p>
               </li>
             ))}
           </ul>
-          <p className="tdg-planner__free-note">
-            Free exploration stays limited ({FREE_LIMITS.maxRecipients} gift people, a small task set, limited budget
-            categories, and a short recipe teaser). The Founding Pass unlocks the full Christmas 2026 Planner listed
-            above. AI cards and videos stay on separate credits.
+          <p className="tdg-pl__free">
+            Free exploration stays limited. Full access unlocks gifts, budget, meals, groceries, tasks, and hosting for
+            Christmas 2026.
           </p>
-        </div>
-      </section>
-
-      <section className="tdg-planner__section tdg-planner__section--cream" id="how">
-        <div className="tdg-planner__inner">
-          <p className="tdg-planner__kicker tdg-planner__kicker--ink">Getting started</p>
-          <h2>Ready for your Christmas, in three simple steps.</h2>
-          <ol className="tdg-planner__steps">
-            {PLANNER_HOW_STEPS.map((step, index) => (
-              <li key={step.title}>
-                <span className="tdg-planner__step-num">{index + 1}</span>
-                <div>
+          <div className="tdg-pl__how" id="how">
+            <p className="tdg-pl__how-title">How it works</p>
+            <ol>
+              {PLANNER_HOW_STEPS.map((step) => (
+                <li key={step.title}>
                   <strong>{step.title}</strong>
-                  <p>{step.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+                  <span>{step.body}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </section>
 
       <section
-        className="tdg-planner__section tdg-planner__section--dark"
+        className="tdg-pl__section tdg-pl__section--offer"
         id="offer"
         ref={(node) => {
           offerRef.current = node;
         }}
       >
-        <div className="tdg-planner__inner">
-          <p className="tdg-planner__kicker">The offer</p>
-          <h2>Christmas Planner 2026</h2>
-          <div className="tdg-planner__offer-card" id="packages">
-            <div className="tdg-planner__offer-card-top">
-              <div>
-                <h3>Christmas Planner 2026</h3>
-                <p className="tdg-planner__micro tdg-planner__micro--on-dark">Founding Pass · one clear product</p>
-              </div>
-              <div className="tdg-planner__price-hero" aria-label={`Price ${priceLabel} USD`}>
-                {priceLabel} USD
-              </div>
-            </div>
-            <p className="tdg-planner__lede tdg-planner__lede--on-dark">One-time payment</p>
-            <ul className="tdg-planner__offer-ticks">
-              <li>Gifts, budget, meals, groceries, tasks, and hosting in one Planner</li>
-              <li>Access for your Christmas 2026 Planner season</li>
-              <li>Works on phone and computer — no PDF, no install</li>
-              <li>AI cards and videos stay separate (their own credits)</li>
+        <div className="tdg-pl__shell">
+          <div className="tdg-pl__offer" id="packages">
+            <p className="tdg-pl__eyebrow tdg-pl__eyebrow--on-dark">Christmas Planner 2026</p>
+            <p className="tdg-pl__price" aria-label={`Price ${priceLabel} USD`}>
+              {priceLabel} <span>USD</span>
+            </p>
+            <p className="tdg-pl__micro tdg-pl__micro--on-dark">One-time payment. No subscription.</p>
+            <ul className="tdg-pl__offer-ticks">
+              <li>Gifts, budget, meals, groceries, tasks &amp; hosting</li>
+              <li>Access for the Christmas 2026 season</li>
+              <li>Works on phone and computer</li>
+              <li>Not a PDF — your plan stays online</li>
             </ul>
 
-            <div
-              className="tdg-planner__checkout-panel tdg-planner__checkout-panel--ivory"
-              id="checkout"
-              ref={paymentRef}
-            >
-              <p className="tdg-planner__trust-strip">
-                Built by The Digital Gifter.
-                <span> Distinct from the card and video generators.</span>
-              </p>
-
+            <div className="tdg-pl__checkout" id="checkout" ref={paymentRef}>
               {error ? (
-                <p role="alert" className="tdg-planner__launch">
+                <p role="alert" className="tdg-pl__error">
                   {error}{" "}
                   {error.includes("opening soon") ? null : (
-                    <button type="button" className="tdg-planner__text-retry" onClick={() => void startPay("offer_retry")}>
+                    <button type="button" className="tdg-pl__text-retry" onClick={() => void startPay("offer_retry")}>
                       Try again
                     </button>
                   )}
@@ -603,79 +633,59 @@ export default function ChristmasPlannerPage() {
               ) : null}
 
               {paidAccess ? (
-                <button type="button" className="tdg-planner__btn" onClick={openPlanner}>
+                <button type="button" className="tdg-pl__btn" onClick={openPlanner}>
                   Open my planner
                 </button>
               ) : !catalog.checkoutLive ? (
-                <div className="tdg-planner__launch" data-testid="planner-checkout-disabled">
-                  <strong>Christmas Planner launch access is opening soon.</strong>
-                  <p>
-                    Apple Pay, Google Pay and card will appear here when checkout opens — only if your device actually
-                    supports them.
-                  </p>
+                <div className="tdg-pl__launch" data-testid="planner-checkout-disabled">
+                  <strong>Checkout is opening soon.</strong>
+                  <p>Apple Pay, Google Pay, and card appear here when live — only if your device supports them.</p>
                 </div>
               ) : !checkout ? (
-                <button
-                  type="button"
-                  className="tdg-planner__btn"
-                  disabled={busy}
-                  data-testid="planner-buy-cta-offer"
-                  onClick={() => void startPay("offer")}
-                >
-                  {busy ? "Starting checkout…" : buyLabel}
-                </button>
+                buyButton("offer", "planner-buy-cta-offer")
               ) : (
-                <div className="tdg-planner__checkout">
-                  <Suspense fallback={<p className="tdg-planner__micro tdg-planner__micro--on-dark">Loading secure payment…</p>}>
-                    <CustomStripeCheckout
-                      clientSecret={checkout.clientSecret}
-                      publishableKey={checkout.publishableKey}
-                      dueDisplay={money(checkout.amountCents, checkout.currency || "usd")}
-                      appearanceTheme="stripe"
-                      appearanceVariables={{
-                        colorPrimary: "#6b1420",
-                        colorBackground: "#fffaf1",
-                        colorText: "#14080b",
-                        colorTextSecondary: "#3a241c",
-                        colorDanger: "#8b1a1a",
-                        borderRadius: "12px",
-                        fontFamily: 'system-ui, "Segoe UI", sans-serif',
-                        fontSizeBase: "16px",
-                      }}
-                      walletCapabilityOnly
-                      payButtonLabel={(due) => `Pay ${due}`}
-                      onWalletAvailability={(info) => {
-                        void trackPlannerFunnel("planner_wallet_presented", {
-                          packageKey: FOUNDING_PASS_PACKAGE_KEY,
-                          metadata: { applePay: info.applePay, googlePay: info.googlePay },
-                        });
-                      }}
-                      onPaymentInteraction={() => {
-                        void trackPlannerFunnel("planner_payment_submitted", {
-                          packageKey: FOUNDING_PASS_PACKAGE_KEY,
-                          orderId: checkout.orderId,
-                          amountCents: checkout.amountCents,
-                        });
-                      }}
-                      onReady={() => {
-                        trackPlannerMetaInitiateCheckout(
-                          checkout.orderId,
-                          checkout.amountCents,
-                          checkout.currency || "usd",
-                        );
-                      }}
-                    />
-                  </Suspense>
-                </div>
+                <Suspense fallback={<p className="tdg-pl__micro tdg-pl__micro--on-dark">Loading secure payment…</p>}>
+                  <CustomStripeCheckout
+                    clientSecret={checkout.clientSecret}
+                    publishableKey={checkout.publishableKey}
+                    dueDisplay={money(checkout.amountCents, checkout.currency || "usd")}
+                    appearanceTheme="stripe"
+                    appearanceVariables={{ ...STRIPE_LIGHT }}
+                    walletCapabilityOnly
+                    payButtonLabel={(due) => `Pay ${due}`}
+                    onWalletAvailability={(info) => {
+                      void trackPlannerFunnel("planner_wallet_presented", {
+                        packageKey: FOUNDING_PASS_PACKAGE_KEY,
+                        metadata: { applePay: info.applePay, googlePay: info.googlePay },
+                      });
+                    }}
+                    onPaymentInteraction={() => {
+                      void trackPlannerFunnel("planner_payment_submitted", {
+                        packageKey: FOUNDING_PASS_PACKAGE_KEY,
+                        orderId: checkout.orderId,
+                        amountCents: checkout.amountCents,
+                      });
+                    }}
+                    onReady={() => {
+                      trackPlannerMetaInitiateCheckout(
+                        checkout.orderId,
+                        checkout.amountCents,
+                        checkout.currency || "usd",
+                      );
+                    }}
+                  />
+                </Suspense>
               )}
             </div>
+            <Link className="tdg-pl__refund-link" to="/refunds">
+              Refund policy
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="tdg-planner__section tdg-planner__section--scene tdg-planner__section--faq" ref={faqRef}>
-        <div className="tdg-planner__inner tdg-planner__faq">
-          <p className="tdg-planner__kicker">Questions</p>
+      <section className="tdg-pl__section" ref={faqRef}>
+        <div className="tdg-pl__shell tdg-pl__faq">
           <h2>FAQ</h2>
           {PLANNER_FAQS.map((item) => (
             <details key={item.q}>
@@ -683,18 +693,11 @@ export default function ChristmasPlannerPage() {
               <p>{item.a}</p>
             </details>
           ))}
-          <article className="tdg-planner__indexable">
-            <h3>Online Christmas planner for 2026</h3>
-            <p>
-              Christmas Planner by The Digital Gifter is a digital Christmas planner for gifts, budget, meals, hosting,
-              and family plans. Not a PDF. Distinct from the AI card and video generators on The Digital Gifter.
-            </p>
-          </article>
         </div>
       </section>
 
-      <footer className="tdg-planner__mini-footer">
-        <div className="tdg-planner__inner tdg-planner__mini-footer-row">
+      <footer className="tdg-pl__footer">
+        <div className="tdg-pl__shell tdg-pl__footer-row">
           <Link to="/">The Digital Gifter</Link>
           <Link to="/support">Support</Link>
           <Link to="/terms">Terms</Link>
@@ -704,19 +707,12 @@ export default function ChristmasPlannerPage() {
       </footer>
 
       {!stickyHidden ? (
-        <div className="tdg-planner__sticky" data-testid="planner-sticky-cta">
+        <div className="tdg-pl__sticky" data-testid="planner-sticky-cta">
           <div>
             <strong>Christmas Planner 2026</strong>
-            <div className="tdg-planner__micro tdg-planner__micro--on-dark">
-              {priceLabel} · One-time payment
-            </div>
+            <div className="tdg-pl__micro tdg-pl__micro--on-dark">{priceLabel} · One-time</div>
           </div>
-          <button
-            type="button"
-            className="tdg-planner__btn"
-            disabled={busy}
-            onClick={() => void startPay("sticky")}
-          >
+          <button type="button" className="tdg-pl__btn" disabled={busy} onClick={() => void startPay("sticky")}>
             {busy ? "Starting…" : buyLabel}
           </button>
         </div>
