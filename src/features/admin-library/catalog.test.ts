@@ -128,6 +128,7 @@ describe("admin video library", () => {
       "public/assets/christmas/lauren-overwhelm/masters/lauren_06_payoff.mp4",
       "public/assets/christmas/lauren-overwhelm/stills/lauren_01_intro_kitchen_worried.jpg",
       "public/assets/christmas/lauren-overwhelm/audio/vo_lauren_overwhelm_full.wav",
+      "public/assets/christmas/lauren-overwhelm/voice_manifest.json",
       "public/assets/christmas/cozy-reel/final_reel.mp4",
       "public/assets/christmas/cozy-reel/clip1.mp4",
       "public/assets/christmas/instagram-reel/source/clip_06.jpg",
@@ -184,6 +185,27 @@ describe("admin video library", () => {
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
     }
+  });
+
+  it("publishes a single voice-over-corrected Lauren Overwhelm master", () => {
+    const masters = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("reel-lauren-overwhelm"));
+    expect(masters.map((item) => item.id)).toEqual([
+      "reel-lauren-overwhelm-master",
+      "reel-lauren-overwhelm-clean",
+      "reel-lauren-overwhelm-visual",
+    ]);
+    const active = LIBRARY_VIDEOS.find((item) => item.id === "reel-lauren-overwhelm-master");
+    expect(active?.tags).toContain("voiceover-corrected");
+    expect(active?.description.toLowerCase()).toContain("voice-over corrected");
+    expect(active?.src).toBe("/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_master.mp4");
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, "public/assets/christmas/lauren-overwhelm/voice_manifest.json"), "utf8"),
+    );
+    expect(manifest.status).toBe("VOICE_CORRECTED");
+    expect(manifest.video_generation_called).toBe(false);
+    expect(manifest.speed).toBeLessThan(1.1);
+    expect(manifest.previous_speed).toBe(1.22);
+    expect(manifest.wording_shortened).toBe(true);
   });
 
   it("is wired into admin nav and the /admin/library route", () => {

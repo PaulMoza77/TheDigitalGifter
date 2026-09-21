@@ -211,10 +211,13 @@
       "notes": "Calm contrast to scene 4. Looks toward family then back. Soft smile."
     }
   ],
-  "status": "ASSEMBLED",
+  "status": "VOICE_CORRECTED",
   "actual_cost_usd": 1.68,
   "success_count": 6,
   "failed_count": 0,
   "voiceover_provider": "openai gpt-4o-mini-tts coral",
-  "total_cost_usd": 1.76
+  "voiceover_speed": 1.03,
+  "voiceover_previous_speed": 1.22,
+  "video_generation_called_for_voice_fix": false,
+  "total_cost_usd": 1.83
 }

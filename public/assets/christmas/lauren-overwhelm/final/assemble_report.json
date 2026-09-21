@@ -4,8 +4,8 @@
     "width": 1080,
     "height": 1920,
     "duration": 31.916667,
-    "size": 23597874,
-    "bitrate": 5914871,
+    "size": 22214972,
+    "bitrate": 5568243,
     "codec": "h264"
   },
   "clean": {
@@ -13,8 +13,8 @@
     "width": 1080,
     "height": 1920,
     "duration": 31.916667,
-    "size": 22745445,
-    "bitrate": 5701208,
+    "size": 22738992,
+    "bitrate": 5699590,
     "codec": "h264"
   },
   "visual": {
@@ -26,5 +26,8 @@
     "bitrate": 5809712,
     "codec": "h264"
   },
-  "vo_duration": 31.774792
+  "vo_duration": 31.917,
+  "voice_fix": "VOICE_CORRECTED",
+  "visual_sha256": "1032d6b93288edbb70a817234b730c14de66b4fe8571ff4ed2ad8639f483a148",
+  "video_generation_called": false
 }

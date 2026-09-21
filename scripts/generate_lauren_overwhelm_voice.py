@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Preview then generate the Lauren Overwhelm narrator (OpenAI gpt-4o-mini-tts).
+"""SUPERSEDED for production assembly.
 
-Voice is generated BEFORE any paid Higgsfield jobs. Preview is a short sample.
-Full narration is saved as WAV + MP3 in the project Library folder.
+The rushed speed=1.22 Lauren VO has been replaced by
+scripts/fix_lauren_overwhelm_voice.py (audio-only, visual reused).
+
+Do not use this script to regenerate the published master.
+Keep it only as provenance of the original OpenAI gpt-4o-mini-tts integration.
 """
 
 from __future__ import annotations
