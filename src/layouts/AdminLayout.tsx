@@ -23,6 +23,7 @@ import {
   Gift,
   Library,
   WandSparkles,
+  Clapperboard,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
 import { useAdminNavAlerts, type AdminNavAlerts } from "@/hooks/useAdminNavAlerts";
@@ -170,6 +171,11 @@ const SidebarNavigation: React.FC<{
             label: "Library",
             path: "/admin/library",
             icon: Library,
+          },
+          {
+            label: "Long-Form Studio",
+            path: "/admin/long-form-studio",
+            icon: Clapperboard,
           },
           {
             label: "AI Clip Factory",

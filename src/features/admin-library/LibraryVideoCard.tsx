@@ -34,6 +34,7 @@ const KIND_LABEL: Record<LibraryVideo["kind"], string> = {
   reel: "Reel",
   short: "Short",
   photo: "Photo",
+  long_form: "Long-form",
 };
 
 export default function LibraryVideoCard({

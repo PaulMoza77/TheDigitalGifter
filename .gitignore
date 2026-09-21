@@ -7,5 +7,11 @@ node_modules/
 dist/
 .tdg-commit
 
-
 .env.local
+
+output/long-form/**/*.mp4
+output/long-form/**/*.m4a
+output/long-form/**/*.jpg
+output/long-form/state.json
+output/long-form/productions/
+public/assets/long-form/music/*.m4a

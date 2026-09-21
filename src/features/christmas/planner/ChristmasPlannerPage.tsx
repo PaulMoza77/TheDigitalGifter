@@ -386,7 +386,7 @@ export default function ChristmasPlannerPage() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<DemoTab>("gifts");
   const [gifts, setGifts] = useState(() => GIFT_DEMO_PEOPLE.map((p) => ({ ...p })));
-  const [mealServings, setMealServings] = useState(MEAL_DEMO_RECIPE.baseServings);
+  const [mealServings, setMealServings] = useState<number>(MEAL_DEMO_RECIPE.baseServings);
   const [groceryAdded, setGroceryAdded] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
   const [nearFooter, setNearFooter] = useState(false);
