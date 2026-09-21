@@ -135,7 +135,6 @@ export function PlannerCheckoutSheet({
           <>
             <p className="tdg-planner-muted">Due today: {due}</p>
             <Suspense fallback={<p className="tdg-planner-muted">Loading checkout…</p>}>
-            <Suspense fallback={<p className="tdg-planner-muted">Loading checkout…</p>}>
               <CustomStripeCheckout
                 clientSecret={session.clientSecret}
                 publishableKey={session.publishableKey}

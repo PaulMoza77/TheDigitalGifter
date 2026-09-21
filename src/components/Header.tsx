@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
+  CalendarDays,
   LayoutGrid,
   LogOut,
   Menu,
@@ -38,6 +39,7 @@ const desktopNavItems = [
   { label: "Home", to: "/" },
   { label: "Templates", to: "/templates" },
   { label: "Generator", to: "/generator" },
+  { label: "Christmas Planner", to: "/christmas/planner" },
 ];
 
 export default function Header({ onBuyCredits }: HeaderProps) {
@@ -217,6 +219,15 @@ export default function Header({ onBuyCredits }: HeaderProps) {
 
                       <button
                         type="button"
+                        onClick={() => goTo("/christmas/planner")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        <CalendarDays className="h-5 w-5 shrink-0" />
+                        Christmas Planner
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => goTo("/account/affiliate")}
                         className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
                       >
@@ -266,6 +277,14 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                       >
                         <Wand2 className="h-5 w-5 shrink-0" />
                         Generator
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goTo("/christmas/planner")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        <CalendarDays className="h-5 w-5 shrink-0" />
+                        Christmas Planner
                       </button>
                     </nav>
 
