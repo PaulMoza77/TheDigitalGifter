@@ -8,3 +8,4 @@ dist/
 .tdg-commit
 
 
+.env.local

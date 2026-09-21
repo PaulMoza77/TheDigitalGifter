@@ -144,7 +144,7 @@ function DeviceShell({
       <div className="tdg-planner__device-frame">
         <div className="tdg-planner__device-screen">
           <div className="tdg-planner__device-brand">
-            The Digital Gifter · Planner
+            <span>The Digital Gifter · Planner</span>
             <span className="tdg-planner__example-tag">Example plan</span>
           </div>
           <h3>{title}</h3>

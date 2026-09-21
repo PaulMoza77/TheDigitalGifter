@@ -1795,6 +1795,7 @@
 }
 
 .tdg-planner--sales .tdg-planner__example-tag {
+  display: inline-block;
   margin-left: 0.55rem;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
@@ -1802,6 +1803,13 @@
   color: rgba(20, 8, 11, 0.55);
   font-family: var(--sans);
   font-weight: 600;
+}
+
+.tdg-planner--sales .tdg-planner__device-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
 }
 
 .tdg-planner--sales .tdg-planner__include-grid {
@@ -2017,5 +2025,21 @@
   .tdg-planner--sales .tdg-planner__device-row strong,
   .tdg-planner--sales .tdg-planner__device-row span {
     font-size: 0.9rem;
+  }
+
+  .tdg-planner--sales .tdg-planner__hero-copy--sales {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .tdg-planner--sales .tdg-planner__hero-copy--sales h1 {
+    font-size: clamp(2.05rem, 9vw, 2.55rem);
+  }
+
+  .tdg-planner--sales .tdg-planner__lede {
+    font-size: 0.98rem;
+  }
+
+  .tdg-planner--sales .tdg-planner__hero-benefits {
+    margin: 0.75rem 0 1rem;
   }
 }
