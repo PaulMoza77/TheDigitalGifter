@@ -15,10 +15,6 @@ export function filenameImpliesSafety(title: string, filename?: string | null): 
   return POSITIVE_FILENAME_HINTS.some((hint) => hay.includes(hint));
 }
 
-/**
- * Never treat a public-domain composition as a public-domain recording.
- * Both legs must be independently cleared.
- */
 export function recordingCleared(track: Pick<MusicTrack, "recordingRights" | "commercialUseAllowed">): boolean {
   if (track.commercialUseAllowed !== true) return false;
   return track.recordingRights === "owned" || track.recordingRights === "licensed" || track.recordingRights === "public_domain";
@@ -32,6 +28,11 @@ export function compositionCleared(track: Pick<MusicTrack, "compositionRights">)
   );
 }
 
+export function hasStoredProof(track: Pick<MusicTrack, "proofStoragePath" | "proofAccessible" | "demo" | "creationRecord">): boolean {
+  if (track.demo) return Boolean(track.creationRecord && Object.keys(track.creationRecord).length);
+  return Boolean(track.proofAccessible && track.proofStoragePath);
+}
+
 export function isRightsComplete(track: Pick<
   MusicTrack,
   | "commercialUseAllowed"
@@ -42,13 +43,19 @@ export function isRightsComplete(track: Pick<
   | "source"
   | "compositionRights"
   | "recordingRights"
+  | "demo"
+  | "proofAccessible"
+  | "proofStoragePath"
+  | "creationRecord"
 >): boolean {
+  if (track.demo) return false;
   if (track.commercialUseAllowed !== true) return false;
   if (track.youtubeMonetizationAllowed === "unknown") return false;
   if (!track.licenseType.trim()) return false;
   if (track.compositionRights === "unknown") return false;
   if (track.recordingRights === "unknown") return false;
   if (track.attributionRequired && !track.attributionText.trim()) return false;
+  if (!hasStoredProof(track)) return false;
   return true;
 }
 
@@ -59,16 +66,21 @@ export function youtubeUseFromRecord(value: unknown): YoutubeUse {
 
 export type TrackBadge =
   | { kind: "cleared"; labels: string[] }
+  | { kind: "demo"; labels: string[] }
   | { kind: "review"; labels: ["Rights need review"] };
 
 export function trackBadges(track: MusicTrack): TrackBadge {
-  if (!track.rightsComplete || !isRightsComplete(track)) {
+  if (track.demo) {
+    return { kind: "demo", labels: ["Demo / test pad", "Not a finished Christmas recording"] };
+  }
+  if (!isRightsComplete(track)) {
     return { kind: "review", labels: ["Rights need review"] };
   }
   const labels: string[] = [];
   if (track.commercialUseAllowed === true) labels.push("Commercial use");
-  if (track.youtubeMonetizationAllowed === "yes") labels.push("YouTube use");
-  if (track.licenseType.trim()) labels.push("License stored");
+  if (track.youtubeMonetizationAllowed === "yes") labels.push("YouTube use (claim-not-guaranteed)");
+  if (track.proofAccessible && track.proofStoragePath) labels.push("License stored");
+  else if (track.creationRecord && Object.keys(track.creationRecord).length) labels.push("Creation record stored");
   if (labels.length < 3) return { kind: "review", labels: ["Rights need review"] };
   return { kind: "cleared", labels };
 }
@@ -80,12 +92,5 @@ export function youtubeAudioLibraryLicenseType(attributionRequired: boolean): st
 }
 
 export function clearedForCommercialYoutube(track: MusicTrack): boolean {
-  return (
-    track.rightsComplete &&
-    isRightsComplete(track) &&
-    track.commercialUseAllowed === true &&
-    track.youtubeMonetizationAllowed === "yes" &&
-    recordingCleared(track) &&
-    compositionCleared(track)
-  );
+  return isRightsComplete(track) && recordingCleared(track) && compositionCleared(track) && !track.demo;
 }

@@ -53,7 +53,7 @@ export function validateProductionRights(input: {
     manifest: {
       visuals,
       music,
-      publicationStatus: ok ? "ready_to_publish" : "rights_review_required",
+      publicationStatus: ok ? "rights_documented" : "rights_review_required",
       blockers: uniqueBlockers,
       generatedAt: new Date().toISOString(),
     },

@@ -69,14 +69,12 @@ function RightsPills({ track }: { track: MusicTrack }) {
       </span>
     );
   }
+  const tone = badge.kind === "demo" ? "border-slate-400/30 bg-slate-500/10 text-slate-200" : "border-emerald-400/30 bg-emerald-500/10 text-emerald-200";
   return (
     <span className="flex flex-wrap gap-1">
       {badge.labels.map((label) => (
-        <span
-          key={label}
-          className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-200"
-        >
-          ✓ {label}
+        <span key={label} className={`rounded-full border px-2 py-0.5 text-[11px] ${tone}`}>
+          {badge.kind === "demo" ? label : `✓ ${label}`}
         </span>
       ))}
     </span>
@@ -93,8 +91,6 @@ export default function AdminLongFormStudioPage() {
   const [style, setStyle] = React.useState<StylePreset>("cozy");
   const [mood, setMood] = React.useState<MusicMood>("cozy_instrumental");
   const [duration, setDuration] = React.useState(3600);
-  const [customOpen, setCustomOpen] = React.useState(false);
-  const [customMinutes, setCustomMinutes] = React.useState(60);
   const [customizeOpen, setCustomizeOpen] = React.useState(false);
   const [shuffle, setShuffle] = React.useState(true);
   const [selectedCount, setSelectedCount] = React.useState(0);
@@ -141,6 +137,11 @@ export default function AdminLongFormStudioPage() {
   const progress = Number(production?.progress || 0);
   const similar = production?.similarity as { tooSimilar?: boolean; closestTitle?: string } | undefined;
   const rights = production?.rights_manifest as { publicationStatus?: string; blockers?: string[] } | undefined;
+  const status = String(production?.status || "");
+  const done = ["saved", "demo", "ready_to_publish", "rights_review_required", "similarity_review_required", "persist_failed", "failed"].includes(status);
+  const playback = String(production?.playback_url || production?.src || "");
+  const libraryId = String(production?.library_asset_id || "");
+  const usedDemo = String(production?.soundtrack_kind || "") === "demo";
 
   async function onCreate() {
     if (!scene) {
@@ -163,9 +164,15 @@ export default function AdminLongFormStudioPage() {
         const timer = window.setInterval(() => {
           void longFormApi.getProduction(id).then((row) => {
             setProduction(row.production);
-            const done = ["ready_to_publish", "rights_review_required", "similarity_review_required", "failed"].includes(
-              String(row.production.status),
-            );
+            const done = [
+              "saved",
+              "demo",
+              "ready_to_publish",
+              "rights_review_required",
+              "similarity_review_required",
+              "persist_failed",
+              "failed",
+            ].includes(String(row.production.status));
             if (done) window.clearInterval(timer);
           });
         }, 2500);
@@ -186,7 +193,7 @@ export default function AdminLongFormStudioPage() {
             <p className="text-[11px] uppercase tracking-[0.32em] text-amber-200/70">Long-Form Studio</p>
             <h1 className="mt-2 font-serif text-4xl tracking-tight text-amber-50 sm:text-5xl">Create the atmosphere</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-              One carefully made Christmas ambience video — owned visuals, cleared music, and a finished file in the Library.
+            One carefully made Christmas ambience video. Start with 1 hour. Music must be documented before this is more than a demo.
             </p>
           </div>
           <button
@@ -282,29 +289,19 @@ export default function AdminLongFormStudioPage() {
               <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 3 — Duration</p>
               <div className="flex flex-wrap gap-2">
                 {DURATION_BUTTONS.map((item) => (
-                  <Chip key={item.seconds} large active={duration === item.seconds} label={item.label} onClick={() => setDuration(item.seconds)} />
+                  <Chip
+                    key={item.seconds}
+                    large
+                    active={duration === item.seconds}
+                    label={item.enabled ? item.label : `${item.label} (soon)`}
+                    onClick={() => {
+                      if (!item.enabled) return;
+                      setDuration(item.seconds);
+                    }}
+                  />
                 ))}
               </div>
-              <button type="button" onClick={() => setCustomOpen((v) => !v)} className="mt-3 text-xs uppercase tracking-[0.22em] text-slate-500">
-                More options
-              </button>
-              {customOpen ? (
-                <label className="mt-2 flex items-center gap-2 text-sm text-slate-300">
-                  Minutes
-                  <input
-                    type="number"
-                    min={10}
-                    max={720}
-                    value={customMinutes}
-                    onChange={(event) => {
-                      const minutes = Number(event.target.value);
-                      setCustomMinutes(minutes);
-                      setDuration(Math.max(10, minutes) * 60);
-                    }}
-                    className="w-24 rounded-xl border border-white/10 bg-black/40 px-3 py-1.5"
-                  />
-                </label>
-              ) : null}
+              <p className="mt-3 text-xs text-slate-500">Longer lengths stay off until storage and render time are validated.</p>
             </section>
 
             <section>
@@ -362,11 +359,49 @@ export default function AdminLongFormStudioPage() {
                   ⚠ Too similar to an existing video{similar.closestTitle ? ` (${similar.closestTitle})` : ""}. Change the scene, music, or style before treating this as a new production.
                 </p>
               ) : null}
-              {rights?.publicationStatus === "rights_review_required" ? (
-                <p className="mt-3 text-sm text-amber-100">Rights review required. This will not be marked ready to publish.</p>
+              {usedDemo ? (
+                <p className="mt-3 text-sm text-amber-100">
+                  This run used demo test pads, not finished Christmas music. The file is a technical demo.
+                </p>
               ) : null}
-              {production.src ? (
-                <video className="mt-4 w-full rounded-2xl" src={String(production.src)} controls poster={production.poster ? String(production.poster) : undefined} />
+              {rights?.publicationStatus === "rights_review_required" ? (
+                <p className="mt-3 text-sm text-amber-100">
+                  Rights need review. Library scenes and demo pads are not a commercial YouTube clearance.
+                </p>
+              ) : null}
+              {status === "persist_failed" || status === "failed" ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <p className="text-sm text-rose-200">{String(production.error_message || "Creation failed.")}</p>
+                  <button
+                    type="button"
+                    className="rounded-full border border-white/20 px-3 py-1 text-xs"
+                    onClick={() => {
+                      const id = String(production.id || "");
+                      if (!id) return;
+                      void longFormApi.retryProduction(id).then((row) => setProduction(row.production)).catch((err: Error) => toast.error(err.message));
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : null}
+              {done && playback ? (
+                <div className="mt-4 space-y-3">
+                  <video className="w-full rounded-2xl" src={playback} controls poster={production.poster ? String(production.poster) : undefined} />
+                  <div className="flex flex-wrap gap-2">
+                    <a href={playback} className="rounded-full bg-amber-100 px-4 py-2 text-sm text-zinc-900" target="_blank" rel="noreferrer">
+                      Play
+                    </a>
+                    <a href={playback} download className="rounded-full border border-white/20 px-4 py-2 text-sm">
+                      Download
+                    </a>
+                    {libraryId ? (
+                      <a href="/admin/library" className="rounded-full border border-white/20 px-4 py-2 text-sm">
+                        Open in Library
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
               ) : null}
             </div>
           ) : null}
@@ -422,7 +457,7 @@ export default function AdminLongFormStudioPage() {
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div>
                 <p className="font-medium">TDG Music Library</p>
-                <p className="text-xs text-slate-500">Rights are stored. Filename claims are ignored.</p>
+                <p className="text-xs text-slate-500">Demo pads are labeled. License stored only when a document was uploaded.</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="text-sm text-amber-100" onClick={() => setYalOpen((v) => !v)}>
@@ -476,34 +511,54 @@ function YalImportForm({ onImported }: { onImported: (track: MusicTrack) => void
   const [attrText, setAttrText] = React.useState("");
   const [youtube, setYoutube] = React.useState<"yes" | "no" | "unknown">("unknown");
   const [commercial, setCommercial] = React.useState(false);
+  const [audio, setAudio] = React.useState<File | null>(null);
+  const [proof, setProof] = React.useState<File | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   return (
     <form
       className="space-y-2 border-b border-white/10 px-5 py-4 text-sm"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!audio) {
+          toast.error("Choose the MP3, WAV, or M4A file you downloaded from YouTube Audio Library.");
+          return;
+        }
+        setBusy(true);
         void longFormApi
-          .importYal({
-            title,
-            artist_source: artist,
-            attribution_required: attr,
-            attribution_text: attrText,
-            youtube_monetization_allowed: youtube,
-            commercial_use_allowed: commercial,
-            mood: "cozy_instrumental",
-          })
+          .importYal(
+            {
+              title,
+              artist_source: artist,
+              attribution_required: attr,
+              attribution_text: attrText,
+              youtube_monetization_allowed: youtube,
+              commercial_use_allowed: commercial,
+              mood: "cozy_instrumental",
+            },
+            { audio, proof },
+          )
           .then((data) => {
             onImported(data.track);
-            toast.success("Stored with license fields. Safety is never inferred from the title.");
+            toast.success(data.duplicate ? "This file was already in the library." : "Track stored. Rights stay on review until the license document is present.");
           })
-          .catch((error: Error) => toast.error(error.message));
+          .catch((error: Error) => toast.error(error.message))
+          .finally(() => setBusy(false));
       }}
     >
       <p className="text-xs text-slate-400">
-        Import a track you obtained from YouTube Audio Library. Do not paste random “no copyright” YouTube links.
+        Import a file you obtained from YouTube Audio Library. Do not paste random YouTube links. Attach the license page or export you saved.
       </p>
       <input className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
       <input className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2" placeholder="Artist / source" value={artist} onChange={(e) => setArtist(e.target.value)} />
+      <label className="block text-slate-400">
+        Audio file
+        <input className="mt-1 block w-full text-xs" type="file" accept=".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/mp4" onChange={(e) => setAudio(e.target.files?.[0] || null)} />
+      </label>
+      <label className="block text-slate-400">
+        License document
+        <input className="mt-1 block w-full text-xs" type="file" accept=".pdf,.txt,application/pdf,text/plain" onChange={(e) => setProof(e.target.files?.[0] || null)} />
+      </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={attr} onChange={(e) => setAttr(e.target.checked)} />
         Attribution required
@@ -523,8 +578,8 @@ function YalImportForm({ onImported }: { onImported: (track: MusicTrack) => void
           <option value="no">No</option>
         </select>
       </label>
-      <button type="submit" className="rounded-full bg-amber-100 px-4 py-2 text-zinc-900">
-        Save track
+      <button type="submit" disabled={busy} className="rounded-full bg-amber-100 px-4 py-2 text-zinc-900 disabled:opacity-60">
+        {busy ? "Saving…" : "Save track"}
       </button>
     </form>
   );

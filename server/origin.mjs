@@ -335,4 +335,22 @@ server.listen(port, "0.0.0.0", () => {
     setInterval(runTick, tickMs);
     setTimeout(runTick, 2500);
   }
+  const longFormTickMs = Number(process.env.LONG_FORM_TICK_MS || process.env.CLIP_FACTORY_TICK_MS || 15000);
+  if (longFormTickMs > 0) {
+    const runLongFormTick = () => {
+      import("../api/_lib/long-form-studio/worker.ts")
+        .then((mod) => mod.tickLongForm("origin-loop"))
+        .catch((error) => {
+          console.error(
+            JSON.stringify({
+              source: "long-form-studio",
+              event: "origin_tick_failed",
+              message: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        });
+    };
+    setInterval(runLongFormTick, longFormTickMs);
+    setTimeout(runLongFormTick, 4000);
+  }
 });

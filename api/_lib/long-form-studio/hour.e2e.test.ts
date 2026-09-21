@@ -7,7 +7,7 @@ import { ffprobeFile } from "../clip-factory/ffmpeg";
 const runHour = process.env.LONG_FORM_HOUR === "1";
 
 describe.skipIf(!runHour)("long-form 1 hour production", () => {
-  it("renders a 1h 1080p Christmas ambience with cleared original music", async () => {
+  it("renders a 1h 1080p Christmas ambience using documented demo pads when no YAL track is present", async () => {
     const result = await createAndRenderProduction({
       sceneIds: ["reel-cozy-01", "reel-cozy-02", "reel-cozy-03"],
       mood: "cozy_instrumental",
@@ -37,7 +37,7 @@ describe.skipIf(!runHour)("long-form 1 hour production", () => {
     expect(probe.width).toBeGreaterThanOrEqual(1920);
     expect(probe.height).toBeGreaterThanOrEqual(1080);
     expect(probe.hasAudio).toBe(true);
-    expect(result.production.status).toBe("ready_to_publish");
+    expect(result.production.status).toBe("demo");
     expect(result.libraryAsset?.src).toContain("long-form");
   }, 1_200_000);
 });

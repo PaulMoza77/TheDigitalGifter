@@ -53,9 +53,10 @@ export async function ensureAllOriginalMusic(root = process.cwd()): Promise<stri
   await writeFile(
     join(originalMusicDirectory(root), "PROVENANCE.txt"),
     [
-      "TDG original music for Long-Form Studio.",
-      "Composition and recording owned by The Digital Gifter.",
-      "Not sourced from YouTube, not a recording of a third-party Christmas master.",
+      "TDG Long-Form Studio demo pads.",
+      "These files are FFmpeg aevalsrc test tones, not Christmas jazz/piano recordings.",
+      "They are not a commercial-rights certificate and are not YouTube-cleared.",
+      "Recipe: api/_lib/long-form-studio/originalMusic.ts",
       `Created ${new Date().toISOString().slice(0, 10)}.`,
     ].join("\n"),
     "utf8",

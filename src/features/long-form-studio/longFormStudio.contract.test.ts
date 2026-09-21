@@ -17,6 +17,8 @@ describe("long-form studio wiring", () => {
     expect(read("api/long-form-studio.ts")).toContain("requireClipFactoryAdmin");
     expect(read("api/long-form-studio.ts")).toContain("create_video");
     expect(read("api/long-form-studio.ts")).toContain("import_youtube_audio_library");
+    expect(read("api/long-form-studio.ts")).not.toContain("waitUntil");
+    expect(read("api/long-form-studio.ts")).not.toMatch(/action === "file"/);
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("CREATE VIDEO");
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("Choose from Library");
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("TDG Music Library");

@@ -1,4 +1,5 @@
-TDG original music for Long-Form Studio.
-Composition and recording owned by The Digital Gifter.
-Generated locally; not a third-party Christmas master and not scraped from YouTube.
-Audio files are created on first studio run.
+TDG Long-Form Studio demo pads.
+These files are FFmpeg aevalsrc test tones, not Christmas jazz/piano recordings.
+They are not a commercial-rights certificate and are not YouTube-cleared.
+Recipe: api/_lib/long-form-studio/originalMusic.ts
+Created 2026-09-21.

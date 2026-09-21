@@ -29,8 +29,17 @@ export function shuffleIds(ids: string[], seed: number): string[] {
   return copy;
 }
 
-export function eligiblePlaylistTracks(tracks: MusicTrack[], mood: string): MusicTrack[] {
-  return tracks.filter((track) => track.mood === mood && clearedForCommercialYoutube(track) && track.durationSeconds > 8);
+export function eligiblePlaylistTracks(
+  tracks: MusicTrack[],
+  mood: string,
+  options?: { includeDemo?: boolean },
+): MusicTrack[] {
+  return tracks.filter((track) => {
+    if (track.mood !== mood || track.durationSeconds <= 8) return false;
+    if (clearedForCommercialYoutube(track)) return true;
+    if (options?.includeDemo && track.demo) return true;
+    return false;
+  });
 }
 
 export function buildPlaylist(input: {
@@ -39,10 +48,13 @@ export function buildPlaylist(input: {
   targetSeconds: number;
   shuffle?: boolean;
   seed?: number;
-}): { entries: PlaylistEntry[]; selected: MusicTrack[]; musicDuration: number } {
-  const pool = eligiblePlaylistTracks(input.tracks, input.mood);
+  includeDemo?: boolean;
+}): { entries: PlaylistEntry[]; selected: MusicTrack[]; musicDuration: number; usedDemo: boolean } {
+  const cleared = eligiblePlaylistTracks(input.tracks, input.mood);
+  const pool = cleared.length ? cleared : eligiblePlaylistTracks(input.tracks, input.mood, { includeDemo: true });
+  const usedDemo = !cleared.length && pool.some((t) => t.demo);
   if (!pool.length || input.targetSeconds <= 0) {
-    return { entries: [], selected: [], musicDuration: 0 };
+    return { entries: [], selected: [], musicDuration: 0, usedDemo: false };
   }
   const order = input.shuffle ? shuffleIds(pool.map((t) => t.id), input.seed ?? 1) : pool.map((t) => t.id);
   const byId = new Map(pool.map((t) => [t.id, t]));
@@ -76,7 +88,7 @@ export function buildPlaylist(input: {
   }
   const unique = [...new Map(used.map((t) => [t.id, t])).values()];
   const musicDuration = unique.reduce((sum, t) => sum + t.durationSeconds, 0);
-  return { entries, selected: unique, musicDuration };
+  return { entries, selected: unique, musicDuration, usedDemo };
 }
 
 export function formatClock(seconds: number): string {

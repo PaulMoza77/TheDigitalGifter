@@ -2,7 +2,7 @@ import type { MusicTrack } from "./types";
 import { isRightsComplete } from "./musicRights";
 import { youtubeAudioLibraryLicenseType } from "./musicRights";
 
-function original(partial: {
+function demoPad(partial: {
   id: string;
   title: string;
   durationSeconds: number;
@@ -12,70 +12,79 @@ function original(partial: {
 }): MusicTrack {
   const track: MusicTrack = {
     ...partial,
-    source: "original_owned",
-    licenseType: "TDG original — owned recording and composition",
-    commercialUseAllowed: true,
-    youtubeMonetizationAllowed: "yes",
+    source: "generated_demo",
+    licenseType: "FFmpeg aevalsrc demo pad — not a commercial master",
+    commercialUseAllowed: null,
+    youtubeMonetizationAllowed: "unknown",
     attributionRequired: false,
     attributionText: "",
-    compositionRights: "owned",
-    recordingRights: "owned",
-    artistSource: "The Digital Gifter",
+    compositionRights: "unknown",
+    recordingRights: "unknown",
+    artistSource: "TDG studio generator (demo)",
     acquisitionDate: "2026-09-21",
-    internalNotes: "Original TDG-owned recording generated for Long-Form Studio. Not a third-party Christmas master.",
+    internalNotes:
+      "Synthesized test tone from api/_lib/long-form-studio/originalMusic.ts. Not Christmas jazz/piano, not YouTube-cleared.",
     publicSrc: `/assets/long-form/music/${partial.filename}`,
+    demo: true,
+    proofAccessible: false,
+    creationRecord: {
+      kind: "ffmpeg_aevalsrc_recipe",
+      recipe: "api/_lib/long-form-studio/originalMusic.ts",
+      filename: partial.filename,
+    },
+    editorialStatus: "demo_unreviewed",
     rightsComplete: false,
   };
   return { ...track, rightsComplete: isRightsComplete(track) };
 }
 
-/** Catalog of original owned tracks. Audio files are created by the studio renderer if missing. */
+/** Demo pads only. Do not present these as premium Christmas recordings. */
 export const ORIGINAL_MUSIC_SEED: MusicTrack[] = [
-  original({
+  demoPad({
     id: "tdg-orig-cozy-hearth",
-    title: "Hearth Glow",
+    title: "Demo pad · warm drone",
     durationSeconds: 180,
-    genre: "ambient instrumental",
+    genre: "test pad",
     mood: "cozy_instrumental",
     filename: "hearth_glow.m4a",
   }),
-  original({
+  demoPad({
     id: "tdg-orig-jazz-ember",
-    title: "Ember Lounge",
+    title: "Demo pad · mid drone",
     durationSeconds: 180,
-    genre: "christmas jazz",
+    genre: "test pad",
     mood: "christmas_jazz",
     filename: "ember_lounge.m4a",
   }),
-  original({
+  demoPad({
     id: "tdg-orig-piano-snowfall",
-    title: "Snowfall Keys",
+    title: "Demo pad · high drone",
     durationSeconds: 180,
-    genre: "piano",
+    genre: "test pad",
     mood: "christmas_piano",
     filename: "snowfall_keys.m4a",
   }),
-  original({
+  demoPad({
     id: "tdg-orig-classic-wreath",
-    title: "Wreath Carol Air",
+    title: "Demo pad · fifths",
     durationSeconds: 180,
-    genre: "classic instrumental",
+    genre: "test pad",
     mood: "classic_christmas",
     filename: "wreath_carol_air.m4a",
   }),
-  original({
+  demoPad({
     id: "tdg-orig-relax-window",
-    title: "Window Quiet",
+    title: "Demo pad · low drone",
     durationSeconds: 180,
-    genre: "ambient",
+    genre: "test pad",
     mood: "relaxing_christmas",
     filename: "window_quiet.m4a",
   }),
-  original({
+  demoPad({
     id: "tdg-orig-sleep-ember",
-    title: "Sleeping Embers",
+    title: "Demo pad · slow drone",
     durationSeconds: 240,
-    genre: "sleep ambient",
+    genre: "test pad",
     mood: "sleep_christmas",
     filename: "sleeping_embers.m4a",
   }),
@@ -91,14 +100,15 @@ export function exampleYoutubeAudioLibraryTrack(attributionRequired: boolean): M
     mood: "cozy_instrumental",
     source: "youtube_audio_library",
     licenseType: youtubeAudioLibraryLicenseType(attributionRequired),
-    commercialUseAllowed: true,
-    youtubeMonetizationAllowed: "yes",
+    commercialUseAllowed: null,
+    youtubeMonetizationAllowed: "unknown",
     attributionRequired,
-    attributionText: attributionRequired ? "Song Title — Artist (YouTube Audio Library)" : "",
-    compositionRights: "licensed",
-    recordingRights: "licensed",
+    attributionText: attributionRequired ? "" : "",
+    compositionRights: "unknown",
+    recordingRights: "unknown",
     rightsComplete: false,
-    internalNotes: "Imported by an admin from YouTube Audio Library. Do not scrape.",
+    proofAccessible: false,
+    internalNotes: "Import template only. Rights stay unknown until proof is stored.",
   };
   return { ...track, rightsComplete: isRightsComplete(track) };
 }

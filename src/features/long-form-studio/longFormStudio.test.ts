@@ -35,7 +35,7 @@ describe("long-form studio rights", () => {
     const track = dirtyTrack();
     expect(isRightsComplete(track)).toBe(false);
     expect(trackBadges(track).kind).toBe("review");
-    expect(trackBadges(ORIGINAL_MUSIC_SEED[0]!).kind).toBe("cleared");
+    expect(trackBadges(ORIGINAL_MUSIC_SEED[0]!).kind).toBe("demo");
   });
 
   it("does not treat public-domain composition as a cleared recording", () => {
@@ -65,23 +65,22 @@ describe("long-form studio rights", () => {
     expect(manifest.publicationStatus).toBe("rights_review_required");
   });
 
-  it("clears original owned seed music with commercial YouTube use", () => {
+  it("does not treat demo pads as YouTube-cleared Christmas recordings", () => {
     const { ok, manifest } = validateProductionRights({
       visuals: [{ id: "reel-cozy-01", title: "Cozy cottage", origin: "tdg_library", commercialUseAllowed: true }],
       tracks: ORIGINAL_MUSIC_SEED.filter((t) => t.mood === "cozy_instrumental"),
     });
-    expect(ok).toBe(true);
-    expect(manifest.publicationStatus).toBe("ready_to_publish");
-    expect(ORIGINAL_MUSIC_SEED.filter((t) => t.youtubeMonetizationAllowed === "yes" && t.commercialUseAllowed).length).toBe(
-      ORIGINAL_MUSIC_SEED.length,
-    );
+    expect(ok).toBe(false);
+    expect(manifest.publicationStatus).toBe("rights_review_required");
+    expect(ORIGINAL_MUSIC_SEED.every((t) => t.demo && t.youtubeMonetizationAllowed === "unknown")).toBe(true);
   });
 });
 
 describe("playlist builder", () => {
-  it("fills the target duration from cleared mood tracks only", () => {
+  it("fills duration from demo pads when no cleared tracks exist", () => {
     const tracks = [...ORIGINAL_MUSIC_SEED, dirtyTrack({ id: "skip", mood: "cozy_instrumental", durationSeconds: 180 })];
-    expect(eligiblePlaylistTracks(tracks, "cozy_instrumental")).toHaveLength(1);
+    expect(eligiblePlaylistTracks(tracks, "cozy_instrumental")).toHaveLength(0);
+    expect(eligiblePlaylistTracks(tracks, "cozy_instrumental", { includeDemo: true }).length).toBeGreaterThan(0);
     const built = buildPlaylist({
       tracks,
       mood: "cozy_instrumental",
@@ -89,6 +88,7 @@ describe("playlist builder", () => {
       shuffle: true,
       seed: 42,
     });
+    expect(built.usedDemo).toBe(true);
     expect(built.entries.length).toBeGreaterThan(10);
     expect(built.entries[built.entries.length - 1]?.endSeconds).toBeGreaterThanOrEqual(3599);
     expect(formatClock(3600)).toBe("1h 0m");

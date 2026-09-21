@@ -23,8 +23,9 @@ describe("long-form render pipeline", () => {
         },
         { workDir: dir },
       );
-      expect(result.rights.ok).toBe(true);
-      expect(result.production.status).toBe("ready_to_publish");
+      expect(result.rights.ok).toBe(false);
+      expect(result.production.status).toBe("demo");
+      expect(result.rights.manifest.publicationStatus).toBe("rights_review_required");
       expect(result.rendered?.probe.width).toBeGreaterThanOrEqual(1920);
       expect(result.rendered?.probe.height).toBeGreaterThanOrEqual(1080);
       expect(result.rendered?.probe.hasAudio).toBe(true);
@@ -33,7 +34,7 @@ describe("long-form render pipeline", () => {
       const probe = await ffprobeFile(result.rendered!.outputPath);
       expect(probe.videoCodec).toBe("h264");
       expect(probe.audioCodec).toMatch(/aac/i);
-      expect(result.rights.manifest.music[0]?.source).toBe("original_owned");
+      expect(result.rights.manifest.music[0]?.source).toBe("generated_demo");
     } finally {
       delete process.env.LONG_FORM_STATE_PATH;
       await rm(dir, { recursive: true, force: true });

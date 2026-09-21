@@ -4,6 +4,7 @@ export const MUSIC_SOURCES = [
   "commissioned",
   "licensed_ai",
   "other_licensed",
+  "generated_demo",
 ] as const;
 
 export type MusicSource = (typeof MUSIC_SOURCES)[number];
@@ -25,15 +26,20 @@ export type MusicMood = (typeof MUSIC_MOODS)[number];
 export const STYLE_PRESETS = ["cozy", "luxury", "snowy", "traditional", "magical", "relaxing"] as const;
 export type StylePreset = (typeof STYLE_PRESETS)[number];
 
-export const DURATION_PRESETS_SECONDS = [3600, 10800, 21600, 28800, 43200] as const;
+export const DURATION_PRESETS_SECONDS = [3600] as const;
+export const ENABLED_DURATION_SECONDS = 3600;
+export const FUTURE_DURATION_SECONDS = [10800, 21600, 28800, 43200] as const;
 
 export const PRODUCTION_STATUSES = [
   "draft",
   "queued",
   "rendering",
+  "saved",
+  "demo",
   "ready_to_publish",
   "rights_review_required",
   "similarity_review_required",
+  "persist_failed",
   "failed",
 ] as const;
 
@@ -79,9 +85,15 @@ export type MusicTrack = {
   storagePath?: string | null;
   publicSrc?: string | null;
   filename?: string | null;
+  storageBucket?: string | null;
   compositionRights: "owned" | "licensed" | "public_domain" | "unknown";
   recordingRights: "owned" | "licensed" | "public_domain" | "unknown";
   rightsComplete: boolean;
+  demo?: boolean;
+  proofAccessible?: boolean;
+  fileSha256?: string | null;
+  creationRecord?: Record<string, unknown>;
+  editorialStatus?: string;
 };
 
 export type PlaylistEntry = {
@@ -98,6 +110,7 @@ export type VisualAssetRights = {
   origin: "tdg_library" | "generated" | "uploaded";
   commercialUseAllowed: boolean | null;
   notes?: string;
+  creationRecord?: Record<string, unknown>;
 };
 
 export type RightsManifest = {
@@ -118,7 +131,7 @@ export type RightsManifest = {
     attributionRequired: boolean;
     attribution: string | null;
   }>;
-  publicationStatus: "ready_to_publish" | "rights_review_required";
+  publicationStatus: "rights_documented" | "rights_review_required";
   blockers: string[];
   generatedAt: string;
 };
@@ -185,10 +198,10 @@ export const STYLE_LABELS: Record<StylePreset, string> = {
   relaxing: "Relaxing",
 };
 
-export const DURATION_BUTTONS: Array<{ seconds: number; label: string }> = [
-  { seconds: 3600, label: "1 HOUR" },
-  { seconds: 10800, label: "3 HOURS" },
-  { seconds: 21600, label: "6 HOURS" },
-  { seconds: 28800, label: "8 HOURS" },
-  { seconds: 43200, label: "12 HOURS" },
+export const DURATION_BUTTONS: Array<{ seconds: number; label: string; enabled: boolean }> = [
+  { seconds: 3600, label: "1 HOUR", enabled: true },
+  { seconds: 10800, label: "3 HOURS", enabled: false },
+  { seconds: 21600, label: "6 HOURS", enabled: false },
+  { seconds: 28800, label: "8 HOURS", enabled: false },
+  { seconds: 43200, label: "12 HOURS", enabled: false },
 ];
