@@ -9,8 +9,10 @@ import { classifyVideoUrl } from "../src/features/clip-factory/ingest/classify";
 import { detectUrlAdapter } from "../src/features/clip-factory/ingest/registry";
 import { IngestFailure } from "../src/features/clip-factory/ingest/types";
 import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
+import { importDeviceOnline } from "../src/features/clip-factory/importDevice";
 import { isKnownInvalidMediaHash } from "../src/features/clip-factory/mediaQuality";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
+import { streamLocalFile } from "./_lib/clip-factory/vpsMedia";
 
 const BUCKET = "clip-factory";
 
@@ -22,17 +24,29 @@ function apiError(res: NodeApiResponse, status: number, error: string, message: 
   return res.status(status).json({ error, message });
 }
 
+async function deviceOnline(service: ReturnType<typeof getServiceClient>): Promise<boolean> {
+  const { data } = await service
+    .from("clip_factory_import_devices")
+    .select("last_seen_at")
+    .order("last_seen_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return importDeviceOnline(data?.last_seen_at, Date.now());
+}
+
 async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Record<string, unknown>) {
   const jobId = String(job.id);
-  const [{ data: candidates }, { data: renders }, { data: media }] = await Promise.all([
+  const [{ data: candidates }, { data: renders }, { data: media }, online] = await Promise.all([
     service.from("clip_factory_candidates").select("*").eq("job_id", jobId).order("overall_viral_score", { ascending: false }),
     service.from("clip_factory_renders").select("*").eq("job_id", jobId).order("created_at", { ascending: false }),
     job.media_id
       ? service.from("clip_factory_media").select("duration_seconds,width,height,has_audio,orientation").eq("id", job.media_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    deviceOnline(service),
   ]);
   return {
     ...job,
+    import_device_online: online,
     media,
     source_thumbnail_url: job.source_thumbnail_path
       ? signedPlaybackPath("thumb", `job:${jobId}`)
@@ -55,6 +69,31 @@ async function hydrateJob(service: ReturnType<typeof getServiceClient>, job: Rec
       thumbnail_url: row.thumbnail_path ? signedPlaybackPath("thumb", row.id) : null,
     })),
   };
+}
+
+async function streamStored(
+  req: NodeApiRequest,
+  res: NodeApiResponse,
+  row: { storage_backend?: string | null; local_relpath?: string | null; storage_path?: string | null; thumbnail_path?: string | null },
+  which: "file" | "thumb",
+  contentType: string,
+  method: string,
+) {
+  const rel = which === "thumb" ? row.thumbnail_path : row.local_relpath || row.storage_path;
+  if (row.storage_backend === "vps" && rel) {
+    try {
+      streamLocalFile(req, res, rel, contentType, method);
+    } catch {
+      res.status(404).json({ error: "not_found", message: "Media is not available." });
+    }
+    return;
+  }
+  const storagePath = which === "thumb" ? row.thumbnail_path : row.storage_path;
+  if (!storagePath) {
+    res.status(404).json({ error: "not_found", message: "Media is not available." });
+    return;
+  }
+  await streamStorage(res, storagePath, contentType, method);
 }
 
 async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string, method = "GET") {
@@ -97,27 +136,27 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
     const service = getServiceClient();
     if (kind === "source") {
-      const { data } = await service.from("clip_factory_media").select("storage_path").eq("id", id).maybeSingle();
-      if (!data?.storage_path) return apiError(res, 404, "not_found", "Source video is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4", req.method);
+      const { data } = await service.from("clip_factory_media").select("storage_path,storage_backend,local_relpath").eq("id", id).maybeSingle();
+      if (!data?.storage_path && !data?.local_relpath) return apiError(res, 404, "not_found", "Source video is not available.");
+      await streamStored(req, res, data, "file", "video/mp4", req.method || "GET");
       return;
     }
     if (kind === "render") {
-      const { data } = await service.from("clip_factory_renders").select("storage_path").eq("id", id).maybeSingle();
-      if (!data?.storage_path) return apiError(res, 404, "not_found", "Rendered clip is not available.");
-      await streamStorage(res, data.storage_path, "video/mp4", req.method);
+      const { data } = await service.from("clip_factory_renders").select("storage_path,storage_backend,local_relpath,thumbnail_path").eq("id", id).maybeSingle();
+      if (!data?.storage_path && !data?.local_relpath) return apiError(res, 404, "not_found", "Rendered clip is not available.");
+      await streamStored(req, res, data, "file", "video/mp4", req.method || "GET");
       return;
     }
     if (kind === "thumb") {
       if (id.startsWith("job:")) {
         const { data } = await service.from("clip_factory_jobs").select("source_thumbnail_path").eq("id", id.slice(4)).maybeSingle();
         if (!data?.source_thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-        await streamStorage(res, data.source_thumbnail_path, "image/jpeg", req.method);
+        await streamStorage(res, data.source_thumbnail_path, "image/jpeg", req.method || "GET");
         return;
       }
-      const { data } = await service.from("clip_factory_renders").select("thumbnail_path").eq("id", id).maybeSingle();
+      const { data } = await service.from("clip_factory_renders").select("storage_backend,local_relpath,thumbnail_path,storage_path").eq("id", id).maybeSingle();
       if (!data?.thumbnail_path) return apiError(res, 404, "not_found", "Thumbnail is not available.");
-      await streamStorage(res, data.thumbnail_path, "image/jpeg", req.method);
+      await streamStored(req, res, data, "thumb", "image/jpeg", req.method || "GET");
       return;
     }
     return apiError(res, 400, "invalid_request", "Unknown media kind.");
@@ -156,7 +195,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         return apiError(res, 400, "unsupported_codec", "Upload MP4, MOV, or WebM.");
       }
       if (!Number.isFinite(byteSize) || byteSize <= 0 || byteSize > MAX_UPLOAD_BYTES) {
-        return apiError(res, 400, "huge_file", "File must be under 500MB.");
+        return apiError(res, 400, "huge_file", "File must be under 2GB.");
       }
       const objectPath = `uploads/${admin.email.replace(/[^a-z0-9@._-]/g, "_")}/${randomUUID()}-${sanitizeFilename(asString(body.file_name))}`;
       const { data, error } = await service.storage.from(BUCKET).createSignedUploadUrl(objectPath);
@@ -385,18 +424,31 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         }
       }
 
+      const rateWindow = new Date(Date.now() - 15 * 60_000).toISOString();
+      const { count: recentCount } = await service
+        .from("clip_factory_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("created_by_email", admin.email)
+        .gte("created_at", rateWindow);
+      if ((recentCount || 0) >= 8) {
+        return apiError(res, 429, "rate_limited", "Please wait a few minutes before starting another job.");
+      }
+
+      const deviceImport = sourceKind === "youtube" && !asString(body.object_path) && !asString(body.library_asset_id);
       const inserted = await service
         .from("clip_factory_jobs")
         .insert({
           created_by: admin.userId,
           created_by_email: admin.email,
           idempotency_key: idempotencyKey,
-          status: waitingForMedia ? "waiting_for_media" : "queued",
-          stage: waitingForMedia ? "source_detected" : "queued",
-          progress: waitingForMedia ? 5 : 2,
-          progress_label: waitingForMedia
-            ? (sourceMetadata as { message?: string }).message || "Source detected. Original media is required to continue."
-            : "Queued",
+          status: deviceImport ? "waiting_for_import" : waitingForMedia ? "waiting_for_media" : "queued",
+          stage: deviceImport ? "waiting_for_import" : waitingForMedia ? "source_detected" : "queued",
+          progress: deviceImport || waitingForMedia ? 4 : 2,
+          progress_label: deviceImport
+            ? "Waiting for import device"
+            : waitingForMedia
+              ? (sourceMetadata as { message?: string }).message || "Source detected. Original media is required to continue."
+              : "Queued",
           source_kind: sourceKind,
           source_payload: sourcePayload,
           source_label: (sourceMetadata as { title?: string }).title || sourceLabel,
@@ -410,7 +462,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         .select("*")
         .single();
       if (inserted.error) throw inserted.error;
-      if (!waitingForMedia) kickClipFactoryWorker();
+      if (!waitingForMedia && !deviceImport) kickClipFactoryWorker();
       return res.status(200).json({ job: await hydrateJob(service, inserted.data) });
     }
 
@@ -445,12 +497,18 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         mediaInvalidated = Boolean(media?.invalidated_at) || isKnownInvalidMediaHash(media?.media_hash);
       }
       const restartIngest = data.failed_stage === "importing" || !data.media_id || mediaInvalidated;
-      const nextStatus = restartIngest ? "queued" : data.failed_stage === "render" ? "rendering" : "queued";
+      const deviceImport = restartIngest && data.source_kind === "youtube" && !asString((data.source_payload || {}).objectPath);
+      const nextStatus = deviceImport ? "waiting_for_import" : restartIngest ? "queued" : data.failed_stage === "render" ? "rendering" : "queued";
       const patch: Record<string, unknown> = {
         status: nextStatus,
-        stage: nextStatus === "rendering" ? "rendering" : "queued",
+        stage: nextStatus === "rendering" ? "rendering" : nextStatus,
         progress: 5,
-        progress_label: nextStatus === "rendering" ? "Rendering clips" : "Retrying",
+        progress_label: deviceImport ? "Waiting for import device" : nextStatus === "rendering" ? "Creating clips" : "Retrying",
+        import_attempt_count: deviceImport ? 0 : data.import_attempt_count,
+        import_attempt_id: deviceImport ? null : data.import_attempt_id,
+        import_worker_id: deviceImport ? null : data.import_worker_id,
+        import_lease_expires_at: null,
+        import_object_path: deviceImport ? null : data.import_object_path,
         error_message: null,
         error_code: null,
         retry_count: (data.retry_count || 0) + 1,

@@ -8,7 +8,7 @@ import { extractYoutubeId } from "../src/features/clip-factory/ingest/adapters/y
 import { classifyVideoUrl } from "../src/features/clip-factory/ingest/classify.ts";
 
 const YT = "https://youtu.be/pV9UPP7n0Po?si=_O2KuMDc1OhkyAg_";
-const AUTHORIZED = process.env.CLIP_FACTORY_E2E_URL || "https://www.thedigitalgifter.com/christmas/cabin-hero-loop-720.mp4";
+const AUTHORIZED = process.env.CLIP_FACTORY_E2E_URL || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 function requireEnv(name: string) {
   const value = String(process.env[name] || "").trim();
@@ -62,7 +62,7 @@ async function authorizedJob() {
       source_kind: "direct_media_url",
       source_payload: { url: AUTHORIZED, mediaUrl: AUTHORIZED, provider: "direct", importMode: "direct_download", ingestionCapability: "FULL_IMPORT" },
       source_label: "Authorized URL e2e",
-      options: { clipCount: 5, duration: "auto", platform: "auto", objective: "auto", captionStyle: "auto", language: "en", aiHook: true },
+      options: { clipCount: 10, duration: "auto", platform: "auto", objective: "auto", captionStyle: "auto", language: "en", aiHook: true },
       provider: "direct",
       rights_confirmed: true,
       auto_render: true,
@@ -89,7 +89,9 @@ async function authorizedJob() {
   const { data: transcript } = job?.media_id
     ? await service.from("clip_factory_media").select("id,source_kind,source_url,duration_seconds").eq("id", job.media_id).maybeSingle()
     : { data: null };
-  return { jobId, job, renders, media: transcript };
+  const okRenders = (renders || []).filter((row) => row.status === "completed" && row.library_asset_id && (row.file_size_bytes || 0) > 0);
+  const validVertical = okRenders.filter((row) => row.width === 1080 && row.height === 1920 && Number(row.duration_seconds || 0) > 0);
+  return { jobId, job, renders, media: transcript, okRenders: okRenders.length, validVertical: validVertical.length };
 }
 
 const report = {
@@ -97,6 +99,6 @@ const report = {
   authorized: await authorizedJob(),
 };
 console.log(JSON.stringify(report, null, 2));
-if (!report.authorized.renders?.some((row) => row.status === "completed" && row.library_asset_id && (row.file_size_bytes || 0) > 0)) {
+if (!report.authorized.validVertical) {
   process.exitCode = 2;
 }

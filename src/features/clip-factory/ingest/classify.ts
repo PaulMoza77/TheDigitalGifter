@@ -1,4 +1,5 @@
 import { capabilityMessage } from "./capability";
+import { clipIngestEndpoint, youtubeCanAttemptFileImport } from "./providerConfig";
 import { detectUrlAdapter } from "./registry";
 import { parsePublicHttpUrl } from "./ssrf";
 import type { IngestionCapability } from "./capability";
@@ -48,7 +49,7 @@ export function classifyVideoUrl(raw: string): UrlClassification {
       message: capabilityMessage("FULL_IMPORT", "direct"),
     };
   }
-  const youtubeImporter = Boolean(String(process.env.CLIP_FACTORY_YOUTUBE_IMPORT_URL || "").trim());
+  const youtubeImporter = youtubeCanAttemptFileImport();
   const vimeoToken = Boolean(String(process.env.VIMEO_ACCESS_TOKEN || "").trim());
   if (adapter.id === "youtube") {
     const capability: IngestionCapability = youtubeImporter ? "FULL_IMPORT" : "REFERENCE_ONLY";
@@ -59,7 +60,7 @@ export function classifyVideoUrl(raw: string): UrlClassification {
       normalizedUrl: validated.url,
       canImport: capability === "FULL_IMPORT",
       ingestionCapability: capability,
-      importMode: youtubeImporter ? "authorized_api" : "unavailable",
+      importMode: clipIngestEndpoint() ? "authorized_api" : youtubeImporter ? "origin_ingest" : "unavailable",
       fallback: youtubeImporter ? null : "upload",
       message: capabilityMessage(capability, "youtube"),
     };

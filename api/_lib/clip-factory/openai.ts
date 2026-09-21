@@ -173,9 +173,62 @@ export async function proposeMoments(input: {
   transcript: Transcript;
   visuals: VisualFrameNote[];
   duration: number;
-  options: { clipCount: 5 | 10 | 20 | "auto"; duration: "auto" | "10-20" | "20-30" | "30-60"; objective: ObjectiveOption; platform: string };
+  options: { clipCount: 5 | 10 | 20 | 30 | "auto"; duration: "auto" | "10-20" | "20-30" | "30-60"; objective: ObjectiveOption; platform: string };
 }): Promise<{ candidates: ViralCandidate[]; tokens: number }> {
   const want = desiredClipCount(input.options.clipCount, input.duration);
+  const windows = transcriptWindows(input.transcript, input.duration);
+  let tokens = 0;
+  const collected: ViralCandidate[] = [];
+  for (const window of windows) {
+    const part = await proposeMomentsWindow({ ...input, transcript: window.transcript, duration: window.end - window.start, offset: window.start, want: window.want });
+    tokens += part.tokens;
+    collected.push(...part.candidates);
+  }
+  const grounded = collected.filter((row) =>
+    candidateTextGrounded({
+      start: row.startTime,
+      end: row.endTime,
+      title: row.title,
+      summary: row.summary,
+      hook: row.hook,
+      transcriptText: input.transcript.fullText,
+      visualNotes: input.visuals,
+    }),
+  );
+  const diverse = selectDiverseCandidates(grounded, want);
+  return { candidates: diverse, tokens };
+}
+
+const WINDOW_SECONDS = 15 * 60;
+
+function transcriptWindows(transcript: Transcript, duration: number): Array<{ start: number; end: number; want: number; transcript: Transcript }> {
+  if (duration <= WINDOW_SECONDS + 30) {
+    return [{ start: 0, end: duration, want: Math.min(24, Math.max(8, Math.round(duration / 40))), transcript }];
+  }
+  const out = [];
+  for (let start = 0; start < duration; start += WINDOW_SECONDS) {
+    const end = Math.min(duration, start + WINDOW_SECONDS + 20);
+    const segments = transcript.segments.filter((s) => s.end > start && s.start < end).map((s) => ({ ...s, start: s.start, end: s.end }));
+    const words = transcript.words.filter((w) => w.end > start && w.start < end);
+    const fullText = segments.map((s) => s.text).join(" ") || transcript.fullText;
+    out.push({
+      start,
+      end,
+      want: 12,
+      transcript: { ...transcript, segments, words, fullText },
+    });
+  }
+  return out;
+}
+
+async function proposeMomentsWindow(input: {
+  transcript: Transcript;
+  visuals: VisualFrameNote[];
+  duration: number;
+  offset: number;
+  want: number;
+  options: { clipCount: 5 | 10 | 20 | 30 | "auto"; duration: "auto" | "10-20" | "20-30" | "30-60"; objective: ObjectiveOption; platform: string };
+}): Promise<{ candidates: ViralCandidate[]; tokens: number }> {
   const transcriptSlice = input.transcript.fullText.slice(0, 12000);
   const wordHint = input.transcript.words.slice(0, 400).map((w) => `${w.start.toFixed(1)}:${w.word}`).join(" ");
   const visualHint = input.visuals.map((v) => `${v.t.toFixed(1)}s ${v.note}`).join(" | ");
@@ -196,7 +249,8 @@ export async function proposeMoments(input: {
 Objective: ${input.options.objective}
 Target duration: ${input.options.duration}
 Platform: ${input.options.platform}
-Need about ${want} diverse candidates.
+Need about ${input.want} diverse candidates in this window.
+Timestamps are absolute seconds from the start of the original video (this window is ${input.offset.toFixed(1)}s–${(input.offset + input.duration).toFixed(1)}s).
 
 Transcript:
 ${transcriptSlice || "(no speech)"}
@@ -232,7 +286,8 @@ Score hook, curiosity, emotion, humor, surprise, storytelling, controversy/debat
     const scores = normalizeDimensions(row.scores as Record<string, unknown>);
     let start = Number(row.start_time ?? row.startTime ?? 0);
     let end = Number(row.end_time ?? row.endTime ?? start + 12);
-    const snapped = snapClipBoundaries(start, end, input.transcript, input.duration, input.options.duration);
+    const sourceDuration = input.offset + input.duration;
+    const snapped = snapClipBoundaries(start, end, input.transcript, sourceDuration, input.options.duration);
     start = snapped.start;
     end = snapped.end;
     const duration = end - start;
@@ -274,6 +329,6 @@ Score hook, curiosity, emotion, humor, surprise, storytelling, controversy/debat
       visualNotes: input.visuals,
     }),
   );
-  const diverse = selectDiverseCandidates(grounded, want);
+  const diverse = selectDiverseCandidates(grounded, input.want);
   return { candidates: diverse, tokens: Number(json.usage?.total_tokens || 0) };
 }

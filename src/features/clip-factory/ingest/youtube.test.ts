@@ -42,6 +42,8 @@ describe("youtube adapter", () => {
 
   it("still previews a valid id when oEmbed is unavailable", async () => {
     vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
+    vi.stubEnv("CLIP_INGEST_ENDPOINT", "");
+    vi.stubEnv("CLIP_FACTORY_DISABLE_YTDLP", "1");
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -55,12 +57,14 @@ describe("youtube adapter", () => {
     expect(meta.canImport).toBe(false);
     expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
     expect(meta.thumbnailUrl).toContain("dQw4w9wgGcI");
-    expect(meta.message).toMatch(/title and thumbnail|official APIs do not give us the video file/i);
+    expect(meta.message).toMatch(/recognized this YouTube link|title and thumbnail|official APIs/i);
   });
 
-  it("does not claim import unless an authorized importer is configured", async () => {
+  it("does not claim import when yt-dlp is disabled and no authorized importer is configured", async () => {
     vi.stubEnv("YOUTUBE_API_KEY", "test-key");
     vi.stubEnv("CLIP_FACTORY_YOUTUBE_IMPORT_URL", "");
+    vi.stubEnv("CLIP_INGEST_ENDPOINT", "");
+    vi.stubEnv("CLIP_FACTORY_DISABLE_YTDLP", "1");
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -80,7 +84,7 @@ describe("youtube adapter", () => {
     expect(meta.title).toBe("Demo");
     expect(meta.canImport).toBe(false);
     expect(meta.ingestionCapability).toBe("REFERENCE_ONLY");
-    expect(meta.message).toMatch(/title and thumbnail|official APIs do not give us the video file/i);
+    expect(meta.message).toMatch(/recognized this YouTube link|title and thumbnail|official APIs/i);
     expect(youtubeAdapter.canImport(meta)).toBe(false);
   });
 
