@@ -1,0 +1,156 @@
+{
+  "reels": [
+    {
+      "id": "reel-christmas-magic-30s",
+      "title": "Christmas Magic \u2014 30s",
+      "file": "/workspace/public/assets/christmas/reels/final/christmas-magic-30s.mp4",
+      "probe": {
+        "duration": 30.266667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15888709,
+        "size": 60112286,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cinematic-santa-london",
+        "short-cinematic-polar-express",
+        "short-npj-04-viaduct-wide",
+        "short-npj-05-village-arrival",
+        "short-cinematic-workshop",
+        "short-christmas-master-08",
+        "short-cinematic-rockefeller",
+        "short-npj-11-plaza",
+        "short-christmas-master-07"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/reels/posters/reel-christmas-magic-30s.jpg"
+    },
+    {
+      "id": "reel-christmas-new-york-30s",
+      "title": "Christmas in New York \u2014 30s",
+      "file": "/workspace/public/assets/christmas/reels/final/christmas-new-york-30s.mp4",
+      "probe": {
+        "duration": 29.3,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 16150391,
+        "size": 59150808,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cinematic-plaza-hotel",
+        "reel-01",
+        "short-cinematic-rockefeller",
+        "short-ice-nyc",
+        "short-christmas-master-02",
+        "short-cinematic-coca-cola-truck",
+        "short-global-04-plaza",
+        "reel-06",
+        "short-npj-11-plaza"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/reels/posters/reel-christmas-new-york-30s.jpg"
+    },
+    {
+      "id": "reel-christmas-escape-30s",
+      "title": "Christmas Escape \u2014 30s",
+      "file": "/workspace/public/assets/christmas/reels/final/christmas-escape-30s.mp4",
+      "probe": {
+        "duration": 30.0,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15891477,
+        "size": 59593042,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-global-01-lapland",
+        "short-npj-04-viaduct-wide",
+        "short-global-02-alps",
+        "short-christmas-master-01",
+        "reel-kling-04-chalet",
+        "short-npj-01-train-window",
+        "short-cinematic-polar-express",
+        "short-christmas-master-10",
+        "short-npj-03-aurora-window"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/reels/posters/reel-christmas-escape-30s.jpg"
+    },
+    {
+      "id": "reel-christmas-dream-home-30s",
+      "title": "Christmas Dream Home \u2014 30s",
+      "file": "/workspace/public/assets/christmas/reels/final/christmas-dream-home-30s.mp4",
+      "probe": {
+        "duration": 30.466667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15305344,
+        "size": 58287855,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cinematic-home-alone-house",
+        "short-palace-01-establish",
+        "short-palace-02-approach",
+        "short-palace-04-entrance",
+        "short-palace-05-hero",
+        "short-global-03-home",
+        "reel-cozy-01",
+        "reel-04",
+        "reel-03",
+        "reel-cozy-03"
+      ],
+      "clip_count": 10,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/reels/posters/reel-christmas-dream-home-30s.jpg"
+    },
+    {
+      "id": "reel-christmas-childhood-30s",
+      "title": "Christmas Childhood \u2014 30s",
+      "file": "/workspace/public/assets/christmas/reels/final/christmas-childhood-30s.mp4",
+      "probe": {
+        "duration": 30.166667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15987199,
+        "size": 60570090,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-christmas-master-10",
+        "short-christmas-master-09",
+        "reel-kling-01-train",
+        "short-npj-02-station",
+        "reel-kling-02-santa",
+        "short-santa-02-sleigh",
+        "short-kids-sled",
+        "short-christmas-master-05",
+        "short-npj-10-snowman",
+        "short-npj-09-window-sleigh"
+      ],
+      "clip_count": 10,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/reels/posters/reel-christmas-childhood-30s.jpg",
+      "trimmed_to": "30.17s"
+    }
+  ],
+  "reels_assembled_at": "2026-09-21T21:13:39.478500+00:00",
+  "status": "COMPLETE",
+  "execution_seconds": 169.98,
+  "audio": "none"
+}

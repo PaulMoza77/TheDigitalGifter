@@ -110,6 +110,16 @@ describe("admin video library", () => {
       ),
     ).toBe(true);
     expect(
+      searchLibraryVideos("Christmas Magic", "christmas_reels", "reel").some(
+        (item) => item.id === "reel-christmas-magic-30s",
+      ),
+    ).toBe(true);
+    expect(
+      searchLibraryVideos("Christmas in New York", "christmas_reels", "reel").some(
+        (item) => item.id === "reel-christmas-new-york-30s",
+      ),
+    ).toBe(true);
+    expect(
       searchLibraryVideos("ready-to-post", "christmas_reels", "reel").length,
     ).toBeGreaterThanOrEqual(8);
     expect(
@@ -162,6 +172,11 @@ describe("admin video library", () => {
       "public/assets/christmas/np-journey/final/one_magical_christmas_night_reel_03.mp4",
       "public/assets/christmas/np-journey/final/viral_train_north_pole_short_04.mp4",
       "public/assets/christmas/np-journey/final/viral_most_magical_night_short_05.mp4",
+      "public/assets/christmas/reels/final/christmas-magic-30s.mp4",
+      "public/assets/christmas/reels/final/christmas-new-york-30s.mp4",
+      "public/assets/christmas/reels/final/christmas-escape-30s.mp4",
+      "public/assets/christmas/reels/final/christmas-dream-home-30s.mp4",
+      "public/assets/christmas/reels/final/christmas-childhood-30s.mp4",
       "public/assets/christmas/np-journey/posters/reel-np-journey-01.jpg",
       "public/assets/christmas/library-stills/np_journey_viaduct_aurora_wide.jpg",
       "public/assets/christmas/cinematic-sep20/masters/cinematic_08_grinch.mp4",
