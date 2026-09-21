@@ -1,9 +1,9 @@
-import { MemoryRouter } from "react-router-dom";
 import { accessFromGrants } from "../entitlements";
 import { buildPlannerSnapshot } from "../intelligence/snapshot";
 import { buildModuleCards, collectHomeNextActions, homeProgressFromReadiness } from "./homeStats";
 import { PlannerHomeRail } from "./PlannerHomeRail";
 import { PlannerModuleGrid } from "./PlannerModuleCard";
+import { PlannerSearch } from "./PlannerSearch";
 import type { PlannerProfile } from "../types";
 import "../plannerApp.css";
 
@@ -63,8 +63,7 @@ export default function PlannerHomeVisualPage() {
   const progress = homeProgressFromReadiness(42, cards);
 
   return (
-    <MemoryRouter>
-      <div className="tdg-planner-app tdg-planner-home-preview">
+    <div className="tdg-planner-app tdg-planner-home-preview">
         <div className="tdg-planner-frame">
           <aside className="tdg-planner-side" aria-label="Preview sidebar">
             <div className="tdg-planner-side-brand">
@@ -80,6 +79,12 @@ export default function PlannerHomeVisualPage() {
               <a href="/account/christmas/food">Meals</a>
               <a href="/account/christmas/recipes">Recipes</a>
               <a href="/account/christmas/shopping">Shopping</a>
+              <div className="tdg-planner-more-group">
+                <button type="button">More</button>
+              </div>
+              <button type="button" className="tdg-planner-side-idea">
+                Need an idea?
+              </button>
             </nav>
             <div className="tdg-planner-side-foot">
               <a href="/account/dashboard">
@@ -102,6 +107,7 @@ export default function PlannerHomeVisualPage() {
                   <h1>Good morning, Lauren!</h1>
                   <p>A calmer, happier Christmas is just a few clicks away. 🎄</p>
                 </div>
+                <PlannerSearch compact />
               </header>
               <div className="tdg-planner-hub-body">
                 <PlannerModuleGrid cards={cards} />
@@ -120,6 +126,5 @@ export default function PlannerHomeVisualPage() {
           </nav>
         </div>
       </div>
-    </MemoryRouter>
   );
 }

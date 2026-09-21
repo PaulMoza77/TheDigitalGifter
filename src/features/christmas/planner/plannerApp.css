@@ -2686,10 +2686,12 @@ button.tdg-planner-module-card {
   margin-bottom: 12px;
 }
 
-.tdg-planner-upgrade-card .tdg-planner-btn {
+.tdg-planner-upgrade-card .tdg-planner-btn,
+.tdg-planner-upgrade-card .tdg-planner-btn.primary {
   width: 100%;
   background: var(--planner-red);
   border-color: transparent;
+  color: #fff;
 }
 
 .tdg-planner-upgrade-card ul {
@@ -2766,6 +2768,13 @@ button.tdg-planner-module-card {
     min-height: 84px;
     padding: 12px 14px 14px;
   }
+}
+
+.tdg-planner-home-preview.tdg-planner-app {
+  min-height: 100dvh;
+}
+.tdg-planner-home-preview .tdg-planner-frame {
+  min-height: 100dvh;
 }
 
 @media (min-width: 1440px) {

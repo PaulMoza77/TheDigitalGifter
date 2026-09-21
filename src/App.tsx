@@ -638,7 +638,10 @@ function AppInner() {
       <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
           {import.meta.env.DEV ? (
-            <Route path="/dev/library" element={<AdminLibraryPage />} />
+            <>
+              <Route path="/dev/library" element={<AdminLibraryPage />} />
+              <Route path="/dev/planner-home" element={<PlannerHomeVisualPage />} />
+            </>
           ) : null}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -685,9 +688,6 @@ function AppInner() {
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/christmas/planner" element={<ChristmasPlannerPage />} />
             <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
-            {import.meta.env.DEV ? (
-              <Route path="/dev/planner-home" element={<PlannerHomeVisualPage />} />
-            ) : null}
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
