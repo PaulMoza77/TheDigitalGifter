@@ -28,5 +28,7 @@ describe("isSupportWidgetHidden", () => {
     expect(isSupportWidgetHidden("/pet/order")).toBe(false);
     expect(isSupportWidgetHidden("/")).toBe(false);
     expect(isSupportWidgetHidden("/account")).toBe(false);
+    expect(isSupportWidgetHidden("/account/christmas")).toBe(true);
+    expect(isSupportWidgetHidden("/account/christmas/gifts")).toBe(true);
   });
 });

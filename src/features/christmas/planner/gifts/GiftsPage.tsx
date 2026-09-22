@@ -263,8 +263,11 @@ export function ChristmasPlannerGiftsPage() {
 
   const header = (
     <header className="tdg-gifts-head">
+      <div className="tdg-gifts-head-hero" aria-hidden="true">
+        <img src="/christmas/planner/gifts-editorial.webp" alt="" decoding="async" />
+      </div>
       <div className="tdg-gifts-head-copy">
-        <p className="tdg-planner-kicker">Gift list</p>
+        <p className="tdg-planner-kicker">Thoughtful gifts. Happier moments.</p>
         <h1>Gifts</h1>
         <p>Everyone you love. Everything in one place.</p>
         <p className="tdg-planner-sr">People first.</p>
@@ -407,56 +410,56 @@ export function ChristmasPlannerGiftsPage() {
                 <Link to="/account/christmas/shopping">Open gift shopping</Link>
               </p>
             ) : null}
+            <aside className="tdg-gifts-context" aria-label="Gift help">
+              <div className="tdg-gifts-context-mood">
+                <p>
+                  It’s not just about gifts.
+                  <br />
+                  It’s about the people who make Christmas special.
+                </p>
+              </div>
+              {attention ? (
+                <div className="tdg-gifts-context-card">
+                  <p className="tdg-planner-kicker">Need inspiration?</p>
+                  <h2>Still need something for {attention.person.display_name}?</h2>
+                  <p>
+                    {attention.stats.total === 0
+                      ? "No gifts yet."
+                      : `${attention.stats.toBuy} ${attention.stats.toBuy === 1 ? "gift" : "gifts"} left to buy.`}
+                    {attention.row?.remainingMinor != null
+                      ? ` ${formatPlannerMoney(Math.max(0, attention.row.remainingMinor), currency)} remaining.`
+                      : ""}
+                  </p>
+                  <button type="button" className="tdg-planner-btn primary" onClick={() => findIdeaFor(attention.person)}>
+                    Find an idea
+                  </button>
+                </div>
+              ) : (
+                <div className="tdg-gifts-context-card">
+                  <p className="tdg-planner-kicker">Christmas gift progress</p>
+                  <h2>
+                    {overview.giftsPlanned} / {overview.giftsTotal || overview.giftsPlanned} planned
+                  </h2>
+                  <p>Everyone on your list has something in motion.</p>
+                </div>
+              )}
+              {overview.budgetMinor != null ? (
+                <div className="tdg-gifts-context-card is-quiet">
+                  <p className="tdg-planner-kicker">Budget</p>
+                  <p>
+                    {formatPlannerMoney(overview.spentMinor || overview.committedMinor, currency)} /{" "}
+                    {formatPlannerMoney(overview.budgetMinor, currency)}
+                  </p>
+                  <Link to="/account/christmas/budget">Open budget →</Link>
+                </div>
+              ) : (
+                <div className="tdg-gifts-context-card is-quiet">
+                  <p className="tdg-planner-kicker">Budget</p>
+                  <Link to="/account/christmas/budget">Set a gift budget →</Link>
+                </div>
+              )}
+            </aside>
           </div>
-          <aside className="tdg-gifts-context" aria-label="Gift help">
-            <div className="tdg-gifts-context-mood">
-              <p>
-                It’s not just about gifts.
-                <br />
-                It’s about the people who make Christmas special.
-              </p>
-            </div>
-            {attention ? (
-              <div className="tdg-gifts-context-card">
-                <p className="tdg-planner-kicker">Need inspiration?</p>
-                <h2>Still need something for {attention.person.display_name}?</h2>
-                <p>
-                  {attention.stats.total === 0
-                    ? "No gifts yet."
-                    : `${attention.stats.toBuy} ${attention.stats.toBuy === 1 ? "gift" : "gifts"} left to buy.`}
-                  {attention.row?.remainingMinor != null
-                    ? ` ${formatPlannerMoney(Math.max(0, attention.row.remainingMinor), currency)} remaining.`
-                    : ""}
-                </p>
-                <button type="button" className="tdg-planner-btn primary" onClick={() => findIdeaFor(attention.person)}>
-                  Find an idea
-                </button>
-              </div>
-            ) : (
-              <div className="tdg-gifts-context-card">
-                <p className="tdg-planner-kicker">Christmas gift progress</p>
-                <h2>
-                  {overview.giftsPlanned} / {overview.giftsTotal || overview.giftsPlanned} planned
-                </h2>
-                <p>Everyone on your list has something in motion.</p>
-              </div>
-            )}
-            {overview.budgetMinor != null ? (
-              <div className="tdg-gifts-context-card is-quiet">
-                <p className="tdg-planner-kicker">Budget</p>
-                <p>
-                  {formatPlannerMoney(overview.spentMinor || overview.committedMinor, currency)} /{" "}
-                  {formatPlannerMoney(overview.budgetMinor, currency)}
-                </p>
-                <Link to="/account/christmas/budget">Open budget</Link>
-              </div>
-            ) : (
-              <div className="tdg-gifts-context-card is-quiet">
-                <p className="tdg-planner-kicker">Budget</p>
-                <Link to="/account/christmas/budget">Set a gift budget</Link>
-              </div>
-            )}
-          </aside>
         </div>
       )}
 

@@ -12,13 +12,26 @@ describe("planner visual language is shared from My Planner", () => {
   const gate = readSrc("src/routes/ProtectedClientRoute.tsx");
 
   it("keeps the cream token set as the private-app source of truth", () => {
-    expect(css).toContain("--planner-cream: #f7f1e8");
+    expect(css).toContain("--planner-cream: #faf8f6");
     expect(css).toContain("--planner-parchment: #f3eadc");
     expect(css).toContain("--planner-ink: #1c1612");
-    expect(css).toContain("--planner-burgundy: #b5232e");
+    expect(css).toContain("--planner-burgundy: #a60a0a");
     expect(css).toContain("--planner-gold: #c4a574");
-    expect(css).toContain("--planner-surface: #fffdf9");
+    expect(css).toContain("--planner-surface: #ffffff");
     expect(css).toContain("--planner-radius: 16px");
+    expect(css).toContain("--planner-pine: #0a3a2a");
+  });
+
+  it("docks Christmas Copilot as a photo-backed desktop rail", () => {
+    expect(css).toContain(".tdg-xmas-copilot");
+    expect(css).toContain(".tdg-planner-copilot-rail");
+    expect(css).toContain("background-size: cover");
+    expect(readSrc("src/features/christmas/planner/copilot/ChristmasCopilotPanel.tsx")).toContain(
+      "/christmas/planner/copilot-cozy.webp",
+    );
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx")).toContain(
+      "ChristmasCopilotRail",
+    );
   });
 
   it("exports shared primitives used across modules", () => {
@@ -52,7 +65,7 @@ describe("planner visual language is shared from My Planner", () => {
 
   it("uses cream loading for planner auth instead of a black flash", () => {
     expect(gate).toContain("Opening your Christmas…");
-    expect(gate).toContain("#f7f1e8");
+    expect(gate).toContain("#faf8f6");
   });
 
   it("loads every planner module with PlannerLoading", () => {

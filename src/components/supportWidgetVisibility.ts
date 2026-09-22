@@ -5,7 +5,9 @@ export function isSupportWidgetHidden(pathname: string) {
     pathname.includes("/funnel") ||
     pathname.includes("/checkout") ||
     pathname.includes("/payment") ||
-    pathname.includes("/credits")
+    pathname.includes("/credits") ||
+    pathname.startsWith("/account/christmas") ||
+    pathname.startsWith("/dev/planner-visual")
   ) {
     return true;
   }

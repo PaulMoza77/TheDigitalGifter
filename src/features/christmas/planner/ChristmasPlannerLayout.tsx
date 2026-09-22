@@ -24,7 +24,7 @@ import { onPlannerWorkspaceBump, subscribePlannerReadiness } from "./workspaceSy
 import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
-import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
+import { ChristmasCopilotRail, CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
 import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import { PlannerGiftMark, PlannerTreeMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
@@ -84,6 +84,13 @@ function PlannerAppShell() {
   }
 
   const daysLeft = useMemo(() => daysUntilChristmas(new Date(), profile?.timezone), [profile?.timezone]);
+  const frameClass = [
+    "tdg-planner-frame",
+    copilot?.enabled && copilot.desktop ? "tdg-planner-frame--copilot" : "",
+    sideCollapsed ? "is-side-collapsed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -132,7 +139,7 @@ function PlannerAppShell() {
   return (
     <>
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex nofollow exactTitle />
-      <div className={`tdg-planner-frame${sideCollapsed ? " is-side-collapsed" : ""}`}>
+      <div className={frameClass}>
         <header className="tdg-planner-header">
           <a className="tdg-planner-logo" href="/account/christmas" aria-label="Christmas Planner">
             <img src="/TheDigitalGifter.png" alt="" width={36} height={36} decoding="async" />
@@ -213,6 +220,7 @@ function PlannerAppShell() {
           ) : null}
           {loading ? <PlannerLoading /> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>
+        <ChristmasCopilotRail />
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
           <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")}>
             <Home size={18} strokeWidth={1.7} aria-hidden />
