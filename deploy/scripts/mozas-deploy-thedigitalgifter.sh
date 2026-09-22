@@ -26,6 +26,14 @@ fi
 [[ -f "${TDG_REPO}/Dockerfile" ]] || die "missing ${TDG_REPO}/Dockerfile"
 [[ -f "${TDG_COMPOSE}" ]] || die "missing TDG compose file"
 mkdir -p "${TDG_RELEASES}"
+CLIP_FACTORY_MEDIA="${TDG_DIR}/media"
+LONG_FORM_DATA="${TDG_DIR}/data/long-form"
+mkdir -p "${CLIP_FACTORY_MEDIA}" "${LONG_FORM_DATA}/productions"
+chmod 0775 "${TDG_DIR}/data" "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" "${CLIP_FACTORY_MEDIA}" || true
+chown -R 100:101 "${LONG_FORM_DATA}" "${CLIP_FACTORY_MEDIA}" 2>/dev/null || chmod 0777 "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" "${CLIP_FACTORY_MEDIA}" || true
+[[ -d "${LONG_FORM_DATA}" ]] || die "missing persistent long-form data directory ${LONG_FORM_DATA}"
+[[ -d "${CLIP_FACTORY_MEDIA}" ]] || die "missing persistent Clip Factory media directory ${CLIP_FACTORY_MEDIA}"
+log "persistent media dirs ready long-form=${LONG_FORM_DATA} clip-factory=${CLIP_FACTORY_MEDIA}"
 
 for k in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
   val="$(grep -E "^${k}=" "${TDG_SECRETS}" | head -1 | cut -d= -f2- || true)"

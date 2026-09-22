@@ -381,7 +381,7 @@ export default function AdminLongFormStudioPage() {
                       void longFormApi.retryProduction(id).then((row) => setProduction(row.production)).catch((err: Error) => toast.error(err.message));
                     }}
                   >
-                    Retry
+                    Retry saving
                   </button>
                 </div>
               ) : null}
@@ -392,7 +392,10 @@ export default function AdminLongFormStudioPage() {
                     <a href={playback} className="rounded-full bg-amber-100 px-4 py-2 text-sm text-zinc-900" target="_blank" rel="noreferrer">
                       Play
                     </a>
-                    <a href={playback} download className="rounded-full border border-white/20 px-4 py-2 text-sm">
+                    <a
+                      href={`${playback}${playback.includes("?") ? "&" : "?"}download=1`}
+                      className="rounded-full border border-white/20 px-4 py-2 text-sm"
+                    >
                       Download
                     </a>
                     {libraryId ? (

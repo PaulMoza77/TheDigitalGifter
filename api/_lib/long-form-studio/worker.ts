@@ -16,11 +16,18 @@ import { ensureAllOriginalMusic } from "./originalMusic";
 import { assertCreatePayload } from "./validateInput";
 import {
   LONG_FORM_BUCKET,
+  LONG_FORM_VPS_BUCKET,
   bucketHeadroom,
+  chooseStorageBackend,
   hashFile,
+  isPermanentSupabaseReject,
   longFormLocalAllowed,
+  persistObjectToVps,
+  resolveVpsAbsolutePath,
   signedStorageDownload,
   uploadObjectStreaming,
+  verifyDurableFile,
+  vpsStorageReady,
 } from "./storage";
 import { getServiceClient } from "../christmas/supabaseClient";
 import type { VisualAssetRights } from "../../../src/features/long-form-studio/types";
@@ -276,6 +283,12 @@ export async function processProductionById(productionId: string, workDir?: stri
     await bucketHeadroom(parsed.durationSeconds >= 3600 ? 2_000_000_000 : 80_000_000);
     const existingFinal = join(dir, "final.mp4");
     const existingThumb = join(dir, "thumb.jpg");
+    const durableVideo = vpsStorageReady()
+      ? resolveVpsAbsolutePath(`productions/${productionId}/final.mp4`)
+      : "";
+    const durableThumb = vpsStorageReady()
+      ? resolveVpsAbsolutePath(`productions/${productionId}/thumb.jpg`)
+      : "";
     let rendered:
       | {
           outputPath: string;
@@ -283,17 +296,29 @@ export async function processProductionById(productionId: string, workDir?: stri
           probe: { duration: number; width: number; height: number; hasAudio?: boolean; fileSize: number | null };
         }
       | undefined;
-    if (existsSync(existingFinal)) {
-      const probe = await ffprobeFile(existingFinal);
+    const reuseCandidates = [durableVideo, existingFinal].filter((path) => path && existsSync(path));
+    for (const candidate of reuseCandidates) {
+      const probe = await ffprobeFile(candidate);
       if (Math.abs(probe.duration - parsed.durationSeconds) <= 3 && probe.width >= 1920 && probe.hasAudio) {
-        if (!existsSync(existingThumb)) {
-          await extractThumbnail(existingFinal, Math.min(8, probe.duration / 5), existingThumb);
+        let thumbPath = existsSync(durableThumb) ? durableThumb : existingThumb;
+        if (!existsSync(thumbPath)) {
+          thumbPath = existingThumb;
+          await extractThumbnail(candidate, Math.min(8, probe.duration / 5), thumbPath);
         }
-        rendered = { outputPath: existingFinal, thumbnailPath: existingThumb, probe };
+        rendered = { outputPath: candidate, thumbnailPath: thumbPath, probe };
+        console.log(
+          JSON.stringify({
+            source: "long-form-studio",
+            event: "reuse_existing_render",
+            production_id: productionId,
+            path: candidate,
+          }),
+        );
         production.stage = "saving_to_library";
         production.progress = 90;
         production.progress_label = STAGE_LABELS.saving_to_library;
         await persistProduction(production, { requireRemote: !longFormLocalAllowed() });
+        break;
       }
     }
     if (!rendered) {
@@ -326,12 +351,41 @@ export async function processProductionById(productionId: string, workDir?: stri
     const videoKey = `productions/${productionId}/${filename}`;
     const thumbKey = `productions/${productionId}/thumb.jpg`;
     const localAllowed = longFormLocalAllowed();
-    const service = serviceIfConfigured();
+    const videoStat = await stat(rendered.outputPath);
+    const backend = chooseStorageBackend(videoStat.size);
+    const storageBucket =
+      backend === "vps" ? LONG_FORM_VPS_BUCKET : backend === "supabase" ? LONG_FORM_BUCKET : "local";
 
     let libraryAsset: { id: string; src: string; poster: string; storagePath: string };
-    if (service) {
-      const videoStat = await stat(rendered.outputPath);
-      await bucketHeadroom(videoStat.size);
+    if (backend === "vps") {
+      const persistedVideo = await persistObjectToVps(rendered.outputPath, videoKey);
+      const persistedThumb = await persistObjectToVps(rendered.thumbnailPath, thumbKey);
+      const durable = await verifyDurableFile(persistedVideo.absolutePath, videoStat.size);
+      if (!durable.ok) throw new Error(durable.message);
+      const thumbOk = await verifyDurableFile(persistedThumb.absolutePath);
+      if (!thumbOk.ok) throw new Error(thumbOk.message);
+      const sha256 = await hashFile(persistedVideo.absolutePath);
+      libraryAsset = await saveLibraryRow({
+        productionId,
+        title: plan2.titles[0]!,
+        description: plan2.description,
+        filename: `${productionId}.mp4`,
+        videoKey,
+        thumbKey,
+        bytes: persistedVideo.bytes,
+        probe: rendered.probe,
+        sceneIds: parsed.sceneIds,
+        musicTrackIds: plan2.usedTracks.map((t) => t.id),
+        rightsManifest: plan2.rights.manifest,
+        titles: plan2.titles,
+        durationSeconds: parsed.durationSeconds,
+        style: parsed.style,
+        demo: plan2.playlist.usedDemo,
+        storageBucket,
+        fileSha256: sha256,
+      });
+      production.file_size_bytes = persistedVideo.bytes;
+    } else if (backend === "supabase") {
       const uploaded = await uploadObjectStreaming({
         localPath: rendered.outputPath,
         objectPath: videoKey,
@@ -358,9 +412,10 @@ export async function processProductionById(productionId: string, workDir?: stri
         durationSeconds: parsed.durationSeconds,
         style: parsed.style,
         demo: plan2.playlist.usedDemo,
+        storageBucket,
+        fileSha256: uploaded.sha256,
       });
       production.file_size_bytes = uploaded.bytes;
-      production.persist_confirmed = true;
     } else if (localAllowed) {
       const destDir = join(process.cwd(), "output/long-form/productions");
       await mkdir(destDir, { recursive: true });
@@ -374,8 +429,6 @@ export async function processProductionById(productionId: string, workDir?: stri
         poster: signedSafe("thumb", productionId),
         storagePath: destVideo,
       };
-      production.persist_confirmed = true;
-      production.storage_bucket = "local";
     } else {
       throw new Error("Storage is not configured. The video was not saved.");
     }
@@ -394,7 +447,7 @@ export async function processProductionById(productionId: string, workDir?: stri
     production.stage = "saving_to_library";
     production.progress_label = STAGE_LABELS.saving_to_library;
     production.library_asset_id = libraryAsset.id;
-    production.storage_bucket = service ? LONG_FORM_BUCKET : production.storage_bucket;
+    production.storage_bucket = storageBucket;
     production.storage_path = videoKey;
     production.thumbnail_path = thumbKey;
     production.probe = rendered.probe;
@@ -407,15 +460,21 @@ export async function processProductionById(productionId: string, workDir?: stri
     production.similarity = plan2.similarity;
     production.soundtrack_kind = plan2.playlist.usedDemo ? "demo" : "imported";
     production.rights_status = plan2.rights.ok ? "rights_documented" : "rights_review_required";
+    production.persist_confirmed = Boolean(libraryAsset.id) && Boolean(production.storage_path);
     await persistProduction(production, { requireRemote: !longFormLocalAllowed() });
     await patchJob(jobId, { status: "completed", progress: 100, progress_label: "Saved to Library", stage: "saving_to_library" });
-    if (!workDir) await rm(dir, { recursive: true, force: true }).catch(() => undefined);
+    if (!workDir && dir.startsWith("/tmp/")) await rm(dir, { recursive: true, force: true }).catch(() => undefined);
     return { production, jobId, rights: plan2.rights, similarity: plan2.similarity, libraryAsset, rendered };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    production.status = message.toLowerCase().includes("storage") || message.toLowerCase().includes("library") ? "persist_failed" : "failed";
+    production.status =
+      message.toLowerCase().includes("storage") ||
+      message.toLowerCase().includes("library") ||
+      isPermanentSupabaseReject(message)
+        ? "persist_failed"
+        : "failed";
+    if (!production.library_asset_id) production.persist_confirmed = false;
     production.error_message = message.slice(0, 400);
-    production.persist_confirmed = false;
     await persistProduction(production, { requireRemote: false }).catch(() => undefined);
     await patchJob(jobId, { status: "failed", error_message: message.slice(0, 400) }).catch(() => undefined);
     throw error;
@@ -440,19 +499,28 @@ async function saveLibraryRow(input: {
   durationSeconds: number;
   style: StylePreset;
   demo: boolean;
+  storageBucket: string;
+  fileSha256?: string;
 }) {
   const service = serviceOrThrow();
-  const existing = await service
+  const existingByPath = await service.from("library_assets").select("id").eq("storage_path", input.videoKey).maybeSingle();
+  if (existingByPath.error) throw new Error(existingByPath.error.message);
+  const existingByProd = await service
     .from("library_assets")
     .select("id")
-    .eq("storage_path", input.videoKey)
+    .eq("kind", "long_form")
+    .filter("provenance->>production_id", "eq", input.productionId)
     .maybeSingle();
-  if (existing.error) throw new Error(existing.error.message);
+  if (existingByProd.error) throw new Error(existingByProd.error.message);
+  const existingId = existingByPath.data?.id || existingByProd.data?.id;
   const src = stableMediaPath("video", input.productionId);
   const poster = stableMediaPath("thumb", input.productionId);
+  const demoTitle = input.demo && !/DEMO/i.test(input.title) ? `${input.title} · DEMO` : input.title;
   const row = {
-    title: input.title,
-    description: input.description,
+    title: demoTitle,
+    description: input.demo
+      ? `${input.description}\n\nDEMO / Rights need review. Soundtrack is synthesized test pads, not YouTube-cleared.`
+      : input.description,
     src,
     filename: input.filename,
     category: "long_form",
@@ -461,7 +529,7 @@ async function saveLibraryRow(input: {
     width: input.probe.width,
     height: input.probe.height,
     poster_src: poster,
-    storage_bucket: LONG_FORM_BUCKET,
+    storage_bucket: input.storageBucket,
     storage_path: input.videoKey,
     thumbnail_path: input.thumbKey,
     provenance: {
@@ -476,11 +544,15 @@ async function saveLibraryRow(input: {
       created_date: new Date().toISOString(),
       style: input.style,
       demo_soundtrack: input.demo,
+      publication_status: input.demo ? "rights_review_required" : "review",
+      youtube_cleared: false,
       file_size_bytes: input.bytes,
+      file_sha256: input.fileSha256 || null,
+      storage_backend: input.storageBucket,
     },
   };
-  if (existing.data?.id) {
-    const upd = await service.from("library_assets").update(row).eq("id", existing.data.id).select("id").single();
+  if (existingId) {
+    const upd = await service.from("library_assets").update(row).eq("id", existingId).select("id").single();
     if (upd.error) throw new Error(upd.error.message);
     return { id: upd.data.id, src, poster, storagePath: input.videoKey };
   }
@@ -699,6 +771,10 @@ export async function listLibraryVideos() {
         poster: signedSafe("thumb", productionId),
         width: Number(row.width || 1920),
         height: Number(row.height || 1080),
+        demo: Boolean((row.provenance as { demo_soundtrack?: boolean } | null)?.demo_soundtrack),
+        rightsLabel: (row.provenance as { demo_soundtrack?: boolean } | null)?.demo_soundtrack
+          ? "DEMO / Rights need review"
+          : undefined,
       };
     });
   }
@@ -753,10 +829,23 @@ export async function resolveMediaRedirect(kind: string, id: string): Promise<{ 
     throw Object.assign(new Error("Media is not available."), { status: 404 });
   }
   if (service) {
-    const { data, error } = await service.from("long_form_productions").select("storage_path,thumbnail_path,storage_bucket,persist_confirmed").eq("id", id).maybeSingle();
+    const { data, error } = await service
+      .from("long_form_productions")
+      .select("storage_path,thumbnail_path,storage_bucket,persist_confirmed")
+      .eq("id", id)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     const path = kind === "thumb" ? data?.thumbnail_path : data?.storage_path;
     if (!path || !data?.persist_confirmed) throw Object.assign(new Error("Media is not available."), { status: 404 });
+    const bucket = String(data.storage_bucket || "");
+    if (bucket === LONG_FORM_VPS_BUCKET || bucket === "local") {
+      if (bucket === LONG_FORM_VPS_BUCKET) {
+        const localPath = resolveVpsAbsolutePath(String(path));
+        return { localPath, contentType: kind === "thumb" ? "image/jpeg" : "video/mp4" };
+      }
+      const dest = join(process.cwd(), "output/long-form/productions", kind === "thumb" ? `${id}.jpg` : `${id}.mp4`);
+      return { localPath: dest, contentType: kind === "thumb" ? "image/jpeg" : "video/mp4" };
+    }
     const url = await signedStorageDownload(String(path), 3600);
     return { url, contentType: kind === "thumb" ? "image/jpeg" : "video/mp4" };
   }

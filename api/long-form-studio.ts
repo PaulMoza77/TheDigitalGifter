@@ -1,6 +1,6 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { createReadStream, existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { requireClipFactoryAdmin } from "./_lib/clip-factory/admin";
 import {
   createAndRenderProduction,
@@ -56,15 +56,28 @@ async function adminOrSigned(req: NodeApiRequest, kind: string, id: string): Pro
 }
 
 function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, contentType: string) {
-  if (!existsSync(path)) {
+  const resolved = resolve(path);
+  const allowedRoots = [
+    resolve(process.env.LONG_FORM_DATA_DIR || "/data/long-form"),
+    resolve(process.cwd(), "output/long-form"),
+    resolve(process.cwd(), "public"),
+  ];
+  if (!allowedRoots.some((root) => resolved === root || resolved.startsWith(`${root}/`))) {
+    return apiError(res, 400, "invalid_path", "This media is not available.");
+  }
+  if (!existsSync(resolved)) {
     apiError(res, 404, "not_found", "This media is not available.");
     return;
   }
-  const stat = statSync(path);
+  const stat = statSync(resolved);
   const range = String(req.headers.range || "");
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Content-Type", contentType);
   res.setHeader("Cache-Control", "private, max-age=60");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (asString(req.query.download) === "1") {
+    res.setHeader("Content-Disposition", 'attachment; filename="long-form.mp4"');
+  }
   const match = /^bytes=(\d*)-(\d*)$/.exec(range);
   if (match) {
     const start = match[1] ? Number(match[1]) : 0;
@@ -79,13 +92,13 @@ function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, 
     res.setHeader("Content-Range", `bytes ${start}-${end}/${stat.size}`);
     res.setHeader("Content-Length", String(end - start + 1));
     if (req.method === "HEAD") return res.end();
-    createReadStream(path, { start, end }).pipe(res);
+    createReadStream(resolved, { start, end }).pipe(res);
     return;
   }
   res.status(200);
   res.setHeader("Content-Length", String(stat.size));
   if (req.method === "HEAD") return res.end();
-  createReadStream(path).pipe(res);
+  createReadStream(resolved).pipe(res);
 }
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {

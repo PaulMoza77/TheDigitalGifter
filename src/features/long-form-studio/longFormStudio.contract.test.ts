@@ -35,7 +35,12 @@ describe("long-form studio wiring", () => {
     expect(sql).toContain("create table if not exists public.music_tracks");
     expect(sql).toContain("create table if not exists public.long_form_productions");
     expect(sql).not.toMatch(/drop table/i);
-    expect(read("src/pages/admin/AdminLibraryPage.tsx")).toContain("longFormApi");
+    expect(read("deploy/docker-compose.yml")).toContain("/opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory");
+    expect(read("deploy/docker-compose.yml")).toContain("/opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form");
+    expect(read("deploy/docker-compose.yml")).toContain("LONG_FORM_DATA_DIR: /data/long-form");
+    expect(read("api/_lib/long-form-studio/storage.ts")).toContain("LONG_FORM_VPS_BUCKET");
+    expect(read("api/_lib/long-form-studio/worker.ts")).toContain("reuse_existing_render");
+    expect(read("api/long-form-studio.ts")).toContain("Accept-Ranges");
     expect(read("src/features/admin-library/catalog.ts")).toContain("long_form");
   });
 });
