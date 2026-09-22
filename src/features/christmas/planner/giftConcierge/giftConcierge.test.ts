@@ -160,7 +160,7 @@ describe("gift concierge context", () => {
 
 describe("gift concierge wiring", () => {
   it("does not navigate Need an idea away from the Planner", () => {
-    const page = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const page = readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx");
     expect(page).not.toContain("/christmas/gift-finder?plannerRecipient");
     expect(page).toContain("setConciergeOpen(true)");
     expect(page).toContain("<GiftConcierge");
@@ -202,7 +202,7 @@ describe("gift concierge wiring", () => {
     expect(add).toContain("affiliateUrl");
     expect(add).toContain("price_checked_at");
     expect(add).toContain('status: "planned"');
-    const giftsPage = readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx");
+    const giftsPage = readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx");
     expect(giftsPage).toContain("PlannerGiftOutboundLink");
     const shopping = readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx");
     expect(shopping).toContain("PlannerGiftOutboundLink");
