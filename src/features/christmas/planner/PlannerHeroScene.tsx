@@ -4,7 +4,7 @@ import { usePrefersReducedMotion } from "../landing/usePrefersReducedMotion";
 
 function pickHeroLoop(): string {
   if (typeof window === "undefined") return LANDING_ASSETS.cabinLoop720;
-  return window.matchMedia("(min-width: 901px)").matches
+  return window.matchMedia("(min-width: 744px)").matches
     ? LANDING_ASSETS.cabinLoop
     : LANDING_ASSETS.cabinLoop720;
 }

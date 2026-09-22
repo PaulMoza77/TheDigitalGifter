@@ -8,7 +8,7 @@ export const PLANNER_FAQS = [
   },
   {
     q: "Is this a PDF? Does it work on my phone?",
-    a: "It is an interactive online planner in your browser - not a PDF and not a store app. It is built for phones first and also works on desktop.",
+    a: "It is an interactive online planner in your browser - not a PDF and not a store app. It is laid out for phone, iPad, and computer, so you can plan from the device you already use.",
   },
   {
     q: "Is $17 a subscription, and how long does access last?",

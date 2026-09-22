@@ -157,7 +157,7 @@
   cursor: pointer;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 744px) {
   .tdg-planner-account-chrome {
     display: inline-flex;
   }
@@ -1282,7 +1282,7 @@
   outline-offset: 2px;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 744px) {
   html:has(.tdg-planner-app:not(.tdg-planner-app--auth)),
   body:has(.tdg-planner-app:not(.tdg-planner-app--auth)),
   #root:has(.tdg-planner-app:not(.tdg-planner-app--auth)) {
@@ -1390,6 +1390,32 @@
   }
   .tdg-planner-summary-cell:last-child {
     border-right: 0;
+  }
+}
+
+@media (min-width: 744px) and (max-width: 1279px) {
+  .tdg-planner-frame {
+    grid-template-columns: 188px minmax(0, 1fr);
+  }
+  .tdg-planner-side {
+    padding: 16px 10px 14px;
+  }
+  .tdg-planner-side-brand strong {
+    font-size: 1.28rem;
+  }
+  .tdg-planner-side a,
+  .tdg-planner-side-copilot {
+    min-height: 44px;
+    padding: 0 10px;
+  }
+  .tdg-planner-main {
+    padding: 18px 22px 48px;
+  }
+}
+
+@media (min-width: 744px) and (max-width: 959px) {
+  .tdg-gifts-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1937,7 +1963,7 @@
   margin-bottom: 12px;
 }
 
-@media (max-width: 959px) {
+@media (max-width: 743px) {
   .tdg-planner-header .tdg-copilot-launch:not(.is-fab) {
     display: none;
   }
@@ -2716,11 +2742,13 @@
   transition: border-color 160ms ease, background 160ms ease;
 }
 
-.tdg-gifts-card:hover,
-.tdg-gifts-add-card:hover {
-  transform: none;
-  border-color: rgba(181, 35, 46, 0.28);
-  box-shadow: none;
+@media (hover: hover) and (pointer: fine) {
+  .tdg-gifts-card:hover,
+  .tdg-gifts-add-card:hover {
+    transform: none;
+    border-color: rgba(181, 35, 46, 0.28);
+    box-shadow: none;
+  }
 }
 
 .tdg-gifts-card-visual {
@@ -3227,7 +3255,7 @@
   }
 }
 
-@media (min-width: 960px) {
+@media (min-width: 744px) {
   .tdg-planner-header-meta > a {
     display: none;
   }

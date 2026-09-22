@@ -359,6 +359,9 @@ describe("christmas planner wiring", () => {
     expect(css).toContain("--pl-shell");
     expect(css).toContain("tdg-pl__pay-surface");
     expect(css).toContain("tdg-pl__pay-btn");
+    expect(css).toContain("@media (min-width: 744px)");
+    expect(css).toContain("@media (min-width: 744px) and (max-height: 900px)");
+    expect(page).toContain("Works on phone, iPad, and computer");
   });
 
   it("shows a product demo and clear offer without quiz-gated checkout", () => {
