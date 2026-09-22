@@ -11,6 +11,7 @@ import {
   isLibraryPhoto,
   librarySrcPath,
   searchLibraryVideos,
+  sortLibraryNewestFirst,
 } from "./catalog";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -51,6 +52,9 @@ describe("admin video library", () => {
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
     expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
+    expect(searchLibraryVideos("", "christmas_reels", "reel")[0]?.id).toBe("reel-pick-one-i2v");
+    expect(searchLibraryVideos("", "christmas_reels", "short")[0]?.id).toBe("short-pick-one-04-christmas-mansion");
+    expect(searchLibraryVideos("", "christmas_reels", "photo")[0]?.id).toBe("photo-pick-one-01-cabin");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -256,6 +260,28 @@ describe("admin video library", () => {
     expect(manifest.wording_shortened).toBe(true);
   });
 
+  it("sorts library results newest-first without requiring a search", () => {
+    const older = LIBRARY_VIDEOS.find((item) => item.id === "reel-lauren-overwhelm-master");
+    const newest = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
+    expect(older && newest).toBeTruthy();
+    const reordered = sortLibraryNewestFirst([older!, newest!]);
+    expect(reordered.map((item) => item.id)).toEqual(["reel-pick-one-i2v", "reel-lauren-overwhelm-master"]);
+    const reels = searchLibraryVideos("", "christmas_reels", "reel");
+    const pickOne = reels.findIndex((item) => item.id === "reel-pick-one-i2v");
+    const stillCuts = reels.findIndex((item) => item.id === "reel-pick-one-christmas");
+    const lauren = reels.findIndex((item) => item.id === "reel-lauren-overwhelm-master");
+    expect(pickOne).toBe(0);
+    expect(stillCuts).toBeGreaterThan(pickOne);
+    expect(lauren).toBeGreaterThan(stillCuts);
+    const photos = searchLibraryVideos("", "christmas_reels", "photo");
+    expect(photos.slice(0, 4).map((item) => item.id)).toEqual([
+      "photo-pick-one-01-cabin",
+      "photo-pick-one-02-penthouse",
+      "photo-pick-one-03-chalet",
+      "photo-pick-one-04-mansion",
+    ]);
+  });
+
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
@@ -263,6 +289,7 @@ describe("admin video library", () => {
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
+    expect(page).toContain("Newest videos stay on top");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
     expect(page).toContain("onShare");
