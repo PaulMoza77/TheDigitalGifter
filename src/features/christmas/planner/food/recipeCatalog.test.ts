@@ -54,5 +54,7 @@ describe("recipe explorer filters", () => {
     const menu = suggestMenu(rows, { guests: 12, sitting: "christmas_eve" });
     expect(menu.map((r) => r.id).sort()).toEqual(["app", "dessert", "main", "side"].sort());
     expect(formatMinutes(260)).toBe("4h 20m");
+    const nutty = recipe({ id: "nuts", title: "Walnut tart", category: "desserts", course: "dessert", ingredients: ["handful walnuts"] });
+    expect(suggestMenu([...rows, nutty], { guests: 8, sitting: "christmas_day", allergen: "nuts" }).map((r) => r.id)).not.toContain("nuts");
   });
 });

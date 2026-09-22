@@ -73,6 +73,7 @@ describe("planner visual language is shared from My Planner", () => {
       "src/features/christmas/planner/ChristmasPlannerPages.tsx",
       "src/features/christmas/planner/ChristmasPlannerMoreModules.tsx",
       "src/features/christmas/planner/food/FoodPages.tsx",
+      "src/features/christmas/planner/food/MealsPage.tsx",
       "src/features/christmas/planner/BudgetPage.tsx",
       "src/features/christmas/planner/gifts/GiftsPage.tsx",
     ];

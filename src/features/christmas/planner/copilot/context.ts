@@ -123,6 +123,26 @@ export function buildCopilotSuggestions(
         },
       ];
     case "meals":
+      return [
+        {
+          id: "meal-plan",
+          label: "Create a dinner plan for 8.",
+          prompt: "Create a dinner plan for 8.",
+          icon: "meal",
+        },
+        {
+          id: "meal-prep",
+          label: "What should I prep tomorrow?",
+          prompt: "What should I prep tomorrow?",
+          icon: "task",
+        },
+        {
+          id: "meal-rescue",
+          label: "Give me a rescue plan.",
+          prompt: "Give me a rescue plan.",
+          icon: "spark",
+        },
+      ];
     case "recipes":
     case "grocery":
       return [
@@ -265,7 +285,16 @@ export function buildCopilotNextWin(
     };
   }
 
-  if (module === "meals" || module === "recipes" || module === "grocery") {
+  if (module === "meals") {
+    return {
+      title: "Your next little win",
+      body: "Build a balanced four-course menu for Christmas Day.",
+      cta: "Plan dinner →",
+      prompt: "Create a dinner plan for 8.",
+    };
+  }
+
+  if (module === "recipes" || module === "grocery") {
     return {
       title: "Your next little win",
       body: "Lock a calm Christmas dinner plan",
