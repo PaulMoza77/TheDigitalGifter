@@ -78,7 +78,7 @@ function fetchChristmasFunnel(
   });
 }
 
-async function readVercelFunnelResponse<T>(response: Response): Promise<T | typeof ROUTE_UNAVAILABLE> {
+async function readOriginFunnelResponse<T>(response: Response): Promise<T | typeof ROUTE_UNAVAILABLE> {
   const payload = (await response.json().catch(() => null)) as FunnelErrorPayload | null;
   const hasAppErrorShape = Boolean(payload && typeof payload === "object" && typeof payload.code === "string");
   if (response.ok) {
@@ -86,7 +86,7 @@ async function readVercelFunnelResponse<T>(response: Response): Promise<T | type
     return payload as T;
   }
   // Only known application errors (our apiError() shape) should short-circuit the fallback.
-  // A bare 404/502 with no matching body means the Vercel route itself is missing/broken.
+  // A bare 404/502 with no matching body means the same-origin route itself is missing/broken.
   if ((response.status === 404 || response.status === 502) && !hasAppErrorShape) {
     return ROUTE_UNAVAILABLE;
   }
@@ -105,7 +105,7 @@ async function callChristmasFunnel<T>(action: string, body: Record<string, unkno
   const edgeUrl = `${url.replace(/\/$/, "")}/functions/v1/christmas-funnel`;
   const edgeHeaders = { apikey: anon, Authorization: `Bearer ${auth}` };
 
-  // Prefer Supabase Edge — production does not depend on Vercel deploy.
+  // Prefer Supabase Edge. The VPS origin is the fallback.
   try {
     const response = await fetchChristmasFunnel(edgeUrl, edgeHeaders, action, body);
     const payload = (await response.json().catch(() => ({}))) as FunnelErrorPayload;
@@ -123,10 +123,10 @@ async function callChristmasFunnel<T>(action: string, body: Record<string, unkno
     if (name === "AbortError" || name === "TimeoutError") {
       throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
     }
-    // Network-level failure — fall through to same-origin Vercel route below.
+    // Network-level failure — fall through to the same-origin VPS route below.
   }
 
-  // Fallback: same-origin Vercel port (local dev / when Vercel is available).
+  // Fallback: same-origin Node route on the VPS (and local Vite).
   try {
     const response = await fetchChristmasFunnel(
       "/api/christmas-funnel",
@@ -134,7 +134,7 @@ async function callChristmasFunnel<T>(action: string, body: Record<string, unkno
       action,
       body,
     );
-    const result = await readVercelFunnelResponse<T>(response);
+    const result = await readOriginFunnelResponse<T>(response);
     if (result !== ROUTE_UNAVAILABLE) return result;
   } catch (caught) {
     if (caught instanceof ChristmasApiError) throw caught;

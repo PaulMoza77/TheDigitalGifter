@@ -1,6 +1,6 @@
 /**
  * After Vite build, emit per-route index.html files with Christmas SEO injected.
- * Lets Vercel/static hosts serve crawlable HTML without relying only on origin.mjs.
+ * Emits crawlable HTML for static hosts without relying only on origin.mjs.
  */
 import type { Plugin } from "vite";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";

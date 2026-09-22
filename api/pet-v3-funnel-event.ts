@@ -6,7 +6,7 @@ import {
   resolveFunnelIsTestSync,
 } from "./petFunnelTrafficExclude";
 
-/** V3 ingest. Traffic helpers live in ./petFunnelTrafficExclude (not ./_lib) to avoid prior Vercel module-load crashes. */
+/** V3 ingest. Traffic helpers live in ./petFunnelTrafficExclude (not ./_lib). */
 
 const PET_V3_EVENT_NAMES = [
   "v3_landing_view",

@@ -33,7 +33,7 @@
 	}
 }
 
-# Keep IP HTTP available for rollback checks while DNS still points at Vercel.
+# Keep IP HTTP available for rollback checks against the VPS.
 # Production names are handled by the named HTTPS sites below (HTTP→HTTPS).
 :80 {
 	@tdg host tdg-verify.mozas-prod-01

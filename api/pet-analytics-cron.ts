@@ -18,7 +18,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       "",
   ).trim();
 
-  // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when configured.
+  // Cron callers send Authorization: Bearer <CRON_SECRET> or x-cron-secret.
   if (!cronSecret || provided !== cronSecret) {
     return res.status(401).json({ error: "Unauthorized" });
   }

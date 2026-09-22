@@ -79,7 +79,7 @@ const upload = await edge("getSignedUploadUrl", {
   fileName: "source.webp",
   byteSize: photo.length,
 });
-rec("signed_upload_url", upload.status === 200 && Boolean(upload.json?.uploadUrl) && !String(upload.json?.uploadUrl || "").includes("vercel"), `http=${upload.status}`);
+rec("signed_upload_url", upload.status === 200 && Boolean(upload.json?.uploadUrl) && !/vercel/i.test(String(upload.json?.uploadUrl || "")), `http=${upload.status}`);
 
 if (!upload.json?.uploadUrl) {
   console.error("CHECKOUT_SMOKE_FAILED: no upload url");

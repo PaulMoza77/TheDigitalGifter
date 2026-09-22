@@ -15,7 +15,7 @@ function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) =>
   });
 }
 
-function vercelLike(
+function nodeLike(
   req: { method?: string; headers: Record<string, unknown>; body?: unknown },
   res: {
     statusCode: number;
@@ -44,7 +44,7 @@ function vercelLike(
   };
 }
 
-/** Local same-origin handlers for Christmas analytics, club signup, and gift tree when Vercel is unavailable. */
+/** Local same-origin handlers for Christmas analytics, club signup, and gift tree. */
 export function christmasV2DevPlugin(): Plugin {
   return {
     name: "christmas-v2-dev",
@@ -75,7 +75,7 @@ export function christmasV2DevPlugin(): Plugin {
           }
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
-        const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
+        const { req: vReq, res: vRes } = nodeLike(fakeReq, res);
         if (isClubSignup) {
           await clubSignupHandler(vReq, vRes);
           return;

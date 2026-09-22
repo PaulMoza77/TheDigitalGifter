@@ -1,10 +1,10 @@
 /**
- * Node/Vercel port of supabase/functions/christmas-funnel/index.ts.
+ * Node origin port of supabase/functions/christmas-funnel/index.ts.
  *
  * Production checkout/generation must work even when the Supabase Edge deploy
  * is blocked (missing SUPABASE_ACCESS_TOKEN). This file re-implements every
  * christmas-funnel action against @supabase/supabase-js + process.env so it
- * can run as a normal Vercel serverless function. Keep the two copies in sync
+ * can run on the VPS origin. Keep the two copies in sync
  * whenever the funnel's request/response contract changes — the Deno source
  * stays live so the Edge function can be redeployed once the token is
  * available again.

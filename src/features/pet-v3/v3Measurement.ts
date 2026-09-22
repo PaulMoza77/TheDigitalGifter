@@ -12,7 +12,7 @@ export const PET_V3_PRICE_COHORT_CERTIFIED_AT: string | null = null;
 
 /**
  * Documented production deploy reference for $2.99 pricing code (NOT a certified cohort timestamp).
- * Vercel Production deploy SHA `01fde32` at 2026-08-27T21:28:28Z merged PR #55.
+ * Production deploy SHA `01fde32` at 2026-08-27T21:28:28Z merged PR #55.
  * Production KPI cohort still requires explicit admin certification after analytics audit.
  */
 export const PET_V3_PRICE_DEPLOY_REFERENCE = {

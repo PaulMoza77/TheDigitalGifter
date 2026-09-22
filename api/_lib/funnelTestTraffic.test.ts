@@ -17,10 +17,10 @@ describe("funnelTestTraffic", () => {
     ).toBe("203.0.113.10");
   });
 
-  it("reads Vercel / Cloudflare country headers", () => {
-    expect(countryCodeFromHeaders({ "x-vercel-ip-country": "ro" })).toBe("RO");
-    expect(countryCodeFromHeaders({ "cf-ipcountry": "IT" })).toBe("IT");
-    expect(countryCodeFromHeaders({ "x-vercel-ip-country": "XX" })).toBeNull();
+  it("reads Cloudflare / proxy country headers", () => {
+    expect(countryCodeFromHeaders({ "cf-ipcountry": "ro" })).toBe("RO");
+    expect(countryCodeFromHeaders({ "x-country-code": "IT" })).toBe("IT");
+    expect(countryCodeFromHeaders({ "cf-ipcountry": "XX" })).toBeNull();
     expect(countryCodeFromHeaders({})).toBeNull();
   });
 

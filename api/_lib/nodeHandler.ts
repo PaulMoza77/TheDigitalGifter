@@ -1,6 +1,5 @@
 /**
  * Neutral Node/VPS request/response types for same-origin /api handlers.
- * Replaces @vercel/node types used by the historical serverless adapters.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
 
@@ -28,11 +27,7 @@ export function isAllowedAppHostname(hostname: string): boolean {
     .replace(/:\d+$/, "");
   if (!host) return false;
   if (host === "localhost" || host === "127.0.0.1") return true;
-  if (host === "thedigitalgifter.com" || host.endsWith(".thedigitalgifter.com")) return true;
-  if (String(process.env.TDG_ALLOW_LEGACY_PREVIEW_ORIGINS || "").trim() === "1") {
-    return host.endsWith(".vercel.app");
-  }
-  return false;
+  return host === "thedigitalgifter.com" || host.endsWith(".thedigitalgifter.com");
 }
 
 export function runtimeEnvironment(): "production" | "preview" | "development" {

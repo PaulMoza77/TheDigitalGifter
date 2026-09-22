@@ -1,7 +1,7 @@
 /**
- * Node/Vercel port of supabase/functions/_shared/christmas/stripeFulfill.ts
+ * Node origin port of supabase/functions/_shared/christmas/stripeFulfill.ts
  * enqueue helpers. Fulfillment itself (RPC calls) lives in api/christmas-funnel.ts
- * since the Vercel action handler already has the Supabase client + request context.
+ * since the origin action handler already has the Supabase client + request context.
  */
 import { asString } from "./crypto";
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants";
@@ -12,7 +12,7 @@ export function isChristmasCheckoutMetadata(metadata: Record<string, unknown>): 
   );
 }
 
-/** Best-effort same-origin (Vercel) invoke, falling back to the Supabase Edge
+/** Best-effort same-origin invoke, falling back to the Supabase Edge
  * function when one is deployed. Intended to be handed to `waitUntil` by the
  * caller so it can keep running after the HTTP response has been sent. */
 export async function invokeChristmasGenerate(orderId: string, siteOrigin: string): Promise<void> {

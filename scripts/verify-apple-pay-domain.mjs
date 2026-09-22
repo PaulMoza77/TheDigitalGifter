@@ -2,7 +2,7 @@
 /**
  * Verify Apple Pay domain association on both public TDG hosts.
  * Does not follow redirects (a 3xx onto HTML would be a failure).
- * Does not print file contents. Does not instruct Vercel deploys.
+ * Does not print file contents. Production is the Mozas VPS.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";

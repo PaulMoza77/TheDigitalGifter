@@ -14,7 +14,7 @@ export const PET_V2_PATHS = ["/pet/dog-v2", "/pet/cat-v2", "/pet/other-v2"] as c
 export const PET_V2_DRAFT_STORAGE_KEY = "tdg.petFunnelV2.draft.v1" as const;
 export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
-/** Legacy Vercel path — kept for rewrites/tests. Live traffic uses the edge function. */
+/** Legacy same-origin path — kept for rewrites/tests. Live traffic uses the edge function. */
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 export const PET_V2_PREVIEW_EDGE_PATH = "/functions/v1/pet-v2-preview" as const;
 export const PET_V2_PROVIDER_STATUS_PATH = "/functions/v1/pet-provider-status" as const;

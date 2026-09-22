@@ -1,8 +1,8 @@
 name: deploy-static-github-pages
 
-# Free static hosting — works when Vercel Hobby blocks production (commercial / spend pause).
+# Free static hosting for the SPA shell. Production traffic is the Mozas VPS.
 # One-time: GitHub repo → Settings → Pages → Source: Deploy from branch → gh-pages / root
-# DNS: point www CNAME to paulmoza77.github.io (or keep Vercel until VPS cutover)
+# Do not point public DNS here. thedigitalgifter.com stays on the VPS.
 
 on:
   workflow_dispatch:

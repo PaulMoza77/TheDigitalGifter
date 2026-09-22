@@ -86,7 +86,7 @@ Planner shell/onboarding; calendar/tasks; budget; gifts/recipients; Gift Finder;
 A passing unit test does not make an area DONE. DONE means the intended user flow works in production or has production-equivalent evidence.
 
 ## Non-negotiables
-- Production is **VPS-only**. Remove obsolete Vercel deployment assumptions without breaking Node/VPS runtime compatibility.
+- Production is **VPS-only**. Node handlers run on the Mozas origin. Do not add another frontend host.
 - Prices are server-authoritative; never trust client checkout amounts.
 - Live product price/availability/delivery comes from providers and carries freshness metadata.
 - Affiliate relationships are disclosed.
