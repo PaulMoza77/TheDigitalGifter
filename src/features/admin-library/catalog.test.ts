@@ -206,10 +206,22 @@ describe("admin video library", () => {
       "public/assets/christmas/reels/posters/reel-pick-one-christmas.jpg",
       "public/assets/christmas/library-stills/pick_one_01_cozy_cabin.jpg",
       "public/assets/christmas/library-stills/pick_one_04_christmas_mansion.jpg",
+      "public/assets/christmas/pick-one/masters/pick_one_01_cozy_cabin.mp4",
+      "public/assets/christmas/pick-one/masters/pick_one_02_nyc_penthouse.mp4",
+      "public/assets/christmas/pick-one/masters/pick_one_03_alpine_chalet.mp4",
+      "public/assets/christmas/pick-one/masters/pick_one_04_christmas_mansion.mp4",
+      "public/assets/christmas/pick-one/posters/pick_one_01_cozy_cabin.jpg",
+      "public/assets/christmas/pick-one/generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
     }
+    const pickOneShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-pick-one-"));
+    expect(pickOneShorts).toHaveLength(4);
+    expect(pickOneShorts.every((item) => item.kind === "short")).toBe(true);
+    expect(pickOneShorts.every((item) => item.model === "kling-video/v3.0/pro/image-to-video")).toBe(true);
+    expect(pickOneShorts.every((item) => Boolean(item.jobId))).toBe(true);
+    expect(pickOneShorts.reduce((sum, item) => sum + (item.costUsd ?? 0), 0)).toBeCloseTo(1.12, 5);
   });
 
   it("publishes a single voice-over-corrected Lauren Overwhelm master", () => {
