@@ -159,17 +159,28 @@ const browser = await chromium.launch({
   args: ["--no-sandbox", "--disable-dev-shm-usage"],
 });
 
-async function shot(name, viewport, { fullPage = false, selector = null, hideNav = false } = {}) {
+async function shot(name, viewport, { fullPage = false, selector = null, hideNav = false, unclipMain = false } = {}) {
   const page = await browser.newPage({ viewport });
   await page.goto("file:///tmp/planner-meals-visual.html", { waitUntil: "load" });
   await page.waitForTimeout(900);
   if (hideNav) {
     await page.addStyleTag({ content: ".tdg-planner-nav { display: none !important; }" });
   }
+  if (unclipMain) {
+    await page.addStyleTag({
+      content: `
+        #root, .tdg-planner-app { position: static !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+        .tdg-planner-frame { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+        .tdg-planner-main { overflow: visible !important; height: auto !important; max-height: none !important; }
+        .tdg-planner-page.tdg-meals, .tdg-meals { overflow: visible !important; }
+        .tdg-planner-copilot-rail { display: none !important; }
+        .tdg-planner-frame--copilot { grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr) !important; }
+      `,
+    });
+  }
   const dest = `${OUT}/meals-${name}.png`;
   if (selector) {
-    const el = page.locator(selector);
-    await el.screenshot({ path: dest });
+    await page.locator(selector).screenshot({ path: dest });
   } else {
     await page.screenshot({ path: dest, fullPage });
   }
@@ -178,8 +189,8 @@ async function shot(name, viewport, { fullPage = false, selector = null, hideNav
 }
 
 await shot("desktop", { width: 1440, height: 1100 });
-await shot("desktop-page", { width: 1440, height: 1100 }, { selector: ".tdg-planner-main" });
+await shot("desktop-page", { width: 1440, height: 2800 }, { hideNav: true, unclipMain: true });
 await shot("tablet", { width: 834, height: 1112 });
 await shot("mobile", { width: 390, height: 844 });
-await shot("mobile-page", { width: 390, height: 844 }, { selector: ".tdg-planner-page", hideNav: true });
+await shot("mobile-page", { width: 390, height: 3200 }, { hideNav: true, unclipMain: true });
 await browser.close();
