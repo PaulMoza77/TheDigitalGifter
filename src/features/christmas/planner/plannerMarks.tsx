@@ -132,3 +132,12 @@ export function PlannerGiftMark({ size = 36 }: { size?: number }) {
     </svg>
   );
 }
+
+export function PlannerTreeMark({ size = 16 }: { size?: number }) {
+  return (
+    <svg className="tdg-planner-tree-mark" viewBox="0 0 18 18" width={size} height={size} aria-hidden="true">
+      <path d="M9 1.8 3.2 8.8h3.1L3 14h12l-3.3-5.2h3.1L9 1.8z" fill="#2a4d3e" />
+      <rect x="8.1" y="14" width="1.8" height="2.4" rx="0.4" fill="#6d4c2f" />
+    </svg>
+  );
+}
