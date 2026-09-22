@@ -21,7 +21,7 @@ import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
 import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
-import { PlannerProgress, PlannerSidebarItem } from "./plannerUi";
+import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import { PlannerGiftMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
 import "./plannerApp.css";
@@ -161,7 +161,7 @@ function PlannerAppShell() {
               <p>Test access is on for this account. It is not a Stripe payment.</p>
             </details>
           ) : null}
-          {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
+          {loading ? <PlannerLoading /> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
           <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")}>

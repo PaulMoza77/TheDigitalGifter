@@ -36,6 +36,18 @@ export default function ProtectedClientRoute() {
   }, []);
 
   if (loading) {
+    const planner =
+      location.pathname === "/account/christmas" || location.pathname.startsWith("/account/christmas/");
+    if (planner) {
+      return (
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: "#f7f1e8", color: "#6a5f55", fontFamily: '"Source Sans 3", "Segoe UI", sans-serif' }}
+        >
+          Opening your Christmas…
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white/80">
         Loading...

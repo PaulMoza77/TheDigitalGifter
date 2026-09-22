@@ -9,6 +9,10 @@
   --planner-pine: #1e3a2f;
   --planner-pine-mid: #2a4d3e;
   --planner-line: rgba(42, 32, 24, 0.1);
+  --planner-surface: #fffdf9;
+  --planner-radius: 16px;
+  --planner-radius-sm: 12px;
+  --planner-shadow: 0 12px 32px rgba(28, 22, 18, 0.08);
   --planner-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --planner-sans: "Source Sans 3", "Segoe UI", sans-serif;
   min-height: 100dvh;
@@ -414,9 +418,9 @@
 }
 
 .tdg-planner-card {
-  background: var(--planner-parchment);
+  background: var(--planner-surface);
   border: 1px solid var(--planner-line);
-  border-radius: 16px;
+  border-radius: var(--planner-radius);
   padding: 16px;
   margin-bottom: 12px;
 }
@@ -452,9 +456,21 @@
   background: transparent;
 }
 
-.tdg-planner-btn.danger {
-  color: var(--planner-burgundy);
-  border-color: rgba(122, 36, 48, 0.28);
+.tdg-planner-btn:hover:not(:disabled) {
+  background: rgba(20, 51, 40, 0.05);
+}
+
+.tdg-planner-btn.primary:hover:not(:disabled) {
+  background: #9d1e28;
+}
+
+.tdg-planner-btn.danger:hover:not(:disabled) {
+  background: rgba(181, 35, 46, 0.08);
+}
+
+.tdg-planner-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tdg-planner-list {
@@ -1031,6 +1047,18 @@
   animation: tdg-planner-rise 180ms ease-out;
 }
 
+@media (min-width: 720px) {
+  .tdg-planner-sheet {
+    align-items: center;
+  }
+  .tdg-planner-sheet-card {
+    border-radius: var(--planner-radius);
+    padding: 20px 22px 24px;
+    box-shadow: var(--planner-shadow);
+    max-height: 86dvh;
+  }
+}
+
 .tdg-planner-qa-note {
   position: absolute;
   width: 1px;
@@ -1194,6 +1222,7 @@
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--planner-line);
+  border-radius: 12px;
   background: transparent;
   color: var(--planner-ink);
   cursor: pointer;
@@ -1441,9 +1470,42 @@
   margin-bottom: 18px;
 }
 
+.tdg-planner-page-head h1 {
+  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
+  line-height: 1.15;
+  max-width: 18ch;
+}
+
 .tdg-planner-page-head p {
   max-width: 42ch;
   margin-top: 6px;
+}
+
+.tdg-planner-page-head .tdg-planner-actions {
+  margin-top: 14px;
+}
+
+.tdg-planner-loading {
+  padding: 24px 0 8px;
+}
+
+.tdg-planner-field {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--planner-ink);
+}
+
+.tdg-planner-field > span {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.tdg-planner-app input[type="checkbox"] {
+  accent-color: var(--planner-pine);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .tdg-planner-mark {
@@ -1479,8 +1541,9 @@
 
 .tdg-planner-panel,
 .tdg-planner-composer.tdg-planner-panel {
-  background: rgba(255, 253, 248, 0.7);
+  background: var(--planner-surface);
   border: 1px solid var(--planner-line);
+  border-radius: var(--planner-radius);
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -2122,7 +2185,8 @@
   height: 88px;
   border-radius: 12px;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #143328, #c4a574 55%, #7a2430);
+  background:
+    linear-gradient(135deg, var(--planner-parchment) 0%, rgba(196, 165, 116, 0.35) 52%, rgba(181, 35, 46, 0.14) 100%);
 }
 
 .tdg-recipe-detail h3 {
@@ -2137,10 +2201,44 @@
   gap: 8px;
 }
 
+.tdg-meal-wizard,
+.tdg-grocery-add {
+  background: var(--planner-surface);
+  border: 1px solid var(--planner-line);
+  border-radius: var(--planner-radius);
+  padding: 16px;
+}
+
 .tdg-sticky-cta {
-  position: sticky;
-  bottom: calc(64px + env(safe-area-inset-bottom));
-  z-index: 5;
+  position: static;
+}
+
+.tdg-recipe-card {
+  background: var(--planner-surface);
+}
+
+.tdg-recipe-grid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .tdg-recipe-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .tdg-recipe-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tdg-planner-page,
+.tdg-gifts,
+.tdg-budget-page,
+.tdg-food-product {
+  overflow-x: clip;
 }
 
 .tdg-servings-inline {
@@ -2221,8 +2319,8 @@
 }
 
 .tdg-budget-page {
-  max-width: 720px;
-  padding-bottom: 96px;
+  max-width: 1080px;
+  padding-bottom: 48px;
 }
 
 .tdg-budget-head {
@@ -2234,10 +2332,10 @@
 }
 
 .tdg-budget-head h1 {
-  font-size: clamp(2.1rem, 6vw, 3.1rem);
-  letter-spacing: -0.04em;
+  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
+  letter-spacing: 0;
   margin: 4px 0 0;
-  color: var(--planner-pine);
+  color: var(--planner-ink);
 }
 
 .tdg-budget-hero {
@@ -2253,8 +2351,9 @@
 
 .tdg-budget-metrics strong {
   display: block;
-  font-size: 1.25rem;
-  color: var(--planner-pine);
+  font-family: var(--planner-serif);
+  font-size: 1.35rem;
+  color: var(--planner-ink);
 }
 
 .tdg-budget-metrics .is-over {
@@ -2263,9 +2362,9 @@
 
 .tdg-budget-bar {
   position: relative;
-  height: 10px;
+  height: 3px;
   border-radius: 999px;
-  background: rgba(20, 52, 36, 0.1);
+  background: rgba(20, 51, 40, 0.1);
   overflow: hidden;
 }
 
@@ -2278,7 +2377,7 @@
 }
 
 .tdg-budget-bar .is-spent {
-  background: var(--planner-pine);
+  background: var(--planner-gold);
 }
 
 .tdg-budget-bar .is-planned {
@@ -2351,11 +2450,9 @@
 }
 
 .tdg-budget-fab {
-  position: sticky;
-  bottom: 16px;
+  margin: 8px 0 0;
   display: flex;
-  justify-content: flex-end;
-  z-index: 3;
+  justify-content: flex-start;
 }
 
 .tdg-budget-unlock {
@@ -2409,80 +2506,78 @@
   }
 }
 
-/* Gifts — Christmas Planner product composition (mockup) */
+/* Gifts — same language as My Planner, not a second mockup system */
 .tdg-planner-page.tdg-gifts,
 .tdg-gifts {
-  max-width: none;
+  max-width: 1080px;
   width: 100%;
 }
 
 .tdg-gifts-head {
   position: relative;
   display: grid;
-  gap: 16px;
-  min-height: 182px;
-  padding: 22px 26px;
+  gap: 12px;
+  min-height: 0;
+  padding: 0;
   margin: 0 0 18px;
   border: 0;
-  border-radius: 24px;
-  overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(247,241,232,.88) 0%, rgba(247,241,232,.55) 24%, rgba(247,241,232,.08) 48%, rgba(247,241,232,0) 68%),
-    url("/christmas/planner/gifts-editorial.webp") right 32% / cover no-repeat;
-  box-shadow: 0 16px 40px rgba(54, 42, 28, .1);
+  border-radius: 0;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
 }
 
 .tdg-gifts-head-copy {
   position: relative;
   z-index: 1;
-  align-self: center;
-  max-width: 520px;
+  align-self: start;
+  max-width: 42ch;
 }
 
 .tdg-gifts-head-copy .tdg-planner-kicker {
-  color: #b5232e;
-  letter-spacing: .16em;
-  font-size: .68rem;
-  font-weight: 700;
-  margin-bottom: 4px;
+  color: var(--planner-muted);
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 8px;
   white-space: nowrap;
 }
 
 .tdg-gifts-head h1 {
-  font-size: clamp(2.8rem, 4.4vw, 3.75rem);
-  line-height: .9;
-  margin: 2px 0 8px;
-  color: #1c1612;
+  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
+  line-height: 1.15;
+  margin: 0 0 8px;
+  color: var(--planner-ink);
 }
 
 .tdg-gifts-head-copy p {
-  max-width: 22ch;
-  font-size: 1.12rem;
-  line-height: 1.32;
-  color: #4a4038;
+  max-width: 42ch;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--planner-muted);
 }
 
 .tdg-gifts-head-actions {
   position: relative;
   z-index: 2;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  align-self: center;
-  justify-self: end;
-  width: min(470px, 100%);
+  gap: 8px;
+  align-self: start;
+  justify-self: start;
+  width: 100%;
 }
 
 .tdg-gifts-head-actions .tdg-planner-btn.primary {
-  background: #b5232e;
-  border-color: #b5232e;
-  color: #f4ead9;
-  min-height: 48px;
-  padding: 0 18px;
+  background: var(--planner-burgundy);
+  border-color: transparent;
+  color: #fffdf9;
+  min-height: 44px;
+  padding: 0 14px;
   white-space: nowrap;
-  border-radius: 999px;
-  box-shadow: 0 10px 22px rgba(181,35,46,.24);
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .tdg-gifts-search-toggle {
@@ -2496,11 +2591,11 @@
 
 .tdg-gifts-search .tdg-planner-input {
   margin: 0;
-  background: #fff;
-  border-radius: 999px;
-  min-height: 48px;
-  border: 1px solid rgba(42,32,24,.08);
-  box-shadow: 0 8px 18px rgba(54,42,28,.06);
+  background: #fffdf8;
+  border-radius: 10px;
+  min-height: 44px;
+  border: 1px solid rgba(20, 51, 40, 0.16);
+  box-shadow: none;
 }
 
 .tdg-gifts-limit,
@@ -2512,24 +2607,24 @@
   width: 100%;
 }
 
-.tdg-gifts-summary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin: 0 0 26px;
-  border: 0;
-  overflow: visible;
-  background: transparent;
-}
-
 .tdg-gifts-summary > div {
   position: relative;
-  min-height: 92px;
-  padding: 16px 16px 14px 52px;
-  border: 1px solid rgba(42,32,24,.08) !important;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 10px 24px rgba(54,42,28,.06);
+  min-height: 88px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--planner-line) !important;
+  border-radius: 0;
+  background: rgba(255, 253, 248, 0.55);
+  box-shadow: none;
+}
+
+.tdg-gifts-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 22px;
+  border: 1px solid var(--planner-line);
+  overflow: hidden;
+  background: rgba(255, 253, 248, 0.55);
 }
 
 .tdg-gifts-summary > div::before {
@@ -2537,17 +2632,15 @@
 }
 
 .tdg-gifts-summary svg {
-  position: absolute;
-  left: 16px;
-  top: 18px;
-  color: #b5232e;
+  display: none;
 }
 
 .tdg-gifts-summary strong {
   display: block;
   font-family: var(--planner-serif);
-  font-size: 1.6rem;
-  line-height: 1;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 600;
   color: var(--planner-ink);
 }
 
@@ -2569,35 +2662,37 @@
 
 .tdg-gifts-people-head h2 {
   margin: 0;
-  font-size: 2rem;
-  letter-spacing: -0.02em;
+  font-size: 1.2rem;
+  letter-spacing: 0;
 }
 
 .tdg-gifts-chips {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: 0;
+  overflow: visible;
   max-width: 100%;
+  border: 1px solid var(--planner-line);
 }
 
 .tdg-gifts-chips button {
   flex: 0 0 auto;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--planner-line);
-  background: #fff;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
   color: var(--planner-muted);
   font: inherit;
   font-weight: 600;
-  font-size: 0.84rem;
+  font-size: 0.9rem;
   cursor: pointer;
 }
 
 .tdg-gifts-chips button.on {
-  background: #b5232e;
-  border-color: #b5232e;
-  color: #fffdf9;
+  background: var(--planner-pine);
+  border-color: transparent;
+  color: #f7f0e4;
 }
 
 .tdg-gifts-grid {
@@ -2612,20 +2707,20 @@
   text-align: left;
   padding: 0;
   overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid rgba(42,32,24,.08);
-  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--planner-line);
+  background: var(--planner-surface);
   color: inherit;
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(54,42,28,.07);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  box-shadow: none;
+  transition: border-color 160ms ease, background 160ms ease;
 }
 
 .tdg-gifts-card:hover,
 .tdg-gifts-add-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(181,35,46,.28);
-  box-shadow: 0 18px 40px rgba(54,42,28,.12);
+  transform: none;
+  border-color: rgba(181, 35, 46, 0.28);
+  box-shadow: none;
 }
 
 .tdg-gifts-card-visual {
@@ -2657,9 +2752,9 @@
 
 .tdg-gifts-card-body strong {
   font-family: var(--planner-serif);
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.1;
 }
 
 .tdg-gifts-card-meta,
@@ -2845,60 +2940,59 @@
 .tdg-gifts-context-mood {
   position: relative;
   overflow: hidden;
-  min-height: 210px;
-  padding: 24px 22px;
-  border-radius: 20px;
-  color: #fff;
-  background:
-    linear-gradient(180deg, rgba(18,12,10,.12), rgba(18,12,10,.72)),
-    url("/christmas/gifts/scene-desktop.jpg") center 38% / cover no-repeat;
-  box-shadow: 0 12px 30px rgba(54,42,28,.1);
+  min-height: 0;
+  padding: 16px;
+  border-radius: 16px;
+  color: var(--planner-ink);
+  background: var(--planner-parchment);
+  border: 1px solid var(--planner-line);
+  box-shadow: none;
 }
 
 .tdg-gifts-context-mood p {
   margin: 0;
-  max-width: 15ch;
+  max-width: 22ch;
   font-family: var(--planner-serif);
-  font-size: 1.42rem;
+  font-size: 1.2rem;
   line-height: 1.2;
-  color: #fff;
-  text-shadow: 0 2px 16px rgba(0,0,0,.5);
+  color: var(--planner-ink);
+  text-shadow: none;
 }
 
 .tdg-gifts-context-card {
-  padding: 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(42,32,24,.08);
-  background: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--planner-line);
+  background: var(--planner-surface);
   display: grid;
   gap: 10px;
-  box-shadow: 0 10px 26px rgba(54,42,28,.06);
+  box-shadow: none;
 }
 
 .tdg-gifts-context-card.is-quiet {
-  background: #fff;
+  background: var(--planner-surface);
 }
 
 .tdg-gifts-context-card h2 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .tdg-gifts-context-card a {
-  color: #b5232e;
+  color: var(--planner-pine);
   font-weight: 600;
 }
 
 .tdg-gifts-context-card .tdg-planner-kicker {
-  color: #b5232e;
+  color: var(--planner-muted);
 }
 
 .tdg-gifts-context-card .tdg-planner-btn.primary {
-  width: 100%;
-  min-height: 46px;
-  background: #b5232e;
-  border-color: #b5232e;
-  color: #f4ead9;
-  border-radius: 999px;
+  width: auto;
+  min-height: 44px;
+  background: var(--planner-burgundy);
+  border-color: transparent;
+  color: #fffdf9;
+  border-radius: 12px;
 }
 
 .tdg-planner-gift-mark {
@@ -2928,22 +3022,22 @@
   .tdg-gifts-card {
     display: flex;
     flex-direction: column;
-    min-height: 310px;
+    min-height: 0;
   }
   .tdg-gifts-card-visual {
-    flex: 1.5 1 0;
-    height: auto;
-    min-height: 186px;
+    flex: 0 0 auto;
+    height: 140px;
+    min-height: 140px;
   }
   .tdg-gifts-add-card {
-    min-height: 310px;
+    min-height: 0;
   }
   .tdg-gifts-empty {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
     align-items: center;
   }
   .tdg-gifts-person-head {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
     align-items: start;
   }
 }
@@ -2951,9 +3045,12 @@
 @media (min-width: 960px) {
   .tdg-gifts-head {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    height: 184px;
-    max-height: 190px;
+    align-items: start;
+    height: auto;
+    max-height: none;
+  }
+  .tdg-gifts-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .tdg-gifts-limit,
   .tdg-gifts-unlock {
@@ -2961,8 +3058,8 @@
   }
   .tdg-gifts-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 286px;
-    gap: 22px;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 28px;
     align-items: start;
   }
   .tdg-gifts-context {
@@ -2975,27 +3072,27 @@
     display: none;
   }
   .tdg-gifts-grid {
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .tdg-gifts-card,
   .tdg-gifts-add-card {
-    min-height: 338px;
+    min-height: 0;
   }
   .tdg-gifts-card-visual {
-    min-height: 200px;
+    min-height: 140px;
   }
 }
 
 @media (min-width: 1280px) {
   .tdg-gifts-card,
   .tdg-gifts-add-card {
-    min-height: 352px;
+    min-height: 0;
   }
   .tdg-gifts-card-visual {
-    min-height: 214px;
+    min-height: 148px;
   }
   .tdg-gifts-layout {
-    grid-template-columns: minmax(0, 1fr) 292px;
+    grid-template-columns: minmax(0, 1fr) 280px;
   }
 }
 
@@ -3020,18 +3117,16 @@
   .tdg-gifts-head {
     min-height: 0;
     max-height: none;
-    padding: 16px 16px 18px;
-    border-radius: 20px;
-    background:
-      linear-gradient(180deg, rgba(247,241,232,.55), rgba(247,241,232,.92)),
-      url("/christmas/planner/gifts-editorial.webp") center 40% / cover no-repeat;
+    padding: 0;
+    border-radius: 0;
+    background: none;
   }
   .tdg-gifts-head h1 {
-    font-size: 2.85rem;
+    font-size: clamp(1.55rem, 7vw, 2.15rem);
   }
   .tdg-gifts-head-copy p {
-    font-size: 1.05rem;
-    max-width: 28ch;
+    font-size: 1rem;
+    max-width: 42ch;
   }
   .tdg-gifts-head-actions {
     flex-direction: row;
@@ -3061,33 +3156,29 @@
     width: auto;
   }
   .tdg-gifts-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
   }
   .tdg-gifts-summary > div {
     min-width: 0;
-    min-height: 86px;
-    padding: 36px 6px 10px;
-    text-align: center;
+    min-height: 88px;
+    padding: 14px 16px 16px;
+    text-align: left;
   }
   .tdg-gifts-summary svg {
-    left: 50%;
-    top: 10px;
-    transform: translateX(-50%);
-    width: 18px;
-    height: 18px;
-  }
-  .tdg-gifts-summary > div:nth-child(4) {
     display: none;
   }
+  .tdg-gifts-summary > div:nth-child(4) {
+    display: block;
+  }
   .tdg-gifts-summary strong {
-    font-size: 1.08rem;
+    font-size: 1.35rem;
   }
   .tdg-gifts-summary span {
-    font-size: .68rem;
+    font-size: 0.82rem;
   }
   .tdg-gifts-people-head h2 {
-    font-size: 1.7rem;
+    font-size: 1.2rem;
   }
   .tdg-gifts-grid {
     grid-template-columns: 1fr;

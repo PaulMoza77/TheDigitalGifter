@@ -30,10 +30,12 @@ import { useCopilotUi } from "./copilot/CopilotHost";
 import {
   PlannerComposer,
   PlannerEmptyState,
+  PlannerLoading,
   PlannerModuleLinkRow,
   PlannerPageHeader,
   PlannerProgress,
   PlannerQuickAdd,
+  PlannerSeg,
   PlannerSection,
   PlannerSnapshotRow,
   TaskRow,
@@ -108,7 +110,7 @@ export default function ChristmasPlannerTodayPage() {
     }
   }, [profile?.id]);
 
-  if (loading) return <p className="tdg-planner-muted">Opening your Christmas…</p>;
+  if (loading) return <PlannerLoading />;
   if (!profile) return <PlannerOnboarding />;
 
   const tz = profile.timezone;
@@ -433,7 +435,7 @@ export function ChristmasPlannerPlanPage() {
     trackPlannerEvent("planner_module_opened", { module: "plan" });
   }, [profile?.id]);
 
-  if (loading) return <p className="tdg-planner-muted">Loading plan…</p>;
+  if (loading) return <PlannerLoading label="Loading plan…" />;
   if (!profile) return <PlannerOnboarding />;
 
   const tz = profile.timezone;
@@ -498,13 +500,17 @@ export function ChristmasPlannerPlanPage() {
           Rescue focus is on - nice-to-have tasks stay listed, just lower.
         </p>
       ) : null}
-      <div className="tdg-planner-seg" role="tablist" aria-label="Plan views">
-        {(["today", "week", "all", "calendar"] as const).map((v) => (
-          <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "on" : ""} onClick={() => setView(v)}>
-            {v === "week" ? "This week" : v === "all" ? "All" : v[0].toUpperCase() + v.slice(1)}
-          </button>
-        ))}
-      </div>
+      <PlannerSeg
+        label="Plan views"
+        value={view}
+        onChange={setView}
+        options={[
+          { id: "today", label: "Today" },
+          { id: "week", label: "This week" },
+          { id: "all", label: "All" },
+          { id: "calendar", label: "Calendar" },
+        ]}
+      />
       <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Add a task" value={title} onChange={(e) => setTitle(e.target.value)} />
         <select className="tdg-planner-select" value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)} aria-label="Category">
@@ -648,7 +654,7 @@ export function ChristmasPlannerSimpleModule({
     trackPlannerEvent("planner_module_opened", { module, feature });
   }, [profile?.id, table, module, feature]);
 
-  if (loading) return <p>Loading…</p>;
+  if (loading) return <PlannerLoading />;
   if (!profile) return <PlannerOnboarding />;
   if (feature && !hasFeature(access, feature)) {
     return <PlannerPaywall feature={feature} title={`${title} is part of Christmas Planner`} body="Christmas Planner is $17 once for the 2026 season. Cards, photos, and videos stay separate." />;
@@ -657,7 +663,7 @@ export function ChristmasPlannerSimpleModule({
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title={title} lede="A quiet place to keep this part of the season." />
-      <div className="tdg-planner-card">
+      <PlannerComposer>
         {fields.map((f) => (
           <input
             key={f.key}
@@ -693,13 +699,17 @@ export function ChristmasPlannerSimpleModule({
         >
           {addLabel}
         </button>
-      </div>
-      {rows.map((row) => (
-        <div key={row.id} className="tdg-planner-card">
-          <strong>{row[fields[0].key] || title}</strong>
-          <div className="tdg-planner-muted">{fields.slice(1).map((f) => row[f.key]).filter(Boolean).join(" · ")}</div>
-        </div>
-      ))}
+      </PlannerComposer>
+      {rows.length === 0 ? (
+        <PlannerEmptyState title="Nothing saved here yet." body="Add the first note above. It stays private to this Planner." />
+      ) : (
+        rows.map((row) => (
+          <div key={row.id} className="tdg-planner-card">
+            <strong>{row[fields[0].key] || title}</strong>
+            <div className="tdg-planner-muted">{fields.slice(1).map((f) => row[f.key]).filter(Boolean).join(" · ")}</div>
+          </div>
+        ))
+      )}
     </div>
   );
 }

@@ -24,7 +24,7 @@ import {
 import type { BudgetExpenseLine } from "./intelligence/budgetIntelligence";
 import { hasFeature } from "./entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
-import { PlannerPageHeader, PlannerProgress } from "./plannerUi";
+import { PlannerLoading, PlannerPageHeader, PlannerProgress } from "./plannerUi";
 import { bumpPlannerWorkspace } from "./workspaceSync";
 import {
   BUDGET_CATEGORY_LABELS,
@@ -230,7 +230,7 @@ export function ChristmasPlannerBudgetPage() {
     trackPlannerEvent("planner_budget_updated", { module: "budget" });
   }
 
-  if (loading) return <p>Loading budget…</p>;
+  if (loading) return <PlannerLoading label="Loading budget…" />;
   if (!profile) return <PlannerOnboarding />;
 
   const money = (minor: number) => formatPlannerMoney(minor, currency);
