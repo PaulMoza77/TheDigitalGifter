@@ -73,11 +73,12 @@ export function CopilotHost({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!profile) return;
+    const current = profile;
     let cancelled = false;
     async function load() {
-      const snapshot = await loadPlannerWorkspace(profile);
+      const snapshot = await loadPlannerWorkspace(current);
       if (cancelled) return;
-      const dismissed = loadDismissedInsightIds(profile.id, profile.season_year);
+      const dismissed = loadDismissedInsightIds(current.id, current.season_year);
       setIntel(runPlannerIntelligence(snapshot, dismissed));
     }
     void load();
