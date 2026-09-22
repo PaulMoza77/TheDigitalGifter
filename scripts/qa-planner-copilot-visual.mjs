@@ -44,14 +44,14 @@ const html = `<!doctype html>
         <span>Your calm Christmas starts here.</span>
       </div>
       <nav class="tdg-planner-side-nav">
-        <a href="#"><svg width="16" height="16"></svg>Home</a>
-        <a href="#"><svg width="16" height="16"></svg>Today</a>
-        <a href="#"><svg width="16" height="16"></svg>Plan</a>
-        <a class="active" href="#"><svg width="16" height="16"></svg>Gifts</a>
-        <a href="#"><svg width="16" height="16"></svg>Meals</a>
-        <a href="#"><svg width="16" height="16"></svg>Recipes</a>
-        <a href="#"><svg width="16" height="16"></svg>Shopping</a>
-        <a href="#"><svg width="16" height="16"></svg>More</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>Home</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>Today</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Plan</a>
+        <a class="active" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V21"/></svg>Gifts</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11h18l-2 10H5L3 11Z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Meals</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>Recipes</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 7h15l-1.5 9h-12L5 4H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>Shopping</a>
+        <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</a>
       </nav>
       <div class="tdg-planner-side-foot">
         <button type="button" class="tdg-planner-side-copilot"><span class="tdg-planner-side-text">AI Copilot</span></button>
@@ -61,6 +61,9 @@ const html = `<!doctype html>
     <main class="tdg-planner-main">
       <div class="tdg-planner-page tdg-gifts">
         <header class="tdg-gifts-head">
+          <div class="tdg-gifts-head-art" aria-hidden="true">
+            <img src="/christmas/planner/gifts-editorial.webp" alt="" />
+          </div>
           <div class="tdg-gifts-head-copy">
             <p class="tdg-planner-kicker tdg-planner-kicker--accent">Thoughtful gifts. Happier moments.</p>
             <h1>Gifts</h1>
@@ -76,10 +79,22 @@ const html = `<!doctype html>
         <div class="tdg-gifts-layout">
           <div class="tdg-gifts-main">
             <div class="tdg-gifts-summary">
-              <div><strong>0 / 1</strong><span>Gifts planned</span></div>
-              <div><strong>1</strong><span>Left to buy</span></div>
-              <div><strong>0 EUR / 50 EUR</strong><span>Budget</span></div>
-              <div><strong>4</strong><span>People</span></div>
+              <div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V21"/><path d="M3 12h18"/><path d="M12 8c0-2.5 1.5-4 4-4 0 2-1 4-4 4Z"/><path d="M12 8c0-2.5-1.5-4-4-4 0 2 1 4 4 4Z"/></svg>
+                <strong>0 / 1</strong><span>Gifts planned</span>
+              </div>
+              <div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 7h15l-1.5 9h-12L5 4H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
+                <strong>1</strong><span>Left to buy</span>
+              </div>
+              <div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M16 14h2"/></svg>
+                <strong>0 EUR / 50 EUR</strong><span>Budget</span>
+              </div>
+              <div>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <strong>4</strong><span>People</span>
+              </div>
             </div>
             <div class="tdg-gifts-people-head">
               <h2>Your people</h2>
@@ -131,9 +146,9 @@ const html = `<!doctype html>
           </header>
           <div class="tdg-copilot-panel-scroll">
             <div class="tdg-copilot-suggest">
-              <button type="button">Find a gift for Andreas</button>
-              <button type="button">Help me stay under €50</button>
-              <button type="button">Surprise me with an idea</button>
+              <button type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V21"/></svg><span>Find a gift for Andreas</span></button>
+              <button type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/></svg><span>Help me stay under €50</span></button>
+              <button type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 4 12c-.8.8-1 1.5-1 3H9c0-1.5-.2-2.2-1-3A7 7 0 0 1 12 2Z"/></svg><span>Surprise me with an idea</span></button>
             </div>
             <div class="tdg-copilot-nextwin">
               <p class="tdg-copilot-nextwin-kicker">Your next little win</p>

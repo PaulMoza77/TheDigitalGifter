@@ -2700,6 +2700,10 @@
   box-shadow: none;
 }
 
+.tdg-gifts-head-art {
+  display: none;
+}
+
 .tdg-gifts-head-copy {
   position: relative;
   z-index: 1;
@@ -2964,14 +2968,7 @@
 }
 
 .tdg-gifts-card .tdg-planner-bar {
-  height: 6px;
-  margin: 4px 0 2px;
-  width: 100%;
-  background: rgba(181,35,46,.12);
-}
-
-.tdg-gifts-card .tdg-planner-bar > span {
-  background: #b5232e;
+  display: none;
 }
 
 .tdg-gifts-add-card {
@@ -3221,10 +3218,51 @@
 
 @media (min-width: 960px) {
   .tdg-gifts-head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.92fr);
     align-items: start;
     height: auto;
     max-height: none;
+    min-height: 132px;
+  }
+  .tdg-gifts-head-art {
+    display: block;
+    position: absolute;
+    top: -28px;
+    right: -8px;
+    width: min(48%, 440px);
+    height: 168px;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 0 0 0 28px;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+  }
+  .tdg-gifts-head-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 58% 42%;
+    display: block;
+  }
+  .tdg-gifts-head-copy {
+    position: relative;
+    z-index: 2;
+  }
+  .tdg-gifts-head-actions {
+    justify-self: end;
+    align-self: start;
+    width: auto;
+    max-width: 100%;
+    padding-top: 6px;
+    flex-wrap: nowrap;
+  }
+  .tdg-gifts-search {
+    flex: 1 1 180px;
+    min-width: 160px;
+    max-width: 260px;
+  }
+  .tdg-gifts-search .tdg-planner-input {
+    min-width: 0;
   }
   .tdg-gifts-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3349,6 +3387,10 @@
     text-align: left;
   }
   .tdg-gifts-summary svg {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .tdg-gifts-head-art {
     display: none;
   }
   .tdg-gifts-summary > div:nth-child(4) {
@@ -4052,6 +4094,24 @@
 .tdg-gifts-search .tdg-planner-input {
   border-radius: 999px;
   padding-left: 16px;
+  min-width: 220px;
+  background: rgba(255, 253, 248, 0.96);
+}
+
+.tdg-gifts-summary > div {
+  display: grid;
+  align-content: start;
+}
+
+.tdg-gifts-summary svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tdg-copilot-panel-photo {
+  background-position: 78% 58%;
+  transform: scale(1.08);
+  transform-origin: 78% 58%;
 }
 
 .tdg-gifts-spotlight {

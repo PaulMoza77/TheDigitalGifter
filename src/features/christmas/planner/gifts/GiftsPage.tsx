@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Gift, Heart, Search, ShoppingBag, Wallet } from "lucide-react";
+import { Gift, Search, ShoppingBag, Users, Wallet } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "../analytics";
@@ -14,7 +14,7 @@ import { FoundingPassUnlockButton } from "../FoundingPassUnlock";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "../PlannerGiftLink";
 import { copilotEnabled } from "../copilot/ask";
 import { useCopilotUi } from "../copilot/CopilotHost";
-import { PlannerEmptyState, PlannerLoading, PlannerProgress, PlannerStatusChip } from "../plannerUi";
+import { PlannerEmptyState, PlannerLoading, PlannerStatusChip } from "../plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { GIFT_ITEM_STATUSES, type GiftItem, type GiftItemStatus, type GiftRecipient } from "../types";
 import { christmasIdentitiesForPeople, christmasIdentityForPerson } from "./giftIdentity";
@@ -263,6 +263,9 @@ export function ChristmasPlannerGiftsPage() {
 
   const header = (
     <header className="tdg-gifts-head">
+      <div className="tdg-gifts-head-art" aria-hidden="true">
+        <img src="/christmas/planner/gifts-editorial.webp" alt="" />
+      </div>
       <div className="tdg-gifts-head-copy">
         <p className="tdg-planner-kicker tdg-planner-kicker--accent">Thoughtful gifts. Happier moments.</p>
         <h1>Gifts</h1>
@@ -663,7 +666,7 @@ function GiftsSummary({
         <span>Budget</span>
       </div>
       <div>
-        <Heart size={22} strokeWidth={1.6} aria-hidden />
+        <Users size={22} strokeWidth={1.6} aria-hidden />
         <strong>{overview.people}</strong>
         <span>People</span>
       </div>
@@ -700,7 +703,6 @@ function PersonCard({
         <span className="tdg-gifts-card-meta">
           {stats.bought} of {stats.total} gifts
         </span>
-        <PlannerProgress value={stats.progress} compact />
         <span className={`tdg-gifts-card-next${stats.done ? " is-done" : ""}`}>{remaining}</span>
       </span>
     </button>
