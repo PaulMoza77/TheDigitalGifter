@@ -252,7 +252,7 @@ export function ChristmasPlannerGiftsPage() {
       <div className="tdg-gifts-head-copy">
         <p className="tdg-planner-kicker">Thoughtful gifts. Happier moments.</p>
         <h1>Gifts</h1>
-        <p>Everyone you love. Everything in one place. People first.</p>
+        <p>Everyone you love. Everything in one place.</p>
       </div>
       <div className="tdg-gifts-head-actions">
         {people.length > 0 ? (
@@ -546,7 +546,6 @@ function GiftsEmptyState({ onAdd, onInspire }: { onAdd: () => void; onInspire?: 
     <section className="tdg-gifts-empty">
       <div className="tdg-gifts-empty-visual">
         <img src="/christmas/planner/gifts-editorial.webp" alt="" />
-        <p>Christmas wrap. Not a portrait.</p>
       </div>
       <div>
         <PlannerEmptyState
@@ -625,7 +624,6 @@ function PersonCard({
     <button type="button" className="tdg-gifts-card" onClick={onOpen}>
       <span className="tdg-gifts-card-visual">
         <img src={look.src} alt="" />
-        <span className="tdg-gifts-card-look">{look.label}</span>
       </span>
       <span className="tdg-gifts-card-body">
         <strong>{person.display_name}</strong>
@@ -634,7 +632,6 @@ function PersonCard({
         </span>
         <PlannerProgress value={stats.progress} compact />
         <span className={`tdg-gifts-card-next${stats.done ? " is-done" : ""}`}>{remaining}</span>
-        <span className="tdg-planner-sr">{look.caption}</span>
       </span>
     </button>
   );
@@ -681,7 +678,6 @@ function PersonDetail({
       <header className="tdg-gifts-person-head">
         <div className="tdg-gifts-person-hero">
           <img src={look.src} alt="" />
-          <span>{look.label} · {look.caption}</span>
         </div>
         <div>
           <h2>{person.display_name}</h2>
