@@ -704,7 +704,6 @@ function AppInner() {
             {/* P3B: Wave 1 locale-prefixed Christmas routes (Strategy A) */}
             {(["ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const).flatMap((prefix) =>
               christmasLocalePrefixedRoutes(prefix, [
-                { path: "/christmas", element: <ChristmasPage /> },
                 { path: "/christmas/suite", element: <ChristmasSuitePage /> },
                 { path: "/christmas/photo-generator", element: <ChristmasPhotoGeneratorPage /> },
                 { path: "/christmas/family", element: <ChristmasFamilyPage /> },
@@ -980,6 +979,13 @@ function AppInner() {
               ]),
             )}
             <Route path="/christmas" element={<ChristmasPage />} />
+            {(["ro", "de", "fr", "es", "it", "pt", "nl", "pl"] as const).map((prefix) => (
+              <Route
+                key={`${prefix}-christmas-club`}
+                path={`/${prefix}/christmas`}
+                element={<ChristmasPage />}
+              />
+            ))}
             <Route path="/christmas-ai-photos" element={<ChristmasV2Route />} />
             <Route
               path="/christmas-ai-photos/order"

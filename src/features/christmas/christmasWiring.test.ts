@@ -39,6 +39,7 @@ describe("christmas foundation wiring", () => {
   it("wires christmas club landing, signup API, and countdown config", () => {
     const app = readSrc("src/App.tsx");
     expect(app).toContain('path="/christmas" element={<ChristmasPage />}');
+    expect(app).toContain("path={`/${prefix}/christmas`}");
     expect(app).toContain("FunnelLayout");
     expect(readSrc("server/routes.mjs")).toContain("/api/christmas/club-signup");
     expect(readSrc("Dockerfile")).toContain("COPY src ./src");

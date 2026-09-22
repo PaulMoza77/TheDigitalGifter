@@ -111,7 +111,14 @@ describe("christmas club Wave 1 UI copy", () => {
     expect(page).toContain("parseChristmasLocalePath");
     expect(page).toContain("resolveClubLocale");
     expect(page).toContain('t("hero.h1")');
+    expect(page).toContain('className="cc-lang"');
     expect(page).not.toContain("Something magical is coming this Christmas.");
+    const css = readFileSync(
+      resolve(process.cwd(), "src/features/christmas/club/christmasClub.css"),
+      "utf8",
+    );
+    expect(css).toContain(".cc-lang");
+    expect(css).toContain("inset-inline-end");
   });
 });
 
