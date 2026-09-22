@@ -798,7 +798,8 @@ describe("private planner privacy surface", () => {
     const ui = readSrc("src/features/christmas/planner/plannerUi.tsx");
     const css = readSrc("src/features/christmas/planner/plannerApp.css");
     const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
-    expect(pages).toContain("Overdue, today, this week, and later use the same dates as Today.");
+    const plan = readSrc("src/features/christmas/planner/PlanPage.tsx");
+    expect(plan).toContain("Everything you need to get Christmas done — without the last-minute stress.");
     expect(gifts).toContain("People first.");
     expect(budget).toContain("Keep Christmas spending beautifully under control.");
     expect(pages).toContain("Everything else for your Christmas season.");

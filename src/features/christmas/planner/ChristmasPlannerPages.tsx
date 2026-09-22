@@ -17,7 +17,6 @@ import {
   daysUntilChristmas,
   formatPlannerDate,
   plannerGreeting,
-  taskCategoryLabel,
 } from "./date";
 import { giftPeopleLimit } from "./giftPeople";
 import { plannerTodayIso, plannerWeekEndIso, taskWhen, tasksForView } from "./taskSchedule";
@@ -35,19 +34,12 @@ import {
   PlannerPageHeader,
   PlannerProgress,
   PlannerQuickAdd,
-  PlannerSeg,
   PlannerSection,
   PlannerSnapshotRow,
   TaskRow,
 } from "./plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
-import {
-  TASK_CATEGORIES,
-  type GiftItem,
-  type GiftRecipient,
-  type PlannerTask,
-  type TaskCategory,
-} from "./types";
+import { type GiftItem, type GiftRecipient, type PlannerTask } from "./types";
 
 export default function ChristmasPlannerTodayPage() {
   const { loading, access, profile } = usePlannerBundle();
@@ -422,136 +414,7 @@ export default function ChristmasPlannerTodayPage() {
   );
 }
 
-export function ChristmasPlannerPlanPage() {
-  const { loading, access, profile } = usePlannerBundle();
-  const [tasks, setTasks] = useState<PlannerTask[]>([]);
-  const [view, setView] = useState<"today" | "week" | "all" | "calendar">("today");
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<TaskCategory>("other");
-
-  useEffect(() => {
-    if (!profile) return;
-    void loadTasks(profile.id).then(setTasks);
-    trackPlannerEvent("planner_module_opened", { module: "plan" });
-  }, [profile?.id]);
-
-  if (loading) return <PlannerLoading label="Loading plan…" />;
-  if (!profile) return <PlannerOnboarding />;
-
-  const tz = profile.timezone;
-  const now = new Date();
-  const todayIso = plannerTodayIso(now, tz);
-  const weekEnd = plannerWeekEndIso(now, tz);
-  const filtered = tasksForView(tasks, view, todayIso, weekEnd);
-
-  async function addCustom() {
-    if (!profile || !title.trim()) return;
-    const gate = canAddCustomTask(
-      access,
-      tasks.filter((t) => t.origin === "user").length,
-      tasks.filter((t) => t.status === "open").length,
-    );
-    if (!gate.ok) return;
-    const row = await insertTask({
-      profile_id: profile.id,
-      title: title.trim().slice(0, 160),
-      category,
-      due_on: todayIso,
-      status: "open",
-      priority: "normal",
-      notes: "",
-      origin: "user",
-      template_key: null,
-    });
-    if (row) {
-      setTasks((prev) => [...prev, row]);
-      setTitle("");
-      bumpPlannerWorkspace();
-      trackPlannerEvent("planner_task_added", { module: "plan" });
-    }
-  }
-
-  const onTaskChange = (task: PlannerTask, next: PlannerTask | null) =>
-    setTasks((prev) => (next ? prev.map((t) => (t.id === next.id ? next : t)) : prev.filter((t) => t.id !== task.id)));
-
-  const groups =
-    view === "calendar"
-      ? null
-      : [
-          { key: "Overdue", rows: filtered.filter((t) => taskWhen(t, todayIso, weekEnd) === "overdue") },
-          { key: "Today", rows: filtered.filter((t) => taskWhen(t, todayIso, weekEnd) === "today") },
-          { key: "This week", rows: filtered.filter((t) => taskWhen(t, todayIso, weekEnd) === "week") },
-          { key: "Later", rows: filtered.filter((t) => taskWhen(t, todayIso, weekEnd) === "later") },
-          { key: "Done", rows: filtered.filter((t) => taskWhen(t, todayIso, weekEnd) === "done") },
-        ].filter((g) => g.rows.length);
-
-  const byDateMap = new Map<string, PlannerTask[]>();
-  for (const task of filtered) {
-    const key = task.due_on || "undated";
-    byDateMap.set(key, [...(byDateMap.get(key) || []), task]);
-  }
-  const byDate = [...byDateMap.entries()].sort(([a], [b]) => a.localeCompare(b));
-
-  return (
-    <div className="tdg-planner-page">
-      <PlannerPageHeader title="Tasks" lede="Overdue, today, this week, and later use the same dates as Today." />
-      {profile.prepared_level === "rescue" || daysUntilChristmas(new Date(), profile.timezone) <= 7 ? (
-        <p className="tdg-intel-kicker" style={{ marginBottom: 12 }}>
-          Rescue focus is on - nice-to-have tasks stay listed, just lower.
-        </p>
-      ) : null}
-      <PlannerSeg
-        label="Plan views"
-        value={view}
-        onChange={setView}
-        options={[
-          { id: "today", label: "Today" },
-          { id: "week", label: "This week" },
-          { id: "all", label: "All" },
-          { id: "calendar", label: "Calendar" },
-        ]}
-      />
-      <PlannerComposer>
-        <input className="tdg-planner-input" placeholder="Add a task" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <select className="tdg-planner-select" value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)} aria-label="Category">
-          {TASK_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {taskCategoryLabel(c)}
-            </option>
-          ))}
-        </select>
-        <button type="button" className="tdg-planner-btn primary" onClick={() => void addCustom()}>
-          Add task
-        </button>
-      </PlannerComposer>
-      {filtered.length === 0 ? (
-        <PlannerEmptyState
-          mark="plan"
-          title="No tasks here yet."
-          body="Add your own task or switch views to see your full Christmas plan."
-        />
-      ) : view === "calendar" ? (
-        byDate.map(([date, rows]) => (
-          <section key={date} className="tdg-planner-section">
-            <h2>{date === "undated" ? "Undated" : formatPlannerDate(date)}</h2>
-            {rows.map((task) => (
-              <TaskRow key={task.id} task={task} onChange={(next) => onTaskChange(task, next)} />
-            ))}
-          </section>
-        ))
-      ) : (
-        (groups || []).map((group) => (
-          <section key={group.key} className="tdg-planner-section tdg-planner-appear">
-            <h2>{group.key}</h2>
-            {group.rows.map((task) => (
-              <TaskRow key={task.id} task={task} onChange={(next) => onTaskChange(task, next)} />
-            ))}
-          </section>
-        ))
-      )}
-    </div>
-  );
-}
+export { ChristmasPlannerPlanPage } from "./PlanPage";
 
 export { ChristmasPlannerGiftsPage } from "./gifts/GiftsPage";
 

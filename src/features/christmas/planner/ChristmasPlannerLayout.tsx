@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  Bell,
   BookOpen,
   CalendarDays,
   Gift,
   Home,
   LayoutList,
   MoreHorizontal,
+  Search,
   ShoppingBag,
   Sparkles,
   UserRound,
@@ -22,7 +24,7 @@ import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
 import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
 import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi";
-import { PlannerGiftMark } from "./plannerMarks";
+import { PlannerGiftMark, PlannerTreeMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
 import "./plannerApp.css";
 
@@ -112,7 +114,15 @@ function PlannerAppShell() {
             <PlannerGiftMark size={34} />
             <span>Christmas Planner</span>
           </a>
-          <p className="tdg-planner-header-count">{countdownCopy(daysLeft)}</p>
+          <p className="tdg-planner-header-count">
+            {daysLeft > 1 ? (
+              <>
+                <strong>{daysLeft}</strong> days until Christmas <PlannerTreeMark size={14} />
+              </>
+            ) : (
+              countdownCopy(daysLeft)
+            )}
+          </p>
           <div className="tdg-planner-header-meta">
             {readiness != null ? (
               <span className="tdg-planner-ready-mini">
@@ -122,6 +132,7 @@ function PlannerAppShell() {
                 <PlannerProgress value={readiness} compact />
               </span>
             ) : null}
+            <PlannerHeaderTools />
             <PlannerAccountChrome />
           </div>
         </header>
@@ -187,5 +198,43 @@ function PlannerAppShell() {
         </nav>
       </div>
     </>
+  );
+}
+
+function PlannerHeaderTools() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [notesOpen, setNotesOpen] = useState(false);
+
+  function onSearch() {
+    if (location.pathname.startsWith("/account/christmas/plan")) {
+      const input = document.getElementById("planner-add-task") as HTMLInputElement | null;
+      input?.focus();
+      input?.scrollIntoView({ block: "center", behavior: "smooth" });
+      return;
+    }
+    navigate("/account/christmas/gifts");
+  }
+
+  return (
+    <div className="tdg-planner-header-tools">
+      <button type="button" className="tdg-planner-header-icon" aria-label="Search" onClick={onSearch}>
+        <Search size={18} strokeWidth={1.7} />
+      </button>
+      <button
+        type="button"
+        className="tdg-planner-header-icon"
+        aria-label="Notifications"
+        aria-expanded={notesOpen}
+        onClick={() => setNotesOpen((v) => !v)}
+      >
+        <Bell size={18} strokeWidth={1.7} />
+      </button>
+      {notesOpen ? (
+        <div className="tdg-planner-notes-pop" role="status">
+          You’re all caught up. New reminders will appear here.
+        </div>
+      ) : null}
+    </div>
   );
 }

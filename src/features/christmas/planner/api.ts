@@ -280,6 +280,14 @@ export async function loadRecipients(profileId: string): Promise<GiftRecipient[]
   return ((data as GiftRecipient[]) || []).filter((row) => row.profile_id === profileId);
 }
 
+export async function loadEvents(profileId: string): Promise<Array<{ id: string; title: string; starts_on: string; event_kind: string }>> {
+  const { data } = await supabase
+    .from("christmas_events")
+    .select("id,title,starts_on,event_kind")
+    .eq("profile_id", profileId);
+  return (data as Array<{ id: string; title: string; starts_on: string; event_kind: string }>) || [];
+}
+
 export async function loadGifts(profileId: string): Promise<GiftItem[]> {
   const userId = await requirePlannerUserId();
   if (!userId) return [];
