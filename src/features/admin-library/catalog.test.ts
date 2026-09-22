@@ -50,10 +50,15 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lauren-overwhelm-master");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
+      ),
+    ).toBe(true);
+    expect(
+      searchLibraryVideos("You can only pick one", "christmas_reels", "reel").some(
+        (video) => video.id === "reel-pick-one-i2v",
       ),
     ).toBe(true);
     expect(
@@ -212,6 +217,8 @@ describe("admin video library", () => {
       "public/assets/christmas/pick-one/masters/pick_one_04_christmas_mansion.mp4",
       "public/assets/christmas/pick-one/posters/pick_one_01_cozy_cabin.jpg",
       "public/assets/christmas/pick-one/generation_manifest.json",
+      "public/assets/christmas/pick-one/final/you-can-only-pick-one-i2v.mp4",
+      "public/assets/christmas/pick-one/posters/reel-pick-one-i2v.jpg",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
@@ -222,6 +229,10 @@ describe("admin video library", () => {
     expect(pickOneShorts.every((item) => item.model === "kling-video/v3.0/pro/image-to-video")).toBe(true);
     expect(pickOneShorts.every((item) => Boolean(item.jobId))).toBe(true);
     expect(pickOneShorts.reduce((sum, item) => sum + (item.costUsd ?? 0), 0)).toBeCloseTo(1.12, 5);
+    const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
+    expect(pickOneReel?.kind).toBe("reel");
+    expect(pickOneReel?.clipsUsed).toHaveLength(4);
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
   });
 
   it("publishes a single voice-over-corrected Lauren Overwhelm master", () => {

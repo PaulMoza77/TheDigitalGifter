@@ -165,6 +165,31 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-pick-one-i2v",
+    title: "You can only pick one 🎄",
+    description:
+      "19.1s 1080×1920 silent Reel assembled from four real Kling 3.0 Pro I2V shorts (cabin → NYC penthouse → alpine hot tub → mansion). Persistent hook + numbers 1–4. Hard cuts only. Tags: christmas, final-reel, ready-to-post, pick-one, AI-generated.",
+    src: "/assets/christmas/pick-one/final/you-can-only-pick-one-i2v.mp4",
+    filename: "you-can-only-pick-one-i2v.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 19.07,
+    poster: "/assets/christmas/pick-one/posters/reel-pick-one-i2v.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 41869891,
+    createdAt: "2026-09-22T16:42:00Z",
+    tags: [...CINEMATIC_REEL_TAGS, "pick-one", "silent", "ready-to-post"],
+    model: "kling-video/v3.0/pro/image-to-video",
+    costUsd: 1.12,
+    clipsUsed: [
+      "short-pick-one-01-cozy-cabin",
+      "short-pick-one-02-nyc-penthouse",
+      "short-pick-one-03-alpine-chalet",
+      "short-pick-one-04-christmas-mansion",
+    ],
+  },
+  {
     id: "reel-lauren-overwhelm-master",
     title: "Lauren — Christmas Overwhelm Story 01 · MASTER",
     description:
@@ -246,9 +271,9 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-pick-one-christmas",
-    title: "You can only pick one 🎄",
+    title: "You can only pick one · still cuts",
     description:
-      "6.93s 1080×1920 silent still Reel. Hard cuts: cozy cabin → NYC penthouse → alpine chalet/hot tub → Christmas mansion. Persistent hook YOU CAN ONLY PICK ONE. Numbers 1–4 only. No VO, no music, no transitions.",
+      "6.93s 1080×1920 silent still Reel (legacy). Hard cuts of still photos only — not I2V. Prefer reel-pick-one-i2v for the real AI shorts Reel.",
     src: "/assets/christmas/reels/final/you-can-only-pick-one.mp4",
     filename: "you-can-only-pick-one.mp4",
     category: "christmas_reels",

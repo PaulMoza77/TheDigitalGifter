@@ -130,5 +130,28 @@
   "paid_submits": 4,
   "actual_cost_usd": 1.12,
   "status": "COMPLETE",
-  "completed_at": "2026-09-22T15:50:56.588801+00:00"
+  "completed_at": "2026-09-22T15:50:56.588801+00:00",
+  "reel": {
+    "id": "reel-pick-one-i2v",
+    "file": "/workspace/public/assets/christmas/pick-one/final/you-can-only-pick-one-i2v.mp4",
+    "poster": "/workspace/public/assets/christmas/pick-one/posters/reel-pick-one-i2v.jpg",
+    "probe": {
+      "filename": "you-can-only-pick-one-i2v.mp4",
+      "duration": 19.066667,
+      "width": 1080,
+      "height": 1920,
+      "codec": "h264",
+      "fps": 30.0,
+      "bitrate": 17567786,
+      "size": 41869891
+    },
+    "clips_used": [
+      "short-pick-one-01-cozy-cabin",
+      "short-pick-one-02-nyc-penthouse",
+      "short-pick-one-03-alpine-chalet",
+      "short-pick-one-04-christmas-mansion"
+    ],
+    "method": "ffmpeg_concat_hardcut_from_kling_i2v_masters",
+    "created_at": "2026-09-22T16:42:56.402161+00:00"
+  }
 }
