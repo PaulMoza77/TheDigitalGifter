@@ -34,7 +34,7 @@
 
 # Pre-DNS / IP verification plus Host-based production names.
 # HTTPS production hosts stay in Caddyfile.https.ready until public DNS
-# points here (so ACME is not attempted against Vercel).
+# points here (so ACME is not attempted against a foreign host).
 :80 {
 	@tdg host tdg-verify.mozas-prod-01 thedigitalgifter.com www.thedigitalgifter.com
 	handle @tdg {

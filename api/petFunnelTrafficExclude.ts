@@ -29,12 +29,11 @@ export function clientIpFromHeaders(
   return pickHeader(headers["cf-connecting-ip"]) || pickHeader(headers["x-real-ip"]) || "";
 }
 
-/** Vercel / Cloudflare edge country (ISO 3166-1 alpha-2). */
+/** Edge country from the VPS proxy (ISO 3166-1 alpha-2). */
 export function countryCodeFromHeaders(
   headers: Record<string, string | string[] | undefined>,
 ): string | null {
   const raw =
-    pickHeader(headers["x-vercel-ip-country"]) ||
     pickHeader(headers["cf-ipcountry"]) ||
     pickHeader(headers["x-country-code"]);
   if (!raw || raw === "XX" || raw === "T1") return null;

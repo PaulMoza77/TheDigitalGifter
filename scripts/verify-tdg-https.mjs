@@ -104,12 +104,12 @@ record(
     ? wwwOnVps.aOk
       ? "already_on_vps"
       : wwwDns.cname.some((c) => /vercel/i.test(c))
-        ? "still_vercel_cname"
+        ? "foreign_hosting_cname"
         : `off_vps count=${wwwDns.a.length}`
     : wwwOnVps.aOk
       ? "on_vps"
       : wwwDns.cname.some((c) => /vercel/i.test(c))
-        ? "still_vercel_cname"
+        ? "foreign_hosting_cname"
         : "not_on_vps",
 );
 record(

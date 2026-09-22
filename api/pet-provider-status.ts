@@ -1,11 +1,11 @@
 /**
- * Dog V2 fulfillment capacity probe (Vercel).
+ * Dog V2 fulfillment capacity probe on the VPS origin.
  * Same semantics as supabase/functions/pet-provider-status — used because Edge deploy
  * requires SUPABASE_ACCESS_TOKEN which may be unavailable.
  *
  * Fail-closed only when we have positive evidence that Replicate cannot fulfill
  * (kill switch, recent billing holds, 402 / auth / rate-limit / provider errors).
- * Missing REPLICATE_API_TOKEN on Vercel is a probe misconfiguration: paid generation
+ * Missing REPLICATE_API_TOKEN on the origin is a probe misconfiguration: paid generation
  * runs on Supabase Edge (where the token normally lives), so do not block checkout.
  */
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
@@ -62,7 +62,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
     const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
     if (!token) {
-      // Probe cannot call Replicate from Vercel, but fulfillment still uses Edge secrets.
+      // Probe cannot call Replicate from the origin, but fulfillment still uses Edge secrets.
       json(res, { available: true, reason: "probe_token_absent", message: "ok" });
       return;
     }

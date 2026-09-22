@@ -20,7 +20,7 @@ Baseline: main after Founding Pass product work. DONE requires a working intende
 | Analytics/admin reporting | PARTIAL | Funnel steps expanded; Planner North Star admin panel computes visitors/starts/preview/checkout/purchase/conversion/revenue/AOV/UTM/device/activation/drop-off. Production verification remaining. |
 | SEO/acquisition | PARTIAL | Canonical/hreflang/sitemap/index checks pass in smoke (155 routes, 0 failures). Search Console verification remaining. |
 | Mobile production QA | MISSING | Requires physical/mobile production acceptance. |
-| VPS-only hygiene | PARTIAL | `@vercel/node` / `@vercel/functions` removed; Node API types + origin adapter. Historical Vercel mentions remain in docs/history. VPS deploy of `068c76f` succeeded (`TDG_VPS_DEPLOY_OK`); GitHub Vercel status checks are not the production gate. |
+| VPS-only hygiene | DONE | Frontend host is the Mozas VPS. Node API types + origin adapter. `scripts/deploy-vps.sh` is the production deploy. |
 
 ## Confirmed architecture worth preserving
 - Server-authoritative Christmas catalog/checkout and entitlement bridge.

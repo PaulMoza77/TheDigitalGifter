@@ -87,8 +87,8 @@ describe("DNS A/AAAA vs VPS", () => {
     });
   });
 
-  it("fails when A still points at Vercel", () => {
-    const rec = parseDnsRecords({ a: ["216.198.79.1"], aaaa: [] });
+  it("fails when A is not the VPS", () => {
+    const rec = parseDnsRecords({ a: ["198.51.100.8"], aaaa: [] });
     expect(dnsPointsAtVps({ ...rec, vpsIp: "203.0.113.9" }).ok).toBe(false);
   });
 

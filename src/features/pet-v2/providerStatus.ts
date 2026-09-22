@@ -1,6 +1,6 @@
 /**
  * Provider fulfillment availability for Dog V2.
- * Prefer same-origin Vercel probe (always deployable with the frontend).
+ * Prefer the same-origin VPS probe (deployed with the frontend).
  * Fall back to Supabase edge `pet-provider-status` when present.
  */
 import { getPublicSupabaseConfig } from "@/lib/env";
@@ -17,8 +17,8 @@ export type V2ProviderStatus = {
 const CACHE_MS = 60_000;
 let cached: V2ProviderStatus | null = null;
 
-/** Same-origin Vercel route — primary probe after conversion rebuild. */
-export const V2_PROVIDER_STATUS_VERCEL_PATH = "/api/pet-provider-status" as const;
+/** Same-origin VPS route — primary probe after conversion rebuild. */
+export const V2_PROVIDER_STATUS_ORIGIN_PATH = "/api/pet-provider-status" as const;
 
 export function clearV2ProviderStatusCache() {
   cached = null;
@@ -64,16 +64,16 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
   if (!force && cached && now - cached.checkedAt < CACHE_MS) return cached;
 
   try {
-    // 1) Same-origin Vercel probe (canonical for production frontend deploys).
-    const vercel = await fetchJson(V2_PROVIDER_STATUS_VERCEL_PATH);
-    const vercelReason = typeof vercel.body.reason === "string" ? vercel.body.reason : null;
+    // 1) Same-origin VPS probe (canonical for production frontend deploys).
+    const origin = await fetchJson(V2_PROVIDER_STATUS_ORIGIN_PATH);
+    const originReason = typeof origin.body.reason === "string" ? origin.body.reason : null;
     // Older deploys returned available:false for missing_token. Prefer Edge when the
-    // Vercel probe is only misconfigured (token lives on Supabase for fulfillment).
-    const vercelIsConfigMiss =
-      vercel.body.available === false &&
-      (vercelReason === "missing_token" || vercelReason === "probe_token_absent");
-    if (vercel.status !== 404 && "available" in vercel.body && !vercelIsConfigMiss) {
-      const status = parseStatus(vercel.body, now);
+    // origin probe is only misconfigured (token lives on Supabase for fulfillment).
+    const originIsConfigMiss =
+      origin.body.available === false &&
+      (originReason === "missing_token" || originReason === "probe_token_absent");
+    if (origin.status !== 404 && "available" in origin.body && !originIsConfigMiss) {
+      const status = parseStatus(origin.body, now);
       cached = status;
       return status;
     }
@@ -90,12 +90,12 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
       return status;
     }
 
-    // Edge missing / unreachable: if Vercel only lacked the probe token, allow checkout.
-    if (vercelIsConfigMiss || (vercel.status !== 404 && vercel.body.available === true)) {
+    // Edge missing / unreachable: if the origin only lacked the probe token, allow checkout.
+    if (originIsConfigMiss || (origin.status !== 404 && origin.body.available === true)) {
       const status = parseStatus(
-        vercelIsConfigMiss
+        originIsConfigMiss
           ? { available: true, reason: "probe_token_absent", message: "ok" }
-          : vercel.body,
+          : origin.body,
         now,
       );
       cached = status;

@@ -135,7 +135,7 @@ Device identifiers beyond session storage are not used (privacy). CAPTCHA is def
 
 1. **iPhone HEIC.** V1 and V2 reject HEIC. iOS often converts to JPEG in the picker; if it does not, the visitor sees an explicit error. This can kill mobile conversion.  
 2. **Preview ≠ paid pack quality.** Same model, one scene. If royal-portrait likeness is weak, the “wow” moment fails and may *reduce* conversion vs V1.  
-3. **Vercel timeout.** Live poll is 60s maxDuration on `api/pet-v2/preview.ts` only.  
+3. **Origin timeout.** Live poll is bounded on `api/pet-v2/preview.ts` only. Production previews use the Supabase edge function.  
 4. **Confounded experiment** if $19 copy and preview funnel launch together.  
 5. **Accidental production traffic.** Routes are unlinked from `/dogs` and sitemap. Still discoverable by URL.  
 6. **Personality.** V1 mood adjectives do not justify a required step. V2 omits it.  

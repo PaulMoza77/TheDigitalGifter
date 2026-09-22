@@ -1,5 +1,5 @@
 /**
- * Node/Vercel port of supabase/functions/christmas-generate-video/index.ts.
+ * Node origin port of supabase/functions/christmas-generate-video/index.ts.
  * Keep in sync with the Deno source — see api/christmas-funnel.ts for context.
  */
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";

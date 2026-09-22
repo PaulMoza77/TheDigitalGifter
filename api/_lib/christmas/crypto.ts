@@ -1,5 +1,5 @@
 /**
- * Node/Vercel port of supabase/functions/_shared/christmas/crypto.ts.
+ * Node origin port of supabase/functions/_shared/christmas/crypto.ts.
  * Keep in sync with the Deno source.
  */
 import { createHash, randomBytes } from "node:crypto";

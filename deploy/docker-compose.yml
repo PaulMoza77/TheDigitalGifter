@@ -45,7 +45,7 @@ services:
       HF_CREDENTIALS: ${HF_CREDENTIALS:-}
       HF_API_KEY_ID: ${HF_API_KEY_ID:-}
       HF_API_KEY_SECRET: ${HF_API_KEY_SECRET:-}
-      VERCEL_ENV: production
+      TDG_ENV: production
       TDG_RELEASE: ${TDG_RELEASE:-latest}
     expose:
       - "8080"

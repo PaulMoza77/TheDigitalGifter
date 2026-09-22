@@ -94,7 +94,7 @@ function post(payload: Record<string, string | number | boolean | null>): void {
     Authorization: `Bearer ${anon}`,
   };
 
-  // Prefer Supabase Edge — production does not depend on Vercel deploy.
+  // Prefer Supabase Edge. The VPS origin is the fallback.
   void fetch(christmasEventEdgeUrl(), {
     method: "POST",
     headers: edgeHeaders,

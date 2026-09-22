@@ -18,7 +18,7 @@ Romanian alternates live under `/ro/christmas/...` with `hreflang`.
 ## Indexability
 
 - **SSR HTML** from `api/christmas-seo.ts` (service-role read of `seo_pages`)
-- Vercel rewrites those paths to the handler **before** the SPA catch-all
+- Mozas origin classifies those paths as `christmas-seo.ts` **before** the SPA catch-all
 - Mozas origin classifies the same paths as `christmas-seo.ts` so refresh is not an empty shell
 - Sitemap includes cluster URLs + xhtml hreflang when service role is present
 - Client route still exists for in-app navigation and also reads `seo_pages` (no mock runtime catalog)

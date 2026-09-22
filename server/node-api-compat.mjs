@@ -106,6 +106,3 @@ export async function invokeNodeHandler(handler, req, res, url) {
   }
   await handler(req, res);
 }
-
-/** @deprecated Use invokeNodeHandler. Kept while remaining callers migrate. */
-export const invokeVercelHandler = invokeNodeHandler;

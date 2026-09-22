@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import type { NodeApiRequest, NodeApiResponse } from "../_lib/nodeHandler";
 
 /**
- * Legacy Vercel preview endpoint.
+ * Legacy same-origin preview endpoint.
  * Production V2 clients call the Supabase edge function `pet-v2-preview`.
- * This handler stays self-contained so Vercel no longer crashes on import.
+ * This handler stays self-contained and live-disabled unless explicitly forced.
  */
 
 const IDENTITY_LOCK =
@@ -82,9 +82,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
   const liveKill = String(process.env.PET_V2_PREVIEW_LIVE || "").toLowerCase() === "false";
   const token = String(process.env.REPLICATE_API_TOKEN || "").trim();
-  // Production free previews must use Supabase pet-v2-preview. Keep this Vercel
+  // Production free previews must use Supabase pet-v2-preview. Keep this
   // path permanently live-disabled unless explicitly forced for local debugging.
-  const forceLegacyLive = String(process.env.PET_V2_VERCEL_PREVIEW_LIVE || "").toLowerCase() === "true";
+  const forceLegacyLive = String(process.env.PET_V2_LEGACY_PREVIEW_LIVE || "").toLowerCase() === "true";
   if (liveKill || !token || !forceLegacyLive) {
     return res.status(200).json({
       ok: false,

@@ -2,7 +2,7 @@
  * HTTP→HTTPS cutover helpers.
  *
  * Never follow an HTTP redirect from a --resolve :80 pin onto public :443 —
- * that would hit stale DNS (Vercel) instead of the VPS.
+ * that would hit stale public DNS instead of the VPS.
  */
 
 const TDG_HOSTS = new Set(["thedigitalgifter.com", "www.thedigitalgifter.com"]);
@@ -68,7 +68,7 @@ export function parseDnsRecords(rec = {}) {
 
 /**
  * A must be exactly the VPS IPv4. AAAA must be empty (preferred for first ACME)
- * or exactly the VPS IPv6. A CNAME to Vercel is not on-VPS.
+ * or exactly the VPS IPv6. Any CNAME is not on-VPS.
  *
  * @param {{ a: string[], aaaa: string[], vpsIp: string, vpsIpv6?: string }} p
  */

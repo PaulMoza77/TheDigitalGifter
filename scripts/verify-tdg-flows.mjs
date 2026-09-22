@@ -97,19 +97,19 @@ const authCb = originCurl("/auth/callback");
 record("auth_callback_spa", authCb.status === 200 && authCb.html, `http=${authCb.status}`);
 
 const apiMiss = originCurl("/api/does-not-exist");
-record("vercel_dep_api_miss_json", apiMiss.status === 404 && !apiMiss.html && apiMiss.json?.error === "not_found", `http=${apiMiss.status}`);
+record("origin_api_miss_json", apiMiss.status === 404 && !apiMiss.html && apiMiss.json?.error === "not_found", `http=${apiMiss.status}`);
 
 const provider = originCurl("/api/pet-provider-status");
 record(
-  "vercel_dep_provider_status",
+  "origin_provider_status",
   provider.status === 200 && provider.json?.available === true,
   `http=${provider.status} available=${provider.json?.available === true}`,
 );
 
 const ingest = originCurl("/api/pet/funnel-event", ["-X", "POST", "-H", "Content-Type: application/json", "-d", "{}"]);
-record("vercel_dep_pet_v1_ingest", ingest.status === 400 && !ingest.html, `http=${ingest.status}`);
+record("origin_pet_v1_ingest", ingest.status === 400 && !ingest.html, `http=${ingest.status}`);
 
-const xmasVercel = originCurl("/api/christmas-funnel", [
+const xmasOrigin = originCurl("/api/christmas-funnel", [
   "-X",
   "POST",
   "-H",
@@ -118,9 +118,9 @@ const xmasVercel = originCurl("/api/christmas-funnel", [
   '{"action":"__probe__"}',
 ]);
 record(
-  "vercel_dep_christmas_funnel_not_html",
-  xmasVercel.status >= 400 && xmasVercel.status < 600 && !xmasVercel.html,
-  `http=${xmasVercel.status}`,
+  "origin_christmas_funnel_not_html",
+  xmasOrigin.status >= 400 && xmasOrigin.status < 600 && !xmasOrigin.html,
+  `http=${xmasOrigin.status}`,
 );
 
 const settings = await fetch(`${supabaseUrl}/auth/v1/settings`, {
@@ -232,23 +232,23 @@ record(
   `http=${themozas}`,
 );
 
-let vercel = "000";
-let vercelHtml = "";
+let publicHome = "000";
+let publicHomeHtml = "";
 try {
-  vercel = execFileSync(
+  publicHome = execFileSync(
     "curl",
-    ["-sS", "-o", "/tmp/tdg-vercel-home", "-w", "%{http_code}", "--max-time", "20", "https://www.thedigitalgifter.com/"],
+    ["-sS", "-o", "/tmp/tdg-public-home", "-w", "%{http_code}", "--max-time", "20", "https://www.thedigitalgifter.com/"],
     { encoding: "utf8" },
   );
-  vercelHtml = execFileSync("cat", ["/tmp/tdg-vercel-home"], { encoding: "utf8" });
+  publicHomeHtml = execFileSync("cat", ["/tmp/tdg-public-home"], { encoding: "utf8" });
 } catch (err) {
-  vercel = String(err?.stdout || "000");
-  vercelHtml = "";
+  publicHome = String(err?.stdout || "000");
+  publicHomeHtml = "";
 }
 record(
   "public_www_https_html",
-  vercel === "200" && /^\s*<!doctype html/i.test(vercelHtml),
-  `http=${vercel} (Vercel rollback before cutover; VPS TDG after)`,
+  publicHome === "200" && /^\s*<!doctype html/i.test(publicHomeHtml),
+  `http=${publicHome}`,
 );
 
 const failed = results.filter((row) => !row.ok);
