@@ -17,9 +17,9 @@ import {
   applyDiscoveryChip,
   filterRecipes,
   formatMinutes,
-  recipeCountry,
   recipeCourse,
-  recipeDifficulty,
+  recipeDietary,
+  recipePhoto,
   scaleIngredientList,
   suggestMenu,
   uniqueFacetValues,
@@ -118,7 +118,7 @@ export function ChristmasPlannerFoodPage() {
   const [diet, setDiet] = useState("all");
   const [country, setCountry] = useState("all");
   const [customTitle, setCustomTitle] = useState("");
-  const [wizard, setWizard] = useState<"plan" | "menu">("plan");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -142,15 +142,14 @@ export function ChristmasPlannerFoodPage() {
   const sitting = dishes.filter((d) => d.meal_id === meal?.id);
   const totalPrep = sitting.reduce((s, d) => s + (d.prep_minutes || 0) + (d.cook_minutes || 0), 0);
   const headcount = meal?.guest_count || people;
-  const groceryNeed = 0;
 
   if (loading) return <PlannerLoading label="Loading meals…" />;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
-        <PlannerPaywall feature="food_planner" title="Meals are part of Christmas Planner" body="Get my Christmas Planner for $17 to plan the occasion, guests, recipes, portions, menu, and grocery list." />
+        <PlannerPageHeader title="Meals" lede="A beautiful menu, planned around your people." />
+        <PlannerPaywall feature="food_planner" title="Meals are part of Christmas Planner" body="Get my Christmas Planner for $17 to plan the menu, guests, and grocery list." />
       </div>
     );
   }
@@ -239,51 +238,129 @@ export function ChristmasPlannerFoodPage() {
     return recipe ? recipeCourse(recipe) === course : false;
   });
 
+  const MENU_COURSES = [
+    { id: "appetizer", label: "Starter" },
+    { id: "main", label: "Main" },
+    { id: "side", label: "Sides" },
+    { id: "dessert", label: "Dessert" },
+    { id: "drink", label: "Drinks" },
+  ] as const;
+
   return (
-    <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
-      <ol className="tdg-meal-steps" aria-label="Meal steps">
-        {[
-          ["Occasion", true],
-          ["Guests", people > 0],
-          ["Recipes", sitting.length > 0],
-          ["Portions", sitting.some((dish) => dish.servings > 0)],
-          ["Menu", sitting.length > 0 && wizard === "menu"],
-          ["Grocery", false],
-        ].map(([label, on]) => (
-          <li key={String(label)} className={on ? "is-on" : undefined}>
-            {label}
-          </li>
-        ))}
-      </ol>
-      <div className="tdg-planner-seg" role="tablist">
-        {FOOD_TABS.map(([id, label]) => (
-          <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
+    <div className="tdg-planner-page tdg-food-product tdg-meals">
+      <PlannerPageHeader title="Meals" lede="Plan every festive table, from breakfast to the big Christmas dinner." />
+      <div className="tdg-meals-toolbar">
+        <div className="tdg-planner-seg" role="tablist" aria-label="Meal occasions">
+          {FOOD_TABS.map(([id, label]) => (
+            <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="tdg-meals-guests">
+          Guests
+          <input
+            className="tdg-planner-input"
+            type="number"
+            min={1}
+            max={50}
+            value={people}
+            onChange={(e) => setPeople(Math.min(50, Math.max(1, Number(e.target.value || 1))))}
+            onBlur={() => {
+              if (meal) void ensureMeal(people);
+            }}
+          />
+        </label>
       </div>
       {tab === "other" ? (
-        <input className="tdg-planner-input" placeholder="Name this meal" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />
+        <input className="tdg-planner-input" placeholder="Name this meal" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} aria-label="Custom meal name" />
       ) : null}
 
-      {sitting.length === 0 || wizard === "plan" ? (
-        <section className="tdg-meal-wizard">
-          <label>
-            Guests
-            <input className="tdg-planner-input" type="number" min={1} max={50} value={people} onChange={(e) => setPeople(Math.min(50, Math.max(1, Number(e.target.value || 1))))} />
-          </label>
-          <label>
-            Food style
-            <select className="tdg-planner-select" value={country} onChange={(e) => setCountry(e.target.value)}>
-              <option value="all">Any tradition</option>
-              {uniqueFacetValues(recipes, "country").map((c) => (
-                <option key={c} value={c}>
-                  {c.replace(/-/g, " ")}
-                </option>
-              ))}
-            </select>
-          </label>
+      <section className="tdg-meal-summary">
+        <div className="tdg-meals-menu-head">
+          <div>
+            <h2>{meal?.title || FOOD_TABS.find((t) => t[0] === tab)?.[1]}</h2>
+            <p className="tdg-planner-muted">{headcount} guests</p>
+          </div>
+          <div className="tdg-planner-actions">
+            {sitting.length === 0 ? (
+              <button
+                type="button"
+                className="tdg-planner-btn primary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await ensureMeal(people);
+                    for (const recipe of suggested) {
+                      if (sitting.some((d) => d.recipe_id === recipe.id)) continue;
+                      await addRecipeToSitting(recipe);
+                    }
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Build my menu
+              </button>
+            ) : (
+              <button type="button" className="tdg-planner-btn" onClick={() => navigate("/account/christmas/grocery")}>
+                Open grocery
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="tdg-meals-courses">
+          {MENU_COURSES.map((course) => {
+            const rows = byCourse(course.id);
+            const leftover =
+              course.id === "main"
+                ? sitting.filter((d) => {
+                    const recipe = recipes.find((r) => r.id === d.recipe_id);
+                    return !recipe || !MENU_COURSES.some((c) => recipeCourse(recipe) === c.id);
+                  })
+                : [];
+            const list = [...rows, ...leftover];
+            const primary = list[0] || null;
+            const recipe = primary ? recipes.find((r) => r.id === primary.recipe_id) : null;
+            return (
+              <article key={course.id} className="tdg-meals-course">
+                <img src={recipePhoto(recipe || { image_path: null, course: course.id, category: course.id })} alt="" loading="lazy" />
+                <p className="tdg-meals-course-label">{course.label}</p>
+                {primary ? (
+                  <>
+                    <strong>{primary.dish_name}</strong>
+                    <p className="tdg-planner-muted">
+                      {primary.prep_minutes || primary.cook_minutes
+                        ? formatMinutes((primary.prep_minutes || 0) + (primary.cook_minutes || 0))
+                        : "On the menu"}
+                      {list.length > 1 ? ` · +${list.length - 1} more` : ""}
+                    </p>
+                    <label className="tdg-servings-inline">
+                      Servings
+                      <input
+                        className="tdg-planner-input"
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={primary.servings}
+                        onChange={(e) => void setServings(primary, Number(e.target.value || primary.servings))}
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <strong>Not chosen yet</strong>
+                    <Link className="tdg-planner-btn" to="/account/christmas/recipes">
+                      Choose {course.label.toLowerCase()}
+                    </Link>
+                  </>
+                )}
+              </article>
+            );
+          })}
+        </div>
+        <div className="tdg-meals-diet">
           <label>
             Dietary
             <select className="tdg-planner-select" value={diet} onChange={(e) => setDiet(e.target.value)}>
@@ -293,72 +370,25 @@ export function ChristmasPlannerFoodPage() {
               <option value="gluten-free">Gluten-free</option>
             </select>
           </label>
-          <button
-            type="button"
-            className="tdg-planner-btn primary tdg-sticky-cta"
-            onClick={async () => {
-              await ensureMeal(people);
-              for (const recipe of suggested) {
-                if (sitting.some((d) => d.recipe_id === recipe.id)) continue;
-                await addRecipeToSitting(recipe);
-              }
-              setWizard("menu");
-            }}
-          >
-            Suggest a menu
-          </button>
-          <Link className="tdg-planner-btn" to="/account/christmas/recipes">
-            Choose recipes myself
-          </Link>
-        </section>
-      ) : null}
-
-      {sitting.length ? (
-        <section className="tdg-meal-summary">
-          <h2>{meal?.title || FOOD_TABS.find((t) => t[0] === tab)?.[1]}</h2>
-          <p className="tdg-planner-muted">{headcount} guests</p>
-          {["appetizer", "main", "side", "dessert"].map((course) => {
-            const rows = byCourse(course);
-            const leftover = course === "appetizer" ? sitting.filter((d) => !recipes.find((r) => r.id === d.recipe_id)) : [];
-            const list = course === "main" ? [...rows, ...leftover.filter((d) => !byCourse("appetizer").includes(d) && !byCourse("side").includes(d) && !byCourse("dessert").includes(d))] : rows;
-            if (!list.length) return null;
-            return (
-              <div key={course} className="tdg-meal-course">
-                <h3>{course === "main" ? "Main" : course[0].toUpperCase() + course.slice(1)}</h3>
-                {list.map((d) => (
-                  <div key={d.id} className="tdg-planner-row">
-                    <div>
-                      <strong>{d.dish_name}</strong>
-                      <div className="tdg-planner-muted">{d.prep_minutes || d.cook_minutes ? `${(d.prep_minutes || 0) + (d.cook_minutes || 0)} min` : ""}</div>
-                    </div>
-                    <label className="tdg-servings-inline">
-                      Servings
-                      <input
-                        className="tdg-planner-input"
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={d.servings}
-                        onChange={(e) => void setServings(d, Number(e.target.value || d.servings))}
-                      />
-                    </label>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+          <label>
+            Tradition
+            <select className="tdg-planner-select" value={country} onChange={(e) => setCountry(e.target.value)}>
+              <option value="all">Any tradition</option>
+              {uniqueFacetValues(recipes, "country").map((c) => (
+                <option key={c} value={c}>
+                  {c.replace(/-/g, " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {sitting.length ? (
           <p className="tdg-meal-totals">
             Estimated preparation: {formatMinutes(totalPrep)}
             {completeness?.missing.length ? ` · Menu still needs ${completeness.missing.join(", ")}` : " · Menu looks complete"}
           </p>
-          <button type="button" className="tdg-planner-btn primary tdg-sticky-cta" onClick={() => navigate("/account/christmas/grocery")}>
-            Open grocery
-          </button>
-        </section>
-      ) : (
-        <PlannerEmptyState mark="food" title="No dishes yet." body="Suggest a menu or pick recipes. Servings follow your guest count." />
-      )}
-      <p className="tdg-planner-muted">{groceryNeed ? `${groceryNeed} ingredients still needed.` : null}</p>
+        ) : null}
+      </section>
     </div>
   );
 }
@@ -457,24 +487,53 @@ export function ChristmasPlannerRecipesPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Recipes" lede="Search, filter, cook. Add a dish to your Christmas menu or send the ingredients to the list." />
+      <PlannerPageHeader title="Recipes" lede="Find the dish, then add it to the table." />
       <input
         className="tdg-planner-input tdg-recipe-search"
         placeholder="Search recipes..."
         value={filters.query || ""}
         onChange={(e) => setFilters((p) => ({ ...p, query: e.target.value }))}
+        aria-label="Search recipes"
       />
-      <div className="tdg-discovery" role="list">
-        {RECIPE_DISCOVERY.map((chip) => (
+      <div className="tdg-recipe-quick" role="group" aria-label="Recipe filters">
+        {[
+          { id: "all", label: "All" },
+          { id: "dessert", label: "Dessert", course: "dessert" },
+          { id: "vegetarian", label: "Dietary", dietary: "vegetarian" },
+          { id: "quick", label: "Under 30 min", maxPrepMinutes: 30 },
+          { id: "traditional", label: "Tradition", tag: "traditional" },
+        ].map((chip) => {
+          const allOn =
+            chip.id === "all" &&
+            (filters.course === "all" || !filters.course) &&
+            (filters.dietary === "all" || !filters.dietary) &&
+            !filters.maxPrepMinutes &&
+            !filters.tag;
+          const on =
+            allOn ||
+            Boolean(
+              (chip.course && filters.course === chip.course) ||
+                (chip.dietary && filters.dietary === chip.dietary) ||
+                (chip.maxPrepMinutes && filters.maxPrepMinutes === chip.maxPrepMinutes) ||
+                (chip.tag && filters.tag === chip.tag),
+            );
+          return (
           <button
             key={chip.id}
             type="button"
-            className={`tdg-planner-chip${filters.tag === ("tag" in chip ? chip.tag : "") || filters.course === ("course" in chip ? chip.course : "") || filters.dietary === ("dietary" in chip ? chip.dietary : "") ? " on" : ""}`}
-            onClick={() => setFilters((p) => applyDiscoveryChip({ ...p, tag: undefined }, chip))}
+            className={`tdg-planner-chip${on ? " on" : ""}`}
+            onClick={() =>
+              setFilters((p) =>
+                chip.id === "all"
+                  ? { ...p, course: "all", dietary: "all", maxPrepMinutes: null, tag: undefined }
+                  : applyDiscoveryChip({ ...p, tag: undefined }, chip as (typeof RECIPE_DISCOVERY)[number]),
+              )
+            }
           >
             {chip.label}
           </button>
-        ))}
+        );
+        })}
       </div>
       <details className="tdg-recipe-filters">
         <summary>Filters</summary>
@@ -544,10 +603,11 @@ export function ChristmasPlannerRecipesPage() {
           return (
             <article key={r.id} className="tdg-recipe-card">
               <button type="button" className="tdg-recipe-open" onClick={() => setOpenId(open ? null : r.id)}>
-                <span className="tdg-recipe-art" aria-hidden />
+                <img className="tdg-recipe-art" src={recipePhoto(r)} alt="" loading="lazy" />
                 <strong>{r.title}</strong>
                 <p className="tdg-planner-muted">
-                  {recipeCountry(r).replace(/-/g, " ")} · {formatMinutes((r.prep_minutes || 0) + (r.cook_minutes || 0))} · {recipeDifficulty(r)}
+                  {formatMinutes((r.prep_minutes || 0) + (r.cook_minutes || 0))} · {serve} servings
+                  {recipeDietary(r)[0] ? ` · ${recipeDietary(r)[0]}` : ""}
                 </p>
               </button>
               {open ? (
@@ -612,7 +672,7 @@ export function ChristmasPlannerRecipesPage() {
                       <button type="button" className="tdg-planner-btn primary" onClick={() => void addToMeal(r, "christmas_eve")}>
                         Christmas Eve
                       </button>
-                      <button type="button" className="tdg-planner-btn primary" onClick={() => void addToMeal(r, "christmas_day")}>
+                      <button type="button" className="tdg-planner-btn" onClick={() => void addToMeal(r, "christmas_day")}>
                         Christmas Day
                       </button>
                     </div>

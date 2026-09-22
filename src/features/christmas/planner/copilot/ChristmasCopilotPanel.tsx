@@ -249,7 +249,7 @@ export function ChristmasCopilotPanel({
           className="tdg-xmas-copilot-input"
           value={question}
           onChange={(e) => onQuestionChange(e.target.value.slice(0, 240))}
-          placeholder="Ask your Christmas Copilot..."
+          placeholder="Ask anything..."
           disabled={!intel || busy}
           autoComplete="off"
         />

@@ -15,7 +15,7 @@
   --planner-shadow: 0 10px 28px rgba(28, 22, 18, 0.07);
   --planner-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --planner-sans: "Source Sans 3", "Segoe UI", sans-serif;
-  --planner-copilot-w: clamp(280px, 23.5vw, 360px);
+  --planner-copilot-w: clamp(300px, 22vw, 340px);
   min-height: 100dvh;
   background: var(--planner-cream);
   color: var(--planner-ink);
@@ -36,7 +36,7 @@
 }
 
 .tdg-planner-frame {
-  --planner-side: 272px;
+  --planner-side: 216px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -406,7 +406,7 @@
 
 .tdg-planner-app h1 {
   font-family: var(--planner-serif);
-  font-size: clamp(1.85rem, 4vw, 2.55rem);
+  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
   line-height: 1.08;
   font-weight: 600;
   margin: 0 0 8px;
@@ -1399,7 +1399,7 @@
   }
   .tdg-planner-frame {
     display: grid;
-    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
     min-height: 0;
@@ -1538,7 +1538,7 @@
 
 @media (min-width: 744px) and (max-width: 1279px) {
   .tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 256px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 200px) minmax(0, 1fr);
   }
   .tdg-planner-side {
     padding: 16px 12px 14px;
@@ -1562,9 +1562,9 @@
   }
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 1440px) {
   .tdg-planner-frame--copilot {
-    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-frame--copilot .tdg-planner-header {
     grid-column: 2;
@@ -1580,8 +1580,11 @@
     min-height: 0;
     min-width: 0;
     height: 100%;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    background: #122018;
+    border-left: 1px solid var(--planner-line);
+    background: #1c1612;
+  }
+  .tdg-copilot-today {
+    display: none;
   }
   .tdg-planner-frame--copilot .tdg-gifts-layout {
     display: block;
@@ -1595,14 +1598,8 @@
 }
 
 @media (min-width: 1280px) {
-  .tdg-planner-frame--copilot {
-    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr) var(--planner-copilot-w);
-  }
   .tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr);
-  }
-  .tdg-planner-frame--copilot.tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr);
   }
   .tdg-planner-main {
     padding: 24px 36px 56px;
@@ -4325,4 +4322,416 @@
     top: -36px;
   }
 }
+
+/* Product UX: Home, Meals, Recipes, Shopping, Plan, Budget */
+.tdg-home-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  margin: 0 0 22px;
+  border-radius: 20px;
+  background: #1c1612;
+}
+
+.tdg-home-hero-visual {
+  position: absolute;
+  inset: 0;
+}
+
+.tdg-home-hero-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 55%;
+  display: block;
+}
+
+.tdg-home-hero-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg, rgba(28, 22, 18, 0.78) 8%, rgba(28, 22, 18, 0.34) 52%, rgba(28, 22, 18, 0.12) 100%);
+}
+
+.tdg-home-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 34ch;
+  padding: 28px 24px 30px;
+}
+
+.tdg-home-hero-copy .tdg-planner-kicker,
+.tdg-home-hero-copy .tdg-planner-ready {
+  color: rgba(255, 253, 249, 0.86);
+}
+
+.tdg-home-hero-copy h1 {
+  color: #fffdf9;
+  max-width: 14ch;
+}
+
+.tdg-home-hero .tdg-planner-bar {
+  background: rgba(255, 253, 249, 0.22);
+  margin-top: 14px;
+  max-width: 220px;
+}
+
+.tdg-home-hero .tdg-planner-bar > span {
+  background: #c4a574;
+}
+
+.tdg-home-start {
+  display: grid;
+  gap: 10px;
+  max-width: 42ch;
+  padding: 8px 2px 12px;
+}
+
+.tdg-home-start h2 {
+  margin: 0;
+  font-family: var(--planner-serif);
+  font-size: clamp(1.45rem, 4vw, 1.9rem);
+  line-height: 1.15;
+}
+
+.tdg-planner-today .tdg-intel-nba {
+  margin-bottom: 18px;
+}
+
+.tdg-planner-today .tdg-intel-nba h2 {
+  font-size: 1.55rem;
+}
+
+.tdg-meals-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 16px;
+}
+
+.tdg-meals-guests {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--planner-muted);
+}
+
+.tdg-meals-guests input {
+  width: 72px;
+  margin: 0;
+}
+
+.tdg-meals-menu-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tdg-meals-menu-head h2 {
+  margin: 0;
+  font-family: var(--planner-serif);
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  line-height: 1.1;
+}
+
+.tdg-meals-courses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 14px;
+}
+
+.tdg-meals-course {
+  overflow: hidden;
+  border: 1px solid var(--planner-line);
+  border-radius: 16px;
+  background: var(--planner-surface);
+  box-shadow: var(--planner-shadow);
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 0 0 14px;
+}
+
+.tdg-meals-course img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  display: block;
+  background: var(--planner-parchment);
+}
+
+.tdg-meals-course-label {
+  margin: 10px 14px 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--planner-burgundy);
+}
+
+.tdg-meals-course strong {
+  margin: 0 14px;
+  font-family: var(--planner-serif);
+  font-size: 1.18rem;
+  line-height: 1.15;
+}
+
+.tdg-meals-course .tdg-planner-muted,
+.tdg-meals-course .tdg-servings-inline,
+.tdg-meals-course .tdg-planner-btn {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+
+.tdg-meals-course .tdg-planner-btn {
+  margin-top: 8px;
+  width: calc(100% - 28px);
+}
+
+.tdg-meals-diet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 16px;
+}
+
+.tdg-meals-diet label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--planner-muted);
+}
+
+.tdg-recipe-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+
+.tdg-recipe-filters {
+  display: block;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.tdg-recipe-filters summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tdg-recipe-filters[open] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.tdg-recipe-filters[open] summary {
+  grid-column: 1 / -1;
+}
+
+.tdg-recipe-card {
+  padding: 0;
+  overflow: hidden;
+  box-shadow: var(--planner-shadow);
+}
+
+.tdg-recipe-open {
+  width: 100%;
+}
+
+.tdg-recipe-art {
+  width: 100%;
+  height: 168px;
+  margin: 0;
+  border-radius: 0;
+  object-fit: cover;
+  background: var(--planner-parchment);
+}
+
+.tdg-recipe-open strong {
+  display: block;
+  margin: 12px 14px 4px;
+  font-family: var(--planner-serif);
+  font-size: 1.22rem;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.tdg-recipe-open .tdg-planner-muted {
+  margin: 0 14px 14px;
+  text-align: left;
+}
+
+.tdg-recipe-detail {
+  padding: 0 14px 16px;
+}
+
+.tdg-recipe-ctas {
+  grid-template-columns: 1fr;
+}
+
+.tdg-shop-group {
+  margin: 16px 0 8px;
+}
+
+.tdg-shop-group h2 {
+  margin: 0 0 8px;
+  font-family: var(--planner-serif);
+  font-size: 1.28rem;
+}
+
+.tdg-shop-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tdg-shop-list > li {
+  border-bottom: 1px solid var(--planner-line);
+}
+
+.tdg-shop-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 56px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.tdg-shop-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--planner-burgundy);
+}
+
+.tdg-shop-row span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tdg-shop-row strong {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tdg-shop-row em {
+  font-style: normal;
+  font-size: 0.88rem;
+  color: var(--planner-muted);
+}
+
+.tdg-shop-row small {
+  color: var(--planner-muted);
+  font-size: 0.78rem;
+}
+
+.tdg-tasks-stats--plan {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tdg-budget-head h1 {
+  font-family: var(--planner-serif);
+  font-size: clamp(1.55rem, 4vw, 2.1rem);
+  line-height: 1.12;
+  margin: 0 0 6px;
+}
+
+.tdg-xmas-copilot--docked .tdg-xmas-copilot-head {
+  padding: 16px 16px 8px;
+}
+
+.tdg-xmas-copilot--docked .tdg-xmas-copilot-brand {
+  font-size: 1.28rem;
+}
+
+.tdg-xmas-copilot-input::placeholder {
+  color: rgba(28, 22, 18, 0.48);
+}
+
+@media (min-width: 720px) {
+  .tdg-recipe-filters[open] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .tdg-meals-courses {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 719px) {
+  .tdg-home-hero {
+    min-height: 200px;
+    border-radius: 16px;
+  }
+  .tdg-home-hero-copy {
+    padding: 22px 18px 24px;
+  }
+  .tdg-planner-dash {
+    grid-template-columns: 1fr;
+  }
+  .tdg-meals-courses {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tdg-meals-course img,
+  .tdg-recipe-art {
+    height: 120px;
+  }
+  .tdg-shop-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .tdg-shop-row em {
+    justify-self: end;
+    text-align: right;
+  }
+  .tdg-recipe-filters[open] {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1440px) {
+  .tdg-planner-frame--copilot .tdg-planner-main > * {
+    max-width: 1080px;
+  }
+  .tdg-planner-frame--copilot .tdg-gifts,
+  .tdg-planner-frame--copilot .tdg-gifts-layout {
+    max-width: none;
+  }
+}
+
+.tdg-planner-app {
+  --planner-ivory: #f7f1e8;
+}
+
+.tdg-copilot-root {
+  --planner-ink: #1c1612;
+}
+
+.tdg-copilot-sheet p {
+  color: var(--planner-ink);
+}
+
+.tdg-copilot-card li {
+  margin: 0;
+}
+
 

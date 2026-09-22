@@ -217,6 +217,16 @@ export function suggestMenu(
   return [appetizer, main, side, dessert].filter(Boolean) as RecipeCatalogRow[];
 }
 
+export function recipePhoto(recipe: Pick<RecipeCatalogRow, "image_path" | "course" | "category"> | null | undefined): string {
+  const raw = String(recipe?.image_path || "").trim();
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("/")) return raw;
+  const course = recipe ? recipeCourse(recipe as RecipeCatalogRow) : "";
+  if (course === "dessert" || course === "drink" || course === "breakfast") {
+    return "/assets/christmas/library-stills/prague_bakery_window.jpg";
+  }
+  return "/christmas/planner/dinner-table.webp";
+}
+
 export function formatMinutes(total: number): string {
   const hours = Math.floor(total / 60);
   const minutes = total % 60;
