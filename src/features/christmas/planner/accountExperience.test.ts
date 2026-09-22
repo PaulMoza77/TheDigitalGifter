@@ -139,6 +139,12 @@ describe("Christmas Planner account, auth, and bonus credits", () => {
     expect(page).toContain("Log in");
     expect(more).toContain('["/account", "My account"');
     expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-pl__topbar-link");
+    expect(readSrc("src/features/christmas/planner/planner.css")).toContain(
+      ".tdg-planner.tdg-pl .tdg-pl__topbar a",
+    );
+    expect(readSrc("src/features/christmas/planner/planner.css")).toContain(
+      ".tdg-planner.tdg-pl .tdg-pl__topbar button.tdg-pl__topbar-cta",
+    );
     expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-pl__faq details[open] summary::after");
     expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-planner.tdg-pl .tdg-pl__faq details p");
   });

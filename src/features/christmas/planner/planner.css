@@ -2190,16 +2190,25 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(18, 8, 12, 0.88);
+  background: #1a0c10;
+  color: #fffaf1;
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(246, 239, 227, 0.12);
+  border-bottom: 1px solid rgba(246, 239, 227, 0.18);
+}
+
+/* Beat `.tdg-planner a { color: inherit }` so ink/burgundy never lands on this dark bar. */
+.tdg-planner.tdg-pl .tdg-pl__topbar,
+.tdg-planner.tdg-pl .tdg-pl__topbar a,
+.tdg-planner.tdg-pl .tdg-pl__topbar button {
+  color: #fffaf1;
 }
 
 .tdg-pl__topbar-brand {
   font-family: var(--serif);
   font-weight: 600;
+  font-size: 1.05rem;
   text-decoration: none;
-  color: var(--cream);
+  color: #fffaf1;
 }
 
 .tdg-pl__topbar-actions {
@@ -2210,47 +2219,50 @@
 
 .tdg-pl__topbar-link,
 .tdg-pl__topbar-credits {
-  color: #f3e6c8;
+  color: #fffaf1;
   text-decoration: none;
   font-weight: 650;
   font-size: 0.95rem;
 }
 
 .tdg-pl__topbar-link {
-  border-bottom: 1px solid rgba(243, 230, 200, 0.55);
+  border-bottom: 1px solid rgba(255, 250, 241, 0.72);
   padding-bottom: 1px;
 }
 
-.tdg-pl__topbar-cta {
+.tdg-planner.tdg-pl .tdg-pl__topbar-cta {
   appearance: none;
   border: 0;
   border-radius: 999px;
+  min-height: 2.5rem;
   padding: 0.45rem 0.95rem;
-  font-weight: 600;
-  background: linear-gradient(180deg, #f0d59a, #c9a24c);
-  color: #2a160c;
+  font-weight: 700;
+  background: linear-gradient(180deg, #f3dfa0 0%, #c9a24c 55%, #a87f2e 100%);
+  color: #1a100c;
   cursor: pointer;
 }
 
-.tdg-pl__topbar-avatar {
+.tdg-planner.tdg-pl .tdg-pl__topbar-avatar {
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(246, 239, 227, 0.12);
-  color: var(--gold-soft);
+  background: #6b1420;
+  color: #fffaf1;
   font-weight: 700;
   text-decoration: none;
+  border: 1px solid rgba(255, 250, 241, 0.45);
 }
 
-.tdg-pl__topbar-menu {
+.tdg-planner.tdg-pl .tdg-pl__topbar-menu {
   appearance: none;
-  border: 1px solid rgba(246, 239, 227, 0.22);
+  border: 1px solid rgba(255, 250, 241, 0.45);
   background: transparent;
-  color: var(--cream);
+  color: #fffaf1;
   border-radius: 999px;
+  min-height: 2.5rem;
   padding: 0.4rem 0.85rem;
   font-weight: 600;
 }
@@ -2260,16 +2272,16 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.75rem 1.15rem 1rem;
-  background: rgba(18, 8, 12, 0.96);
-  border-bottom: 1px solid rgba(246, 239, 227, 0.12);
+  background: #1a0c10;
+  border-bottom: 1px solid rgba(246, 239, 227, 0.18);
 }
 
-.tdg-pl__mobile-menu a,
-.tdg-pl__mobile-menu button {
+.tdg-planner.tdg-pl .tdg-pl__mobile-menu a,
+.tdg-planner.tdg-pl .tdg-pl__mobile-menu button {
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--cream);
+  color: #fffaf1;
   text-align: left;
   font: inherit;
   font-weight: 600;
