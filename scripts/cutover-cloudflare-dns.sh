@@ -155,4 +155,4 @@ verify_records "${DOMAIN}"
 verify_records "www.${DOMAIN}"
 
 echo "Cloudflare DNS cutover complete. Allow propagation, then verify HTTPS on www.${DOMAIN}."
-echo "Rollback DNS: restore the A/CNAME values saved in docs/audits/tdg-dns-before-cutover.txt (Vercel remains available)."
+echo "Rollback: point apex and www A records back at the VPS. Do not restore a third-party hosting CNAME."

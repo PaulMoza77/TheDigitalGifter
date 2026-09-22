@@ -15,7 +15,7 @@ function readRawBody(req: { on: (event: string, cb: (chunk?: Buffer) => void) =>
   });
 }
 
-function vercelLike(
+function nodeLike(
   req: { method?: string; headers: Record<string, unknown>; body?: unknown },
   res: {
     statusCode: number;
@@ -72,7 +72,7 @@ export function petV2DevPlugin(): Plugin {
           }
         }
         const fakeReq = { method: req.method, headers: req.headers as Record<string, unknown>, body };
-        const { req: vReq, res: vRes } = vercelLike(fakeReq, res);
+        const { req: vReq, res: vRes } = nodeLike(fakeReq, res);
         if (url === "/api/pet-v2/funnel-event") {
           await funnelHandler(vReq, vRes);
           return;

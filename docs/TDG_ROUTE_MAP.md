@@ -1,4 +1,4 @@
-# TheDigitalGifter production route map (Vercel → Mozas VPS)
+# TheDigitalGifter production route map (Mozas VPS)
 
 Supabase stays external for auth, database, storage, and Edge Functions.
 Checkout, Stripe webhooks, paid generation, and Replicate webhooks stay on Supabase.
@@ -13,11 +13,11 @@ Prices, providers, and product design are unchanged.
 | `/api/pet-v3/funnel-event` | Mozas Node origin | Same-origin V3 analytics. Same service-role requirement. |
 | `/api/pet-v3/internal-test-status` | Mozas Node origin | Returns 503 without service role. |
 | `/api/pet-provider-status` | Mozas Node origin (Edge fallback remains) | Checkout stays open if Replicate token is absent on VPS (`probe_token_absent`). |
-| `/api/christmas-funnel` | Mozas Node origin (Edge remains primary in the browser) | Same-origin Vercel-compat fallback if Edge is down. |
+| `/api/christmas-funnel` | Mozas Node origin (Edge remains primary in the browser) | Same-origin origin fallback if Edge is down. |
 | `/api/christmas-v2/funnel-event` | **Supabase Edge** primary; Mozas origin fallback | |
-| `/api/pet-v2/preview` | **Supabase Edge** `pet-v2-preview` | Vercel handler is live-disabled / unused. |
+| `/api/pet-v2/preview` | **Supabase Edge** `pet-v2-preview` | Same-origin handler is live-disabled / unused. |
 | `/api/christmas-generate*` | **Supabase Edge** | Server-side only. |
-| `/api/pet-analytics-cron` | **Supabase Edge** `pet-analytics-sync` | Cron Vercel shim is unused. Schedule Edge directly. |
+| `/api/pet-analytics-cron` | **Supabase Edge** `pet-analytics-sync` | Origin cron shim is unused. Schedule Edge directly. |
 | `/sitemap.xml` | Mozas Node origin | Static URLs always; SEO/blog + Christmas cluster URLs when service role is present. |
 | `/christmas/gifts-for-*`, `/christmas/messages-for-*`, message-intent slugs, `/ro/christmas/...` | Mozas Node origin → `api/christmas-seo.ts` | SSR HTML from `seo_pages`. Not the SPA shell. |
 | `/robots.txt` | Mozas static `dist` | |
@@ -32,6 +32,6 @@ Prices, providers, and product design are unchanged.
 Pre-cutover verify host: `tdg-verify.mozas-prod-01` via
 `curl --resolve tdg-verify.mozas-prod-01:80:$MOZAS_SSH_HOST http://tdg-verify.mozas-prod-01/`.
 
-Public `thedigitalgifter.com` / `www` stay on Vercel until you change DNS.
+Public `thedigitalgifter.com` / `www` are on the Mozas VPS.
 Caddy already matches those Host headers on `:80` via `--resolve` / after cutover.
 HTTPS for those names is applied only with `TDG_HTTPS_APPLY=yes bash scripts/apply-tdg-https.sh`.

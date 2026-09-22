@@ -1,7 +1,7 @@
 /**
- * Node/Vercel port of supabase/functions/_shared/christmas/constants.ts.
- * Keep in sync with the Deno source — this copy exists because Vercel
- * functions cannot import Deno-flavored modules (esm.sh URLs, Deno.env, ...).
+ * Node origin port of supabase/functions/_shared/christmas/constants.ts.
+ * Keep in sync with the Deno source — this copy exists because the VPS Node
+ * origin cannot import Deno-flavored modules (esm.sh URLs, Deno.env, ...).
  */
 
 export const CHRISTMAS_SOURCE_BUCKET = "christmas-source-photos";

@@ -15,7 +15,7 @@
 
 ## Executive summary
 
-The Digital Gifter is a **Vite + React 19 SPA** on **Vercel**, with **Supabase** (Postgres, Auth, Storage, Edge Functions), **Stripe Checkout Elements** (embedded Payment Element + Apple Pay / Google Pay Express), **Replicate** image/video generation, **Resend** transactional email, and **Meta CAPI / GA4 / Clarity** analytics.
+The Digital Gifter is a **Vite + React 19 SPA** on the **Mozas VPS**, with **Supabase** (Postgres, Auth, Storage, Edge Functions), **Stripe Checkout Elements** (embedded Payment Element + Apple Pay / Google Pay Express), **Replicate** image/video generation, **Resend** transactional email, and **Meta CAPI / GA4 / Clarity** analytics.
 
 **Christmas today:** a single occasion marketing page at `/christmas` that deep-links into the generic `/generator?occasion=christmas` and `/templates?occasion=christmas`. There is **no** Christmas Hub, product family routes, Santa Video, Tree/Advent, Wishlist, Gift Finder, cards/messages factory, or `/account/christmas`.
 
@@ -39,7 +39,7 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 | Branch | `main` |
 | HEAD | `b5aef6bc69914d1dbaa36543293d9b5d46627759` |
 | Frontend | React 19 + Vite 6 + react-router-dom 7 + Tailwind — `package.json`, `vite.config.ts`, `src/App.tsx` |
-| Backend/runtime | Supabase Edge Functions (Deno) under `supabase/functions/*`; Vercel Node routes under `api/*` |
+| Backend/runtime | Supabase Edge Functions (Deno) under `supabase/functions/*`; Node routes under `api/*` on the VPS origin |
 | Database | Supabase Postgres — `supabase/migrations/*` |
 | Auth | Supabase Auth — `src/contexts/AuthContext`, `src/pages/AuthCallback.tsx` |
 | Storage | Buckets incl. `pet-source-photos`, `pet-generated`, `seo-images` (migrations / constants) |
@@ -50,9 +50,9 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 | Analytics | GA4 `G-YF2GRM2TL4` (`index.html`); Meta Pixel/CAPI (`lib/metaPixel`, `_shared/pet/meta.ts`); Clarity (`index.html`); pet funnel event tables + hybrid Meta Ads / GA4 sync |
 | Admin | `/admin/*` SPA — `src/pages/admin/*`, `AdminRoute` |
 | iOS / native | No iOS app in this repo. `delete-my-account` comments reference App Store guideline — NOT VERIFIED as shared Christmas backend for a native Christmas rebuild |
-| Deploy | Vercel — `vercel.json`, `.vercel/`; SPA rewrite to `index.html`; cron hint for `api/pet-analytics-cron.ts` |
-| Preview/staging | Vercel preview implied via `scripts/vercel-ignore.mjs`; exact staging URL **NOT VERIFIED IN PRODUCTION** |
-| Env structure | `.env.example` — `VITE_SUPABASE_*` client; server `SUPABASE_*`; Stripe / Meta / GA4 as Edge/Vercel secrets (never `VITE_` for secrets) |
+| Deploy | Mozas VPS — `scripts/deploy-vps.sh`, Docker origin, Caddy |
+| Preview/staging | Verify host `tdg-verify.mozas-prod-01` on the VPS |
+| Env structure | `.env.example` — `VITE_SUPABASE_*` client; server `SUPABASE_*`; Stripe / Meta / GA4 as Edge or VPS secrets (never `VITE_` for secrets) |
 
 **README note:** Root `README.md` still describes an obsolete Convex/Chef template and is **not** accurate for the current Supabase architecture.
 
@@ -61,7 +61,7 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 ## 2. Routing / page architecture
 
 **Router:** `BrowserRouter` + declarative `<Routes>` in `src/App.tsx`.  
-**Rendering:** CSR SPA. `vercel.json` rewrites non-API paths to `/index.html`.  
+**Rendering:** CSR SPA. The VPS origin serves `index.html` for non-API paths.  
 **Indexability without JS:** Homepage static meta/JSON-LD exists in `index.html`. Per-route `PageHead` / `SeoPage` meta are **client-set** after hydration — crawlers that do not execute JS see thin/generic HTML for most routes.
 
 ### Current page map (relevant)
@@ -369,7 +369,7 @@ Purchase↔acquisition join: pet hybrid analytics already joins funnel sessions 
 | Sitemap | Dynamic `/sitemap.xml` → `api/sitemap.xml.ts` (static + `seo_pages` + blog) | `/christmas` **not** in static list today |
 | robots.txt | Allow `/`; disallow admin/account/funnel payment/result | `public/robots.txt` |
 | Data-driven SEO | `seo_pages` by page_type+slug | Yes |
-| Googlebot HTML | SPA shell — **weak** for deep Christmas programmatic pages without SSR/prerender | `vercel.json` rewrite |
+| Googlebot HTML | SPA shell — **weak** for deep Christmas programmatic pages without SSR/prerender | origin SPA fallback |
 
 **Christmas SEO factory recommendation:** extend `seo_pages` (or `christmas_seo_pages`) with `cluster` (`gifts-for`, `messages-for`), `locale`, template fields; add SSR/prerender or edge HTML for indexability; register routes under `/christmas/...` **or** map `page_type` carefully to avoid colliding with `/:pageType/:slug`; include in sitemap.
 
@@ -498,8 +498,8 @@ Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for previe
 | Unit | Vitest — **48 files / 360 tests passed** locally on audit machine |
 | E2E | No Playwright/Cypress found |
 | CI | **No `.github/workflows`** in repo |
-| Deploy | Vercel |
-| Rollback | Vercel deployment rollback — **NOT VERIFIED IN PRODUCTION** |
+| Deploy | Mozas VPS |
+| Rollback | Previous Docker image via `scripts/rollback-tdg-vps.sh` |
 
 **Future Christmas gates:** A generator, B payment browsers, C Santa, D Tree, E SEO — as specified in the brief; automate unit/contract tests first (pet style), then manual GATE checklists.
 

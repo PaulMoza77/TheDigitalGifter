@@ -16,7 +16,7 @@ fi
 
 if [[ "${TDG_HTTPS_ALLOW_PROXIED:-}" != "yes" ]]; then
   if ! node "${ROOT}/scripts/check-tdg-dns-ready.mjs"; then
-    echo "BLOCKED: apex + www A must point at MOZAS_SSH_HOST (no stray AAAA, no Vercel CNAME) before HTTPS apply."
+    echo "BLOCKED: apex + www A must point at MOZAS_SSH_HOST (no stray AAAA, no third-party hosting CNAME) before HTTPS apply."
     echo "Change DNS first, then re-run. Orange-cloud: TDG_HTTPS_ALLOW_PROXIED=yes"
     exit 2
   fi

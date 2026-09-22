@@ -827,6 +827,9 @@ describe("private planner privacy surface", () => {
     expect(layout).toContain("TheDigitalGifter.png");
     expect(layout).not.toContain("tdg-planner-body");
     expect(layout).toContain('aside className="tdg-planner-side"');
+    expect(layout).toContain("tdg-planner-side-toggle");
+    expect(layout).toContain("is-side-collapsed");
+    expect(css).toContain("--planner-side");
     expect(layout).toContain('main className="tdg-planner-main"');
   });
 });

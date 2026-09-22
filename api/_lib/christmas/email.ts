@@ -1,5 +1,5 @@
 /**
- * Node/Vercel port of supabase/functions/_shared/christmas/email.ts.
+ * Node origin port of supabase/functions/_shared/christmas/email.ts.
  * Keep in sync with the Deno source.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";

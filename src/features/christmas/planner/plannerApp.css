@@ -36,6 +36,7 @@
 }
 
 .tdg-planner-frame {
+  --planner-side: 272px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -249,14 +250,61 @@
   display: grid;
   justify-items: start;
   gap: 6px;
-  padding: 4px 12px 24px;
+  padding: 4px 8px 20px;
+}
+
+.tdg-planner-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  min-height: 40px;
+}
+
+.tdg-planner-side-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 12px;
+}
+
+.tdg-planner-side-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(181, 35, 46, 0.2);
+  background: #fffdf9;
+  color: var(--planner-burgundy);
+  box-shadow: 0 6px 16px rgba(54, 42, 28, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.tdg-planner-side-toggle:hover {
+  background: #fff;
+  border-color: rgba(181, 35, 46, 0.38);
+}
+
+.tdg-planner-side-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tdg-planner-side-brand strong {
   display: block;
   font-family: var(--planner-serif);
   font-size: 1.48rem;
-  line-height: 1.1;
+  line-height: 1.15;
   font-weight: 600;
   color: var(--planner-burgundy);
   white-space: nowrap;
@@ -1351,11 +1399,15 @@
   }
   .tdg-planner-frame {
     display: grid;
-    grid-template-columns: 216px minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    transition: grid-template-columns 220ms ease;
+  }
+  .tdg-planner-frame.is-side-collapsed {
+    --planner-side: 84px;
   }
   .tdg-planner-header {
     grid-column: 2;
@@ -1404,6 +1456,38 @@
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--planner-line);
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side {
+    padding: 16px 10px 14px;
+    align-items: center;
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-head {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-brand,
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-text,
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-flourish {
+    display: none;
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side a,
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-copilot {
+    width: 48px;
+    min-height: 48px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    border-radius: 14px;
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side a.active::before {
+    display: none;
+  }
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-nav,
+  .tdg-planner-frame.is-side-collapsed .tdg-planner-side-foot {
+    width: 100%;
+    align-items: center;
   }
   .tdg-planner-nav {
     display: none;
@@ -1454,18 +1538,18 @@
 
 @media (min-width: 744px) and (max-width: 1279px) {
   .tdg-planner-frame {
-    grid-template-columns: 188px minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 256px) minmax(0, 1fr);
   }
   .tdg-planner-side {
-    padding: 16px 10px 14px;
+    padding: 16px 12px 14px;
   }
   .tdg-planner-side-brand strong {
-    font-size: 1.28rem;
+    font-size: 1.42rem;
   }
   .tdg-planner-side a,
   .tdg-planner-side-copilot {
     min-height: 44px;
-    padding: 0 10px;
+    padding: 0 12px;
   }
   .tdg-planner-main {
     padding: 18px 22px 48px;
@@ -1515,7 +1599,7 @@
     grid-template-columns: 220px minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-frame {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr);
   }
   .tdg-planner-frame--copilot.tdg-planner-frame {
     grid-template-columns: 220px minmax(0, 1fr) var(--planner-copilot-w);

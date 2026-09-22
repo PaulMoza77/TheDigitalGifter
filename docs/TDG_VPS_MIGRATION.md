@@ -49,7 +49,7 @@ CI (`.github/workflows/deploy-vps-static.yml`) requires Production secrets and p
 `MOZAS_SSH_HOST` into the Verify step. After deploy it runs `TDG_HTTPS_PHASE=post`
 (public HTTPS, no `--resolve`) and Apple Pay file checks.
 
-`deploy-vercel-production.yml` has been removed. Production is VPS-only via `scripts/deploy-vps.sh`.
+The old hosted-frontend workflow has been removed. Production is VPS-only via `scripts/deploy-vps.sh`. There is no third-party frontend host.
 
 ## Verify
 
@@ -83,7 +83,7 @@ You change DNS (no Cloudflare token in this repo):
 
 1. Keep MX.
 2. Apex **and** www **A** → `MOZAS_SSH_HOST` (prefer grey-cloud; no AAAA, or AAAA = VPS only).
-3. Keep the Vercel deployment as rollback.
+3. Confirm both names answer from the VPS before HTTPS apply.
 
 **After you confirm both names are on the VPS:**
 
@@ -121,7 +121,7 @@ Instructions on VPS: `/opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt`.
 
 1. Keep MX.
 2. Apex + www A → `MOZAS_SSH_HOST` (prefer grey-cloud for first ACME).
-3. Keep Vercel as rollback.
+3. Leave public DNS on the VPS. Do not restore a pre-cutover hosting CNAME.
 4. Confirm to the agent, then HTTPS apply + post verify above.
 
 ## Still optional / blockers

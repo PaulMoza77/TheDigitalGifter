@@ -5,7 +5,7 @@ import {
   resolveFunnelIsTest,
 } from "./petFunnelTrafficExclude";
 
-/** V2 ingest. Traffic helpers live in ./petFunnelTrafficExclude (not ./_lib) to avoid prior Vercel module-load crashes. */
+/** V2 ingest. Traffic helpers live in ./petFunnelTrafficExclude (not ./_lib). */
 
 const PET_V2_EVENT_NAMES = [
   "v2_landing_view",

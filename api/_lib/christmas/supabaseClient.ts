@@ -37,7 +37,7 @@ export async function getAuthUser(authHeader: string | null | undefined): Promis
 }
 
 /** Matches supabase/functions/_shared/supabase.ts#isServiceRoleRequest so internal
- * Vercel-to-Vercel calls (e.g. christmas-funnel enqueueing christmas-generate) can
+ * origin-to-origin calls (e.g. christmas-funnel enqueueing christmas-generate) can
  * authenticate with the shared service-role key. */
 export function isServiceRoleRequest(authHeader: string | null | undefined): boolean {
   const token = String(authHeader || "").replace(/^Bearer\s+/i, "").trim();

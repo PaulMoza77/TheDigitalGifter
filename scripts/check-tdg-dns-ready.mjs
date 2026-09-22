@@ -32,7 +32,7 @@ function report(name) {
   const v = dnsPointsAtVps({ ...rec, vpsIp: ip });
   const cname = rec.cname[0] || "";
   console.log(
-    `${name} a=${v.aOk ? "vps" : "not_vps"} aaaa=${v.aaaaAbsent ? "absent" : v.aaaaOk ? "vps" : "other"} cname=${cname ? (/vercel/i.test(cname) ? "vercel" : "other") : "none"}`,
+    `${name} a=${v.aOk ? "vps" : "not_vps"} aaaa=${v.aaaaAbsent ? "absent" : v.aaaaOk ? "vps" : "other"} cname=${cname ? (/vercel/i.test(cname) ? "foreign_hosting" : "other") : "none"}`,
   );
   return v.ok;
 }

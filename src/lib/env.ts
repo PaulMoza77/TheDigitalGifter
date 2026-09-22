@@ -4,7 +4,7 @@ function requiredPublicEnv(name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY")
   if (!value) {
     throw new Error(
       `Missing required environment variable: ${name}. ` +
-        `Set it in .env.local (local) or Vercel Project Settings (deploy).`
+        `Set it in .env.local (local) or the VPS app.env used at image build.`
     );
   }
   return value;
