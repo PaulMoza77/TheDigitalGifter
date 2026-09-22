@@ -2758,3 +2758,369 @@
   }
 }
 
+
+
+/* Gifts visual parity — premium photography-led command center */
+.tdg-planner-page.tdg-gifts {
+  max-width: none;
+  width: 100%;
+}
+
+.tdg-gifts-head {
+  position: relative;
+  min-height: 172px;
+  padding: 24px 28px;
+  margin: 0 0 18px;
+  border: 1px solid rgba(54, 73, 55, .12);
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255,253,248,.98) 0%, rgba(255,253,248,.93) 40%, rgba(255,253,248,.35) 70%, rgba(255,253,248,.08) 100%),
+    url("/christmas/planner/gifts-editorial.webp") center 44% / cover no-repeat;
+  box-shadow: 0 12px 36px rgba(54, 42, 28, .08);
+}
+
+.tdg-gifts-head-copy {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  max-width: 520px;
+}
+
+.tdg-gifts-head-copy .tdg-planner-kicker {
+  color: #9d2929;
+  letter-spacing: .14em;
+}
+
+.tdg-gifts-head h1 {
+  font-size: clamp(2.65rem, 4vw, 4.2rem);
+  line-height: .95;
+  margin: 7px 0 10px;
+}
+
+.tdg-gifts-head-copy p:last-of-type {
+  max-width: 38ch;
+  font-size: 1.02rem;
+}
+
+.tdg-gifts-head-actions {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  justify-self: end;
+  width: min(360px, 100%);
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tdg-gifts-head-actions .tdg-planner-btn.primary {
+  background: #b71924;
+  border-color: #b71924;
+  color: #fff;
+  min-height: 46px;
+  box-shadow: 0 8px 20px rgba(183,25,36,.18);
+}
+
+.tdg-gifts-search { flex: 0 0 auto; }
+
+.tdg-gifts-layout {
+  width: 100%;
+}
+
+.tdg-gifts-summary {
+  gap: 12px;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  margin-bottom: 24px;
+}
+
+.tdg-gifts-summary > div {
+  position: relative;
+  min-height: 92px;
+  padding: 17px 14px 14px 54px;
+  border: 1px solid rgba(54,73,55,.12) !important;
+  border-radius: 16px;
+  background: rgba(255,253,248,.96);
+  box-shadow: 0 7px 22px rgba(54,42,28,.055);
+}
+
+.tdg-gifts-summary > div::before {
+  position: absolute;
+  left: 15px;
+  top: 18px;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+.tdg-gifts-summary > div:nth-child(1)::before { content: "🎁"; }
+.tdg-gifts-summary > div:nth-child(2)::before { content: "🛒"; }
+.tdg-gifts-summary > div:nth-child(3)::before { content: "🪙"; }
+.tdg-gifts-summary > div:nth-child(4)::before { content: "👥"; }
+
+.tdg-gifts-summary strong {
+  font-size: 1.32rem;
+}
+
+.tdg-gifts-people-head {
+  margin: 2px 0 14px;
+}
+
+.tdg-gifts-people-head h2 {
+  font-size: 1.45rem;
+}
+
+.tdg-gifts-grid {
+  gap: 16px;
+}
+
+.tdg-gifts-card,
+.tdg-gifts-add-card {
+  border-radius: 18px;
+  border-color: rgba(54,73,55,.12);
+  background: #fffdf9;
+  box-shadow: 0 8px 26px rgba(54,42,28,.065);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.tdg-gifts-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(183,25,36,.22);
+  box-shadow: 0 14px 34px rgba(54,42,28,.11);
+}
+
+.tdg-gifts-card-visual {
+  background: #eee3d4;
+}
+
+.tdg-gifts-card-visual::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 36%;
+  background: linear-gradient(transparent, rgba(21,18,13,.12));
+  pointer-events: none;
+}
+
+.tdg-gifts-card-body {
+  gap: 7px;
+}
+
+.tdg-gifts-card-body strong {
+  font-size: 1.32rem;
+}
+
+.tdg-gifts-card-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--planner-ink);
+}
+.tdg-gifts-card-next::after { content: "→"; font-size: 1.1rem; }
+
+.tdg-gifts-add-card {
+  position: relative;
+  overflow: hidden;
+  border-style: solid;
+  background:
+    linear-gradient(135deg, rgba(255,253,248,.94), rgba(248,239,224,.86)),
+    url("/christmas/planner/gifts-editorial.webp") center / cover;
+}
+.tdg-gifts-add-card::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #b71924;
+  color: #fff;
+  font-size: 1.6rem;
+  box-shadow: 0 6px 16px rgba(183,25,36,.18);
+}
+.tdg-gifts-add-card > span { margin-top: 4px; }
+
+.tdg-gifts-context {
+  gap: 14px;
+}
+
+.tdg-gifts-context-card {
+  padding: 20px;
+  border-radius: 18px;
+  border-color: rgba(54,73,55,.12);
+  background: #fffdf9;
+  box-shadow: 0 8px 26px rgba(54,42,28,.06);
+}
+
+.tdg-gifts-context-card:first-child {
+  position: relative;
+  overflow: hidden;
+  padding-top: 116px;
+  background:
+    linear-gradient(180deg, transparent 0 92px, rgba(255,253,249,.98) 116px),
+    url("/christmas/planner/gifts-editorial.webp") center 35% / cover no-repeat;
+}
+
+.tdg-gifts-context-card:first-child::before {
+  content: "It’s not just about gifts — it’s about the people who make Christmas special. ♥";
+  position: absolute;
+  inset: 18px 18px auto;
+  max-width: 220px;
+  color: #fff;
+  font-family: var(--planner-serif);
+  font-size: 1.08rem;
+  line-height: 1.25;
+  text-shadow: 0 2px 12px rgba(0,0,0,.42);
+}
+
+.tdg-gifts-context-card .tdg-planner-btn.primary {
+  width: 100%;
+  background: #b71924;
+  border-color: #b71924;
+  color: #fff;
+}
+
+.tdg-gifts-context-card.is-quiet {
+  background: #fffaf1;
+}
+
+.tdg-gifts-empty {
+  min-height: 430px;
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(54,73,55,.12);
+  background: #fffdf9;
+  box-shadow: 0 10px 30px rgba(54,42,28,.06);
+}
+
+.tdg-gifts-empty-visual {
+  min-height: 300px;
+  border-radius: 18px;
+}
+.tdg-gifts-empty-visual img { min-height: 300px; }
+
+@media (min-width: 960px) {
+  .tdg-gifts-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 290px);
+    gap: 18px;
+  }
+  .tdg-gifts-grid {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+  }
+  .tdg-gifts-card-visual {
+    height: 190px;
+    min-height: 190px;
+  }
+  .tdg-gifts-add-card {
+    min-height: 292px;
+    align-content: center;
+  }
+}
+
+@media (min-width: 1280px) {
+  .tdg-gifts-card-visual {
+    height: 205px;
+    min-height: 205px;
+  }
+}
+
+@media (max-width: 959px) {
+  .tdg-gifts-head {
+    min-height: 160px;
+    grid-template-columns: minmax(0,1fr);
+  }
+  .tdg-gifts-head-actions {
+    justify-self: stretch;
+    width: 100%;
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 719px) {
+  .tdg-gifts {
+    padding-bottom: 92px;
+  }
+  .tdg-gifts-head {
+    min-height: 0;
+    padding: 18px 16px 20px;
+    margin-inline: -4px;
+    background:
+      linear-gradient(180deg, rgba(255,253,248,.94), rgba(255,253,248,.98)),
+      url("/christmas/planner/gifts-editorial.webp") center / cover no-repeat;
+  }
+  .tdg-gifts-head h1 {
+    font-size: 2.35rem;
+  }
+  .tdg-gifts-head-copy p:last-of-type {
+    font-size: .92rem;
+  }
+  .tdg-gifts-head-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .tdg-gifts-search {
+    flex-basis: 100%;
+  }
+  .tdg-gifts-summary {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .tdg-gifts-summary > div {
+    min-width: 105px;
+    min-height: 92px;
+    padding: 40px 10px 10px;
+    text-align: center;
+  }
+  .tdg-gifts-summary > div::before {
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    font-size: 1.35rem;
+  }
+  .tdg-gifts-summary > div:nth-child(4) {
+    display: none;
+  }
+  .tdg-gifts-summary strong {
+    font-size: 1.02rem;
+  }
+  .tdg-gifts-summary span {
+    font-size: .7rem;
+  }
+  .tdg-gifts-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .tdg-gifts-card {
+    display: grid;
+    grid-template-columns: 96px minmax(0,1fr);
+    min-height: 112px;
+  }
+  .tdg-gifts-card-visual {
+    height: 112px;
+    min-height: 112px;
+  }
+  .tdg-gifts-card-body {
+    padding: 11px 13px 11px 0;
+  }
+  .tdg-gifts-add-card {
+    min-height: 112px;
+    grid-template-columns: 42px minmax(0,1fr);
+    column-gap: 10px;
+    padding: 16px;
+  }
+  .tdg-gifts-add-card::before {
+    grid-row: 1 / 3;
+  }
+  .tdg-gifts-add-card > span,
+  .tdg-gifts-add-card > em {
+    margin: 0;
+  }
+  .tdg-gifts-empty {
+    min-height: 0;
+    padding: 14px;
+  }
+  .tdg-gifts-empty-visual,
+  .tdg-gifts-empty-visual img {
+    min-height: 190px;
+  }
+}
