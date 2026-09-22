@@ -147,17 +147,19 @@ export default function PlannerVisualHarness() {
             <span>Your calm Christmas starts here.</span>
           </div>
           <nav className="tdg-planner-side-nav">
-            {[
-              ["Home", Home],
-              ["Today", LayoutList],
-              ["Plan", LayoutList],
-              ["Gifts", Gift],
-              ["Meals", ShoppingBag],
-              ["Recipes", ShoppingBag],
-              ["Shopping", ShoppingBag],
-              ["More", MoreHorizontal],
-            ].map(([label, Icon], i) => (
-              <a key={String(label)} href="#gifts" className={label === "Gifts" ? "active" : undefined}>
+            {(
+              [
+                ["Home", Home],
+                ["Today", LayoutList],
+                ["Plan", LayoutList],
+                ["Gifts", Gift],
+                ["Meals", ShoppingBag],
+                ["Recipes", ShoppingBag],
+                ["Shopping", ShoppingBag],
+                ["More", MoreHorizontal],
+              ] as const
+            ).map(([label, Icon]) => (
+              <a key={label} href="#gifts" className={label === "Gifts" ? "active" : undefined}>
                 <Icon size={16} strokeWidth={1.7} aria-hidden />
                 <span className="tdg-planner-side-label">{label}</span>
               </a>
