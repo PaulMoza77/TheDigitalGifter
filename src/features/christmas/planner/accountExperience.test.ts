@@ -138,6 +138,9 @@ describe("Christmas Planner account, auth, and bonus credits", () => {
     expect(page).toContain("Get my Planner");
     expect(page).toContain("Log in");
     expect(more).toContain('["/account", "My account"');
+    expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-pl__topbar-link");
+    expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-pl__faq details[open] summary::after");
+    expect(readSrc("src/features/christmas/planner/planner.css")).toContain(".tdg-planner.tdg-pl .tdg-pl__faq details p");
   });
 
   it("uses the same credits ledger balance for image and video generation", () => {

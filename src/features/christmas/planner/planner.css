@@ -2210,10 +2210,15 @@
 
 .tdg-pl__topbar-link,
 .tdg-pl__topbar-credits {
-  color: var(--cream);
+  color: #f3e6c8;
   text-decoration: none;
-  font-weight: 600;
-  font-size: 0.92rem;
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.tdg-pl__topbar-link {
+  border-bottom: 1px solid rgba(243, 230, 200, 0.55);
+  padding-bottom: 1px;
 }
 
 .tdg-pl__topbar-cta {
@@ -2989,9 +2994,27 @@
   min-height: 2.75rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   color: var(--pl-ink);
+  list-style: none;
 }
 
+.tdg-pl__faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.tdg-pl__faq summary::after {
+  content: "+";
+  color: var(--pl-ink-soft);
+  font-weight: 500;
+}
+
+.tdg-pl__faq details[open] summary::after {
+  content: "–";
+}
+
+.tdg-planner.tdg-pl .tdg-pl__faq details p,
 .tdg-pl__faq p {
   margin: 0.45rem 0 0.25rem;
   color: var(--pl-ink-soft);
