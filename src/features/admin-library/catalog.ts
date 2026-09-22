@@ -245,6 +245,29 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
     ],
   },
   {
+    id: "reel-pick-one-christmas",
+    title: "You can only pick one 🎄",
+    description:
+      "6.93s 1080×1920 silent still Reel. Hard cuts: cozy cabin → NYC penthouse → alpine chalet/hot tub → Christmas mansion. Persistent hook YOU CAN ONLY PICK ONE. Numbers 1–4 only. No VO, no music, no transitions.",
+    src: "/assets/christmas/reels/final/you-can-only-pick-one.mp4",
+    filename: "you-can-only-pick-one.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 6.93,
+    poster: "/assets/christmas/reels/posters/reel-pick-one-christmas.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 4214634,
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_REEL_TAGS, "pick-one", "still-reel", "silent", "loop"],
+    clipsUsed: [
+      "pick_one_01_cozy_cabin.jpg",
+      "pick_one_02_nyc_penthouse.jpg",
+      "pick_one_03_alpine_chalet.jpg",
+      "pick_one_04_christmas_mansion.jpg",
+    ],
+  },
+  {
     id: "reel-np-journey-01",
     title: "The Journey — Magical Train to the North Pole",
     description:

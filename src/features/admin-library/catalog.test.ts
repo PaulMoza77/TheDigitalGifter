@@ -115,6 +115,12 @@ describe("admin video library", () => {
       ),
     ).toBe(true);
     expect(
+      searchLibraryVideos("You can only pick one", "christmas_reels", "reel").some(
+        (item) => item.id === "reel-pick-one-christmas",
+      ),
+    ).toBe(true);
+    expect(LIBRARY_VIDEOS.find((video) => video.id === "reel-pick-one-christmas")?.durationSeconds).toBe(6.93);
+    expect(
       searchLibraryVideos("Christmas in New York", "christmas_reels", "reel").some(
         (item) => item.id === "reel-christmas-new-york-30s",
       ),
@@ -196,6 +202,10 @@ describe("admin video library", () => {
       "public/assets/christmas/global-reel/masters/global_01_lapland.mp4",
       "public/assets/christmas/global-reel/masters/global_05_white_house.mp4",
       "public/assets/christmas/global-reel/source/05_white_house_1080x1920.jpg",
+      "public/assets/christmas/reels/final/you-can-only-pick-one.mp4",
+      "public/assets/christmas/reels/posters/reel-pick-one-christmas.jpg",
+      "public/assets/christmas/library-stills/pick_one_01_cozy_cabin.jpg",
+      "public/assets/christmas/library-stills/pick_one_04_christmas_mansion.jpg",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
