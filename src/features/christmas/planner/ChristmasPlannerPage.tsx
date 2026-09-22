@@ -30,7 +30,8 @@ import {
   FOUNDING_PASS_PRICE_CENTS,
   FOUNDING_PASS_PRICE_LABEL,
   PLANNER_ACCOUNT_ROUTE,
-  PLANNER_WELCOME_ROUTE,
+  PLANNER_ACCOUNT_WELCOME_ROUTE,
+  PLANNER_PUBLIC_ROUTE,
 } from "./types";
 import {
   getOrCreatePlannerGuestToken,
@@ -41,6 +42,8 @@ import { plannerJsonLd, plannerSeo, upsertJsonLd } from "./seo";
 import { trackPlannerMetaInitiateCheckout } from "./meta";
 import { getChristmasFunnelSessionId, trackPlannerFunnel } from "./funnelTrack";
 import { PlannerHeroScene } from "./PlannerHeroScene";
+import { CHECKOUT_INTENT_KEY } from "./bonusCredits";
+import { useUserCreditsQuery } from "@/data";
 import "./planner.css";
 
 const CustomStripeCheckout = lazy(() =>
@@ -48,8 +51,6 @@ const CustomStripeCheckout = lazy(() =>
     default: mod.CustomStripeCheckout,
   })),
 );
-
-const PURCHASE_INTENT_KEY = "tdg.christmas.planner.purchaseIntent.v1";
 
 type DemoTab = "gifts" | "budget" | "meals";
 
@@ -127,7 +128,7 @@ function ensureFonts() {
 function rememberPurchaseIntent() {
   try {
     window.sessionStorage.setItem(
-      PURCHASE_INTENT_KEY,
+      CHECKOUT_INTENT_KEY,
       JSON.stringify({ packageKey: FOUNDING_PASS_PACKAGE_KEY, at: Date.now() }),
     );
   } catch {
@@ -137,8 +138,8 @@ function rememberPurchaseIntent() {
 
 function takePurchaseIntent(): boolean {
   try {
-    const raw = window.sessionStorage.getItem(PURCHASE_INTENT_KEY);
-    window.sessionStorage.removeItem(PURCHASE_INTENT_KEY);
+        const raw = window.sessionStorage.getItem(CHECKOUT_INTENT_KEY);
+        window.sessionStorage.removeItem(CHECKOUT_INTENT_KEY);
     if (!raw) return false;
     const parsed = JSON.parse(raw) as { packageKey?: string; at?: number };
     if (parsed.packageKey !== FOUNDING_PASS_PACKAGE_KEY) return false;
@@ -392,6 +393,8 @@ export default function ChristmasPlannerPage() {
   const [nearFooter, setNearFooter] = useState(false);
   const [offerSeen, setOfferSeen] = useState(false);
   const [demoSeen, setDemoSeen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { data: creditsBalance = 0 } = useUserCreditsQuery();
   const heroRef = useRef<HTMLElement | null>(null);
   const demoRef = useRef<HTMLElement | null>(null);
   const offerRef = useRef<HTMLElement | null>(null);
@@ -538,6 +541,12 @@ export default function ChristmasPlannerPage() {
         openPlanner();
         return;
       }
+      if (!user) {
+        rememberPurchaseIntent();
+        rememberAuthReturnTo(PLANNER_PUBLIC_ROUTE);
+        navigate(`/login?next=${encodeURIComponent(PLANNER_PUBLIC_ROUTE)}`);
+        return;
+      }
       if (!catalog.checkoutLive) {
         setError("Christmas Planner checkout is opening soon.");
         void trackPlannerFunnel("planner_purchase_failed", {
@@ -552,7 +561,7 @@ export default function ChristmasPlannerPage() {
       setBusy(true);
       setError(null);
       rememberPurchaseIntent();
-      rememberAuthReturnTo(PLANNER_WELCOME_ROUTE);
+      rememberAuthReturnTo(PLANNER_ACCOUNT_WELCOME_ROUTE);
       void trackPlannerFunnel("planner_cta_clicked", {
         packageKey: FOUNDING_PASS_PACKAGE_KEY,
         amountCents: priceCents,
@@ -572,7 +581,8 @@ export default function ChristmasPlannerPage() {
           guestToken,
           funnelSessionId: getChristmasFunnelSessionId(),
           existingOrderId: recovered?.orderId,
-          returnPath: PLANNER_WELCOME_ROUTE,
+          returnPath: PLANNER_ACCOUNT_WELCOME_ROUTE,
+          email: user.email || undefined,
         });
         if (result.publicToken) {
           persistPlannerOrderRecovery({
@@ -595,6 +605,12 @@ export default function ChristmasPlannerPage() {
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Could not start checkout.";
+        if (/auth_required|sign in required/i.test(msg)) {
+          rememberPurchaseIntent();
+          rememberAuthReturnTo(PLANNER_PUBLIC_ROUTE);
+          navigate(`/login?next=${encodeURIComponent(PLANNER_PUBLIC_ROUTE)}`);
+          return;
+        }
         setError(
           /not enabled|checkout_disabled/i.test(msg)
             ? "Christmas Planner checkout is opening soon."
@@ -610,7 +626,7 @@ export default function ChristmasPlannerPage() {
         setBusy(false);
       }
     },
-    [catalog.checkoutLive, openPlanner, paidAccess, priceCents],
+    [catalog.checkoutLive, navigate, openPlanner, paidAccess, priceCents, user],
   );
 
   useEffect(() => {
@@ -645,6 +661,106 @@ export default function ChristmasPlannerPage() {
     <div className="tdg-planner tdg-pl">
       <PageHead title={seo.title} description={seo.description} url={seo.url} image={seo.image} exactTitle />
 
+      <nav className="tdg-pl__topbar" aria-label="Account">
+        <Link className="tdg-pl__topbar-brand" to="/">
+          The Digital Gifter
+        </Link>
+        <div className="tdg-pl__topbar-actions tdg-pl__topbar-actions--desktop">
+          {!user ? (
+            <>
+              <Link
+                className="tdg-pl__topbar-link"
+                data-testid="planner-login"
+                to={`/login?next=${encodeURIComponent(PLANNER_PUBLIC_ROUTE)}`}
+                onClick={() => rememberAuthReturnTo(PLANNER_PUBLIC_ROUTE)}
+              >
+                Log in
+              </Link>
+              <button type="button" className="tdg-pl__topbar-cta" onClick={() => void startPay("header")}>
+                Get my Planner
+              </button>
+            </>
+          ) : !paidAccess ? (
+            <>
+              <Link className="tdg-pl__topbar-link" to="/account">
+                My Account
+              </Link>
+              <button type="button" className="tdg-pl__topbar-cta" onClick={() => void startPay("header")}>
+                Get my Planner
+              </button>
+            </>
+          ) : (
+            <>
+              <Link className="tdg-pl__topbar-link" to={PLANNER_ACCOUNT_ROUTE} data-testid="planner-my-planner">
+                My Planner
+              </Link>
+              <Link className="tdg-pl__topbar-credits" to="/account" data-testid="planner-credits-balance">
+                {Number(creditsBalance || 0)} credits
+              </Link>
+              <Link className="tdg-pl__topbar-avatar" to="/account" aria-label="Account menu">
+                {(user.email || "A").slice(0, 1).toUpperCase()}
+              </Link>
+            </>
+          )}
+        </div>
+        <button
+          type="button"
+          className="tdg-pl__topbar-menu"
+          aria-expanded={menuOpen}
+          aria-label="Open menu"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          Menu
+        </button>
+      </nav>
+      {menuOpen ? (
+        <div className="tdg-pl__mobile-menu" data-testid="planner-mobile-menu">
+          {!user ? (
+            <>
+              <Link to={`/login?next=${encodeURIComponent(PLANNER_PUBLIC_ROUTE)}`} onClick={() => setMenuOpen(false)}>
+                Log in
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void startPay("header_mobile");
+                }}
+              >
+                Get my Planner
+              </button>
+            </>
+          ) : !paidAccess ? (
+            <>
+              <Link to="/account" onClick={() => setMenuOpen(false)}>
+                My Account
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void startPay("header_mobile");
+                }}
+              >
+                Get my Planner
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to={PLANNER_ACCOUNT_ROUTE} onClick={() => setMenuOpen(false)}>
+                My Planner
+              </Link>
+              <Link to="/account" onClick={() => setMenuOpen(false)}>
+                {Number(creditsBalance || 0)} credits
+              </Link>
+              <Link to="/account" onClick={() => setMenuOpen(false)}>
+                Account
+              </Link>
+            </>
+          )}
+        </div>
+      ) : null}
+
       <header className="tdg-pl__hero" ref={heroRef}>
         <div className="tdg-pl__hero-atmosphere" aria-hidden="true">
           <PlannerHeroScene alt="" />
@@ -668,7 +784,11 @@ export default function ChristmasPlannerPage() {
                 See the planner
               </button>
             </div>
-            {!paidAccess ? <p className="tdg-pl__micro">One-time payment. No subscription.</p> : null}
+            {!paidAccess ? (
+              <p className="tdg-pl__micro" data-testid="planner-bonus-copy">
+                Christmas Planner 2026 + 300 bonus AI credits. One-time payment. No subscription.
+              </p>
+            ) : null}
           </div>
           <div className="tdg-pl__hero-product">
             <HeroProductSummary />
@@ -732,7 +852,7 @@ export default function ChristmasPlannerPage() {
       >
         <div className="tdg-pl__shell">
           <div className="tdg-pl__offer" id="packages">
-            <p className="tdg-pl__eyebrow tdg-pl__eyebrow--on-dark">Christmas Planner 2026</p>
+            <p className="tdg-pl__eyebrow tdg-pl__eyebrow--on-dark">Christmas Planner 2026 + 300 bonus AI credits</p>
             <p className="tdg-pl__price" aria-label={`Price ${priceLabel} USD`}>
               {priceLabel} <span>USD</span>
             </p>
@@ -740,9 +860,14 @@ export default function ChristmasPlannerPage() {
             <ul className="tdg-pl__offer-ticks">
               <li>Gifts, budget, meals, groceries, tasks &amp; hosting</li>
               <li>Access for the Christmas 2026 season</li>
+              <li>300 bonus credits for AI images and videos</li>
               <li>Works on phone and computer</li>
-              <li>Not a PDF - your plan stays online</li>
+              <li>One-time payment — no subscription</li>
             </ul>
+            <p className="tdg-pl__micro tdg-pl__micro--on-dark tdg-pl__bonus-note">
+              Use your bonus credits in The Digital Gifter Generator to create Christmas images or videos.
+              Generation costs vary by model and format.
+            </p>
 
             <div className="tdg-pl__checkout" id="checkout" ref={paymentRef}>
               {error ? (

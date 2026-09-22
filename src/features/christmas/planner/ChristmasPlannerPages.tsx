@@ -581,6 +581,13 @@ export function ChristmasPlannerMorePage() {
       ],
     },
     {
+      title: "Account",
+      items: [
+        ["/account", "My account", "Credits, orders, and sign-out", "settings"],
+        ["/generator", "Create", "Use your AI credits for an image or video", "star"],
+      ],
+    },
+    {
       title: "Season extras",
       items: [
         ["/account/christmas/traditions", "Traditions", "Make time for what matters", "star"],

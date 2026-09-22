@@ -1,6 +1,6 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { isWave1GenerationLocale, normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
-import { getServiceClient, readJson } from "../_shared/supabase.ts";
+import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
 import {
   buildChristmasPortraitPrompt,
   isPortraitProductKey,
@@ -132,6 +132,10 @@ Deno.serve(async (req) => {
 
     const service = getServiceClient();
     const plannerFlow = isPlannerProductKey(productKey);
+    const { user: authUser } = await getAuthUser(req);
+    if (plannerFlow && !authUser?.id) {
+      return jsonResponse({ error: "Sign in required to purchase the Planner.", code: "auth_required" }, 401);
+    }
 
     let resolvedProductKey = productKey;
     let productName = "";
@@ -333,7 +337,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Stripe is not configured" }, 503);
     }
 
-    const email = asString(body.email).toLowerCase();
+    const email = (asString(body.email) || asString(authUser?.email)).toLowerCase();
     const successUrl = plannerFlow
       ? plannerSafeCheckoutSuccessUrl(asString(body.success_url) || asString(body.landing_path), siteOrigin())
       : asString(body.success_url) ||
@@ -347,6 +351,7 @@ Deno.serve(async (req) => {
     const orderPatch = {
       email: email || null,
       email_normalized: email || null,
+      ...(plannerFlow && authUser?.id ? { user_id: authUser.id } : {}),
       style_key: styleKey || null,
       source_path: sourcePath || null,
       source_bucket: asString(body.source_bucket) || "christmas-source",
@@ -416,6 +421,7 @@ Deno.serve(async (req) => {
                   addon_keys: plannerAddonKeys,
                   entitlements: plannerEntitlements,
                   product_family: "christmas_planner",
+                  user_id: authUser?.id || null,
                 }
               : {}),
             ...(guestTokenHash ? { guest_token_hash: guestTokenHash } : {}),
@@ -490,6 +496,12 @@ Deno.serve(async (req) => {
       params.set("metadata[planner]", "1");
       params.set("metadata[addon_keys]", plannerAddonKeys.join(","));
       params.set("metadata[entitlements]", plannerEntitlements.join(","));
+      if (authUser?.id) {
+        params.set("metadata[user_id]", authUser.id);
+        params.set("client_reference_id", authUser.id);
+        params.set("payment_intent_data[metadata][user_id]", authUser.id);
+        params.set("payment_intent_data[metadata][product_key]", resolvedProductKey);
+      }
     }
     if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
     if (styleKey) params.set("metadata[style_key]", styleKey);

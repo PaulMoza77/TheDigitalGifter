@@ -420,13 +420,14 @@ describe("christmas planner wiring", () => {
     expect(page).toContain("starting.current");
     expect(page).toContain("Open my planner");
     expect(page).toContain("navigate(PLANNER_ACCOUNT_ROUTE)");
-    expect(page).toContain("PURCHASE_INTENT_KEY");
+    expect(page).toContain("CHECKOUT_INTENT_KEY");
     expect(copy.match(/q:/g)?.length).toBeGreaterThanOrEqual(6);
     expect(copy.match(/q:/g)?.length).toBeLessThanOrEqual(7);
     expect(copy.toLowerCase()).toContain("one-time");
     expect(copy.toLowerCase()).toContain("not lifetime");
     expect(copy.toLowerCase()).toContain("not separately defined");
-    expect(copy.toLowerCase()).toContain("separate credits");
+    expect(copy.toLowerCase()).toContain("300 bonus");
+    expect(copy.toLowerCase()).toContain("log in");
     expect(copy).toContain("BUDGET_DEMO_REMAINING");
     expect(copy).toContain("MEAL_DEMO_RECIPE");
     expect(readSrc("src/pages/website/HomePage.tsx")).toContain("/christmas/planner");
@@ -761,7 +762,7 @@ describe("private planner privacy surface", () => {
     const workspace = readSrc("supabase/migrations/20260917180000_christmas_planner_workspace.sql");
     expect(layout).toContain("noindex");
     expect(gate).toContain("PlannerAuthGate");
-    const auth = readSrc("src/features/christmas/planner/PlannerAuthGate.tsx");
+    const auth = readSrc("src/features/christmas/planner/ChristmasAuthScreen.tsx");
     const appCss = readSrc("src/features/christmas/planner/plannerApp.css");
     expect(auth).toContain("tdg-planner-google");
     expect(auth).toContain('fill="#4285F4"');

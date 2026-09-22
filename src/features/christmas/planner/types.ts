@@ -295,5 +295,6 @@ export const FREE_LIMITS = {
 export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
 export const PLANNER_PUBLIC_ROUTE = "/christmas/planner";
 export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
+export const PLANNER_ACCOUNT_WELCOME_ROUTE = "/account/christmas/welcome";
 export const PLANNER_UPGRADE_HASH = "pricing";
 export const PLANNER_ORDER_STORAGE_KEY = "tdg.christmas.planner.order.v1";

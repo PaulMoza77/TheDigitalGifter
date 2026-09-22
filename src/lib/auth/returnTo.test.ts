@@ -16,8 +16,11 @@ describe("admin return path", () => {
     expect(isSafeAuthReturnPath("/christmas")).toBe(true);
     expect(isSafeAuthReturnPath("/christmas?joined=1")).toBe(true);
     expect(isSafeAuthReturnPath("/christmas/planner")).toBe(true);
-    expect(isSafeAuthReturnPath("/christmas/planner/welcome")).toBe(true);
-    expect(isSafeAuthReturnPath("/account/christmas")).toBe(true);
+    expect(isSafeAuthReturnPath("/login")).toBe(true);
+    expect(isSafeAuthReturnPath("/account")).toBe(true);
+    expect(isSafeAuthReturnPath("/account/christmas/welcome")).toBe(true);
+    expect(isSafeAuthReturnPath("/generator")).toBe(true);
+    expect(isSafeAuthReturnPath("https://evil.com")).toBe(false);
     expect(isSafeAuthReturnPath("/christmas/tree")).toBe(false);
     expect(isSafeAuthReturnPath("//evil.com")).toBe(false);
   });

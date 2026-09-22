@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { resolveOAuthReturnTo, withAuthError } from "@/lib/auth/oauthReturn";
+import { isSafeAuthReturnPath, rememberAuthReturnTo } from "@/lib/auth/returnTo";
+import { resolvePostAuthDestination } from "@/lib/auth/postAuth";
 
 function getHashParams() {
   const hash = window.location.hash.startsWith("#")
@@ -18,18 +20,19 @@ export default function AuthCallback() {
   useEffect(() => {
     let mounted = true;
 
-    function destination() {
-      return resolveOAuthReturnTo(window.location.search, "/");
-    }
-
     async function finish() {
       if (!mounted) return;
-      navigate(destination(), { replace: true });
+      const stored = resolveOAuthReturnTo(window.location.search, "/account");
+      const dest = await resolvePostAuthDestination(stored);
+      navigate(dest, { replace: true });
     }
 
     async function fail(reason: string) {
       if (!mounted) return;
-      navigate(withAuthError(destination(), reason), { replace: true });
+      const stored = resolveOAuthReturnTo(window.location.search, "/login");
+      const next = isSafeAuthReturnPath(stored) ? stored : "/account";
+      if (isSafeAuthReturnPath(next)) rememberAuthReturnTo(next);
+      navigate(withAuthError(`/login?next=${encodeURIComponent(next)}`, reason), { replace: true });
     }
 
     async function handleAuthCallback() {

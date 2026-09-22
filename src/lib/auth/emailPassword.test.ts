@@ -48,9 +48,9 @@ describe("email password auth", () => {
   });
 
   it("keeps planner and welcome gates on separate sign-in vs create-account actions", () => {
-    const gate = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/PlannerAuthGate.tsx"), "utf8");
+    const gate = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/ChristmasAuthScreen.tsx"), "utf8");
     const welcome = readFileSync(
-      resolve(process.cwd(), "src/features/christmas/planner/ChristmasPlannerWelcomePage.tsx"),
+      resolve(process.cwd(), "src/features/christmas/planner/ChristmasAuthScreen.tsx"),
       "utf8",
     );
     expect(gate).toContain("signInWithEmailPassword");

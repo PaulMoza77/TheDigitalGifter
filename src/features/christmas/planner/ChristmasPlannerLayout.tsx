@@ -23,6 +23,7 @@ import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./On
 import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
 import { PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import { PlannerGiftMark } from "./plannerMarks";
+import { PlannerAccountChrome } from "./PlannerAccountChrome";
 import "./plannerApp.css";
 
 const SIDE = [
@@ -121,7 +122,7 @@ function PlannerAppShell() {
                 <PlannerProgress value={readiness} compact />
               </span>
             ) : null}
-            <a href="/account/dashboard">Account</a>
+            <PlannerAccountChrome />
           </div>
         </header>
         <aside className="tdg-planner-side" aria-label="Planner modules">
@@ -147,7 +148,7 @@ function PlannerAppShell() {
               <Sparkles size={16} strokeWidth={1.7} aria-hidden />
               AI Copilot
             </button>
-            <a href="/account/dashboard">
+            <a href="/account">
               <UserRound size={16} strokeWidth={1.6} aria-hidden />
               Account
             </a>

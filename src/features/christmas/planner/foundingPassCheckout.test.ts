@@ -128,9 +128,9 @@ describe("Founding Pass unlock CTA", () => {
     expect(plannerCheckoutReturnPath("/account/christmas/grocery")).toBe("/account/christmas/grocery");
     expect(plannerCheckoutReturnPath("/account/christmas/calendar")).toBe("/account/christmas/calendar");
     expect(plannerCheckoutReturnPath("https://evil.example/account/christmas/food")).toBe(
-      "/christmas/planner/welcome",
+      "/account/christmas/welcome",
     );
-    expect(plannerCheckoutReturnPath("//evil.com")).toBe("/christmas/planner/welcome");
+    expect(plannerCheckoutReturnPath("//evil.com")).toBe("/account/christmas/welcome");
     const layout = readSrc("src/features/christmas/planner/ChristmasPlannerLayout.tsx");
     expect(layout).toContain('params.get("checkout") !== "success"');
     expect(layout).toContain("claimPlannerOrder");
@@ -174,6 +174,7 @@ describe("Founding Pass unlock CTA", () => {
   it("grants Founding Pass entitlements only after verified Stripe fulfillment", () => {
     const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
     expect(fulfill).toContain("fulfill_christmas_order_payment");
+    expect(fulfill).toContain("grant_christmas_planner_purchase_bonus");
     expect(fulfill).toContain("grant_christmas_planner_entitlements");
     expect(fulfill).toContain('p_source: "stripe"');
     expect(readSrc("supabase/migrations/20260920210000_founding_pass_price_lock.sql")).toContain("price_cents = 1700");

@@ -45,7 +45,7 @@ export default function ProtectedClientRoute() {
 
   if (!session) {
     if (location.pathname === "/account/christmas" || location.pathname.startsWith("/account/christmas/")) {
-      rememberAuthReturnTo("/account/christmas");
+      rememberAuthReturnTo(`${location.pathname}${location.search}`);
       return (
         <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f6efe4] text-[#1c1612]">Opening…</div>}>
           <PlannerAuthGate />

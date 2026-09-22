@@ -69,7 +69,7 @@ export default function AccountTopbar() {
 
   const items: TopbarItem[] = React.useMemo(() => {
     const base: TopbarItem[] = [
-      { label: "Dashboard", to: "/account/dashboard", icon: LayoutGrid },
+      { label: "Account", to: "/account", icon: LayoutGrid },
       { label: "Christmas Planner", to: "/account/christmas", icon: TreePine },
       { label: "Affiliate", to: "/account/affiliate", icon: Users },
     ];
