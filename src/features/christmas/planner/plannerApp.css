@@ -1532,7 +1532,7 @@
   }
 }
 
-@media (min-width: 744px) and (max-width: 1279px) {
+@media (min-width: 744px) and (max-width: 1099px) {
   .tdg-planner-frame {
     grid-template-columns: var(--planner-side, 256px) minmax(0, 1fr);
   }
@@ -1560,7 +1560,7 @@
 
 @media (min-width: 1280px) {
   .tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 228px) minmax(0, 1fr) minmax(280px, 23.5%);
   }
   .tdg-planner-main {
     padding: 24px 40px 56px;
@@ -2700,6 +2700,10 @@
   box-shadow: none;
 }
 
+.tdg-gifts-head-art {
+  display: none;
+}
+
 .tdg-gifts-head-copy {
   position: relative;
   z-index: 1;
@@ -2708,19 +2712,19 @@
 }
 
 .tdg-gifts-head-copy .tdg-planner-kicker {
-  color: var(--planner-muted);
-  letter-spacing: 0.16em;
+  color: var(--planner-burgundy);
+  letter-spacing: 0.14em;
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
   white-space: nowrap;
 }
 
 .tdg-gifts-head h1 {
-  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
-  line-height: 1.15;
+  font-size: clamp(2.05rem, 4.2vw, 3rem);
+  line-height: 1.02;
   margin: 0 0 8px;
-  color: var(--planner-ink);
+  color: #4a1a1e;
 }
 
 .tdg-gifts-head-copy p {
@@ -2747,9 +2751,9 @@
   border-color: transparent;
   color: #fffdf9;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0 18px;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 999px;
   box-shadow: none;
 }
 
@@ -2782,22 +2786,22 @@
 
 .tdg-gifts-summary > div {
   position: relative;
-  min-height: 88px;
-  padding: 14px 16px 16px;
+  min-height: 92px;
+  padding: 16px 16px 14px;
   border: 1px solid var(--planner-line) !important;
-  border-radius: 0;
-  background: rgba(255, 253, 248, 0.55);
-  box-shadow: none;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(54, 42, 28, 0.05);
 }
 
 .tdg-gifts-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
+  gap: 12px;
   margin: 0 0 22px;
-  border: 1px solid var(--planner-line);
-  overflow: hidden;
-  background: rgba(255, 253, 248, 0.55);
+  border: 0;
+  overflow: visible;
+  background: transparent;
 }
 
 .tdg-gifts-summary > div::before {
@@ -2805,7 +2809,9 @@
 }
 
 .tdg-gifts-summary svg {
-  display: none;
+  display: block;
+  color: var(--planner-burgundy);
+  margin-bottom: 8px;
 }
 
 .tdg-gifts-summary strong {
@@ -2842,17 +2848,17 @@
 .tdg-gifts-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0;
+  gap: 6px;
   overflow: visible;
   max-width: 100%;
-  border: 1px solid var(--planner-line);
+  border: 0;
 }
 
 .tdg-gifts-chips button {
   flex: 0 0 auto;
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 14px;
-  border-radius: 0;
+  border-radius: 999px;
   border: 0;
   background: transparent;
   color: var(--planner-muted);
@@ -2962,14 +2968,7 @@
 }
 
 .tdg-gifts-card .tdg-planner-bar {
-  height: 6px;
-  margin: 4px 0 2px;
-  width: 100%;
-  background: rgba(181,35,46,.12);
-}
-
-.tdg-gifts-card .tdg-planner-bar > span {
-  background: #b5232e;
+  display: none;
 }
 
 .tdg-gifts-add-card {
@@ -3219,10 +3218,51 @@
 
 @media (min-width: 960px) {
   .tdg-gifts-head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.92fr);
     align-items: start;
     height: auto;
     max-height: none;
+    min-height: 132px;
+  }
+  .tdg-gifts-head-art {
+    display: block;
+    position: absolute;
+    top: -28px;
+    right: -8px;
+    width: min(48%, 440px);
+    height: 168px;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 0 0 0 28px;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+  }
+  .tdg-gifts-head-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 58% 42%;
+    display: block;
+  }
+  .tdg-gifts-head-copy {
+    position: relative;
+    z-index: 2;
+  }
+  .tdg-gifts-head-actions {
+    justify-self: end;
+    align-self: start;
+    width: auto;
+    max-width: 100%;
+    padding-top: 6px;
+    flex-wrap: nowrap;
+  }
+  .tdg-gifts-search {
+    flex: 1 1 180px;
+    min-width: 160px;
+    max-width: 260px;
+  }
+  .tdg-gifts-search .tdg-planner-input {
+    min-width: 0;
   }
   .tdg-gifts-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3233,15 +3273,18 @@
   }
   .tdg-gifts-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 28px;
     align-items: start;
   }
-  .tdg-gifts-context {
+  .tdg-gifts-spotlight {
     display: grid;
+    grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1fr) minmax(160px, 0.7fr);
     gap: 16px;
-    position: sticky;
-    top: 8px;
+    align-items: stretch;
+  }
+  .tdg-gifts-context {
+    display: none;
   }
   .tdg-gifts-mobile-inspire {
     display: none;
@@ -3267,7 +3310,10 @@
     min-height: 148px;
   }
   .tdg-gifts-layout {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tdg-gifts-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -3341,6 +3387,10 @@
     text-align: left;
   }
   .tdg-gifts-summary svg {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .tdg-gifts-head-art {
     display: none;
   }
   .tdg-gifts-summary > div:nth-child(4) {
@@ -4025,4 +4075,390 @@
     top: -36px;
   }
 }
+
+/* Shared kicker accent, buttons, and Christmas Copilot photo rail */
+.tdg-planner-kicker--accent {
+  color: var(--planner-burgundy);
+  letter-spacing: 0.14em;
+}
+
+.tdg-planner-btn.primary {
+  border-radius: 999px;
+}
+
+.tdg-gifts-head-actions .tdg-planner-btn.primary {
+  border-radius: 999px;
+  padding: 0 18px;
+}
+
+.tdg-gifts-search .tdg-planner-input {
+  border-radius: 999px;
+  padding-left: 16px;
+  min-width: 220px;
+  background: rgba(255, 253, 248, 0.96);
+}
+
+.tdg-gifts-summary > div {
+  display: grid;
+  align-content: start;
+}
+
+.tdg-gifts-summary svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tdg-copilot-panel-photo {
+  background-position: 78% 58%;
+  transform: scale(1.08);
+  transform-origin: 78% 58%;
+}
+
+.tdg-gifts-spotlight {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.tdg-gifts-context-mood {
+  min-height: 168px;
+  background:
+    linear-gradient(180deg, rgba(20, 12, 10, 0.15), rgba(20, 12, 10, 0.55)),
+    url("/assets/christmas/christmas_hero_room.webp") center / cover no-repeat;
+  color: #fffdf9;
+  border: 0;
+}
+
+.tdg-gifts-context-mood p {
+  color: #fffdf9;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.tdg-gifts-card-visual {
+  height: 148px;
+}
+
+.tdg-copilot-rail {
+  display: none;
+}
+
+.tdg-copilot-panel {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  color: #fffaf1;
+  background: #1a100c;
+}
+
+.tdg-copilot-panel-photo,
+.tdg-copilot-panel-veil {
+  position: absolute;
+  inset: 0;
+}
+
+.tdg-copilot-panel-photo {
+  background-size: cover;
+  background-position: 62% 48%;
+  background-repeat: no-repeat;
+}
+
+.tdg-copilot-panel-veil {
+  background:
+    linear-gradient(180deg, rgba(18, 10, 8, 0.42) 0%, rgba(18, 10, 8, 0.18) 28%, rgba(18, 10, 8, 0.58) 100%);
+}
+
+.tdg-copilot-panel-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  padding: 22px 18px 16px;
+}
+
+.tdg-copilot-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.tdg-copilot-panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--planner-serif);
+  font-size: 1.65rem;
+  color: #fffaf1;
+  font-weight: 600;
+}
+
+.tdg-copilot-panel-head p {
+  margin: 4px 0 0;
+  color: rgba(255, 250, 241, 0.82);
+  font-size: 0.92rem;
+}
+
+.tdg-copilot-panel-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 250, 241, 0.16);
+  color: #fffaf1;
+  cursor: pointer;
+}
+
+.tdg-copilot-panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 12px;
+}
+
+.tdg-copilot-suggest {
+  display: grid;
+  gap: 8px;
+}
+
+.tdg-copilot-suggest button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(247, 241, 232, 0.82);
+  color: #1c1612;
+  text-align: left;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(12, 8, 6, 0.12);
+}
+
+.tdg-copilot-suggest button svg {
+  color: var(--planner-burgundy);
+  flex-shrink: 0;
+}
+
+.tdg-copilot-nextwin {
+  margin-top: auto;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(247, 241, 232, 0.92);
+  color: #1c1612;
+  box-shadow: 0 12px 28px rgba(12, 8, 6, 0.16);
+}
+
+.tdg-copilot-nextwin-kicker {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--planner-muted);
+}
+
+.tdg-copilot-nextwin-title {
+  margin: 0 0 12px;
+  font-family: var(--planner-serif);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  color: #1c1612;
+}
+
+.tdg-copilot-nextwin .tdg-planner-btn.primary {
+  width: 100%;
+}
+
+.tdg-copilot-thread {
+  display: grid;
+  gap: 10px;
+}
+
+.tdg-copilot-bubble {
+  padding: 12px 14px;
+  border-radius: 16px;
+  max-width: 100%;
+}
+
+.tdg-copilot-bubble.is-user {
+  justify-self: end;
+  background: rgba(181, 35, 46, 0.88);
+  color: #fffaf1;
+}
+
+.tdg-copilot-bubble.is-assistant {
+  background: rgba(247, 241, 232, 0.92);
+  color: #1c1612;
+}
+
+.tdg-copilot-bubble p,
+.tdg-copilot-card,
+.tdg-copilot-card strong,
+.tdg-copilot-card p,
+.tdg-copilot-card li,
+.tdg-copilot-confirm,
+.tdg-copilot-confirm p,
+.tdg-copilot-sheet p {
+  color: inherit;
+}
+
+.tdg-copilot-card {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 253, 249, 0.72);
+  color: #1c1612;
+}
+
+.tdg-copilot-followups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tdg-copilot-followups button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(247, 241, 232, 0.86);
+  color: #1c1612;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.tdg-copilot-dock {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 250, 241, 0.94);
+}
+
+.tdg-copilot-dock input {
+  flex: 1;
+  min-height: 42px;
+  border: 0;
+  background: transparent;
+  color: #1c1612;
+  outline: none;
+}
+
+.tdg-copilot-dock input::placeholder {
+  color: #6f675f;
+}
+
+.tdg-copilot-send {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--planner-pine);
+  color: #f7f0e4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.tdg-copilot-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tdg-copilot-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  --planner-cream: #f6efe4;
+  --planner-parchment: #efe4d2;
+  --planner-ink: #1c1612;
+  --planner-muted: #5c534b;
+  --planner-gold: #8a6a32;
+  --planner-burgundy: #7a2430;
+  --planner-pine: #143328;
+  --planner-line: rgba(20, 51, 40, 0.12);
+  color: var(--planner-ink);
+}
+
+.tdg-copilot-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(20, 22, 18, 0.5);
+  cursor: pointer;
+}
+
+.tdg-copilot-panel.is-sheet {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(420px, 100%);
+  height: 100%;
+}
+
+@media (max-width: 1099px) {
+  .tdg-copilot-panel.is-sheet {
+    top: auto;
+    height: min(92dvh, 760px);
+    width: 100%;
+    border-radius: 22px 22px 0 0;
+  }
+}
+
+@media (min-width: 1100px) {
+  .tdg-planner-frame {
+    grid-template-columns: var(--planner-side, 220px) minmax(0, 1fr) minmax(280px, 23.5%);
+  }
+  .tdg-planner-header {
+    display: none;
+  }
+  .tdg-planner-main {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    padding-top: 28px;
+  }
+  .tdg-copilot-rail {
+    display: block;
+    grid-column: 3;
+    grid-row: 1 / -1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    position: sticky;
+    top: 0;
+  }
+  .tdg-gifts-add-card {
+    display: none;
+  }
+}
+
+@media (max-width: 719px) {
+  .tdg-gifts-spotlight {
+    grid-template-columns: 1fr;
+  }
+  .tdg-copilot-dock {
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 

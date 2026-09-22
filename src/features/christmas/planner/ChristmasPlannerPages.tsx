@@ -192,7 +192,7 @@ export default function ChristmasPlannerTodayPage() {
   return (
     <div className="tdg-planner-today">
       <header className="tdg-planner-hero tdg-home-hero">
-        <p className="tdg-planner-kicker">{plannerGreeting(now, tz)}</p>
+        <p className="tdg-planner-kicker tdg-planner-kicker--accent">{plannerGreeting(now, tz)}</p>
         <h1>{countdownCopy(daysLeft)}</h1>
         <p className="tdg-planner-ready">{readiness.percent}% planned</p>
         <PlannerProgress value={readiness.percent} />
@@ -468,7 +468,7 @@ export function ChristmasPlannerMorePage() {
   ] as const;
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="More" lede="Everything else for your Christmas season." />
+      <PlannerPageHeader kicker="The rest of the season" title="More" lede="Everything else for your Christmas season." />
       {groups.map((group) => (
         <section key={group.title} className="tdg-planner-section">
           <p className="tdg-planner-kicker">{group.title}</p>

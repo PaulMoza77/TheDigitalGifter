@@ -43,7 +43,7 @@ describe("planner visual language is shared from My Planner", () => {
     expect(css).not.toContain("font-size: 2.85rem");
     expect(css).not.toMatch(/\.tdg-gifts-head h1 \{[\s\S]*?3\.75rem/);
     expect(css).toContain(".tdg-gifts-head h1");
-    expect(css).toContain("clamp(1.55rem, 6.4vw, 2.15rem)");
+    expect(css).toContain("clamp(2.05rem, 4.2vw, 3rem)");
   });
 
   it("does not use the dark recipe art gradient", () => {

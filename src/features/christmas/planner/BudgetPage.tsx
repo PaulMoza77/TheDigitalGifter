@@ -246,6 +246,7 @@ export function ChristmasPlannerBudgetPage() {
     return (
       <div className="tdg-planner-page tdg-budget-page">
         <PlannerPageHeader
+          kicker="Spend with intention"
           title="Christmas Budget"
           lede="Keep Christmas spending beautifully under control."
         />
@@ -314,7 +315,7 @@ export function ChristmasPlannerBudgetPage() {
     <div className="tdg-planner-page tdg-budget-page">
       <header className="tdg-budget-head">
         <div>
-          <p className="tdg-planner-kicker">Christmas Budget</p>
+      <p className="tdg-planner-kicker tdg-planner-kicker--accent">Spend with intention</p>
           <h1>{money(total)}</h1>
           <p className="tdg-planner-muted">Total Christmas budget</p>
         </div>

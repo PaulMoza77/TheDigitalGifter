@@ -149,7 +149,7 @@ export function ChristmasPlannerFoodPage() {
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
+        <PlannerPageHeader kicker="Gather around the table" title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
         <PlannerPaywall feature="food_planner" title="Meals are part of Christmas Planner" body="Get my Christmas Planner for $17 to plan the occasion, guests, recipes, portions, menu, and grocery list." />
       </div>
     );
@@ -241,7 +241,7 @@ export function ChristmasPlannerFoodPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
+      <PlannerPageHeader kicker="Gather around the table" title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
       <ol className="tdg-meal-steps" aria-label="Meal steps">
         {[
           ["Occasion", true],
@@ -457,7 +457,7 @@ export function ChristmasPlannerRecipesPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Recipes" lede="Search, filter, cook. Add a dish to your Christmas menu or send the ingredients to the list." />
+      <PlannerPageHeader kicker="Cook with calm" title="Recipes" lede="Search, filter, cook. Add a dish to your Christmas menu or send the ingredients to the list." />
       <input
         className="tdg-planner-input tdg-recipe-search"
         placeholder="Search recipes..."
@@ -666,7 +666,7 @@ export function ChristmasPlannerGroceryPage() {
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Grocery" lede="Food for the menu. Gift shopping is a separate list." />
+        <PlannerPageHeader kicker="What to pick up" title="Grocery" lede="Food for the menu. Gift shopping is a separate list." />
         <PlannerPaywall feature="food_planner" title="Grocery is part of Christmas Planner" body="Get my Christmas Planner for $17 to keep one grocery list from your meals." />
       </div>
     );
@@ -676,7 +676,7 @@ export function ChristmasPlannerGroceryPage() {
 
   return (
     <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Grocery" lede="Built from your menu. Tick what you have. This is food, not gift shopping." />
+      <PlannerPageHeader kicker="What to pick up" title="Grocery" lede="Built from your menu. Tick what you have. This is food, not gift shopping." />
       <p className="tdg-planner-muted">{remaining} ingredients still needed</p>
       {notice ? <p className="tdg-planner-muted" role="status">{notice}</p> : null}
       <form

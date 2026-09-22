@@ -110,7 +110,7 @@ export function PlannerPageHeader({
 }) {
   return (
     <header className="tdg-planner-page-head">
-      {kicker ? <p className="tdg-planner-kicker">{kicker}</p> : null}
+      {kicker ? <p className="tdg-planner-kicker tdg-planner-kicker--accent">{kicker}</p> : null}
       <h1>{title}</h1>
       <p>{lede}</p>
       {children}
