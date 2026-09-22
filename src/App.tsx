@@ -172,6 +172,7 @@ const ChristmasPlannerPage = lazy(
 const ChristmasPlannerWelcomePage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
 );
+const PlannerVisualHarness = lazy(() => import("@/dev/PlannerVisualHarness"));
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
@@ -471,7 +472,8 @@ function PlannerAwareSupportWidget() {
     location.pathname === "/christmas/planner" ||
     location.pathname.startsWith("/christmas/planner/") ||
     location.pathname === "/account/christmas" ||
-    location.pathname.startsWith("/account/christmas/")
+    location.pathname.startsWith("/account/christmas/") ||
+    location.pathname.startsWith("/dev/planner-visual")
   ) {
     return null;
   }
@@ -808,6 +810,17 @@ function AppInner() {
               element={<Navigate to="/new-born" replace />}
             />
           </Route>
+
+          {import.meta.env.DEV ? (
+            <Route
+              path="/dev/planner-visual"
+              element={
+                <Suspense fallback={<div style={{ padding: 24 }}>Loading visual harness…</div>}>
+                  <PlannerVisualHarness />
+                </Suspense>
+              }
+            />
+          ) : null}
 
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account/christmas/welcome" element={<PlannerPurchaseWelcomePage />} />

@@ -258,7 +258,7 @@
   font-size: 1.48rem;
   line-height: 1.1;
   font-weight: 600;
-  color: var(--planner-ink);
+  color: var(--planner-burgundy);
   white-space: nowrap;
 }
 
@@ -1904,6 +1904,7 @@
 .tdg-planner-copilot-rail {
   position: relative;
   z-index: 5;
+  display: none;
 }
 
 .tdg-xmas-copilot {
@@ -2836,6 +2837,12 @@
   display: none;
 }
 
+.tdg-planner-app .fixed.bottom-4.right-4,
+.tdg-planner-app [data-testid="support-ticket-fab"],
+.tdg-planner-app .tdg-support-fab {
+  display: none !important;
+}
+
 .tdg-gifts-head-copy {
   position: relative;
   z-index: 1;
@@ -3024,16 +3031,16 @@
   background: var(--planner-surface);
   color: inherit;
   cursor: pointer;
-  box-shadow: none;
-  transition: border-color 160ms ease, background 160ms ease;
+  box-shadow: var(--planner-shadow);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .tdg-gifts-card:hover,
   .tdg-gifts-add-card:hover {
     transform: none;
-    border-color: rgba(181, 35, 46, 0.28);
-    box-shadow: none;
+    border-color: rgba(166, 10, 10, 0.28);
+    box-shadow: 0 14px 32px rgba(28, 22, 18, 0.1);
   }
 }
 
@@ -3364,19 +3371,26 @@
 
 @media (min-width: 960px) {
   .tdg-gifts-head {
-    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.9fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
     align-items: end;
-    gap: 18px 24px;
+    gap: 16px 20px;
     height: auto;
     max-height: none;
+    position: relative;
+    padding: 22px 24px 20px;
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 168px;
+    background: var(--planner-parchment);
   }
   .tdg-gifts-head-hero {
     display: block;
-    grid-column: 1 / -1;
-    height: 148px;
-    border-radius: 18px;
+    position: absolute;
+    inset: 0;
+    grid-column: auto;
+    height: auto;
+    border-radius: 0;
     overflow: hidden;
-    background: var(--planner-parchment);
   }
   .tdg-gifts-head-hero img {
     width: 100%;
@@ -3384,13 +3398,23 @@
     object-fit: cover;
     object-position: center 45%;
   }
+  .tdg-gifts-head-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(250, 248, 246, 0.92) 0%, rgba(250, 248, 246, 0.72) 42%, rgba(250, 248, 246, 0.28) 100%);
+  }
   .tdg-gifts-head-copy {
     align-self: end;
+    position: relative;
+    z-index: 1;
   }
   .tdg-gifts-head-actions {
     justify-self: end;
     width: auto;
     align-self: end;
+    position: relative;
+    z-index: 1;
   }
   .tdg-gifts-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
