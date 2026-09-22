@@ -59,8 +59,16 @@ describe("planner visual language is shared from My Planner", () => {
     expect(css).toContain("clamp(1.55rem, 6.4vw, 2.15rem)");
   });
 
-  it("does not use the dark recipe art gradient", () => {
-    expect(css).not.toContain("linear-gradient(135deg, #143328, #c4a574 55%, #7a2430)");
+  it("keeps Gifts as the visual quality bar without a second copilot column below 1440", () => {
+    expect(css).toContain("--planner-side: 216px");
+    expect(css).toContain("--planner-copilot-w: clamp(300px, 22vw, 340px)");
+    expect(readSrc("src/features/christmas/planner/copilot/CopilotHost.tsx")).toContain('matchMedia("(min-width: 1440px)"');
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx")).toContain("Start with the people");
+    expect(readSrc("src/features/christmas/planner/food/FoodPages.tsx")).toContain("Build my menu");
+    expect(readSrc("src/features/christmas/planner/food/FoodPages.tsx")).toContain("tdg-meals-course");
+    expect(readSrc("src/features/christmas/planner/ChristmasPlannerMoreModules.tsx")).toContain("tdg-shop-row");
+    expect(readSrc("src/features/christmas/planner/BudgetPage.tsx")).toContain("spent of");
+    expect(readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx")).toContain("People first.");
   });
 
   it("uses cream loading for planner auth instead of a black flash", () => {

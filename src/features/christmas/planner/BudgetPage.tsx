@@ -315,8 +315,10 @@ export function ChristmasPlannerBudgetPage() {
       <header className="tdg-budget-head">
         <div>
           <p className="tdg-planner-kicker">Christmas Budget</p>
-          <h1>{money(total)}</h1>
-          <p className="tdg-planner-muted">Total Christmas budget</p>
+          <h1>
+            {money(spent)} spent of {money(total)}
+          </h1>
+          <p className="tdg-planner-muted">{remaining < 0 ? `${money(Math.abs(remaining))} over` : `${money(remaining)} remaining`}</p>
         </div>
         {entitled ? (
           editingTotal ? (

@@ -65,11 +65,11 @@ export function ChristmasCopilotRail() {
 
 function useDesktopCopilot() {
   const [desktop, setDesktop] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(min-width: 1100px)").matches : true,
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1440px)").matches : true,
   );
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1100px)");
+    const mq = window.matchMedia("(min-width: 1440px)");
     const onChange = () => setDesktop(mq.matches);
     onChange();
     mq.addEventListener("change", onChange);

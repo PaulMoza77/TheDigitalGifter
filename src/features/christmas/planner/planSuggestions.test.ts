@@ -60,7 +60,7 @@ describe("Tasks page copy and assets", () => {
     expect(page).toContain("insertTasks");
     expect(page).toContain("missingStarterTasks");
     expect(page).toContain("/assets/christmas/cozy-reel/posters/clip1.jpg");
-    expect(page).toContain("/assets/christmas/luxury-palace/posters/palace_04_entrance.jpg");
+    expect(page).not.toContain("tdg-tasks-door");
     expect(page).not.toContain("🎁");
     expect(css).toContain(".tdg-tasks");
     expect(css).toContain(".tdg-tasks-hero-fade");

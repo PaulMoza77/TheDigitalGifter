@@ -15,11 +15,10 @@ import { PlannerRecommendationSheet, PlannerRescueBanner } from "./intelligence/
 import {
   countdownCopy,
   daysUntilChristmas,
-  formatPlannerDate,
   plannerGreeting,
 } from "./date";
 import { giftPeopleLimit } from "./giftPeople";
-import { plannerTodayIso, plannerWeekEndIso, taskWhen, tasksForView } from "./taskSchedule";
+import { plannerTodayIso, plannerWeekEndIso, taskWhen } from "./taskSchedule";
 import { recommendedToday } from "./planGenerator";
 import { bumpPlannerWorkspace, localReadinessPercent, publishPlannerReadiness } from "./workspaceSync";
 import { canAddCustomTask, canAddRecipient, hasFeature } from "./entitlements";
@@ -114,10 +113,7 @@ export default function ChristmasPlannerTodayPage() {
   const overdue = tasks.filter((task) => taskWhen(task, todayIso, weekEnd) === "overdue");
   const dueToday = tasks.filter((task) => taskWhen(task, todayIso, weekEnd) === "today");
   const weekTasks = tasks.filter((task) => taskWhen(task, todayIso, weekEnd) === "week");
-  const laterTasks = tasks.filter((task) => taskWhen(task, todayIso, weekEnd) === "later" && task.due_on);
   const priorities = recommendedToday([...overdue, ...dueToday, ...weekTasks], todayIso, 3, weekEnd);
-  const priorityIds = new Set(priorities.map((task) => task.id));
-  const thisWeek = weekTasks.filter((task) => !priorityIds.has(task.id)).slice(0, 3);
   const mealsCount = intel?.snapshot.meals.length || 0;
   const giftsWithoutPlan = Math.max(
     0,
@@ -125,7 +121,6 @@ export default function ChristmasPlannerTodayPage() {
   );
   const spent = intel?.budget.spentMinor ?? gifts.reduce((s, g) => s + (g.actual_price_minor || 0), 0);
   const planned = profile.total_budget_minor || intel?.budget.forecastMinor || 0;
-  const nextDeadline = [...dueToday, ...weekTasks, ...laterTasks].sort((a, b) => (a.due_on || "").localeCompare(b.due_on || ""))[0] || null;
 
   async function addQuick(event: FormEvent) {
     event.preventDefault();
@@ -188,166 +183,163 @@ export default function ChristmasPlannerTodayPage() {
   const primary = intel?.nextBestAction || null;
   const giftPeople = giftPeopleLimit(access, recipients).giftPeople;
   const groceryNeed = (intel?.snapshot.grocery || []).filter((row) => row.status === "need").length;
+  const isFreshStart = giftPeople === 0 && mealsCount === 0 && !priorities.length;
 
   return (
     <div className="tdg-planner-today">
-      <header className="tdg-planner-hero tdg-home-hero">
-        <p className="tdg-planner-kicker">{plannerGreeting(now, tz)}</p>
-        <h1>{countdownCopy(daysLeft)}</h1>
-        <p className="tdg-planner-ready">{readiness.percent}% planned</p>
-        <PlannerProgress value={readiness.percent} />
-        <div className="tdg-home-modules">
-          <Link to="/account/christmas/gifts">Gifts</Link>
-          <Link to="/account/christmas/food">Meals</Link>
-          <Link to="/account/christmas/grocery">Grocery</Link>
-          <Link to="/account/christmas/plan">Tasks</Link>
-          <Link to="/account/christmas/budget">Budget</Link>
+      <header className="tdg-home-hero">
+        <div className="tdg-home-hero-visual" aria-hidden="true">
+          <img src="/christmas/planner/dinner-table.webp" alt="" decoding="async" />
+          <div className="tdg-home-hero-veil" />
+        </div>
+        <div className="tdg-home-hero-copy">
+          <p className="tdg-planner-kicker">{plannerGreeting(now, tz)}</p>
+          <h1>{countdownCopy(daysLeft)}</h1>
+          <p className="tdg-planner-ready">{readiness.percent}% ready for Christmas</p>
+          <PlannerProgress value={readiness.percent} />
         </div>
       </header>
 
-      <div className="tdg-planner-dash">
-        <div className="tdg-planner-today-main">
-          {intel?.rescue.active ? <PlannerRescueBanner remaining={intel.rescue.essentialRemaining} /> : null}
-          {primary ? (
-            <section className="tdg-planner-section tdg-intel-nba">
-              <p className="tdg-intel-kicker">Next</p>
-              <h2>{primary.title}</h2>
-              <p className="tdg-planner-muted">{primary.reason}</p>
-              {primary.actionType === "review_reschedule" ? (
-                <button type="button" className="tdg-planner-btn primary" onClick={() => setRescheduleOpen(true)}>
-                  Review date changes
-                </button>
-              ) : primary.actionType === "ensure_hosting_tasks" ? (
-                <button
-                  type="button"
-                  className="tdg-planner-btn primary"
-                  onClick={() => {
-                    void executePlannerAction(
-                      { userId: profile.user_id, access, profile },
-                      { type: "ensure_hosting_tasks", payload: {} },
-                    ).then(() => refreshIntelligence());
-                  }}
-                >
-                  Add hosting tasks
-                </button>
-              ) : (
-                <Link className="tdg-planner-btn primary" to={primary.href}>
-                  Continue
-                </Link>
-              )}
-            </section>
-          ) : (
-            <p className="tdg-planner-muted">You are on track. Open a section only if you want to change something.</p>
-          )}
-          <PlannerSection
-            title={overdue.length ? "Overdue and today" : "Today"}
-            action={
-              <PlannerQuickAdd
-                open={quick}
-                onOpen={setQuick}
-                onClose={() => {
-                  setQuick(null);
-                  setDraft("");
-                }}
-                draft={draft}
-                onDraft={setDraft}
-                onSubmit={(e) => void addQuick(e)}
-              />
-            }
-          >
-            {priorities.length === 0 ? (
-              <PlannerEmptyState
-                title="Nothing is due today."
-                body="Add a person, a meal, or a task when you are ready."
-                action={
-                  <div className="tdg-planner-actions">
-                    <Link className="tdg-planner-btn primary" to="/account/christmas/gifts">
-                      Add a person
-                    </Link>
-                    <Link className="tdg-planner-btn" to="/account/christmas/plan">
-                      Open tasks
-                    </Link>
-                  </div>
-                }
-              />
-            ) : (
-              <div className="tdg-planner-list">
-                {priorities.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onChange={(next) => {
-                      const nextTasks = next ? tasks.map((t) => (t.id === next.id ? next : t)) : tasks.filter((t) => t.id !== task.id);
-                      setTasks(nextTasks);
-                      publishPlannerReadiness(
-                        localReadinessPercent({
-                          profile,
-                          tasks: nextTasks,
-                          recipients,
-                          gifts,
-                          mealsCount,
-                        }),
-                      );
-                      bumpPlannerWorkspace();
-                      void refreshIntelligence();
+      {isFreshStart ? (
+        <section className="tdg-home-start">
+          <h2>Start with the people you’re buying for.</h2>
+          <p className="tdg-planner-muted">A calm Christmas starts with who matters. Add a person, then we’ll help with gifts, meals, and the rest.</p>
+          <div className="tdg-planner-actions">
+            <Link className="tdg-planner-btn primary" to="/account/christmas/gifts">
+              Add people
+            </Link>
+            <Link className="tdg-planner-btn" to="/account/christmas/plan">
+              Open tasks
+            </Link>
+            {hasFeature(access, "food_planner") ? (
+              <Link className="tdg-planner-btn" to="/account/christmas/food">
+                Plan a meal
+              </Link>
+            ) : null}
+          </div>
+        </section>
+      ) : (
+        <div className="tdg-planner-dash">
+          <div className="tdg-planner-today-main">
+            {intel?.rescue.active ? <PlannerRescueBanner remaining={intel.rescue.essentialRemaining} /> : null}
+            {primary ? (
+              <section className="tdg-planner-section tdg-intel-nba">
+                <p className="tdg-intel-kicker">Next best action</p>
+                <h2>{primary.title}</h2>
+                <p className="tdg-planner-muted">{primary.reason}</p>
+                {primary.actionType === "review_reschedule" ? (
+                  <button type="button" className="tdg-planner-btn primary" onClick={() => setRescheduleOpen(true)}>
+                    Review date changes
+                  </button>
+                ) : primary.actionType === "ensure_hosting_tasks" ? (
+                  <button
+                    type="button"
+                    className="tdg-planner-btn primary"
+                    onClick={() => {
+                      void executePlannerAction(
+                        { userId: profile.user_id, access, profile },
+                        { type: "ensure_hosting_tasks", payload: {} },
+                      ).then(() => refreshIntelligence());
                     }}
-                  />
-                ))}
-              </div>
-            )}
-          </PlannerSection>
+                  >
+                    Add hosting tasks
+                  </button>
+                ) : (
+                  <Link className="tdg-planner-btn primary" to={primary.href}>
+                    Continue
+                  </Link>
+                )}
+              </section>
+            ) : null}
 
-          {thisWeek.length ? (
-            <PlannerSection title="This week">
-              <ol className="tdg-planner-week">
-                {thisWeek.map((task) => (
-                  <li key={task.id}>
-                    <time dateTime={task.due_on || undefined}>{formatPlannerDate(task.due_on)}</time>
-                    <span>{task.title}</span>
-                  </li>
-                ))}
-              </ol>
-              {laterTasks.length ? (
-                <p className="tdg-planner-muted">{laterTasks.length} more {laterTasks.length === 1 ? "task is" : "tasks are"} later in the season.</p>
-              ) : null}
+            <PlannerSection
+              title={overdue.length ? "Overdue and today" : "Today"}
+              action={
+                <PlannerQuickAdd
+                  open={quick}
+                  onOpen={setQuick}
+                  onClose={() => {
+                    setQuick(null);
+                    setDraft("");
+                  }}
+                  draft={draft}
+                  onDraft={setDraft}
+                  onSubmit={(e) => void addQuick(e)}
+                />
+              }
+            >
+              {priorities.length === 0 ? (
+                <PlannerEmptyState
+                  title="Nothing is due today."
+                  body="You’re clear for today. Add a person, a meal, or a task when you’re ready."
+                  action={
+                    <div className="tdg-planner-actions">
+                      <Link className="tdg-planner-btn primary" to="/account/christmas/gifts">
+                        Add a person
+                      </Link>
+                      <Link className="tdg-planner-btn" to="/account/christmas/plan">
+                        Open tasks
+                      </Link>
+                    </div>
+                  }
+                />
+              ) : (
+                <div className="tdg-planner-list">
+                  {priorities.slice(0, 3).map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      onChange={(next) => {
+                        const nextTasks = next ? tasks.map((t) => (t.id === next.id ? next : t)) : tasks.filter((t) => t.id !== task.id);
+                        setTasks(nextTasks);
+                        publishPlannerReadiness(
+                          localReadinessPercent({
+                            profile,
+                            tasks: nextTasks,
+                            recipients,
+                            gifts,
+                            mealsCount,
+                          }),
+                        );
+                        bumpPlannerWorkspace();
+                        void refreshIntelligence();
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </PlannerSection>
-          ) : null}
-        </div>
+          </div>
 
-        <aside className="tdg-planner-snapshot" aria-label="Season overview">
-          <h2>This season</h2>
-          <PlannerSnapshotRow
-            label="Gifts"
-            title={giftPeople === 0 ? "No one added yet." : `${giftPeople} ${giftPeople === 1 ? "person" : "people"}`}
-            action={giftPeople === 0 ? "Add a person" : "Open gifts"}
-            to="/account/christmas/gifts"
-          />
-          <PlannerSnapshotRow
-            label="Budget"
-            title={!planned ? "No total yet." : `${money(spent, profile.currency)} spent`}
-            action={!planned ? "Set a total" : "Open budget"}
-            to="/account/christmas/budget"
-          />
-          <PlannerSnapshotRow
-            label="Meals"
-            title={mealsCount === 0 ? "No menu yet." : `${mealsCount} ${mealsCount === 1 ? "meal" : "meals"}`}
-            action={mealsCount === 0 ? "Plan a meal" : "Open meals"}
-            to="/account/christmas/food"
-          />
-          <PlannerSnapshotRow
-            label="Grocery"
-            title={groceryNeed === 0 ? "Nothing left to buy." : `${groceryNeed} still needed`}
-            action="Open grocery"
-            to="/account/christmas/grocery"
-          />
-          <PlannerSnapshotRow
-            label="Next date"
-            title={nextDeadline ? `${formatPlannerDate(nextDeadline.due_on)} · ${nextDeadline.title}` : "No dated tasks yet"}
-            action="Open tasks"
-            to="/account/christmas/plan"
-          />
-        </aside>
-      </div>
+          <aside className="tdg-planner-snapshot" aria-label="Season overview">
+            <h2>This season</h2>
+            <PlannerSnapshotRow
+              label="Gifts"
+              title={giftPeople === 0 ? "No one added yet." : `${giftPeople} ${giftPeople === 1 ? "person" : "people"}`}
+              action={giftPeople === 0 ? "Add a person" : "Open gifts"}
+              to="/account/christmas/gifts"
+            />
+            <PlannerSnapshotRow
+              label="Meals"
+              title={mealsCount === 0 ? "No menu yet." : `${mealsCount} ${mealsCount === 1 ? "meal" : "meals"}`}
+              action={mealsCount === 0 ? "Plan a meal" : "Open meals"}
+              to="/account/christmas/food"
+            />
+            <PlannerSnapshotRow
+              label="Shopping"
+              title={groceryNeed === 0 && giftsWithoutPlan === 0 ? "Nothing left to buy." : `${groceryNeed + giftsWithoutPlan} still needed`}
+              action="Open shopping"
+              to="/account/christmas/shopping"
+            />
+            <PlannerSnapshotRow
+              label="Budget"
+              title={!planned ? "No total yet." : `${money(spent, profile.currency)} spent`}
+              action={!planned ? "Set a total" : "Open budget"}
+              to="/account/christmas/budget"
+            />
+          </aside>
+        </div>
+      )}
 
       {!hasFeature(access, "planner_core") ? (
         <PlannerPaywall
@@ -424,45 +416,36 @@ export function ChristmasPlannerMorePage() {
   }, []);
   const groups = [
     {
-      title: "Planning",
+      title: "Plan",
       items: [
-        ["/account/christmas/budget", "Budget", "Track the season total", "budget"],
         ["/account/christmas/calendar", "Calendar", "See every date, task and delivery", "calendar"],
-        ["/account/christmas/shopping", "Gift shopping", "Presents to buy, ordered, arriving, and returns", "shopping"],
+        ["/account/christmas/traditions", "Traditions", "Make time for what matters", "star"],
       ],
     },
     {
-      title: "Home & food",
+      title: "Home",
       items: [
-        ["/account/christmas/food", "Meals", "Occasion, guests, recipes, portions, then the menu", "food"],
-        ["/account/christmas/recipes", "Recipes", "Save seasonal dishes", "food"],
-        ["/account/christmas/grocery", "Grocery", "One food list from the menu. Not gift shopping.", "list"],
         ["/account/christmas/hosting", "Hosting", "Guests, prep and home", "home"],
         ["/account/christmas/home", "Home", "Tree, rooms and lights", "home"],
+        ["/account/christmas/travel", "Travel", "Trips, packing and plans", "travel"],
       ],
     },
     {
-      title: "People",
+      title: "Memories",
       items: [
-        ["/account/christmas/travel", "Travel", "Trips, packing and plans", "travel"],
         ["/account/christmas/cards", "Cards", "Track greetings. Card making is a separate credit.", "star"],
+        ["/account/christmas/memories", "Memories", "Keep the season", "memory"],
         ["/christmas/wishlist", "Wishlist", "Open your public wishlist", "gift"],
       ],
     },
     {
       title: "Account",
       items: [
+        ["/account/christmas/budget", "Budget", "Track the season total", "budget"],
+        ["/account/christmas/grocery", "Grocery", "One food list from the menu", "list"],
         ["/account", "My account", "Credits, orders, and sign-out", "settings"],
-        ["/generator", "Create", "Use your AI credits for an image or video", "star"],
-      ],
-    },
-    {
-      title: "Season extras",
-      items: [
-        ["/account/christmas/traditions", "Traditions", "Make time for what matters", "star"],
-        ["/account/christmas/memories", "Memories", "Keep the season", "memory"],
-        ["/account/christmas/club", "Christmas Club", "Feed is not live and is not part of the $17 planner.", "star"],
         ["/account/christmas/settings", "Settings", "Currency, hosting, reset", "settings"],
+        ["/account/christmas/club", "Christmas Club", "Feed is not live and is not part of the $17 planner.", "star"],
       ],
     },
   ] as const;

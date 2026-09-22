@@ -18,12 +18,19 @@ import { cardsStudioCues, memoriesStudioCues, PlannerStudioCue } from "./studio/
 export function ChristmasPlannerShoppingPage() {
   const { loading, profile } = usePlannerBundle();
   const [gifts, setGifts] = useState<GiftItem[]>([]);
+  const [grocery, setGrocery] = useState<Array<{ id: string; name: string; quantity: string; status: string; source_notes?: string | null }>>([]);
   const [tab, setTab] = useState<"need" | "ordered" | "arriving" | "arrived" | "returns">("need");
   const [extra, setExtra] = useState({ name: "", store: "", price: "", delivery: "" });
 
   useEffect(() => {
     if (!profile) return;
-    void loadGifts(profile.id).then(setGifts);
+    void Promise.all([
+      loadGifts(profile.id),
+      supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_notes").eq("profile_id", profile.id),
+    ]).then(([g, groc]) => {
+      setGifts(g);
+      setGrocery((groc.data as typeof grocery) || []);
+    });
     trackPlannerEvent("planner_module_opened", { module: "shopping" });
   }, [profile?.id]);
 
@@ -67,36 +74,79 @@ export function ChristmasPlannerShoppingPage() {
     }
   }
 
+  const groceryNeed = grocery.filter((row) => row.status === "need");
+
   return (
-    <div className="tdg-planner-page">
-      <PlannerPageHeader title="Gift shopping" lede="Presents to buy, ordered, arriving, and returns. Groceries stay in Grocery." />
+    <div className="tdg-planner-page tdg-shop">
+      <PlannerPageHeader title="Shopping" lede="Need to buy, then tick it off. Groceries from your menu, gifts for the people they’re for." />
       <PlannerSeg
         label="Shopping lanes"
         value={tab}
         onChange={setTab}
         options={(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => ({
           id: t,
-          label: t === "need" ? "To buy" : prettyLabel(t),
+          label: t === "need" ? "Need to buy" : prettyLabel(t),
         }))}
       />
-      {filtered.length === 0 ? (
-        <PlannerEmptyState mark="shopping" title="Nothing in this lane yet." body="Add a purchase, or move gifts along as you order them." />
-      ) : (
-        filtered.map((g) => (
-          <div key={g.id} className="tdg-planner-row tdg-planner-appear">
-            <div>
-              <strong>{g.selected_gift || g.idea}</strong>
-              <div className="tdg-planner-gift-meta">
-                <PlannerStatusChip>{giftStatusLabel(g.status)}</PlannerStatusChip>
-                {g.delivery_on ? <span>arrives {formatPlannerDate(g.delivery_on)}</span> : null}
-                {g.store ? <span>{g.store}</span> : null}
-                <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
-              </div>
-              {g.url ? <PlannerGiftOutboundLink gift={g} source="shopping" /> : null}
-            </div>
-          </div>
-        ))
-      )}
+      {tab === "need" && groceryNeed.length ? (
+        <section className="tdg-shop-group">
+          <h2>Groceries</h2>
+          <ul className="tdg-shop-list">
+            {groceryNeed.map((row) => (
+              <li key={row.id}>
+                <label className="tdg-shop-row">
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    onChange={async () => {
+                      await supabase.from("christmas_grocery_items").update({ status: "bought" }).eq("id", row.id);
+                      setGrocery((p) => p.map((x) => (x.id === row.id ? { ...x, status: "bought" } : x)));
+                    }}
+                  />
+                  <span>
+                    <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
+                    <small>{row.source_notes || "Christmas menu"}</small>
+                  </span>
+                  <em>{row.quantity || ""}</em>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {filtered.length === 0 && !(tab === "need" && groceryNeed.length) ? (
+        <PlannerEmptyState mark="shopping" title="Nothing to buy here." body="Add a purchase, or move gifts along as you order them." />
+      ) : filtered.length ? (
+        <section className="tdg-shop-group">
+          <h2>Gifts</h2>
+          <ul className="tdg-shop-list">
+            {filtered.map((g) => (
+              <li key={g.id}>
+                <label className="tdg-shop-row">
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    disabled={tab !== "need"}
+                    onChange={async () => {
+                      if (tab !== "need") return;
+                      await supabase.from("christmas_gift_items").update({ status: "ordered" }).eq("id", g.id);
+                      setGifts((p) => p.map((x) => (x.id === g.id ? { ...x, status: "ordered" } : x)));
+                    }}
+                  />
+                  <span>
+                    <strong>{g.selected_gift || g.idea}</strong>
+                    <small>{g.store || "Gifts"}</small>
+                  </span>
+                  <em>
+                    <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
+                  </em>
+                </label>
+                {g.url ? <PlannerGiftOutboundLink gift={g} source="shopping" /> : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <section className="tdg-planner-section">
         <h2>Non-gift purchase</h2>
         <PlannerComposer>

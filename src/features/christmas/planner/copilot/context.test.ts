@@ -95,8 +95,17 @@ describe("copilot contextual prompts", () => {
   it("builds gifts suggestions from real people and budget", () => {
     const suggestions = buildCopilotSuggestions("gifts", intel());
     expect(suggestions[0]?.label).toContain("Andreas");
-    expect(suggestions.some((s) => /€|EUR|under/i.test(s.label))).toBe(true);
+    expect(suggestions.some((s) => /buy next|within budget|Gift ideas/i.test(s.label))).toBe(true);
     const win = buildCopilotNextWin("gifts", intel());
     expect(win.body).toContain("Andreas");
+  });
+
+  it("changes suggestions by module without inventing people", () => {
+    const meals = buildCopilotSuggestions("meals", intel());
+    expect(meals.map((s) => s.label)).toContain("Build my Christmas dinner");
+    expect(buildCopilotSuggestions("today", intel())[0]?.label).toBe("What should I do next?");
+    expect(buildCopilotSuggestions("plan", intel())[0]?.label).toBe("Prioritize my week");
+    expect(buildCopilotSuggestions("shopping", intel())[0]?.label).toBe("What am I missing?");
+    expect(buildCopilotSuggestions("budget", intel())[0]?.label).toBe("Where am I overspending?");
   });
 });

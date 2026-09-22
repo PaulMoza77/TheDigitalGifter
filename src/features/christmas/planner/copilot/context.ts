@@ -71,6 +71,8 @@ export function buildCopilotSuggestions(
   const remaining = Math.max(0, budget.remainingMinor ?? 0);
   const groceryNeed = grocery.filter((g) => g.status === "need").length;
   const topTask = todayPriorities[0]?.title;
+  const guestHeadcount = snapshot.guests.reduce((s, g) => s + (g.adults || 0) + (g.kids || 0), 0);
+  const hasDietary = snapshot.guests.some((g) => g.dietary.trim());
 
   switch (module) {
     case "gifts":
@@ -89,117 +91,164 @@ export function buildCopilotSuggestions(
               icon: "gift",
             },
         {
-          id: "gift-budget",
-          label: remaining > 0 ? `Help me stay under ${money(remaining)}` : "Am I over budget?",
-          prompt: remaining > 0 ? `Help me stay under ${money(remaining)}` : "Am I over budget?",
-          icon: "budget",
+          id: "gift-next",
+          label: "What should I buy next?",
+          prompt: "What should I buy next?",
+          icon: "cart",
         },
-        {
-          id: "gift-surprise",
-          label: "Surprise me with an idea",
-          prompt: firstMissing ? `Surprise me with a gift idea for ${firstMissing}` : "Surprise me with a gift idea",
-          icon: "spark",
-        },
+        remaining > 0
+          ? {
+              id: "gift-budget",
+              label: `Help me stay within budget`,
+              prompt: `Help me stay under ${money(remaining)}`,
+              icon: "budget",
+            }
+          : {
+              id: "gift-ideas",
+              label: "Gift ideas",
+              prompt: firstMissing ? `Surprise me with a gift idea for ${firstMissing}` : "Surprise me with a gift idea",
+              icon: "spark",
+            },
       ];
     case "budget":
       return [
         {
-          id: "budget-check",
-          label: remaining > 0 ? `${money(remaining)} left — where to spend?` : "Am I over budget?",
-          prompt: "Am I over budget?",
+          id: "budget-over",
+          label: "Where am I overspending?",
+          prompt: "Where am I overspending?",
           icon: "budget",
         },
         {
-          id: "budget-gifts",
-          label: "What gifts am I still missing?",
-          prompt: "What gifts am I still missing?",
-          icon: "gift",
+          id: "budget-left",
+          label: remaining > 0 ? `How much do I have left?` : "Am I over budget?",
+          prompt: remaining > 0 ? "How much do I have left?" : "Am I over budget?",
+          icon: "budget",
         },
         {
-          id: "budget-weekend",
-          label: "What should I do this weekend?",
-          prompt: "What should I do this weekend?",
-          icon: "task",
+          id: "budget-stay",
+          label: "Help me stay on budget",
+          prompt: "Help me stay on budget",
+          icon: "spark",
         },
       ];
     case "meals":
-    case "recipes":
-    case "grocery":
       return [
         {
-          id: "meal-plan",
-          label: "Create a dinner plan for 8.",
-          prompt: "Create a dinner plan for 8.",
+          id: "meal-build",
+          label: "Build my Christmas dinner",
+          prompt: "Build my Christmas dinner",
           icon: "meal",
         },
         {
-          id: "meal-prep",
-          label: "What should I prep tomorrow?",
-          prompt: "What should I prep tomorrow?",
+          id: "meal-ahead",
+          label: "What can I prepare ahead?",
+          prompt: "What can I prepare ahead?",
           icon: "task",
         },
-        groceryNeed > 0
+        hasDietary
           ? {
-              id: "meal-grocery",
-              label: `${groceryNeed} grocery items still needed`,
-              prompt: "What should I buy for groceries?",
-              icon: "cart",
+              id: "meal-diet",
+              label: "Adjust menu for dietary needs",
+              prompt: "Adjust menu for dietary needs",
+              icon: "spark",
             }
           : {
-              id: "meal-rescue",
-              label: "Give me a rescue plan.",
-              prompt: "Give me a rescue plan.",
+              id: "meal-missing",
+              label: "What am I missing?",
+              prompt: "What am I missing from the menu?",
+              icon: "meal",
+            },
+      ];
+    case "recipes":
+      return [
+        {
+          id: "recipe-dessert",
+          label: "Find a dessert",
+          prompt: "Find a dessert",
+          icon: "meal",
+        },
+        {
+          id: "recipe-quick",
+          label: "Something under 30 minutes",
+          prompt: "Something under 30 minutes",
+          icon: "task",
+        },
+        guestHeadcount > 0
+          ? {
+              id: "recipe-guests",
+              label: `Recipe for ${guestHeadcount} guests`,
+              prompt: `Recipe for ${guestHeadcount} guests`,
+              icon: "meal",
+            }
+          : {
+              id: "recipe-trad",
+              label: "Suggest something traditional",
+              prompt: "Suggest something traditional",
               icon: "spark",
             },
       ];
+    case "grocery":
     case "shopping":
       return [
         {
-          id: "shop-gifts",
-          label: "What gifts am I still missing?",
-          prompt: "What gifts am I still missing?",
-          icon: "gift",
+          id: "shop-missing",
+          label: "What am I missing?",
+          prompt: "What am I missing?",
+          icon: "cart",
         },
-        groceryNeed > 0
-          ? {
-              id: "shop-grocery",
-              label: `${groceryNeed} ingredients still needed`,
-              prompt: "What should I buy for groceries?",
-              icon: "cart",
-            }
-          : {
-              id: "shop-budget",
-              label: "Am I over budget?",
-              prompt: "Am I over budget?",
-              icon: "budget",
-            },
         {
-          id: "shop-weekend",
-          label: topTask ? `Focus on: ${topTask}` : "What should I do this weekend?",
-          prompt: topTask ? `Help me with: ${topTask}` : "What should I do this weekend?",
-          icon: "task",
+          id: "shop-next",
+          label: "What should I buy next?",
+          prompt: "What should I buy next?",
+          icon: "cart",
+        },
+        {
+          id: "shop-list",
+          label: "Consolidate my list",
+          prompt: groceryNeed > 0 ? `Consolidate my list. ${groceryNeed} grocery items still needed.` : "Consolidate my list",
+          icon: "spark",
         },
       ];
     case "today":
-    case "plan":
     case "home":
       return [
         {
-          id: "plan-weekend",
-          label: topTask ? `Next: ${topTask}` : "What should I do this weekend?",
-          prompt: "What should I do this weekend?",
+          id: "today-next",
+          label: topTask ? `What should I do next?` : "What should I do next?",
+          prompt: topTask ? `Help me with: ${topTask}` : "What should I do next?",
           icon: "task",
         },
         {
-          id: "plan-gifts",
-          label: firstMissing ? `Gift still needed for ${firstMissing}` : "What gifts am I still missing?",
-          prompt: firstMissing ? `Need an idea for ${firstMissing}?` : "What gifts am I still missing?",
-          icon: "gift",
+          id: "today-catch",
+          label: "Help me catch up",
+          prompt: "Help me catch up",
+          icon: "spark",
         },
         {
-          id: "plan-rescue",
-          label: "Give me a rescue plan.",
-          prompt: "Give me a rescue plan.",
+          id: "today-urgent",
+          label: "What is urgent?",
+          prompt: "What is urgent?",
+          icon: "task",
+        },
+      ];
+    case "plan":
+      return [
+        {
+          id: "plan-week",
+          label: "Prioritize my week",
+          prompt: "Prioritize my week",
+          icon: "task",
+        },
+        {
+          id: "plan-overdue",
+          label: "Reschedule overdue tasks",
+          prompt: "Reschedule overdue tasks",
+          icon: "task",
+        },
+        {
+          id: "plan-simple",
+          label: "Simplify my plan",
+          prompt: "Simplify my plan",
           icon: "spark",
         },
       ];

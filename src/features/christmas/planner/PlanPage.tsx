@@ -1,15 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, Plus } from "lucide-react";
 import { trackPlannerEvent } from "./analytics";
-import { insertTask, insertTasks, loadEvents, loadGifts, loadTasks } from "./api";
+import { insertTask, insertTasks, loadTasks } from "./api";
 import { daysUntilChristmas, formatPlannerDate, taskCategoryLabel } from "./date";
 import { canAddCustomTask } from "./entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
 import {
   exploreOnOwnStorageKey,
   findStarterMatch,
-  giftIdeaCount,
-  itemsToBuyCount,
   missingStarterTasks,
   planProgress,
   STARTER_TASKS,
@@ -19,17 +17,14 @@ import {
 import { PlannerComposer, PlannerLoading, TaskRow } from "./plannerUi";
 import { plannerTodayIso, plannerWeekEndIso, taskWhen, tasksForView } from "./taskSchedule";
 import { bumpPlannerWorkspace } from "./workspaceSync";
-import { TASK_CATEGORIES, type GiftItem, type PlannerTask, type TaskCategory } from "./types";
+import { TASK_CATEGORIES, type PlannerTask, type TaskCategory } from "./types";
 
 const HERO_SRC = "/assets/christmas/cozy-reel/posters/clip1.jpg";
-const DOOR_SRC = "/assets/christmas/luxury-palace/posters/palace_04_entrance.jpg";
 
 export function ChristmasPlannerPlanPage() {
   const { loading, access, profile } = usePlannerBundle();
   const [tasks, setTasks] = useState<PlannerTask[]>([]);
-  const [gifts, setGifts] = useState<GiftItem[]>([]);
-  const [eventsCount, setEventsCount] = useState(0);
-  const [view, setView] = useState<"today" | "week" | "all" | "calendar">("today");
+  const [view, setView] = useState<"today" | "week" | "all" | "calendar">("all");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<TaskCategory>("other");
   const [exploreOwn, setExploreOwn] = useState(false);
@@ -37,11 +32,7 @@ export function ChristmasPlannerPlanPage() {
 
   useEffect(() => {
     if (!profile) return;
-    void Promise.all([loadTasks(profile.id), loadGifts(profile.id), loadEvents(profile.id)]).then(([nextTasks, nextGifts, nextEvents]) => {
-      setTasks(nextTasks);
-      setGifts(nextGifts);
-      setEventsCount(nextEvents.length);
-    });
+    void loadTasks(profile.id).then(setTasks);
     setExploreOwn(window.localStorage.getItem(exploreOnOwnStorageKey(profile.id)) === "1");
     trackPlannerEvent("planner_module_opened", { module: "plan" });
   }, [profile?.id]);
@@ -215,44 +206,25 @@ export function ChristmasPlannerPlanPage() {
         </form>
       </PlannerComposer>
 
-      <section className="tdg-tasks-stats" aria-label="Christmas plan stats">
-        <article className="tdg-tasks-stat tdg-tasks-stat--plan">
-          <PlanRing percent={progress.percent} />
-          <div>
-            <h2>Your Christmas plan</h2>
-            <p>
-              {progress.done} of {progress.total} tasks completed
-            </p>
-            <div className="tdg-tasks-stat-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
-              <span style={{ width: `${progress.percent}%` }} />
+      {progress.total > 0 ? (
+        <section className="tdg-tasks-stats tdg-tasks-stats--plan" aria-label="Christmas plan progress">
+          <article className="tdg-tasks-stat tdg-tasks-stat--plan">
+            <PlanRing percent={progress.percent} />
+            <div>
+              <h2>Your Christmas plan</h2>
+              <p>
+                {progress.done} of {progress.total} tasks completed
+              </p>
+              <div className="tdg-tasks-stat-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
+                <span style={{ width: `${progress.percent}%` }} />
+              </div>
             </div>
-          </div>
-        </article>
-        <article className="tdg-tasks-stat">
-          <span className="tdg-tasks-stat-ico tdg-tasks-stat-ico--gift">
-            <GiftGlyph />
-          </span>
-          <strong>{giftIdeaCount(gifts)}</strong>
-          <span>Gift ideas</span>
-        </article>
-        <article className="tdg-tasks-stat">
-          <span className="tdg-tasks-stat-ico tdg-tasks-stat-ico--shop">
-            <CartGlyph />
-          </span>
-          <strong>{itemsToBuyCount(gifts)}</strong>
-          <span>Items to buy</span>
-        </article>
-        <article className="tdg-tasks-stat">
-          <span className="tdg-tasks-stat-ico tdg-tasks-stat-ico--event">
-            <EventGlyph />
-          </span>
-          <strong>{eventsCount}</strong>
-          <span>Events planned</span>
-        </article>
-      </section>
+          </article>
+        </section>
+      ) : null}
 
-      <div className={`tdg-tasks-mid${showStarter ? "" : " is-rail-only"}`}>
-        {showStarter ? (
+      {showStarter ? (
+      <div className="tdg-tasks-mid">
           <section className="tdg-tasks-start">
             <p className="tdg-tasks-start-kicker">
               <SparkleGlyph /> Get started
@@ -291,24 +263,8 @@ export function ChristmasPlannerPlanPage() {
               </button>
             </div>
           </section>
-        ) : null}
-
-        <aside className="tdg-tasks-rail">
-          <blockquote className="tdg-tasks-quote">
-            <QuoteGlyph />
-            <p>A little progress every day makes a stress-free Christmas.</p>
-            <HeartMark />
-          </blockquote>
-          <figure className="tdg-tasks-door">
-            <img src={DOOR_SRC} alt="Lantern-lit Christmas doorway opening onto a decorated tree" width={720} height={1280} decoding="async" />
-            <figcaption>
-              It’s not just a to-do list.
-              <br />
-              It’s a more magical Christmas.
-            </figcaption>
-          </figure>
-        </aside>
       </div>
+      ) : null}
 
       <section className="tdg-tasks-today" aria-label={sectionTitle}>
         <div className="tdg-tasks-today-head">
@@ -391,25 +347,6 @@ function GiftGlyph() {
   );
 }
 
-function CartGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
-      <path d="M4 6h2.2l1.4 10h10.2l1.6-7H8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="10" cy="19" r="1.2" fill="currentColor" />
-      <circle cx="17" cy="19" r="1.2" fill="currentColor" />
-    </svg>
-  );
-}
-
-function EventGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
-      <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4 10h16M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function BudgetGlyph() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
@@ -459,14 +396,6 @@ function HeartMark() {
   return (
     <svg className="tdg-tasks-heart" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
       <path d="M8 13.4S2.4 9.7 2.4 6.4A3.1 3.1 0 0 1 8 5.2a3.1 3.1 0 0 1 5.6 1.2C13.6 9.7 8 13.4 8 13.4z" fill="#b5232e" />
-    </svg>
-  );
-}
-
-function QuoteGlyph() {
-  return (
-    <svg className="tdg-tasks-quote-mark" viewBox="0 0 48 36" width="36" height="28" aria-hidden="true">
-      <path d="M18 0C8 4 0 14 0 24c0 7 5 12 11 12 6 0 10-4 10-10 0-6-4-9-9-9-1 0-3 0-4 1 2-6 7-12 14-16L18 0zm30 0C38 4 30 14 30 24c0 7 5 12 11 12 6 0 10-4 10-10 0-6-4-9-9-9-1 0-3 0-4 1 2-6 7-12 14-16L48 0z" fill="#c4a574" />
     </svg>
   );
 }

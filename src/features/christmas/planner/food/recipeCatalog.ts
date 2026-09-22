@@ -217,6 +217,18 @@ export function suggestMenu(
   return [appetizer, main, side, dessert].filter(Boolean) as RecipeCatalogRow[];
 }
 
+export function recipePhoto(recipe: Pick<RecipeCatalogRow, "image_path" | "course" | "category"> | null | undefined): string {
+  const raw = String(recipe?.image_path || "").trim();
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("/")) return raw;
+  const course = recipe ? recipeCourse(recipe as RecipeCatalogRow) : "";
+  if (course === "dessert") return "/assets/christmas/library-stills/prague_bakery_window.jpg";
+  if (course === "drink") return "/assets/christmas/library-stills/alpine_village_cocoa_bridge.jpg";
+  if (course === "breakfast") return "/assets/christmas/library-stills/prague_cafe_street_cookies.jpg";
+  if (course === "appetizer") return "/assets/christmas/library-stills/prague_balcony_christmas_spread.jpg";
+  if (course === "side") return "/assets/christmas/library-stills/prague_market_gingerbread_stall.jpg";
+  return "/christmas/planner/dinner-table.webp";
+}
+
 export function formatMinutes(total: number): string {
   const hours = Math.floor(total / 60);
   const minutes = total % 60;
