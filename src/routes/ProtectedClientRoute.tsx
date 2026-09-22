@@ -42,7 +42,7 @@ export default function ProtectedClientRoute() {
       return (
         <div
           className="min-h-screen flex items-center justify-center"
-          style={{ background: "#f7f1e8", color: "#6a5f55", fontFamily: '"Source Sans 3", "Segoe UI", sans-serif' }}
+          style={{ background: "#faf8f6", color: "#6a5f55", fontFamily: '"Source Sans 3", "Segoe UI", sans-serif' }}
         >
           Opening your Christmas…
         </div>
