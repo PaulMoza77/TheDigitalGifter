@@ -861,7 +861,7 @@ export default function ChristmasPlannerPage() {
               <li>Gifts, budget, meals, groceries, tasks &amp; hosting</li>
               <li>Access for the Christmas 2026 season</li>
               <li>300 bonus credits for AI images and videos</li>
-              <li>Works on phone and computer</li>
+              <li>Works on phone, iPad, and computer</li>
               <li>One-time payment — no subscription</li>
             </ul>
             <p className="tdg-pl__micro tdg-pl__micro--on-dark tdg-pl__bonus-note">
