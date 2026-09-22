@@ -2181,6 +2181,113 @@
   margin-top: 1.25rem;
 }
 
+.tdg-pl__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.7rem 1.15rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(18, 8, 12, 0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(246, 239, 227, 0.12);
+}
+
+.tdg-pl__topbar-brand {
+  font-family: var(--serif);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--cream);
+}
+
+.tdg-pl__topbar-actions {
+  display: none;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.tdg-pl__topbar-link,
+.tdg-pl__topbar-credits {
+  color: var(--cream);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.tdg-pl__topbar-cta {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-weight: 600;
+  background: linear-gradient(180deg, #f0d59a, #c9a24c);
+  color: #2a160c;
+  cursor: pointer;
+}
+
+.tdg-pl__topbar-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(246, 239, 227, 0.12);
+  color: var(--gold-soft);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tdg-pl__topbar-menu {
+  appearance: none;
+  border: 1px solid rgba(246, 239, 227, 0.22);
+  background: transparent;
+  color: var(--cream);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-weight: 600;
+}
+
+.tdg-pl__mobile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 1.15rem 1rem;
+  background: rgba(18, 8, 12, 0.96);
+  border-bottom: 1px solid rgba(246, 239, 227, 0.12);
+}
+
+.tdg-pl__mobile-menu a,
+.tdg-pl__mobile-menu button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--cream);
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tdg-pl__bonus-note {
+  max-width: 36rem;
+  margin-top: 0.85rem;
+}
+
+@media (min-width: 800px) {
+  .tdg-pl__topbar-actions--desktop {
+    display: flex;
+  }
+  .tdg-pl__topbar-menu,
+  .tdg-pl__mobile-menu {
+    display: none;
+  }
+}
+
 /* --  Hero: atmosphere + two columns --  */
 .tdg-pl__hero {
   position: relative;

@@ -9,6 +9,10 @@ export function isSafeAuthReturnPath(path: string): boolean {
     return false;
   }
   const pathname = path.split("?")[0];
+  if (pathname === "/login") return true;
+  if (pathname === "/account" || pathname.startsWith("/account/")) return true;
+  if (pathname === "/generator" || pathname.startsWith("/generator/")) return true;
+  if (pathname === "/pricing") return true;
   if (pathname === "/christmas") return true;
   if (pathname === "/christmas/planner" || pathname.startsWith("/christmas/planner/")) return true;
   if (pathname === "/account/christmas" || pathname.startsWith("/account/christmas/")) return true;

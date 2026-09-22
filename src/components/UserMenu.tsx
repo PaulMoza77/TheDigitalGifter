@@ -107,7 +107,7 @@ export default function UserMenu() {
     {
       label: "Dashboard",
       icon: LayoutGrid,
-      action: () => goTo("/account/dashboard"),
+      action: () => goTo("/account"),
       badge: null,
     },
     {

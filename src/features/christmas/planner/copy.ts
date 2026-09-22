@@ -16,11 +16,11 @@ export const PLANNER_FAQS = [
   },
   {
     q: "What happens after I pay?",
-    a: "You return to a welcome page, sign in or create an account if needed, and open your Planner. Paid access is granted only after the server verifies payment - never from a success URL alone.",
+    a: "Payment is verified on our servers. Your Christmas Planner access is activated, 300 bonus AI credits are added to your account, and you can return anytime through Log in → My Account or My Planner. Access is never granted from a success URL alone.",
   },
   {
-    q: "Are AI cards and videos included?",
-    a: "No. Card and video generation uses separate credits and is not part of the $17 Planner payment.",
+    q: "Are AI images and videos included?",
+    a: "Yes. Your Christmas Planner Founding Pass includes 300 bonus AI credits. You can use them in The Digital Gifter Generator for image or video creation. Each generation shows its credit cost before you confirm it. Additional credits can be purchased separately.",
   },
   {
     q: "What is your refund policy?",

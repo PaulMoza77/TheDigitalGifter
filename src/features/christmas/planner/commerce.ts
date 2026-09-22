@@ -23,6 +23,7 @@ export const PLANNER_SEASON_YEAR = 2026;
 export const PLANNER_ROUTE = "/christmas/planner";
 export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
 export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
+export const PLANNER_ACCOUNT_WELCOME_ROUTE = "/account/christmas/welcome";
 
 export const PLANNER_PACKAGE_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export type PlannerPackageKey = (typeof PLANNER_PACKAGE_KEYS)[number];
@@ -154,9 +155,10 @@ export function isSafePlannerReturnPath(path: string): boolean {
 export function plannerCheckoutReturnPath(path: string | null | undefined): string {
   const raw = String(path || "").trim().split("#")[0];
   const pathname = raw.split("?")[0];
+  if (pathname === PLANNER_ACCOUNT_WELCOME_ROUTE) return PLANNER_ACCOUNT_WELCOME_ROUTE;
   if (isSafePlannerReturnPath(pathname) && pathname.startsWith(PLANNER_ACCOUNT_ROUTE)) return pathname;
   if (pathname === PLANNER_WELCOME_ROUTE || pathname.startsWith(`${PLANNER_WELCOME_ROUTE}/`)) return PLANNER_WELCOME_ROUTE;
-  return PLANNER_WELCOME_ROUTE;
+  return PLANNER_ACCOUNT_WELCOME_ROUTE;
 }
 
 export type PlannerCheckoutPlan =

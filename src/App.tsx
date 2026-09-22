@@ -203,6 +203,11 @@ const BlogPostPage = lazy(() => import("@/pages/blog/BlogPostPage"));
 
 // ================= CLIENT ACCOUNT =================
 const AccountDashboard = lazy(() => import("@/pages/account/AccountDashboard"));
+const CustomerAccountHome = lazy(() => import("@/pages/account/CustomerAccountHome"));
+const PlannerPurchaseWelcomePage = lazy(
+  () => import("@/pages/account/AccountChristmasWelcomePage"),
+);
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const AccountAffiliate = lazy(() => import("@/pages/account/AccountAffiliate"));
 const AccountGeneratorRedirect = lazy(
   () => import("@/pages/account/AccountGeneratorRedirect")
@@ -637,6 +642,7 @@ function AppInner() {
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/login" element={<LoginPage />} />
 
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/generator" element={<GeneratorPage />} />
@@ -804,6 +810,7 @@ function AppInner() {
           </Route>
 
           <Route element={<ProtectedClientRoute />}>
+            <Route path="/account/christmas/welcome" element={<PlannerPurchaseWelcomePage />} />
             <Route path="/account/christmas" element={<ChristmasPlannerLayout />}>
               <Route index element={<ChristmasPlannerTodayPage />} />
               <Route path="plan" element={<PlannerPlanRoute />} />
@@ -826,10 +833,7 @@ function AppInner() {
               <Route path="settings" element={<PlannerSettingsRoute />} />
             </Route>
             <Route path="/account" element={<ClientLayout />}>
-              <Route
-                index
-                element={<Navigate to="/account/dashboard" replace />}
-              />
+              <Route index element={<CustomerAccountHome />} />
               <Route path="dashboard" element={<AccountDashboard />} />
               <Route path="affiliate" element={<AccountAffiliate />} />
               <Route path="generator" element={<AccountGeneratorRedirect />} />

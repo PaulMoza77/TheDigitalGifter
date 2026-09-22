@@ -81,7 +81,9 @@ export async function handleChristmasStripeEvent(input: {
 }): Promise<Response | null> {
   if (
     input.eventType === "charge.refunded" ||
-    input.eventType === "refund.created"
+    input.eventType === "refund.created" ||
+    input.eventType === "charge.dispute.created" ||
+    input.eventType === "charge.dispute.funds_withdrawn"
   ) {
     return handleChristmasPlannerRefund(input);
   }
@@ -176,6 +178,11 @@ export async function handleChristmasStripeEvent(input: {
         .select("user_id,email,package_key,metadata,commercial_snapshot")
         .eq("id", orderId)
         .maybeSingle();
+      const metaUserId = asString(input.metadata.user_id);
+      if (ord && !ord.user_id && isUuid(metaUserId)) {
+        await input.service.from("christmas_orders").update({ user_id: metaUserId }).eq("id", orderId);
+        ord.user_id = metaUserId;
+      }
       const meta = (ord?.metadata || {}) as Record<string, unknown>;
       const snap = (ord?.commercial_snapshot || {}) as Record<string, unknown>;
       const keys = entitlements.length
@@ -193,10 +200,13 @@ export async function handleChristmasStripeEvent(input: {
         p_source_transaction_id: sessionId,
         p_season_year: 2026,
       });
+      await input.service.rpc("grant_christmas_planner_purchase_bonus", {
+        p_order_id: orderId,
+      });
       if (result.status === "paid") {
         const email = asString(ord?.email);
         const token = asString(meta.public_token_hint);
-        if (email && token) {
+        if (email) {
           waitUntil(
             sendPlannerReadyEmail({
               service: input.service,

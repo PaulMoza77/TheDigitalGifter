@@ -11,6 +11,7 @@ export const FOUNDING_PASS_CURRENCY = "usd";
 export const PLANNER_ACCOUNT_ROUTE = "/account/christmas";
 export const PLANNER_ROUTE = "/christmas/planner";
 export const PLANNER_WELCOME_ROUTE = "/christmas/planner/welcome";
+export const PLANNER_ACCOUNT_WELCOME_ROUTE = "/account/christmas/welcome";
 
 export const PLANNER_PACKAGE_KEYS = ["founding_pass", "essentials", "magic", "all_in"] as const;
 export const PLANNER_ADDON_KEYS = [
@@ -153,6 +154,7 @@ function addonsIncludedInPackage(packageKey: PlannerPackageKey): PlannerAddonKey
 export function plannerCheckoutReturnPath(path: string | null | undefined): string {
   const raw = String(path || "").trim().split("#")[0];
   const pathname = raw.split("?")[0];
+  if (pathname === PLANNER_ACCOUNT_WELCOME_ROUTE) return PLANNER_ACCOUNT_WELCOME_ROUTE;
   if (
     pathname === PLANNER_ACCOUNT_ROUTE ||
     pathname.startsWith(`${PLANNER_ACCOUNT_ROUTE}/`)
@@ -161,18 +163,21 @@ export function plannerCheckoutReturnPath(path: string | null | undefined): stri
       return pathname;
     }
   }
-  return PLANNER_WELCOME_ROUTE;
+  if (pathname === PLANNER_WELCOME_ROUTE || pathname.startsWith(`${PLANNER_WELCOME_ROUTE}/`)) {
+    return PLANNER_WELCOME_ROUTE;
+  }
+  return PLANNER_ACCOUNT_WELCOME_ROUTE;
 }
 
 export function plannerSafeCheckoutSuccessUrl(rawSuccess: string, origin: string): string {
   const site = origin.replace(/\/$/, "");
   try {
     const url = new URL(rawSuccess, site);
-    if (url.origin !== new URL(site).origin) return `${site}${PLANNER_WELCOME_ROUTE}?checkout=success`;
+    if (url.origin !== new URL(site).origin) return `${site}${PLANNER_ACCOUNT_WELCOME_ROUTE}?checkout=success`;
     const path = plannerCheckoutReturnPath(url.pathname);
     return `${site}${path}?checkout=success`;
   } catch {
-    return `${site}${PLANNER_WELCOME_ROUTE}?checkout=success`;
+    return `${site}${PLANNER_ACCOUNT_WELCOME_ROUTE}?checkout=success`;
   }
 }
 

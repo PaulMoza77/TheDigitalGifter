@@ -27,19 +27,20 @@ export async function sendPlannerReadyEmail(input: {
     .maybeSingle();
   if (existing?.status === "sent") return { sent: false, reason: "already_sent" };
 
-  const url = `${siteOrigin()}/christmas/planner/welcome?token=${encodeURIComponent(input.publicToken)}`;
+  const origin = siteOrigin();
+  const plannerUrl = `${origin}/account/christmas`;
+  const generatorUrl = `${origin}/generator`;
+  const loginUrl = `${origin}/login?next=${encodeURIComponent("/account/christmas")}`;
   const subject = "Your Christmas Planner is ready 🎄";
-  const unlocked = input.unlocked.length
-    ? input.unlocked.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
-    : "<li>Your Christmas Planner access</li>";
   const html = `<!doctype html><html><body style="font-family:Georgia,serif;background:#10261c;color:#F7F0E4;padding:32px">
   <div style="max-width:560px;margin:0 auto;background:#1B4332;border-radius:18px;padding:28px">
     <h1 style="font-size:28px;margin:0 0 12px">${escapeHtml(subject)}</h1>
-    <p style="line-height:1.6;opacity:.9">Thanks for your purchase of ${escapeHtml(input.packageName)}. Your interactive Christmas Planner access is unlocked — this is not a PDF.</p>
-    <p style="line-height:1.6;opacity:.9">What you unlocked:</p>
-    <ul style="line-height:1.7">${unlocked}</ul>
-    <p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#C9A227;color:#10261c;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">Continue to Planner</a></p>
-    <p style="font-size:13px;opacity:.7">Create an account or sign in on that page to keep your Planner on every device. Need help? Visit ${escapeHtml(siteOrigin())}/support</p>
+    <p style="line-height:1.6;opacity:.9">Your Christmas Planner 2026 access is confirmed. This is your online planner for the season — not a PDF.</p>
+    <p style="line-height:1.6;opacity:.9"><strong>300 bonus AI credits</strong> have been added to the same credits wallet you use for images and videos. They are not cash and cannot be withdrawn.</p>
+    <p style="margin:24px 0 12px"><a href="${plannerUrl}" style="display:inline-block;background:#C9A227;color:#10261c;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">Open my Planner</a></p>
+    <p style="margin:0 0 24px"><a href="${generatorUrl}" style="display:inline-block;background:transparent;color:#F7F0E4;text-decoration:underline;padding:8px 0;font-weight:600">Go to Generator</a></p>
+    <p style="line-height:1.6;opacity:.9">Log in with the same email you used to purchase: <a href="${loginUrl}" style="color:#F0D59A">Log in</a>.</p>
+    <p style="font-size:13px;opacity:.7">Need help? Visit ${escapeHtml(origin)}/support</p>
   </div></body></html>`;
 
   const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
