@@ -319,9 +319,9 @@ export function PlannerSidebarItem({
   end?: boolean;
 }) {
   return (
-    <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}>
-      <Icon size={16} strokeWidth={1.6} aria-hidden />
-      {label}
+    <NavLink to={to} end={end} title={label} className={({ isActive }) => (isActive ? "active" : "")}>
+      <Icon size={18} strokeWidth={1.6} aria-hidden />
+      <span className="tdg-planner-side-text">{label}</span>
     </NavLink>
   );
 }
