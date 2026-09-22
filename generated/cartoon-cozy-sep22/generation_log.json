@@ -1,0 +1,332 @@
+{
+  "created_at": "2026-09-22T18:08:49.976578+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.4000000000000001,
+  "budget_usd": 1.45,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "cozy_01_cartoon_cabin_mashup",
+      "library_id": "short-cozy-01-cartoon-cabin-mashup",
+      "title": "Short \u00b7 Cartoon cabin mashup",
+      "source_image": "cartoon_cabin_mashup.jpg",
+      "job_id": "65ba8349-ff56-49e5-b19b-747fcc5981ca",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "This exact cartoon cabin interior photograph quietly comes alive for five seconds. Locked camera. Preserve every character, face, body, outfit, and pose exactly: pink panther on the windowsill with mug, sponge in the hammock, duck in the beanbag, knitting grandmother, orange lobster on the sofa, scientist at the blueprint table, blonde man in sunglasses under a blanket, blue-haired woman reading, sleeping pink dog, sleeping brown monkey in the pet bed. Only four natural motions: rain streaks moving on the storm window with one brief lightning illumination of the mountains and lake; tiny steam rising from the mug; oil-lantern and candle flames flickering; sleeping dog and monkey with extremely subtle breathing. Everyone else stays almost still \u2014 maybe one tiny blink. Furniture, wood walls, books, and composition unchanged. Locked camera. Characters stay exactly where they are \u2014 no walking, no standing up, no exaggerated gestures. Do not morph faces, hands, bodies, clothing, or furniture. No extra limbs. No duplicated characters. Do not add or remove characters or objects. Do not redesign the scene. No melting objects. No random text, logos, captions, or watermarks. No audio. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_01_cartoon_cabin_mashup.mp4",
+      "probe": {
+        "filename": "cozy_01_cartoon_cabin_mashup.mp4",
+        "path": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_01_cartoon_cabin_mashup.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 15421370,
+        "size": 9718677
+      },
+      "qc_frames": [
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_01_cartoon_cabin_mashup_first.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_01_cartoon_cabin_mashup_mid.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_01_cartoon_cabin_mashup_last.jpg"
+      ],
+      "created_at": "2026-09-22T18:10:42.598288+00:00",
+      "qc_status": "REJECTED",
+      "qc_reason": "Character morph: sofa lobster becomes Garfield; beanbag duck becomes Donald Duck. Do not retry until approved."
+    },
+    {
+      "id": "cozy_02_family_christmas_boardgame",
+      "library_id": "short-cozy-02-family-boardgame",
+      "title": "Short \u00b7 Family Christmas board game",
+      "source_image": "family_christmas_boardgame.jpg",
+      "job_id": "d3e10a8b-2559-4165-b7ac-68307938288e",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "This exact cozy Christmas living-room photograph quietly comes alive for five seconds. Locked camera. Preserve the same family of four, golden retriever, sleeping grey kitten, Christmas tree, stone fireplace, stockings, wreath, board game, popcorn, mugs, plaid blankets, and snowy mountain village outside. Same faces, hair, sweaters, and seated positions. Nobody stands or walks. Only four natural motions: realistic fireplace flames with a soft changing warm glow; Christmas tree and garland lights twinkling gently; natural falling snow outside the windows; tiny steam from mugs and a barely-there blink or finger nudge on the board game from the girl. Dog stays lying down. Kitten stays asleep. Locked camera. Characters stay exactly where they are \u2014 no walking, no standing up, no exaggerated gestures. Do not morph faces, hands, bodies, clothing, or furniture. No extra limbs. No duplicated characters. Do not add or remove characters or objects. Do not redesign the scene. No melting objects. No random text, logos, captions, or watermarks. No audio. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_02_family_christmas_boardgame.mp4",
+      "probe": {
+        "filename": "cozy_02_family_christmas_boardgame.mp4",
+        "path": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_02_family_christmas_boardgame.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 11529305,
+        "size": 7265865
+      },
+      "qc_frames": [
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_02_family_christmas_boardgame_first.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_02_family_christmas_boardgame_mid.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_02_family_christmas_boardgame_last.jpg"
+      ],
+      "created_at": "2026-09-22T18:10:45.523261+00:00",
+      "qc_status": "PASSED",
+      "qc_reason": "Identities and layout stable; fireplace/snow/steam present; mild expression change only."
+    },
+    {
+      "id": "cozy_03_tom_jerry_christmas_living_room",
+      "library_id": "short-cozy-03-tom-jerry-living-room",
+      "title": "Short \u00b7 Tom & Jerry Christmas living room",
+      "source_image": "tom_jerry_christmas_living_room.jpg",
+      "job_id": "e9387109-0a7d-4977-b034-72323b859151",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "This exact Tom and Jerry Christmas living-room still quietly comes alive for five seconds. Locked camera. Preserve Tom on the left sofa with the red mug, Jerry standing on the coffee table holding cheese, Spike the bulldog on the right sofa, the small grey kitten with teddy under the blanket, Christmas tree, fireplace, stockings, board game, cookies, marshmallows, and snowy village windows. Same faces, bodies, and positions. Nobody walks. Only four natural motions: fireplace flames and warm glow; tree lights twinkling; falling snow outside; tiny steam from Tom's mug plus Jerry's tiny cheese wiggle and one small blink. Spike stays seated. Kitten stays still. Locked camera. Characters stay exactly where they are \u2014 no walking, no standing up, no exaggerated gestures. Do not morph faces, hands, bodies, clothing, or furniture. No extra limbs. No duplicated characters. Do not add or remove characters or objects. Do not redesign the scene. No melting objects. No random text, logos, captions, or watermarks. No audio. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_03_tom_jerry_christmas_living_room.mp4",
+      "probe": {
+        "filename": "cozy_03_tom_jerry_christmas_living_room.mp4",
+        "path": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_03_tom_jerry_christmas_living_room.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 11259677,
+        "size": 7095943
+      },
+      "qc_frames": [
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_03_tom_jerry_christmas_living_room_first.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_03_tom_jerry_christmas_living_room_mid.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_03_tom_jerry_christmas_living_room_last.jpg"
+      ],
+      "created_at": "2026-09-22T18:10:48.356712+00:00",
+      "qc_status": "PASSED",
+      "qc_reason": "Identities preserved; use earlier section before Spike reaches the board."
+    },
+    {
+      "id": "cozy_04_tom_jerry_storm_sleeping",
+      "library_id": "short-cozy-04-tom-jerry-storm-sleep",
+      "title": "Short \u00b7 Tom & Jerry storm sleeping cabin",
+      "source_image": "tom_jerry_storm_sleeping.jpg",
+      "job_id": "2fab0dc0-30a8-453d-8231-5d42a836934e",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "This exact rainy cabin den still quietly comes alive for five seconds. Locked camera. Preserve Tom sitting on the window frame with the steaming mug, Jerry smiling in the hammock with cheese, Spike asleep on the big plaid dog bed, black-and-white cat asleep, two grey kittens asleep with a teddy, yellow bird asleep, wood stove fire, lanterns, books, and the storm lake window. Same characters and poses. Nobody gets up. Only four natural motions: rain moving on the window with one subtle lightning flash lighting the mountains; steam rising from Tom's mug; wood-stove and lantern flame flicker; sleeping Spike, cats, kittens, and bird with extremely subtle breathing. Jerry may nibble the cheese a tiny bit. Furniture and sign text unchanged. Locked camera. Characters stay exactly where they are \u2014 no walking, no standing up, no exaggerated gestures. Do not morph faces, hands, bodies, clothing, or furniture. No extra limbs. No duplicated characters. Do not add or remove characters or objects. Do not redesign the scene. No melting objects. No random text, logos, captions, or watermarks. No audio. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_04_tom_jerry_storm_sleeping.mp4",
+      "probe": {
+        "filename": "cozy_04_tom_jerry_storm_sleeping.mp4",
+        "path": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_04_tom_jerry_storm_sleeping.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 14493258,
+        "size": 9133773
+      },
+      "qc_frames": [
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_04_tom_jerry_storm_sleeping_first.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_04_tom_jerry_storm_sleeping_mid.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_04_tom_jerry_storm_sleeping_last.jpg"
+      ],
+      "created_at": "2026-09-22T18:10:51.143988+00:00",
+      "qc_status": "PASSED",
+      "qc_reason": "Rain/lightning/steam/sleeping poses stable; characters remain in place."
+    },
+    {
+      "id": "cozy_05_tom_jerry_storm_bed",
+      "library_id": "short-cozy-05-tom-jerry-storm-bed",
+      "title": "Short \u00b7 Tom & Jerry stormy bed",
+      "source_image": "tom_jerry_storm_bed.jpg",
+      "job_id": "97f523c4-3329-4826-a8e3-a1cb981b823b",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "This exact Tom and Jerry cabin-bed still quietly comes alive for five seconds. Locked camera. Preserve Tom sleeping on the left pillows, Jerry sitting in the blankets holding cheese, empty hammock, wood stove fire, lanterns, stacked books, mug, cookies, open comic, plaid pillows, and stormy lake window. Same faces, bodies, clothing, and layout. Only four natural motions: rain streaks on the window with one brief lightning illumination; lantern and stove flames flickering; Tom's extremely subtle sleeping breath; Jerry a tiny nibble or blink while holding cheese. No one leaves the bed. Book spines and mug lettering stay readable and unchanged. Locked camera. Characters stay exactly where they are \u2014 no walking, no standing up, no exaggerated gestures. Do not morph faces, hands, bodies, clothing, or furniture. No extra limbs. No duplicated characters. Do not add or remove characters or objects. Do not redesign the scene. No melting objects. No random text, logos, captions, or watermarks. No audio. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_05_tom_jerry_storm_bed.mp4",
+      "probe": {
+        "filename": "cozy_05_tom_jerry_storm_bed.mp4",
+        "path": "/workspace/public/assets/christmas/cartoon-cozy-sep22/masters/cozy_05_tom_jerry_storm_bed.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 14797108,
+        "size": 9325262
+      },
+      "qc_frames": [
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_05_tom_jerry_storm_bed_first.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_05_tom_jerry_storm_bed_mid.jpg",
+        "/workspace/generated/cartoon-cozy-sep22/qc/cozy_05_tom_jerry_storm_bed_last.jpg"
+      ],
+      "created_at": "2026-09-22T18:11:35.190652+00:00",
+      "qc_status": "PASSED",
+      "qc_reason": "Layout and identities stable; Tom snore is slightly big but not a morph."
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "paid_submits": 5,
+  "actual_cost_usd": 1.4,
+  "status": "COMPLETE",
+  "completed_at": "2026-09-22T18:11:35.191258+00:00",
+  "reels": [
+    {
+      "id": "reel-cozy-emotional-01",
+      "title": "Cartoon cozy \u00b7 emotional",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_emotional_reel_01.mp4",
+      "poster": "/workspace/public/assets/christmas/cartoon-cozy-sep22/posters/reel-cozy-emotional-01.jpg",
+      "probe": {
+        "filename": "cartoon_cozy_emotional_reel_01.mp4",
+        "duration": 14.6,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16378619,
+        "size": 29890981
+      },
+      "clips_used": [
+        "short-cozy-05-tom-jerry-storm-bed",
+        "short-cozy-04-tom-jerry-storm-sleep",
+        "short-cozy-02-family-boardgame",
+        "short-cozy-03-tom-jerry-living-room"
+      ],
+      "shots": [
+        {
+          "src": "cozy_05_tom_jerry_storm_bed.mp4",
+          "start": 0.08,
+          "duration": 3.7,
+          "library_id": "short-cozy-05-tom-jerry-storm-bed"
+        },
+        {
+          "src": "cozy_04_tom_jerry_storm_sleeping.mp4",
+          "start": 0.1,
+          "duration": 3.6,
+          "library_id": "short-cozy-04-tom-jerry-storm-sleep"
+        },
+        {
+          "src": "cozy_02_family_christmas_boardgame.mp4",
+          "start": 0.08,
+          "duration": 3.8,
+          "library_id": "short-cozy-02-family-boardgame"
+        },
+        {
+          "src": "cozy_03_tom_jerry_christmas_living_room.mp4",
+          "start": 0.08,
+          "duration": 3.4,
+          "library_id": "short-cozy-03-tom-jerry-living-room"
+        }
+      ],
+      "method": "ffmpeg_concat_hardcut_from_kling_i2v_masters",
+      "created_at": "2026-09-22T18:16:52.799600+00:00"
+    },
+    {
+      "id": "reel-cozy-atmosphere-02",
+      "title": "Cartoon cozy \u00b7 atmosphere",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_atmosphere_reel_02.mp4",
+      "poster": "/workspace/public/assets/christmas/cartoon-cozy-sep22/posters/reel-cozy-atmosphere-02.jpg",
+      "probe": {
+        "filename": "cartoon_cozy_atmosphere_reel_02.mp4",
+        "duration": 14.5,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16431480,
+        "size": 29782059
+      },
+      "clips_used": [
+        "short-cozy-04-tom-jerry-storm-sleep",
+        "short-cozy-05-tom-jerry-storm-bed",
+        "short-cozy-03-tom-jerry-living-room",
+        "short-cozy-02-family-boardgame"
+      ],
+      "shots": [
+        {
+          "src": "cozy_04_tom_jerry_storm_sleeping.mp4",
+          "start": 0.04,
+          "duration": 3.9,
+          "library_id": "short-cozy-04-tom-jerry-storm-sleep"
+        },
+        {
+          "src": "cozy_05_tom_jerry_storm_bed.mp4",
+          "start": 0.12,
+          "duration": 3.5,
+          "library_id": "short-cozy-05-tom-jerry-storm-bed"
+        },
+        {
+          "src": "cozy_03_tom_jerry_christmas_living_room.mp4",
+          "start": 1.6,
+          "duration": 3.5,
+          "library_id": "short-cozy-03-tom-jerry-living-room"
+        },
+        {
+          "src": "cozy_02_family_christmas_boardgame.mp4",
+          "start": 0.2,
+          "duration": 3.6,
+          "library_id": "short-cozy-02-family-boardgame"
+        }
+      ],
+      "method": "ffmpeg_concat_hardcut_from_kling_i2v_masters",
+      "created_at": "2026-09-22T18:17:07.602971+00:00"
+    },
+    {
+      "id": "reel-cozy-characters-03",
+      "title": "Cartoon cozy \u00b7 characters",
+      "file": "/workspace/public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_characters_reel_03.mp4",
+      "poster": "/workspace/public/assets/christmas/cartoon-cozy-sep22/posters/reel-cozy-characters-03.jpg",
+      "probe": {
+        "filename": "cartoon_cozy_characters_reel_03.mp4",
+        "duration": 12.633333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 17083550,
+        "size": 26977772
+      },
+      "clips_used": [
+        "short-cozy-03-tom-jerry-living-room",
+        "short-cozy-05-tom-jerry-storm-bed",
+        "short-cozy-02-family-boardgame",
+        "short-cozy-04-tom-jerry-storm-sleep"
+      ],
+      "shots": [
+        {
+          "src": "cozy_03_tom_jerry_christmas_living_room.mp4",
+          "start": 0.05,
+          "duration": 2.5,
+          "library_id": "short-cozy-03-tom-jerry-living-room"
+        },
+        {
+          "src": "cozy_05_tom_jerry_storm_bed.mp4",
+          "start": 1.8,
+          "duration": 2.9,
+          "library_id": "short-cozy-05-tom-jerry-storm-bed"
+        },
+        {
+          "src": "cozy_02_family_christmas_boardgame.mp4",
+          "start": 0.5,
+          "duration": 3.5,
+          "library_id": "short-cozy-02-family-boardgame"
+        },
+        {
+          "src": "cozy_04_tom_jerry_storm_sleeping.mp4",
+          "start": 0.8,
+          "duration": 3.7,
+          "library_id": "short-cozy-04-tom-jerry-storm-sleep"
+        }
+      ],
+      "method": "ffmpeg_concat_hardcut_from_kling_i2v_masters",
+      "created_at": "2026-09-22T18:17:21.471406+00:00"
+    }
+  ],
+  "qc": {
+    "passed": 4,
+    "rejected": 1,
+    "rejected_ids": [
+      "cozy_01_cartoon_cabin_mashup"
+    ]
+  }
+}

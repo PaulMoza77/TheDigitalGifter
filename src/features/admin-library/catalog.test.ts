@@ -219,6 +219,19 @@ describe("admin video library", () => {
       "public/assets/christmas/pick-one/generation_manifest.json",
       "public/assets/christmas/pick-one/final/you-can-only-pick-one-i2v.mp4",
       "public/assets/christmas/pick-one/posters/reel-pick-one-i2v.jpg",
+      "public/assets/christmas/library-stills/cartoon_cabin_mashup.jpg",
+      "public/assets/christmas/library-stills/family_christmas_boardgame.jpg",
+      "public/assets/christmas/library-stills/tom_jerry_christmas_living_room.jpg",
+      "public/assets/christmas/library-stills/tom_jerry_storm_sleeping.jpg",
+      "public/assets/christmas/library-stills/tom_jerry_storm_bed.jpg",
+      "public/assets/christmas/cartoon-cozy-sep22/masters/cozy_02_family_christmas_boardgame.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/masters/cozy_03_tom_jerry_christmas_living_room.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/masters/cozy_04_tom_jerry_storm_sleeping.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/masters/cozy_05_tom_jerry_storm_bed.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_emotional_reel_01.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_atmosphere_reel_02.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_characters_reel_03.mp4",
+      "public/assets/christmas/cartoon-cozy-sep22/generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
@@ -233,6 +246,14 @@ describe("admin video library", () => {
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
     expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
+    const cozyShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-cozy-"));
+    expect(cozyShorts).toHaveLength(4);
+    expect(cozyShorts.every((item) => item.kind === "short")).toBe(true);
+    expect(cozyShorts.every((item) => item.model === "kling-video/v3.0/pro/image-to-video")).toBe(true);
+    expect(cozyShorts.every((item) => Boolean(item.sourceImage))).toBe(true);
+    expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-emotional-01")?.clipsUsed).toHaveLength(4);
+    expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-atmosphere-02")?.kind).toBe("reel");
+    expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-characters-03")?.durationSeconds).toBe(12.63);
   });
 
   it("publishes a single voice-over-corrected Lauren Overwhelm master", () => {
