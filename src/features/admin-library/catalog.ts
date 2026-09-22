@@ -955,7 +955,37 @@ const CARTOON_COZY_SHORT_TAGS = [
   "silent",
 ];
 
+const COUNTDOWN_SHORT_TAGS = [
+  "christmas",
+  "countdown",
+  "reel-source",
+  "cinematic",
+  "AI-generated",
+  "silent",
+];
+
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
+  {
+    id: "short-countdown-93-days",
+    title: "Short · 93 days until Christmas",
+    description:
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Cozy fireplace living room with a snowy village window. Overlay text “93 DAYS UNTIL Christmas” is locked and unmoving. Real image-to-video — not a still.",
+    src: "/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4",
+    filename: "countdown_93_days_until_christmas.mp4",
+    category: "christmas_reels",
+    kind: "short",
+    durationSeconds: 5.04,
+    poster: "/assets/christmas/countdown-93/posters/countdown_93_days_until_christmas.jpg",
+    width: 1080,
+    height: 1920,
+    tags: COUNTDOWN_SHORT_TAGS,
+    model: "kling-video/v3.0/pro/image-to-video",
+    sourceImage: "93_days_until_christmas.jpg",
+    jobId: "b385fff7-954b-4fc0-9e76-259b6740f26b",
+    costUsd: 0.28,
+    fileSizeBytes: 19347481,
+    createdAt: "2026-09-22T19:13:00Z",
+  },
   {
     id: "short-cozy-02-family-boardgame",
     title: "Short · Family Christmas board game",
@@ -2115,6 +2145,17 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 ];
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
+  {
+    id: "photo-93-days-until-christmas",
+    title: "Photo · 93 days until Christmas",
+    description:
+      "Cozy Christmas living room with fireplace, tree, and snowy village window. Source for short-countdown-93-days. Overlay: 93 DAYS UNTIL Christmas.",
+    src: "/assets/christmas/library-stills/93_days_until_christmas.jpg",
+    filename: "93_days_until_christmas.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    tags: ["christmas", "countdown", "reel-source", "AI-generated"],
+  },
   {
     id: "photo-cartoon-cabin-mashup",
     title: "Photo · Cartoon cabin mashup",

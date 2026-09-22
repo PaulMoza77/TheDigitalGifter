@@ -1,0 +1,47 @@
+{
+  "created_at": "2026-09-22T19:12:15.206346+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 0.28,
+  "budget_usd": 0.5,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "countdown_93_days_until_christmas",
+      "library_id": "short-countdown-93-days",
+      "title": "Short \u00b7 93 days until Christmas",
+      "source_image": "93_days_until_christmas.jpg",
+      "job_id": "b385fff7-954b-4fc0-9e76-259b6740f26b",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 cozy Christmas living room at night. This exact photograph comes alive for five seconds. Preserve the decorated Christmas tree with red bows, wrapped gifts, mug, lanterns, stone fireplace, garland, hanging lantern, snowy mountain village through the large window, and the fixed gold overlay text \u201c93 DAYS UNTIL Christmas\u201d exactly as in the first frame. Very subtle slow camera push-in. Natural snowfall outside the window. Fireplace flames move naturally. Christmas-tree and fairy lights softly twinkle. Candle flames in the lanterns flicker subtly. Slight realistic light and reflection movement on the window glass and floor. Everything else stays stable. CRITICAL: the on-screen text overlay is locked. The exact lettering \u201c93 DAYS UNTIL Christmas\u201d must stay perfectly sharp, readable, and completely motionless for all five seconds \u2014 same glyphs, same gold color, same position, same size, same script Christmas word. Do not animate, morph, regenerate, replace, warp, blur, or rewrite any text. No extra captions. Do not morph architecture, furniture, gifts, or the tree. No invented people. No wild camera motion, no Ken Burns-only still, no morphing, no warped windows. Subtle living-photograph motion only.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4",
+      "probe": {
+        "filename": "countdown_93_days_until_christmas.mp4",
+        "path": "/workspace/public/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 30700133,
+        "size": 19347481
+      },
+      "qc_frames": [
+        "/workspace/generated/countdown-93/qc/countdown_93_days_until_christmas_first.jpg",
+        "/workspace/generated/countdown-93/qc/countdown_93_days_until_christmas_mid.jpg",
+        "/workspace/generated/countdown-93/qc/countdown_93_days_until_christmas_last.jpg"
+      ],
+      "created_at": "2026-09-22T19:13:49.776262+00:00"
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "paid_submits": 1,
+  "actual_cost_usd": 0.28,
+  "status": "COMPLETE",
+  "completed_at": "2026-09-22T19:13:49.776854+00:00"
+}
