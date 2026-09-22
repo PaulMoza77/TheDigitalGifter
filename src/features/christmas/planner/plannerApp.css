@@ -4440,10 +4440,12 @@
 .tdg-meals-summary strong,
 .tdg-meals-guests-edit .tdg-planner-input {
   display: block;
-  font-family: var(--planner-serif);
+  font-family: var(--planner-sans);
   font-size: 1.35rem;
   line-height: 1.1;
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.03em;
   color: var(--planner-ink);
 }
 
@@ -4455,6 +4457,13 @@
   border: 0;
   background: transparent;
   box-shadow: none;
+  appearance: textfield;
+}
+
+.tdg-meals-guests-edit .tdg-planner-input::-webkit-outer-spin-button,
+.tdg-meals-guests-edit .tdg-planner-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .tdg-meals-summary span {
@@ -4547,6 +4556,14 @@
   box-shadow: var(--planner-shadow);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .tdg-meals-course:hover,
+  .tdg-meals-idea:hover {
+    border-color: rgba(166, 10, 10, 0.28);
+    box-shadow: 0 14px 32px rgba(28, 22, 18, 0.1);
+  }
+}
+
 .tdg-meals-course-visual,
 .tdg-meals-idea-visual {
   display: block;
@@ -4560,9 +4577,25 @@
 .tdg-meals-course-visual img,
 .tdg-meals-idea-visual img {
   width: 100%;
-  height: 148px;
+  height: 156px;
   object-fit: cover;
   display: block;
+}
+
+.tdg-meals-course[data-course="appetizer"] img {
+  object-position: 12% 62%;
+}
+
+.tdg-meals-course[data-course="main"] img {
+  object-position: 48% 40%;
+}
+
+.tdg-meals-course[data-course="side"] img {
+  object-position: 82% 48%;
+}
+
+.tdg-meals-course[data-course="dessert"] img {
+  object-position: 50% 42%;
 }
 
 .tdg-meals-course-body,
@@ -4741,7 +4774,14 @@
   }
   .tdg-meals-course-visual img,
   .tdg-meals-idea-visual img {
-    height: 140px;
+    height: 156px;
+  }
+}
+
+@media (min-width: 744px) and (max-width: 1099px) {
+  .tdg-meals-tabs button {
+    padding: 0 12px;
+    font-size: 0.86rem;
   }
 }
 

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { pickIdeasForTable, suggestMenu, type RecipeCatalogRow } from "./recipeCatalog";
-import { dietFromGuestNotes, recipePhoto, suggestInputFromDiet } from "./mealVisuals";
+import { coursePhoto, dietFromGuestNotes, recipePhoto, suggestInputFromDiet } from "./mealVisuals";
 
 function readSrc(rel: string) {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
@@ -106,6 +106,9 @@ describe("meals helpers stay truthful", () => {
     expect(ideas.map((r) => r.id)).not.toContain("main");
     expect(suggestMenu(rows, { guests: 8, sitting: "christmas_day", allergen: "nuts" }).length).toBeGreaterThan(0);
     expect(recipePhoto(rows[0], "main")).toContain("dinner-table.webp");
+    expect(coursePhoto("appetizer")).toContain("dinner-table.webp");
+    expect(coursePhoto("side")).toContain("dinner-table.webp");
+    expect(coursePhoto("dessert")).toContain("prague_bakery_window.jpg");
     expect(pickIdeasForTable([], {})).toEqual([]);
   });
 });

@@ -367,7 +367,7 @@ export function ChristmasPlannerFoodPage() {
             const primary = rows[0] || null;
             const recipe = primary ? recipes.find((r) => r.id === primary.recipe_id) : null;
             return (
-              <article key={course.id} className={`tdg-meals-course${primary ? " has-dish" : ""}`}>
+              <article key={course.id} className={`tdg-meals-course${primary ? " has-dish" : ""}`} data-course={course.id}>
                 <button type="button" className="tdg-meals-course-visual" onClick={() => setPickerCourse(course.id)}>
                   <img src={recipe ? recipePhoto(recipe, course.id) : coursePhoto(course.id)} alt="" />
                 </button>

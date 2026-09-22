@@ -30,26 +30,11 @@ export const DIET_CHIPS = [
 export type DietChipId = (typeof DIET_CHIPS)[number]["id"];
 
 const COURSE_PHOTOS: Record<MenuCourseId, string> = {
-  appetizer: "/assets/christmas/library-stills/prague_balcony_christmas_spread.jpg",
+  appetizer: MEAL_HERO_SRC,
   main: MEAL_HERO_SRC,
-  side: "/assets/christmas/library-stills/prague_market_gingerbread_stall.jpg",
+  side: MEAL_HERO_SRC,
   dessert: "/assets/christmas/library-stills/prague_bakery_window.jpg",
 };
-
-const EDITORIAL_FOOD = [
-  MEAL_HERO_SRC,
-  "/assets/christmas/library-stills/prague_balcony_christmas_spread.jpg",
-  "/assets/christmas/library-stills/prague_bakery_window.jpg",
-  "/assets/christmas/library-stills/prague_cafe_street_cookies.jpg",
-  "/assets/christmas/library-stills/prague_market_gingerbread_stall.jpg",
-  "/christmas/planner/copilot-cozy.webp",
-] as const;
-
-function hashKey(value: string): number {
-  let n = 0;
-  for (let i = 0; i < value.length; i += 1) n = (n * 31 + value.charCodeAt(i)) >>> 0;
-  return n;
-}
 
 export function coursePhoto(course: MenuCourseId): string {
   return COURSE_PHOTOS[course];
@@ -63,8 +48,7 @@ export function recipePhoto(recipe: Pick<RecipeCatalogRow, "id" | "image_path" |
   if (inferred === "appetizer" || inferred === "main" || inferred === "side" || inferred === "dessert") {
     return COURSE_PHOTOS[inferred];
   }
-  const key = recipe?.id || inferred || "feast";
-  return EDITORIAL_FOOD[hashKey(key) % EDITORIAL_FOOD.length];
+  return MEAL_HERO_SRC;
 }
 
 export function dietStorageKey(profileId: string): string {
