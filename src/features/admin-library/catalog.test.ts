@@ -232,6 +232,11 @@ describe("admin video library", () => {
       "public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_atmosphere_reel_02.mp4",
       "public/assets/christmas/cartoon-cozy-sep22/final/cartoon_cozy_characters_reel_03.mp4",
       "public/assets/christmas/cartoon-cozy-sep22/generation_manifest.json",
+      "public/assets/christmas/library-stills/93_days_until_christmas.jpg",
+      "public/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4",
+      "public/assets/christmas/countdown-93/posters/countdown_93_days_until_christmas.jpg",
+      "public/assets/christmas/countdown-93/generation_manifest.json",
+      "source/countdown-93/93_days_until_christmas_1080x1920.png",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
@@ -254,6 +259,21 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-emotional-01")?.clipsUsed).toHaveLength(4);
     expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-atmosphere-02")?.kind).toBe("reel");
     expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-cozy-characters-03")?.durationSeconds).toBe(12.63);
+    const countdown = LIBRARY_VIDEOS.find((item) => item.id === "short-countdown-93-days");
+    expect(countdown?.kind).toBe("short");
+    expect(countdown?.model).toBe("kling-video/v3.0/pro/image-to-video");
+    expect(countdown?.jobId).toBe("b385fff7-954b-4fc0-9e76-259b6740f26b");
+    expect(countdown?.costUsd).toBe(0.28);
+    expect(countdown?.width).toBe(1080);
+    expect(countdown?.height).toBe(1920);
+    expect(countdown?.durationSeconds).toBe(5.04);
+    expect(countdown?.src).toBe("/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4");
+    expect(searchLibraryVideos("93 days", "christmas_reels", "short").some((item) => item.id === "short-countdown-93-days")).toBe(
+      true,
+    );
+    expect(
+      searchLibraryVideos("93 days", "christmas_reels", "photo").some((item) => item.id === "photo-93-days-until-christmas"),
+    ).toBe(true);
   });
 
   it("publishes a single voice-over-corrected Lauren Overwhelm master", () => {
