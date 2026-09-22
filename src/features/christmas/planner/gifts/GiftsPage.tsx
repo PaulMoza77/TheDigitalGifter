@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Gift, Heart, Search, ShoppingBag, Wallet } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "../analytics";
@@ -16,7 +17,7 @@ import { useCopilotUi } from "../copilot/CopilotHost";
 import { PlannerEmptyState, PlannerProgress, PlannerStatusChip } from "../plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { GIFT_ITEM_STATUSES, type GiftItem, type GiftItemStatus, type GiftRecipient } from "../types";
-import { christmasIdentityForPerson } from "./giftIdentity";
+import { christmasIdentitiesForPeople, christmasIdentityForPerson } from "./giftIdentity";
 import {
   giftLifecycle,
   giftsOverviewStats,
@@ -66,6 +67,7 @@ export function ChristmasPlannerGiftsPage() {
   const [personError, setPersonError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PersonFilter>("all");
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const ideaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -129,6 +131,18 @@ export function ChristmasPlannerGiftsPage() {
         );
       });
   }, [people, gifts, filter, query]);
+
+  const covers = useMemo(
+    () =>
+      christmasIdentitiesForPeople(
+        people.map((person) => ({
+          id: person.id,
+          displayName: person.display_name,
+          relationship: person.relationship,
+        })),
+      ),
+    [people],
+  );
 
   const attention = useMemo(() => {
     return people
@@ -252,19 +266,31 @@ export function ChristmasPlannerGiftsPage() {
       <div className="tdg-gifts-head-copy">
         <p className="tdg-planner-kicker">Thoughtful gifts. Happier moments.</p>
         <h1>Gifts</h1>
-        <p>Everyone you love. Everything in one place. People first.</p>
+        <p>Everyone you love. Everything in one place.</p>
+        <p className="tdg-planner-sr">People first.</p>
       </div>
       <div className="tdg-gifts-head-actions">
         {people.length > 0 ? (
-          <label className="tdg-gifts-search">
-            <span className="tdg-planner-sr">Search gifts, people or ideas</span>
-            <input
-              className="tdg-planner-input"
-              placeholder="Search gifts, people or ideas..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
+          <>
+            <button
+              type="button"
+              className="tdg-gifts-search-toggle"
+              aria-expanded={searchOpen}
+              aria-label="Search gifts, people or ideas"
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              <Search size={18} strokeWidth={1.8} aria-hidden />
+            </button>
+            <label className={`tdg-gifts-search${searchOpen ? " is-open" : ""}`}>
+              <span className="tdg-planner-sr">Search gifts, people or ideas</span>
+              <input
+                className="tdg-planner-input"
+                placeholder="Search gifts, people or ideas..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+          </>
         ) : null}
         <button type="button" className="tdg-planner-btn primary" disabled={!limit.canAdd} onClick={openAddSomeone}>
           + Add Someone
@@ -351,13 +377,17 @@ export function ChristmasPlannerGiftsPage() {
                     key={person.id}
                     person={person}
                     stats={stats}
+                    look={covers.get(person.id)}
                     onOpen={() => openPerson(person.id)}
                   />
                 );
               })}
               <button type="button" className="tdg-gifts-add-card" onClick={openAddSomeone} disabled={!limit.canAdd}>
-                <span>+ Add Someone</span>
-                <em>Name, optional relationship and budget</em>
+                <span className="tdg-gifts-add-plus" aria-hidden="true">
+                  +
+                </span>
+                <span>Add Someone</span>
+                <em>Start shopping for someone new</em>
               </button>
             </div>
             <div className="tdg-gifts-mobile-inspire">
@@ -379,6 +409,13 @@ export function ChristmasPlannerGiftsPage() {
             ) : null}
           </div>
           <aside className="tdg-gifts-context" aria-label="Gift help">
+            <div className="tdg-gifts-context-mood">
+              <p>
+                It’s not just about gifts.
+                <br />
+                It’s about the people who make Christmas special.
+              </p>
+            </div>
             {attention ? (
               <div className="tdg-gifts-context-card">
                 <p className="tdg-planner-kicker">Need inspiration?</p>
@@ -546,7 +583,6 @@ function GiftsEmptyState({ onAdd, onInspire }: { onAdd: () => void; onInspire?: 
     <section className="tdg-gifts-empty">
       <div className="tdg-gifts-empty-visual">
         <img src="/christmas/planner/gifts-editorial.webp" alt="" />
-        <p>Christmas wrap. Not a portrait.</p>
       </div>
       <div>
         <PlannerEmptyState
@@ -585,20 +621,24 @@ function GiftsSummary({
   return (
     <div className="tdg-gifts-summary">
       <div>
+        <Gift size={22} strokeWidth={1.6} aria-hidden />
         <strong>
           {overview.giftsPlanned} / {overview.giftsTotal}
         </strong>
         <span>Gifts planned</span>
       </div>
       <div>
+        <ShoppingBag size={22} strokeWidth={1.6} aria-hidden />
         <strong>{overview.leftToBuy}</strong>
         <span>Left to buy</span>
       </div>
       <div>
+        <Wallet size={22} strokeWidth={1.6} aria-hidden />
         <strong>{budgetValue}</strong>
         <span>Budget</span>
       </div>
       <div>
+        <Heart size={22} strokeWidth={1.6} aria-hidden />
         <strong>{overview.people}</strong>
         <span>People</span>
       </div>
@@ -609,23 +649,26 @@ function GiftsSummary({
 function PersonCard({
   person,
   stats,
+  look,
   onOpen,
 }: {
   person: GiftRecipient;
   stats: ReturnType<typeof personGiftStats>;
+  look?: ReturnType<typeof christmasIdentityForPerson>;
   onOpen: () => void;
 }) {
-  const look = christmasIdentityForPerson({
-    id: person.id,
-    displayName: person.display_name,
-    relationship: person.relationship,
-  });
-  const remaining = stats.done ? "All done!" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
+  const cover =
+    look ||
+    christmasIdentityForPerson({
+      id: person.id,
+      displayName: person.display_name,
+      relationship: person.relationship,
+    });
+  const remaining = stats.done ? "All done" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
   return (
     <button type="button" className="tdg-gifts-card" onClick={onOpen}>
       <span className="tdg-gifts-card-visual">
-        <img src={look.src} alt="" />
-        <span className="tdg-gifts-card-look">{look.label}</span>
+        <img src={cover.src} alt="" />
       </span>
       <span className="tdg-gifts-card-body">
         <strong>{person.display_name}</strong>
@@ -634,7 +677,6 @@ function PersonCard({
         </span>
         <PlannerProgress value={stats.progress} compact />
         <span className={`tdg-gifts-card-next${stats.done ? " is-done" : ""}`}>{remaining}</span>
-        <span className="tdg-planner-sr">{look.caption}</span>
       </span>
     </button>
   );
@@ -681,7 +723,6 @@ function PersonDetail({
       <header className="tdg-gifts-person-head">
         <div className="tdg-gifts-person-hero">
           <img src={look.src} alt="" />
-          <span>{look.label} · {look.caption}</span>
         </div>
         <div>
           <h2>{person.display_name}</h2>

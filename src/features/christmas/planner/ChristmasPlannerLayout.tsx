@@ -1,5 +1,16 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { CalendarDays, Gift, LayoutList, ListTodo, MoreHorizontal, Settings, UserRound, UtensilsCrossed, Wallet } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  Gift,
+  Home,
+  LayoutList,
+  MoreHorizontal,
+  ShoppingBag,
+  Sparkles,
+  UserRound,
+  UtensilsCrossed,
+} from "lucide-react";
 import { PageHead } from "@/components/PageHead";
 import { useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
@@ -10,24 +21,18 @@ import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
 import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
-import { CopilotLaunchButton } from "./copilot/CopilotSheet";
 import { PlannerProgress, PlannerSidebarItem } from "./plannerUi";
+import { PlannerGiftMark } from "./plannerMarks";
 import "./plannerApp.css";
 
 const SIDE = [
-  { to: "/account/christmas", label: "Today", icon: ListTodo, end: true as const },
+  { to: "/account/christmas", label: "Home", icon: Home, end: true as const },
+  { to: "/account/christmas/calendar", label: "Today", icon: CalendarDays },
+  { to: "/account/christmas/plan", label: "Plan", icon: LayoutList },
   { to: "/account/christmas/gifts", label: "Gifts", icon: Gift },
   { to: "/account/christmas/food", label: "Meals", icon: UtensilsCrossed },
-  { to: "/account/christmas/plan", label: "Tasks", icon: LayoutList },
-  { to: "/account/christmas/budget", label: "Budget", icon: Wallet },
-  { to: "/account/christmas/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/account/christmas/more", label: "More", icon: MoreHorizontal },
-];
-
-const MOBILE_NAV = [
-  { to: "/account/christmas", label: "Today", icon: ListTodo, end: true as const },
-  { to: "/account/christmas/gifts", label: "Gifts", icon: Gift },
-  { to: "/account/christmas/food", label: "Meals", icon: UtensilsCrossed },
+  { to: "/account/christmas/recipes", label: "Recipes", icon: BookOpen },
+  { to: "/account/christmas/shopping", label: "Shopping", icon: ShoppingBag },
   { to: "/account/christmas/more", label: "More", icon: MoreHorizontal },
 ];
 
@@ -101,9 +106,10 @@ function PlannerAppShell() {
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex nofollow exactTitle />
       <div className="tdg-planner-frame">
         <header className="tdg-planner-header">
-          <a className="tdg-planner-logo" href="/christmas" aria-label="The Digital Gifter">
+          <a className="tdg-planner-logo" href="/account/christmas" aria-label="Christmas Planner">
             <img src="/TheDigitalGifter.png" alt="" width={36} height={36} decoding="async" />
-            <span>The Digital Gifter</span>
+            <PlannerGiftMark size={34} />
+            <span>Christmas Planner</span>
           </a>
           <p className="tdg-planner-header-count">{countdownCopy(daysLeft)}</p>
           <div className="tdg-planner-header-meta">
@@ -115,13 +121,15 @@ function PlannerAppShell() {
                 <PlannerProgress value={readiness} compact />
               </span>
             ) : null}
-            {profile ? <CopilotLaunchButton onClick={() => copilot?.openCopilot(undefined, "header")} /> : null}
             <a href="/account/dashboard">Account</a>
           </div>
         </header>
         <aside className="tdg-planner-side" aria-label="Planner modules">
           <div className="tdg-planner-side-brand">
+            <PlannerGiftMark size={44} />
             <strong>Christmas Planner</strong>
+            <i className="tdg-planner-side-flourish" aria-hidden="true" />
+            <span>Your calm Christmas starts here.</span>
           </div>
           <nav className="tdg-planner-side-nav">
             {SIDE.map((item) => (
@@ -135,10 +143,10 @@ function PlannerAppShell() {
             ))}
           </nav>
           <div className="tdg-planner-side-foot">
-            <NavLink to="/account/christmas/settings" className={({ isActive }) => (isActive ? "active" : "")}>
-              <Settings size={16} strokeWidth={1.6} aria-hidden />
-              Settings
-            </NavLink>
+            <button type="button" className="tdg-planner-side-copilot" onClick={() => copilot?.openCopilot(undefined, "sidebar")}>
+              <Sparkles size={16} strokeWidth={1.7} aria-hidden />
+              AI Copilot
+            </button>
             <a href="/account/dashboard">
               <UserRound size={16} strokeWidth={1.6} aria-hidden />
               Account
@@ -147,24 +155,34 @@ function PlannerAppShell() {
         </aside>
         <main className="tdg-planner-main">
           {access?.access_source === "qa_grant" ? (
-            <p className="tdg-planner-qa-note" data-testid="planner-qa-access">
-              Test access is on for this account. It is not a Stripe payment.
-            </p>
+            <details className="tdg-planner-qa-note" data-testid="planner-qa-access">
+              <summary>QA ACCESS</summary>
+              <p>Test access is on for this account. It is not a Stripe payment.</p>
+            </details>
           ) : null}
           {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
-          {MOBILE_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={"end" in item ? Boolean(item.end) : false}
-              className={({ isActive }) => (isActive ? "active" : "")}
-            >
-              <item.icon size={18} strokeWidth={1.6} aria-hidden />
-              {item.label}
-            </NavLink>
-          ))}
+          <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")}>
+            <Home size={18} strokeWidth={1.7} aria-hidden />
+            Home
+          </NavLink>
+          <NavLink to="/account/christmas/plan" className={({ isActive }) => (isActive ? "active" : "")}>
+            <LayoutList size={18} strokeWidth={1.7} aria-hidden />
+            Plan
+          </NavLink>
+          <button type="button" className="tdg-planner-nav-copilot" onClick={() => copilot?.openCopilot(undefined, "nav")}>
+            <Sparkles size={18} strokeWidth={1.7} aria-hidden />
+            AI Copilot
+          </button>
+          <NavLink to="/account/christmas/shopping" className={({ isActive }) => (isActive ? "active" : "")}>
+            <ShoppingBag size={18} strokeWidth={1.7} aria-hidden />
+            Shopping
+          </NavLink>
+          <NavLink to="/account/christmas/more" className={({ isActive }) => (isActive ? "active" : "")}>
+            <MoreHorizontal size={18} strokeWidth={1.7} aria-hidden />
+            More
+          </NavLink>
         </nav>
       </div>
     </>

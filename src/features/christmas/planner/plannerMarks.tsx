@@ -113,3 +113,22 @@ export function PlannerMark({ kind }: { kind: PlannerMarkKind }) {
       );
   }
 }
+
+/** Filled Christmas gift mark for planner branding. Not an emoji. */
+export function PlannerGiftMark({ size = 36 }: { size?: number }) {
+  return (
+    <svg
+      className="tdg-planner-gift-mark"
+      viewBox="0 0 48 48"
+      width={size}
+      height={size}
+      aria-hidden="true"
+    >
+      <rect x="8" y="20" width="32" height="22" rx="4" fill="#B5232E" />
+      <rect x="8" y="20" width="32" height="6" fill="#8E1B24" />
+      <rect x="22" y="20" width="4" height="22" fill="#F4D7A1" />
+      <path d="M24 20c-6-8-13-8-13-2 0 4 5 6 13 8 8-2 13-4 13-8 0-6-7-6-13 2z" fill="#C4A574" />
+      <path d="M24 20c-4-5-9-6-9-2 0 3 4 5 9 6 5-1 9-3 9-6 0-4-5-3-9 2z" fill="#B5232E" />
+    </svg>
+  );
+}
