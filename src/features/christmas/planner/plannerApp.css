@@ -1,14 +1,14 @@
 /* Christmas Planner private app - cream application, evergreen chrome. Not the public funnel. */
 .tdg-planner-app {
-  --planner-cream: #f6efe4;
-  --planner-parchment: #efe4d2;
+  --planner-cream: #f7f1e8;
+  --planner-parchment: #f3eadc;
   --planner-ink: #1c1612;
-  --planner-muted: #5c534b;
+  --planner-muted: #6a5f55;
   --planner-gold: #c4a574;
-  --planner-burgundy: #7a2430;
-  --planner-pine: #143328;
-  --planner-pine-mid: #1c4636;
-  --planner-line: rgba(20, 51, 40, 0.12);
+  --planner-burgundy: #b5232e;
+  --planner-pine: #1e3a2f;
+  --planner-pine-mid: #2a4d3e;
+  --planner-line: rgba(42, 32, 24, 0.1);
   --planner-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
   --planner-sans: "Source Sans 3", "Segoe UI", sans-serif;
   min-height: 100dvh;
@@ -41,10 +41,11 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 0 18px 0 0;
-  background: var(--planner-pine);
-  color: #f4ead9;
+  min-height: 58px;
+  padding: 0 16px 0 12px;
+  background: #fffdf9;
+  color: var(--planner-ink);
+  border-bottom: 1px solid var(--planner-line);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -54,28 +55,23 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 52px;
-  padding: 0 14px 0 16px;
-  color: #f7f0e4;
+  min-height: 58px;
+  padding: 0 8px 0 4px;
+  color: var(--planner-ink);
   text-decoration: none;
-  background: var(--planner-pine);
+  background: transparent;
 }
 
 .tdg-planner-logo img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: #143328;
+  display: none;
 }
 
 .tdg-planner-logo span {
   font-family: var(--planner-serif);
-  font-size: 1.02rem;
+  font-size: 1.18rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #f7f0e4;
+  color: var(--planner-ink);
   white-space: nowrap;
 }
 
@@ -84,14 +80,14 @@
   font-weight: 600;
   font-size: 1.02rem;
   letter-spacing: 0.01em;
-  color: #f7f0e4;
+  color: var(--planner-ink);
 }
 
 .tdg-planner-header-count {
   margin: 0;
   text-align: center;
   font-size: 0.84rem;
-  color: #ead9bd;
+  color: var(--planner-muted);
   letter-spacing: 0.01em;
 }
 
@@ -101,12 +97,12 @@
   gap: 14px;
   flex-wrap: nowrap;
   justify-content: flex-end;
-  font-size: 0.82rem;
-  color: #ead9bd;
+  font-size: 0.86rem;
+  color: var(--planner-muted);
 }
 
 .tdg-planner-header a {
-  color: #f7f0e4;
+  color: var(--planner-ink);
   text-decoration: none;
   min-height: 44px;
   display: inline-flex;
@@ -114,14 +110,11 @@
 }
 
 .tdg-planner-ready-mini {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #f7f0e4;
+  display: none;
 }
 
 .tdg-planner-ready-mini-label {
-  color: #d9c7a6;
+  color: var(--planner-muted);
 }
 
 .tdg-planner-ready-mini .tdg-planner-bar,
@@ -129,33 +122,38 @@
   width: 72px;
   height: 4px;
   margin: 0;
-  background: rgba(247, 240, 228, 0.18);
+  background: rgba(181, 35, 46, 0.12);
 }
 
 .tdg-planner-side {
   display: none;
-  color: #f4ead9;
+  color: var(--planner-ink);
+  background: #fffdf9;
 }
 
 .tdg-planner-side-brand {
-  padding: 4px 14px 16px;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 4px 12px 24px;
 }
 
 .tdg-planner-side-brand strong {
   display: block;
   font-family: var(--planner-serif);
-  font-size: 1.18rem;
+  font-size: 1.72rem;
+  line-height: 1.02;
   font-weight: 600;
-  color: #f7f0e4;
+  color: var(--planner-ink);
 }
 
 .tdg-planner-side-brand span {
   display: block;
-  margin-top: 4px;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #cbb892;
+  margin-top: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--planner-muted);
 }
 
 .tdg-planner-side-nav,
@@ -167,36 +165,45 @@
 
 .tdg-planner-side-foot {
   margin-top: auto;
-  padding-top: 28px;
+  padding-top: 20px;
 }
 
-.tdg-planner-side a {
+.tdg-planner-side a,
+.tdg-planner-side-copilot {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 44px;
+  min-height: 42px;
   padding: 0 14px;
-  border-radius: 0;
-  color: #efe4d0;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: #3d342e;
   text-decoration: none;
-  font-size: 0.95rem;
+  font: inherit;
+  font-size: 0.98rem;
   font-weight: 500;
+  cursor: pointer;
+  text-align: left;
 }
 
-.tdg-planner-side a svg {
-  color: #d9c7a6;
+.tdg-planner-side a svg,
+.tdg-planner-side-copilot svg {
+  color: #8a7264;
   flex-shrink: 0;
 }
 
-.tdg-planner-side a:hover {
-  background: rgba(247, 240, 228, 0.06);
-  color: #f7f0e4;
+.tdg-planner-side a:hover,
+.tdg-planner-side-copilot:hover {
+  background: rgba(181, 35, 46, 0.06);
+  color: var(--planner-ink);
 }
 
 .tdg-planner-side a.active {
-  background: rgba(247, 240, 228, 0.08);
-  color: #f3e2bf;
+  background: rgba(181, 35, 46, 0.1);
+  color: var(--planner-burgundy);
+  font-weight: 650;
 }
 
 .tdg-planner-side a.active::before {
@@ -205,12 +212,13 @@
   left: 0;
   top: 10px;
   bottom: 10px;
-  width: 2px;
-  background: #d4b483;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--planner-burgundy);
 }
 
 .tdg-planner-side a.active svg {
-  color: #e6c98a;
+  color: var(--planner-burgundy);
 }
 
 .tdg-planner-side-label {
@@ -376,8 +384,8 @@
 }
 
 .tdg-planner-btn.primary {
-  background: var(--planner-pine);
-  color: var(--planner-cream);
+  background: var(--planner-burgundy);
+  color: #fffdf9;
   border-color: transparent;
 }
 
@@ -525,32 +533,37 @@
   bottom: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-  background: var(--planner-pine);
-  border-top: 1px solid rgba(196, 165, 116, 0.22);
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+  background: #fffdf9;
+  border-top: 1px solid var(--planner-line);
+  box-shadow: 0 -8px 24px rgba(54, 42, 28, 0.06);
 }
 
-.tdg-planner-nav a {
-  min-height: 48px;
+.tdg-planner-nav a,
+.tdg-planner-nav-copilot {
+  min-height: 52px;
   border: 0;
   background: transparent;
-  color: #efe4d0;
+  color: #6a5f55;
   text-decoration: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 3px;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.tdg-planner-nav a.active {
-  color: #f3e2bf;
+.tdg-planner-nav a.active,
+.tdg-planner-nav-copilot:focus-visible {
+  color: var(--planner-burgundy);
 }
 
 .tdg-planner-chips {
@@ -592,8 +605,8 @@
 
 .tdg-planner-app a.tdg-planner-btn.primary,
 .tdg-planner-app .tdg-planner-btn.primary {
-  color: #f7f0e4;
-  background: var(--planner-pine);
+  color: #fffdf9;
+  background: var(--planner-burgundy);
 }
 
 .tdg-planner-app a.tdg-planner-btn:hover {
@@ -1198,23 +1211,24 @@
   }
   .tdg-planner-frame {
     display: grid;
-    grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-columns: 216px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
     min-height: 0;
     overflow: hidden;
   }
   .tdg-planner-header {
-    grid-column: 1 / -1;
+    grid-column: 2;
     grid-row: 1;
-    grid-template-columns: 232px minmax(0, 1fr) auto;
-    padding-left: 0;
-    padding-right: 32px;
+    grid-template-columns: 1fr auto;
+    padding: 0 28px;
     position: relative;
+    background: transparent;
+    border-bottom: 0;
+    min-height: 42px;
   }
   .tdg-planner-logo {
-    width: 232px;
-    padding-left: 18px;
+    display: none;
   }
   .tdg-planner-header-brand {
     display: none;
@@ -1224,16 +1238,17 @@
   }
   .tdg-planner-side {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1 / -1;
     display: flex;
     flex-direction: column;
-    background: var(--planner-pine);
-    color: #f4ead9;
-    padding: 18px 10px 16px;
+    background: #fffdf9;
+    color: var(--planner-ink);
+    padding: 22px 14px 18px;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    border-right: 1px solid var(--planner-line);
   }
   .tdg-planner-side-nav {
     flex: 1 1 auto;
@@ -1243,7 +1258,7 @@
     flex-shrink: 0;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(247, 240, 228, 0.1);
+    border-top: 1px solid var(--planner-line);
   }
   .tdg-planner-nav {
     display: none;
@@ -1291,16 +1306,10 @@
 
 @media (min-width: 1280px) {
   .tdg-planner-frame {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-  .tdg-planner-header {
-    grid-template-columns: 240px minmax(0, 1fr) auto;
-  }
-  .tdg-planner-logo {
-    width: 240px;
+    grid-template-columns: 220px minmax(0, 1fr);
   }
   .tdg-planner-main {
-    padding: 32px 48px 64px;
+    padding: 24px 40px 56px;
   }
   .tdg-planner-split {
     display: grid;
@@ -1335,8 +1344,7 @@
   }
 }
 
-/* Contrast lock: chrome text stays ivory even if later app link rules change. */
-.tdg-planner-app .tdg-planner-side,
+/* Contrast lock: keep primary CTAs ivory-on-red even if later app link rules change. */
 .tdg-planner-app .tdg-planner-side a,
 .tdg-planner-app .tdg-planner-side a:hover,
 .tdg-planner-app .tdg-planner-nav a,
@@ -1345,26 +1353,24 @@
 .tdg-planner-app .tdg-planner-header p,
 .tdg-planner-app .tdg-planner-logo,
 .tdg-planner-app .tdg-planner-logo span {
-  color: #f4ead9;
+  color: var(--planner-ink);
 }
 
 .tdg-planner-app a.tdg-planner-btn.primary,
 .tdg-planner-app button.tdg-planner-btn.primary,
 .tdg-planner-app .tdg-planner-btn.primary {
-  color: #f7f0e4;
+  color: #f4ead9;
 }
 
 .tdg-planner-app .tdg-planner-side a.active,
-.tdg-planner-app .tdg-planner-nav a.active,
-.tdg-planner-app .tdg-planner-header-brand,
-.tdg-planner-app .tdg-planner-logo span {
-  color: #f7eed8;
+.tdg-planner-app .tdg-planner-nav a.active {
+  color: var(--planner-burgundy);
 }
 
 .tdg-planner-app .tdg-planner-side-brand span,
 .tdg-planner-app .tdg-planner-ready-mini-label,
 .tdg-planner-app .tdg-planner-header-count {
-  color: #dcc9a4;
+  color: var(--planner-muted);
 }
 
 .tdg-planner-page {
@@ -1652,21 +1658,7 @@
 }
 
 .tdg-copilot-launch.is-fab {
-  position: fixed;
-  right: 16px;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  z-index: 34;
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--planner-pine);
-  color: #f7f0e4;
-  box-shadow: 0 10px 24px rgba(20, 51, 40, 0.28);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  display: none !important;
 }
 
 .tdg-copilot-root {
@@ -1827,7 +1819,7 @@
     display: none;
   }
   .tdg-copilot-launch.is-fab {
-    display: inline-flex;
+    display: none !important;
   }
   .tdg-copilot-sheet {
     top: auto;
@@ -2357,39 +2349,97 @@
   }
 }
 
-/* Gifts — people-first, same Home chrome */
+/* Gifts — Christmas Planner product composition (mockup) */
+.tdg-planner-page.tdg-gifts,
 .tdg-gifts {
-  max-width: 1180px;
+  max-width: none;
+  width: 100%;
 }
 
 .tdg-gifts-head {
+  position: relative;
   display: grid;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 16px;
+  min-height: 182px;
+  padding: 22px 26px;
+  margin: 0 0 18px;
+  border: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(247,241,232,.94) 0%, rgba(247,241,232,.78) 28%, rgba(247,241,232,.18) 52%, rgba(247,241,232,0) 72%),
+    url("/christmas/planner/gifts-editorial.webp") right 36% / cover no-repeat;
+  box-shadow: 0 16px 40px rgba(54, 42, 28, .1);
 }
 
-.tdg-gifts-head h1 {
+.tdg-gifts-head-copy {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  max-width: 520px;
+}
+
+.tdg-gifts-head-copy .tdg-planner-kicker {
+  color: #b5232e;
+  letter-spacing: .18em;
+  font-size: .7rem;
+  font-weight: 700;
   margin-bottom: 4px;
 }
 
-.tdg-gifts-head-copy p:last-of-type {
-  max-width: 42ch;
+.tdg-gifts-head h1 {
+  font-size: clamp(2.8rem, 4.4vw, 3.75rem);
+  line-height: .9;
+  margin: 2px 0 8px;
+  color: #1c1612;
+}
+
+.tdg-gifts-head-copy p {
+  max-width: 22ch;
+  font-size: 1.12rem;
+  line-height: 1.32;
+  color: #4a4038;
 }
 
 .tdg-gifts-head-actions {
+  position: relative;
+  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
   align-items: center;
+  gap: 10px;
+  align-self: center;
+  justify-self: end;
+  width: min(470px, 100%);
+}
+
+.tdg-gifts-head-actions .tdg-planner-btn.primary {
+  background: #b5232e;
+  border-color: #b5232e;
+  color: #f4ead9;
+  min-height: 48px;
+  padding: 0 18px;
+  white-space: nowrap;
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(181,35,46,.24);
+}
+
+.tdg-gifts-search-toggle {
+  display: none;
 }
 
 .tdg-gifts-search {
-  flex: 1 1 220px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .tdg-gifts-search .tdg-planner-input {
   margin: 0;
+  background: #fff;
+  border-radius: 999px;
+  min-height: 48px;
+  border: 1px solid rgba(42,32,24,.08);
+  box-shadow: 0 8px 18px rgba(54,42,28,.06);
 }
 
 .tdg-gifts-limit,
@@ -2397,44 +2447,53 @@
   margin: 0;
 }
 
+.tdg-gifts-layout {
+  width: 100%;
+}
+
 .tdg-gifts-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-  margin: 0 0 22px;
-  border: 1px solid var(--planner-line);
-  border-radius: 16px;
-  overflow: hidden;
-  background: #fffdf8;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 26px;
+  border: 0;
+  overflow: visible;
+  background: transparent;
 }
 
 .tdg-gifts-summary > div {
-  padding: 12px 14px 14px;
-  border-right: 1px solid var(--planner-line);
-  border-bottom: 1px solid var(--planner-line);
-  min-width: 0;
+  position: relative;
+  min-height: 92px;
+  padding: 16px 16px 14px 52px;
+  border: 1px solid rgba(42,32,24,.08) !important;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(54,42,28,.06);
 }
 
-.tdg-gifts-summary > div:nth-child(2n) {
-  border-right: 0;
+.tdg-gifts-summary > div::before {
+  content: none !important;
 }
 
-.tdg-gifts-summary > div:nth-last-child(-n + 2) {
-  border-bottom: 0;
+.tdg-gifts-summary svg {
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  color: #b5232e;
 }
 
 .tdg-gifts-summary strong {
   display: block;
   font-family: var(--planner-serif);
-  font-size: 1.2rem;
+  font-size: 1.6rem;
+  line-height: 1;
   color: var(--planner-ink);
-  line-height: 1.15;
 }
 
 .tdg-gifts-summary span {
   display: block;
-  margin-top: 4px;
-  font-size: 0.78rem;
+  margin-top: 6px;
+  font-size: .78rem;
   color: var(--planner-muted);
 }
 
@@ -2444,11 +2503,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin: 4px 0 16px;
 }
 
 .tdg-gifts-people-head h2 {
   margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
 }
 
 .tdg-gifts-chips {
@@ -2460,49 +2521,54 @@
 
 .tdg-gifts-chips button {
   flex: 0 0 auto;
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--planner-line);
-  background: #fffdf8;
+  background: #fff;
   color: var(--planner-muted);
   font: inherit;
   font-weight: 600;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   cursor: pointer;
 }
 
 .tdg-gifts-chips button.on {
-  background: var(--planner-pine);
-  border-color: var(--planner-pine);
-  color: #f7f0e4;
+  background: #b5232e;
+  border-color: #b5232e;
+  color: #fffdf9;
 }
 
 .tdg-gifts-grid {
   display: grid;
-  gap: 12px;
+  gap: 18px;
 }
 
 .tdg-gifts-card,
 .tdg-gifts-add-card {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 12px;
   width: 100%;
   text-align: left;
   padding: 0;
   overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid var(--planner-line);
-  background: #fffdf8;
+  border-radius: 20px;
+  border: 1px solid rgba(42,32,24,.08);
+  background: #fff;
   color: inherit;
   cursor: pointer;
-  min-height: 92px;
+  box-shadow: 0 12px 30px rgba(54,42,28,.07);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.tdg-gifts-card:hover,
+.tdg-gifts-add-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(181,35,46,.28);
+  box-shadow: 0 18px 40px rgba(54,42,28,.12);
 }
 
 .tdg-gifts-card-visual {
   position: relative;
-  min-height: 92px;
   overflow: hidden;
   background: var(--planner-parchment);
 }
@@ -2517,68 +2583,103 @@
 }
 
 .tdg-gifts-card-look {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: rgba(28, 22, 18, 0.55);
-  color: #f7f0e4;
-  font-size: 0.62rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  display: none;
 }
 
 .tdg-gifts-card-body {
   display: grid;
-  align-content: center;
-  gap: 4px;
-  padding: 10px 12px 10px 0;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 16px 16px;
   min-width: 0;
 }
 
 .tdg-gifts-card-body strong {
   font-family: var(--planner-serif);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 600;
+  line-height: 1.05;
 }
 
 .tdg-gifts-card-meta,
 .tdg-gifts-card-next {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--planner-muted);
 }
 
-.tdg-gifts-card-next.is-done {
-  color: var(--planner-pine);
+.tdg-gifts-card-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--planner-ink);
   font-weight: 600;
+}
+
+.tdg-gifts-card-next::after {
+  content: "→";
+  font-size: 1.15rem;
+  color: #b5232e;
+}
+
+.tdg-gifts-card-next.is-done {
+  color: #2a4d3e;
+  font-weight: 600;
+}
+
+.tdg-gifts-card-next.is-done::after {
+  content: none;
 }
 
 .tdg-gifts-card .tdg-planner-bar {
-  margin: 4px 0 0;
+  height: 6px;
+  margin: 4px 0 2px;
   width: 100%;
+  background: rgba(181,35,46,.12);
+}
+
+.tdg-gifts-card .tdg-planner-bar > span {
+  background: #b5232e;
 }
 
 .tdg-gifts-add-card {
-  place-items: center start;
-  padding: 16px 18px;
+  position: relative;
+  place-items: center;
+  align-content: center;
+  justify-items: center;
+  padding: 28px 20px;
   grid-template-columns: 1fr;
-  background: transparent;
-  border-style: dashed;
-  min-height: 92px;
+  border-style: solid;
+  background:
+    linear-gradient(165deg, rgba(255,253,249,.94), rgba(247,241,232,.82)),
+    url("/christmas/planner/gifts-editorial.webp") center / cover;
 }
 
-.tdg-gifts-add-card span {
+.tdg-gifts-add-plus {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #b5232e;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  box-shadow: 0 10px 20px rgba(181,35,46,.24);
+}
+
+.tdg-gifts-add-card span:not(.tdg-gifts-add-plus) {
   font-family: var(--planner-serif);
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 600;
   color: var(--planner-ink);
+  margin-top: 10px;
 }
 
 .tdg-gifts-add-card em {
   font-style: normal;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: var(--planner-muted);
+  text-align: center;
 }
 
 .tdg-gifts-context {
@@ -2594,7 +2695,8 @@
 }
 
 .tdg-gifts-household a {
-  color: var(--planner-pine);
+  color: #b5232e;
+  font-weight: 600;
 }
 
 .tdg-gifts-empty {
@@ -2604,25 +2706,18 @@
 
 .tdg-gifts-empty-visual {
   position: relative;
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
-  min-height: 180px;
+  min-height: 220px;
   background: var(--planner-parchment);
 }
 
 .tdg-gifts-empty-visual img {
-  min-height: 180px;
+  min-height: 220px;
 }
 
 .tdg-gifts-empty-visual p {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(28, 22, 18, 0.55);
-  color: #f7f0e4;
-  font-size: 0.72rem;
+  display: none;
 }
 
 .tdg-gifts-person-head {
@@ -2633,26 +2728,19 @@
 
 .tdg-gifts-person-hero {
   position: relative;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  min-height: 140px;
+  min-height: 160px;
   background: var(--planner-parchment);
 }
 
 .tdg-gifts-person-hero img {
-  min-height: 140px;
-  max-height: 220px;
+  min-height: 160px;
+  max-height: 240px;
 }
 
 .tdg-gifts-person-hero span {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(28, 22, 18, 0.55);
-  color: #f7f0e4;
-  font-size: 0.72rem;
+  display: none;
 }
 
 .tdg-gifts-back {
@@ -2670,7 +2758,7 @@
 
 .tdg-gifts-lane h3 {
   font-family: var(--planner-serif);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   margin: 0 0 6px;
 }
 
@@ -2690,60 +2778,101 @@
   margin-top: 12px;
 }
 
+.tdg-gifts-context-mood {
+  position: relative;
+  overflow: hidden;
+  min-height: 210px;
+  padding: 24px 22px;
+  border-radius: 20px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(18,12,10,.12), rgba(18,12,10,.72)),
+    url("/christmas/gifts/scene-desktop.jpg") center 38% / cover no-repeat;
+  box-shadow: 0 12px 30px rgba(54,42,28,.1);
+}
+
+.tdg-gifts-context-mood p {
+  margin: 0;
+  max-width: 15ch;
+  font-family: var(--planner-serif);
+  font-size: 1.42rem;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,.5);
+}
+
 .tdg-gifts-context-card {
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid var(--planner-line);
-  background: #fffdf8;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(42,32,24,.08);
+  background: #fff;
   display: grid;
   gap: 10px;
+  box-shadow: 0 10px 26px rgba(54,42,28,.06);
 }
 
 .tdg-gifts-context-card.is-quiet {
-  background: transparent;
+  background: #fff;
 }
 
 .tdg-gifts-context-card h2 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .tdg-gifts-context-card a {
-  color: var(--planner-pine);
+  color: #b5232e;
   font-weight: 600;
 }
 
+.tdg-gifts-context-card .tdg-planner-kicker {
+  color: #b5232e;
+}
+
+.tdg-gifts-context-card .tdg-planner-btn.primary {
+  width: 100%;
+  min-height: 46px;
+  background: #b5232e;
+  border-color: #b5232e;
+  color: #f4ead9;
+  border-radius: 999px;
+}
+
+.tdg-planner-gift-mark {
+  display: block;
+  flex-shrink: 0;
+}
+
+.tdg-planner-side-brand {
+  position: relative;
+}
+
+.tdg-planner-side-flourish {
+  display: block;
+  width: 42px;
+  height: 8px;
+  margin: 2px 0 4px;
+  background:
+    radial-gradient(circle at 4px 4px, #c4a574 2.4px, transparent 2.6px),
+    radial-gradient(circle at 21px 4px, #b5232e 1.7px, transparent 1.9px),
+    radial-gradient(circle at 38px 4px, #c4a574 2.4px, transparent 2.6px);
+}
+
 @media (min-width: 720px) {
-  .tdg-gifts-summary {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  .tdg-gifts-summary > div {
-    border-bottom: 0;
-  }
-  .tdg-gifts-summary > div:nth-child(2n) {
-    border-right: 1px solid var(--planner-line);
-  }
-  .tdg-gifts-summary > div:last-child {
-    border-right: 0;
-  }
   .tdg-gifts-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .tdg-gifts-card,
-  .tdg-gifts-add-card {
-    grid-template-columns: none;
-    min-height: 0;
   }
   .tdg-gifts-card {
     display: flex;
     flex-direction: column;
+    min-height: 310px;
   }
   .tdg-gifts-card-visual {
-    height: 168px;
-    min-height: 168px;
+    flex: 1.5 1 0;
+    height: auto;
+    min-height: 186px;
   }
-  .tdg-gifts-card-body {
-    padding: 12px 14px 14px;
-    flex: 1 1 auto;
+  .tdg-gifts-add-card {
+    min-height: 310px;
   }
   .tdg-gifts-empty {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -2758,7 +2887,9 @@
 @media (min-width: 960px) {
   .tdg-gifts-head {
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
+    align-items: center;
+    height: 184px;
+    max-height: 190px;
   }
   .tdg-gifts-limit,
   .tdg-gifts-unlock {
@@ -2766,429 +2897,183 @@
   }
   .tdg-gifts-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.85fr);
-    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) 286px;
+    gap: 22px;
     align-items: start;
   }
   .tdg-gifts-context {
     display: grid;
-    gap: 12px;
+    gap: 16px;
     position: sticky;
-    top: 12px;
+    top: 8px;
   }
   .tdg-gifts-mobile-inspire {
     display: none;
   }
   .tdg-gifts-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 719px) {
-  .tdg-gifts-head h1 {
-    font-size: 1.85rem;
-  }
-  .tdg-gifts-row-actions .tdg-planner-select {
-    width: 100%;
-  }
-}
-
-
-
-/* Gifts visual parity — premium photography-led command center */
-.tdg-planner-page.tdg-gifts {
-  max-width: none;
-  width: 100%;
-}
-
-.tdg-gifts-head {
-  position: relative;
-  min-height: 168px;
-  max-height: 190px;
-  padding: 18px 22px;
-  margin: 0 0 16px;
-  border: 1px solid rgba(54, 73, 55, .12);
-  border-radius: 20px;
-  overflow: hidden;
-  background:
-    linear-gradient(90deg, rgba(255,253,248,.97) 0%, rgba(255,253,248,.9) 38%, rgba(255,253,248,.28) 62%, rgba(255,253,248,.06) 100%),
-    url("/christmas/planner/gifts-editorial.webp") right 42% / cover no-repeat;
-  box-shadow: 0 10px 28px rgba(54, 42, 28, .07);
-}
-
-.tdg-gifts-head-copy {
-  position: relative;
-  z-index: 1;
-  align-self: center;
-  max-width: 520px;
-}
-
-.tdg-gifts-head-copy .tdg-planner-kicker {
-  color: #9d2929;
-  letter-spacing: .14em;
-}
-
-.tdg-gifts-head h1 {
-  font-size: clamp(2.15rem, 3vw, 2.85rem);
-  line-height: .95;
-  margin: 4px 0 6px;
-}
-
-.tdg-gifts-head-copy p:last-of-type {
-  max-width: 38ch;
-  font-size: 0.98rem;
-}
-
-.tdg-gifts-head-actions {
-  position: relative;
-  z-index: 2;
-  align-self: center;
-  justify-self: end;
-  width: min(430px, 100%);
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-}
-
-.tdg-gifts-head-actions .tdg-planner-btn.primary {
-  background: #b71924;
-  border-color: #b71924;
-  color: #fff;
-  min-height: 44px;
-  white-space: nowrap;
-  box-shadow: 0 8px 20px rgba(183,25,36,.18);
-}
-
-.tdg-gifts-search {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.tdg-gifts-layout {
-  width: 100%;
-}
-
-.tdg-gifts-summary {
-  gap: 12px;
-  border: 0;
-  overflow: visible;
-  background: transparent;
-  margin-bottom: 24px;
-}
-
-.tdg-gifts-summary > div {
-  position: relative;
-  min-height: 92px;
-  padding: 17px 14px 14px 54px;
-  border: 1px solid rgba(54,73,55,.12) !important;
-  border-radius: 16px;
-  background: rgba(255,253,248,.96);
-  box-shadow: 0 7px 22px rgba(54,42,28,.055);
-}
-
-.tdg-gifts-summary > div::before {
-  position: absolute;
-  left: 15px;
-  top: 18px;
-  font-size: 1.65rem;
-  line-height: 1;
-}
-.tdg-gifts-summary > div:nth-child(1)::before { content: "🎁"; }
-.tdg-gifts-summary > div:nth-child(2)::before { content: "🛒"; }
-.tdg-gifts-summary > div:nth-child(3)::before { content: "🪙"; }
-.tdg-gifts-summary > div:nth-child(4)::before { content: "👥"; }
-
-.tdg-gifts-summary strong {
-  font-size: 1.32rem;
-}
-
-.tdg-gifts-people-head {
-  margin: 2px 0 14px;
-}
-
-.tdg-gifts-people-head h2 {
-  font-size: 1.45rem;
-}
-
-.tdg-gifts-grid {
-  gap: 16px;
-}
-
-.tdg-gifts-card,
-.tdg-gifts-add-card {
-  border-radius: 18px;
-  border-color: rgba(54,73,55,.12);
-  background: #fffdf9;
-  box-shadow: 0 8px 26px rgba(54,42,28,.065);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-.tdg-gifts-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(183,25,36,.22);
-  box-shadow: 0 14px 34px rgba(54,42,28,.11);
-}
-
-.tdg-gifts-card-visual {
-  background: #eee3d4;
-}
-
-.tdg-gifts-card-visual::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 36%;
-  background: linear-gradient(transparent, rgba(21,18,13,.12));
-  pointer-events: none;
-}
-
-.tdg-gifts-card-body {
-  gap: 7px;
-}
-
-.tdg-gifts-card-body strong {
-  font-size: 1.32rem;
-}
-
-.tdg-gifts-card-next {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: var(--planner-ink);
-}
-.tdg-gifts-card-next::after { content: "→"; font-size: 1.1rem; }
-.tdg-gifts-card-next.is-done::after { content: none; }
-.tdg-gifts-card .tdg-planner-bar {
-  height: 6px;
-  margin-top: 2px;
-}
-.tdg-gifts-chips button.on {
-  background: #1f2a24;
-  border-color: #1f2a24;
-  color: #f7f0e4;
-}
-
-.tdg-gifts-add-card {
-  position: relative;
-  overflow: hidden;
-  border-style: solid;
-  background:
-    linear-gradient(135deg, rgba(255,253,248,.94), rgba(248,239,224,.86)),
-    url("/christmas/planner/gifts-editorial.webp") center / cover;
-}
-.tdg-gifts-add-card::before {
-  content: "+";
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #b71924;
-  color: #fff;
-  font-size: 1.6rem;
-  box-shadow: 0 6px 16px rgba(183,25,36,.18);
-}
-.tdg-gifts-add-card > span { margin-top: 4px; }
-
-.tdg-gifts-context {
-  gap: 14px;
-}
-
-.tdg-gifts-context-mood {
-  position: relative;
-  overflow: hidden;
-  min-height: 168px;
-  padding: 18px 18px 20px;
-  border-radius: 18px;
-  color: #fff;
-  background:
-    linear-gradient(180deg, rgba(18,12,10,.28), rgba(18,12,10,.62)),
-    url("/christmas/gifts/scene-desktop.jpg") center 40% / cover no-repeat;
-  box-shadow: 0 8px 26px rgba(54,42,28,.08);
-}
-
-.tdg-gifts-context-mood p {
-  margin: 0;
-  max-width: 18ch;
-  font-family: var(--planner-serif);
-  font-size: 1.12rem;
-  line-height: 1.28;
-  text-shadow: 0 2px 12px rgba(0,0,0,.45);
-}
-
-.tdg-gifts-context-card {
-  padding: 20px;
-  border-radius: 18px;
-  border-color: rgba(54,73,55,.12);
-  background: #fffdf9;
-  box-shadow: 0 8px 26px rgba(54,42,28,.06);
-}
-
-.tdg-gifts-context-card .tdg-planner-btn.primary {
-  width: 100%;
-  background: #b71924;
-  border-color: #b71924;
-  color: #fff;
-}
-
-.tdg-gifts-context-card.is-quiet {
-  background: #fffaf1;
-}
-
-.tdg-gifts-empty {
-  min-height: 430px;
-  padding: 22px;
-  border-radius: 22px;
-  border: 1px solid rgba(54,73,55,.12);
-  background: #fffdf9;
-  box-shadow: 0 10px 30px rgba(54,42,28,.06);
-}
-
-.tdg-gifts-empty-visual {
-  min-height: 300px;
-  border-radius: 18px;
-}
-.tdg-gifts-empty-visual img { min-height: 300px; }
-
-@media (min-width: 960px) {
-  .tdg-gifts-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(270px, 300px);
-    gap: 18px;
-  }
-  .tdg-gifts-grid {
     grid-template-columns: repeat(3, minmax(220px, 1fr));
   }
-  .tdg-gifts-card {
-    min-height: 332px;
+  .tdg-gifts-card,
+  .tdg-gifts-add-card {
+    min-height: 338px;
   }
   .tdg-gifts-card-visual {
-    flex: 1.45 1 0;
-    height: auto;
-    min-height: 188px;
-  }
-  .tdg-gifts-add-card {
-    min-height: 332px;
-    align-content: center;
+    min-height: 200px;
   }
 }
 
 @media (min-width: 1280px) {
-  .tdg-gifts-card {
-    min-height: 348px;
+  .tdg-gifts-card,
+  .tdg-gifts-add-card {
+    min-height: 352px;
   }
   .tdg-gifts-card-visual {
-    min-height: 202px;
+    min-height: 214px;
+  }
+  .tdg-gifts-layout {
+    grid-template-columns: minmax(0, 1fr) 292px;
   }
 }
 
 @media (max-width: 959px) {
   .tdg-gifts-head {
-    min-height: 160px;
-    grid-template-columns: minmax(0,1fr);
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
   }
   .tdg-gifts-head-actions {
     justify-self: stretch;
     width: 100%;
-    max-width: 520px;
   }
 }
 
 @media (max-width: 719px) {
+  .tdg-planner-main {
+    padding: 12px 14px 118px;
+  }
   .tdg-gifts {
-    padding-bottom: 92px;
+    padding-bottom: 8px;
   }
   .tdg-gifts-head {
     min-height: 0;
     max-height: none;
-    padding: 18px 16px 16px;
-    margin-inline: -4px;
+    padding: 16px 16px 18px;
+    border-radius: 20px;
     background:
-      linear-gradient(180deg, rgba(255,253,248,.94), rgba(255,253,248,.98)),
-      url("/christmas/planner/gifts-editorial.webp") center / cover no-repeat;
-  }
-  .tdg-gifts-head-actions {
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-items: stretch;
-    width: 100%;
-  }
-  .tdg-gifts-head-actions .tdg-planner-btn.primary {
-    width: 100%;
+      linear-gradient(180deg, rgba(247,241,232,.55), rgba(247,241,232,.92)),
+      url("/christmas/planner/gifts-editorial.webp") center 40% / cover no-repeat;
   }
   .tdg-gifts-head h1 {
-    font-size: 2.35rem;
+    font-size: 2.85rem;
   }
-  .tdg-gifts-head-copy p:last-of-type {
-    font-size: .92rem;
+  .tdg-gifts-head-copy p {
+    font-size: 1.05rem;
+    max-width: 28ch;
   }
   .tdg-gifts-head-actions {
     flex-direction: row;
     flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+  }
+  .tdg-gifts-search-toggle {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1px solid var(--planner-line);
+    background: #fff;
+    color: var(--planner-ink);
   }
   .tdg-gifts-search {
+    display: none;
     flex-basis: 100%;
   }
+  .tdg-gifts-search.is-open {
+    display: block;
+  }
+  .tdg-gifts-head-actions .tdg-planner-btn.primary {
+    flex: 1 1 auto;
+    width: auto;
+  }
   .tdg-gifts-summary {
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    overflow-x: auto;
   }
   .tdg-gifts-summary > div {
-    min-width: 105px;
-    min-height: 92px;
-    padding: 40px 10px 10px;
+    min-width: 0;
+    min-height: 86px;
+    padding: 36px 6px 10px;
     text-align: center;
   }
-  .tdg-gifts-summary > div::before {
+  .tdg-gifts-summary svg {
     left: 50%;
     top: 10px;
     transform: translateX(-50%);
-    font-size: 1.35rem;
+    width: 18px;
+    height: 18px;
   }
   .tdg-gifts-summary > div:nth-child(4) {
     display: none;
   }
   .tdg-gifts-summary strong {
-    font-size: 1.02rem;
+    font-size: 1.08rem;
   }
   .tdg-gifts-summary span {
-    font-size: .7rem;
+    font-size: .68rem;
+  }
+  .tdg-gifts-people-head h2 {
+    font-size: 1.7rem;
   }
   .tdg-gifts-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 12px;
   }
   .tdg-gifts-card {
     display: grid;
-    grid-template-columns: 96px minmax(0,1fr);
-    min-height: 112px;
+    grid-template-columns: 118px minmax(0, 1fr);
+    min-height: 124px;
   }
   .tdg-gifts-card-visual {
-    height: 112px;
-    min-height: 112px;
+    height: 124px;
+    min-height: 124px;
+    flex: none;
   }
   .tdg-gifts-card-body {
-    padding: 11px 13px 11px 0;
+    padding: 12px 14px 12px 0;
+  }
+  .tdg-gifts-card-body strong {
+    font-size: 1.32rem;
   }
   .tdg-gifts-add-card {
-    min-height: 112px;
-    grid-template-columns: 42px minmax(0,1fr);
-    column-gap: 10px;
+    min-height: 118px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    justify-items: start;
+    column-gap: 12px;
     padding: 16px;
   }
-  .tdg-gifts-add-card::before {
+  .tdg-gifts-add-plus {
     grid-row: 1 / 3;
+    width: 42px;
+    height: 42px;
+    font-size: 1.6rem;
   }
-  .tdg-gifts-add-card > span,
-  .tdg-gifts-add-card > em {
+  .tdg-gifts-add-card span:not(.tdg-gifts-add-plus),
+  .tdg-gifts-add-card em {
     margin: 0;
+    text-align: left;
   }
-  .tdg-gifts-empty {
-    min-height: 0;
-    padding: 14px;
+  .tdg-gifts-row-actions .tdg-planner-select {
+    width: 100%;
   }
   .tdg-gifts-empty-visual,
   .tdg-gifts-empty-visual img {
-    min-height: 190px;
+    min-height: 180px;
+  }
+}
+
+@media (min-width: 960px) {
+  .tdg-planner-header-meta > a {
+    display: none;
   }
 }

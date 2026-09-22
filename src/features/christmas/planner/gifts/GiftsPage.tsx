@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Gift, Heart, Search, ShoppingBag, Wallet } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "../analytics";
@@ -66,6 +67,7 @@ export function ChristmasPlannerGiftsPage() {
   const [personError, setPersonError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PersonFilter>("all");
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const ideaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -269,15 +271,26 @@ export function ChristmasPlannerGiftsPage() {
       </div>
       <div className="tdg-gifts-head-actions">
         {people.length > 0 ? (
-          <label className="tdg-gifts-search">
-            <span className="tdg-planner-sr">Search gifts, people or ideas</span>
-            <input
-              className="tdg-planner-input"
-              placeholder="Search gifts, people or ideas..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
+          <>
+            <button
+              type="button"
+              className="tdg-gifts-search-toggle"
+              aria-expanded={searchOpen}
+              aria-label="Search gifts, people or ideas"
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              <Search size={18} strokeWidth={1.8} aria-hidden />
+            </button>
+            <label className={`tdg-gifts-search${searchOpen ? " is-open" : ""}`}>
+              <span className="tdg-planner-sr">Search gifts, people or ideas</span>
+              <input
+                className="tdg-planner-input"
+                placeholder="Search gifts, people or ideas..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+          </>
         ) : null}
         <button type="button" className="tdg-planner-btn primary" disabled={!limit.canAdd} onClick={openAddSomeone}>
           + Add Someone
@@ -370,6 +383,9 @@ export function ChristmasPlannerGiftsPage() {
                 );
               })}
               <button type="button" className="tdg-gifts-add-card" onClick={openAddSomeone} disabled={!limit.canAdd}>
+                <span className="tdg-gifts-add-plus" aria-hidden="true">
+                  +
+                </span>
                 <span>Add Someone</span>
                 <em>Start shopping for someone new</em>
               </button>
@@ -395,7 +411,7 @@ export function ChristmasPlannerGiftsPage() {
           <aside className="tdg-gifts-context" aria-label="Gift help">
             <div className="tdg-gifts-context-mood">
               <p>
-                It’s not just about gifts…
+                It’s not just about gifts.
                 <br />
                 It’s about the people who make Christmas special.
               </p>
@@ -605,20 +621,24 @@ function GiftsSummary({
   return (
     <div className="tdg-gifts-summary">
       <div>
+        <Gift size={22} strokeWidth={1.6} aria-hidden />
         <strong>
           {overview.giftsPlanned} / {overview.giftsTotal}
         </strong>
         <span>Gifts planned</span>
       </div>
       <div>
+        <ShoppingBag size={22} strokeWidth={1.6} aria-hidden />
         <strong>{overview.leftToBuy}</strong>
         <span>Left to buy</span>
       </div>
       <div>
+        <Wallet size={22} strokeWidth={1.6} aria-hidden />
         <strong>{budgetValue}</strong>
         <span>Budget</span>
       </div>
       <div>
+        <Heart size={22} strokeWidth={1.6} aria-hidden />
         <strong>{overview.people}</strong>
         <span>People</span>
       </div>
@@ -644,7 +664,7 @@ function PersonCard({
       displayName: person.display_name,
       relationship: person.relationship,
     });
-  const remaining = stats.done ? "All done! 🎉" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
+  const remaining = stats.done ? "All done" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
   return (
     <button type="button" className="tdg-gifts-card" onClick={onOpen}>
       <span className="tdg-gifts-card-visual">
@@ -653,7 +673,7 @@ function PersonCard({
       <span className="tdg-gifts-card-body">
         <strong>{person.display_name}</strong>
         <span className="tdg-gifts-card-meta">
-          {stats.total === 0 ? "No gifts yet" : `${stats.bought} of ${stats.total} gifts`}
+          {stats.bought} of {stats.total} gifts
         </span>
         <PlannerProgress value={stats.progress} compact />
         <span className={`tdg-gifts-card-next${stats.done ? " is-done" : ""}`}>{remaining}</span>
