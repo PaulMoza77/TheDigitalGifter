@@ -24,7 +24,7 @@ import { onPlannerWorkspaceBump, subscribePlannerReadiness } from "./workspaceSy
 import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
 import { PlannerOnboarding, PlannerBundleProvider, usePlannerBundle } from "./Onboarding";
-import { CopilotHost, useCopilotUi } from "./copilot/CopilotHost";
+import { CopilotHost, CopilotSurface, useCopilotUi } from "./copilot/CopilotHost";
 import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import { PlannerGiftMark, PlannerTreeMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
@@ -213,6 +213,7 @@ function PlannerAppShell() {
           ) : null}
           {loading ? <PlannerLoading /> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>
+        <CopilotSurface />
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
           <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")}>
             <Home size={18} strokeWidth={1.7} aria-hidden />

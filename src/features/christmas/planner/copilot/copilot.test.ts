@@ -5,6 +5,7 @@ import { sanitizePlannerMetadata } from "../analytics";
 import { buildPlannerSnapshot } from "../intelligence/snapshot";
 import { runPlannerIntelligence } from "../intelligence/engine";
 import { askCopilot, copilotLlmEnabled } from "./ask";
+import { copilotNextWin, copilotSuggestions } from "./context";
 import { proposeCopilotPlan } from "./plan";
 import { applyCopilotPlan, confirmationClassFor, isWriteTool } from "./registry";
 import type { GiftItem, GiftRecipient, PlannerProfile, PlannerTask } from "../types";
@@ -151,6 +152,16 @@ describe("christmas copilot P0 on Intelligence Engine", () => {
     expect(blob).not.toContain("do not leak");
   });
 
+  it("builds page suggestions from live snapshot names and money", () => {
+    const intel = fixture();
+    const gifts = copilotSuggestions("/account/christmas/gifts", intel);
+    expect(gifts.some((row) => row.label.includes("Dad") || row.label.includes("Maya"))).toBe(true);
+    expect(gifts.every((row) => !row.label.includes("Andreas"))).toBe(true);
+    const win = copilotNextWin("/account/christmas/gifts", intel);
+    expect(win.kicker).toBe("Your next little win");
+    expect(win.title.length).toBeGreaterThan(8);
+  });
+
   it("never enables the LLM path; apply requires a confirmed plan", async () => {
     expect(copilotLlmEnabled()).toBe(false);
     const appliedMissing = await applyCopilotPlan();
@@ -188,7 +199,14 @@ describe("copilot wiring is local-only", () => {
   it("does not add a production LLM edge function in this release", () => {
     const layout = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/ChristmasPlannerLayout.tsx"), "utf8");
     expect(layout).toContain("CopilotHost");
+    expect(layout).toContain("CopilotSurface");
     const ask = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/copilot/ask.ts"), "utf8");
     expect(ask).not.toContain("api.openai.com");
+    const panel = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/copilot/ChristmasCopilotPanel.tsx"), "utf8");
+    expect(panel).toContain("ChristmasCopilotPanel");
+    expect(panel).not.toContain("Andreas");
+    const ctx = readFileSync(resolve(process.cwd(), "src/features/christmas/planner/copilot/context.ts"), "utf8");
+    expect(ctx).toContain("christmas_hero_room.webp");
+    expect(ctx).not.toContain("Andreas");
   });
 });

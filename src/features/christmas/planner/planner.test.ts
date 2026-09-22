@@ -827,10 +827,13 @@ describe("private planner privacy surface", () => {
     expect(layout).toContain("TheDigitalGifter.png");
     expect(layout).not.toContain("tdg-planner-body");
     expect(layout).toContain('aside className="tdg-planner-side"');
+    expect(layout).toContain('main className="tdg-planner-main"');
     expect(layout).toContain("tdg-planner-side-toggle");
     expect(layout).toContain("is-side-collapsed");
     expect(css).toContain("--planner-side");
-    expect(layout).toContain('main className="tdg-planner-main"');
+    expect(css).toContain("minmax(280px, 23.5%)");
+    expect(css).toContain(".tdg-copilot-panel-photo");
+    expect(css).toContain("background-size: cover");
   });
 });
 

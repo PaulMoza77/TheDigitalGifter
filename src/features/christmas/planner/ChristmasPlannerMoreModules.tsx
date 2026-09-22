@@ -69,7 +69,7 @@ export function ChristmasPlannerShoppingPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Gift shopping" lede="Presents to buy, ordered, arriving, and returns. Groceries stay in Grocery." />
+      <PlannerPageHeader kicker="Everything to buy" title="Gift shopping" lede="Presents to buy, ordered, arriving, and returns. Groceries stay in Grocery." />
       <PlannerSeg
         label="Shopping lanes"
         value={tab}
@@ -197,7 +197,7 @@ export function ChristmasPlannerCalendarPage() {
 
   return (
     <div className="tdg-planner-page tdg-planner-cal-page">
-      <PlannerPageHeader title="Calendar" lede="See your season at a glance." />
+      <PlannerPageHeader kicker="This week, this season" title="Calendar" lede="See your season at a glance." />
       <PlannerSeg
         label="Calendar views"
         value={view}
@@ -348,7 +348,7 @@ export function ChristmasPlannerHostingPage() {
   if (!hasFeature(access, "hosting")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
+        <PlannerPageHeader kicker="A calm house" title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
         <PlannerPaywall feature="hosting" title="Hosting, beautifully organized." body="Guests, RSVP, dietary notes, and rooms - no extra sensitive data." />
       </div>
     );
@@ -356,7 +356,7 @@ export function ChristmasPlannerHostingPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
+      <PlannerPageHeader kicker="A calm house" title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
       <section className="tdg-planner-section">
         <h2>Guests</h2>
         <PlannerComposer>
@@ -462,7 +462,7 @@ export function ChristmasPlannerHomePage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Home" lede="Tree, rooms, and the little setups that make the house feel ready." />
+      <PlannerPageHeader kicker="Make the house feel ready" title="Home" lede="Tree, rooms, and the little setups that make the house feel ready." />
       {rows.length === 0 ? (
         <PlannerEmptyState mark="home" title="The house is still a blank page." body="Add tree, lights, and rooms so Christmas feels ready." />
       ) : null}
@@ -543,7 +543,7 @@ export function ChristmasPlannerTravelPage() {
   if (!hasFeature(access, "travel")) {
     return (
       <div className="tdg-planner-page">
-        <PlannerPageHeader title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
+        <PlannerPageHeader kicker="Arrive unhurried" title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
         <PlannerPaywall feature="travel" title="Travel, without the paperwork panic." body="Trips, packing, and home notes. We never store passport or card data." />
       </div>
     );
@@ -569,7 +569,7 @@ export function ChristmasPlannerTravelPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
+      <PlannerPageHeader kicker="Arrive unhurried" title="Travel" lede="Trips, packing, and home notes. Never passports or cards." />
       {conflicts.length > 0 ? (
         <div className="tdg-intel-card tdg-intel-important">
           <h3>{conflicts.length} tasks conflict with your travel dates</h3>
@@ -690,7 +690,7 @@ export function ChristmasPlannerTraditionsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Traditions" lede="Make time for what matters - family, kindness, and the small rituals." />
+      <PlannerPageHeader kicker="Keep the rituals" title="Traditions" lede="Make time for what matters - family, kindness, and the small rituals." />
       {Object.entries(TRADITION_IDEAS).map(([section, ideas]) => (
         <section key={section} className="tdg-planner-section">
           <h2>{section}</h2>
@@ -758,7 +758,7 @@ export function ChristmasPlannerCardsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Cards" lede="Track who needs a greeting. Creating a card, photo, or video uses separate credits and is not part of the $17 planner." />
+      <PlannerPageHeader kicker="Who still needs a card" title="Cards" lede="Track who needs a greeting. Creating a card, photo, or video uses separate credits and is not part of the $17 planner." />
       <PlannerStudioCue cues={cardsStudioCues()} />
       <div className="tdg-planner-actions" style={{ marginBottom: 12 }}>
         <Link className="tdg-planner-btn primary" to="/christmas/messages">
@@ -833,7 +833,7 @@ export function ChristmasPlannerMemoriesPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Memories" lede="A quiet journal for this season, and a note for the next." />
+      <PlannerPageHeader kicker="This season, remembered" title="Memories" lede="A quiet journal for this season, and a note for the next." />
       <PlannerStudioCue cues={memoriesStudioCues()} />
       <div className="tdg-planner-card">
         <select className="tdg-planner-select" value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value })}>
@@ -887,7 +887,7 @@ export function ChristmasPlannerClubPage() {
   }, []);
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Christmas Club" lede="The community feed is not live and is not included in Christmas Planner." />
+      <PlannerPageHeader kicker="Not included" title="Christmas Club" lede="The community feed is not live and is not included in Christmas Planner." />
       <p>Community posts aren’t live yet - we won’t fake an active feed. The $17 planner does not include this feed. Countdown updates stay on the separate Christmas Club page.</p>
       <div className="tdg-planner-actions" style={{ marginTop: 16 }}>
         <Link className="tdg-planner-btn primary" to={CHRISTMAS_CLUB_ROUTE}>
@@ -928,7 +928,7 @@ export function ChristmasPlannerSettingsPage() {
 
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Settings" lede="Season preferences. This Planner is private - there is no share setting." />
+      <PlannerPageHeader kicker="Your private season" title="Settings" lede="Season preferences. This Planner is private - there is no share setting." />
       <div className="tdg-planner-card">
         <PlannerField label="Currency">
         <select className="tdg-planner-select" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
@@ -1016,7 +1016,7 @@ export function ChristmasPlannerSettingsPage() {
 export function ChristmasPlannerWishlistBridgePage() {
   return (
     <div className="tdg-planner-page">
-      <PlannerPageHeader title="Wishlist" lede="Your shareable list lives separately. Sharing it never shares this Planner." />
+      <PlannerPageHeader kicker="A list you can share" title="Wishlist" lede="Your shareable list lives separately. Sharing it never shares this Planner." />
       <p>Your personal Christmas wishlist stays on the existing shareable list. Sharing wishlist does not share this Planner.</p>
       <Link className="tdg-planner-btn primary" to="/christmas/wishlist">
         Open My Wishlist
