@@ -119,7 +119,7 @@ export const CHRISTMAS_LIBRARY_KINDS: LibraryKindFilter[] = [
   {
     id: "reel",
     label: "Reels",
-    description: "Assembled vertical Reels, about 10–15 seconds.",
+    description: "Newest first. Includes the five silent 30s theme Reels, plus 10–15s and longer assembled Reels.",
   },
   {
     id: "short",
@@ -393,7 +393,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-magic-30s",
-    title: "Christmas Magic — 30s",
+    title: "NEW · Christmas Magic — 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Strongest cinematic Christmas scenes: Santa over London, Polar Express, North Pole village, workshop, sleigh, Rockefeller, Plaza. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-magic-30s.mp4",
@@ -421,7 +421,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-new-york-30s",
-    title: "Christmas in New York — 30s",
+    title: "NEW · Christmas in New York — 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. NYC Plaza, Rockefeller rink, skating, Coca-Cola truck, snowy Fifth Avenue. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-new-york-30s.mp4",
@@ -449,7 +449,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-escape-30s",
-    title: "Christmas Escape — 30s",
+    title: "NEW · Christmas Escape — 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Lapland aurora, Alps hotel, chalets, Polar Express trains, snowy landscapes. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-escape-30s.mp4",
@@ -477,7 +477,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-dream-home-30s",
-    title: "Christmas Dream Home — 30s",
+    title: "NEW · Christmas Dream Home — 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Decorated houses, luxury palace, fireplaces, cozy interiors. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-dream-home-30s.mp4",
@@ -506,7 +506,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-childhood-30s",
-    title: "Christmas Childhood — 30s",
+    title: "NEW · Christmas Childhood — 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Polar Express, Santa, reindeer, sledding, snowman, child watching the sleigh. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-childhood-30s.mp4",
@@ -2589,6 +2589,31 @@ export function videosForCategory(
   return videos.filter((video) => video.category === categoryId);
 }
 
+export function libraryCreatedAtMs(item: Pick<LibraryVideo, "createdAt">): number {
+  if (!item.createdAt) return 0;
+  const t = Date.parse(item.createdAt);
+  return Number.isFinite(t) ? t : 0;
+}
+
+export function isRecentLibraryItem(
+  item: Pick<LibraryVideo, "createdAt">,
+  nowMs = Date.now(),
+  windowMs = 72 * 60 * 60 * 1000,
+): boolean {
+  const created = libraryCreatedAtMs(item);
+  return created > 0 && nowMs - created >= 0 && nowMs - created <= windowMs;
+}
+
+export function sortLibraryByRecency(list: LibraryVideo[]): LibraryVideo[] {
+  return list
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const delta = libraryCreatedAtMs(b.item) - libraryCreatedAtMs(a.item);
+      return delta !== 0 ? delta : a.index - b.index;
+    })
+    .map((entry) => entry.item);
+}
+
 export function searchLibraryCatalog(
   videos: LibraryVideo[],
   query: string,
@@ -2598,13 +2623,16 @@ export function searchLibraryCatalog(
   const needle = query.trim().toLowerCase();
   let list = videosForCategory(categoryId, videos);
   if (kind !== "all") list = list.filter((item) => item.kind === kind);
-  if (!needle) return list;
-  return list.filter((video) =>
-    [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
-      .join(" ")
-      .toLowerCase()
-      .includes(needle),
-  );
+  if (needle) {
+    list = list.filter((video) =>
+      [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
+  }
+  if (categoryId === "christmas_reels") return sortLibraryByRecency(list);
+  return list;
 }
 
 export function searchLibraryVideos(

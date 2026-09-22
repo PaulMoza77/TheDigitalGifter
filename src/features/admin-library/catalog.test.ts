@@ -9,6 +9,7 @@ import {
   LIBRARY_VIDEOS,
   countChristmasKind,
   isLibraryPhoto,
+  isRecentLibraryItem,
   librarySrcPath,
   searchLibraryVideos,
 } from "./catalog";
@@ -51,6 +52,14 @@ describe("admin video library", () => {
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
     expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lauren-overwhelm-master");
+    expect(searchLibraryVideos("", "christmas_reels", "reel").slice(0, 5).map((item) => item.id)).toEqual([
+      "reel-christmas-magic-30s",
+      "reel-christmas-new-york-30s",
+      "reel-christmas-escape-30s",
+      "reel-christmas-dream-home-30s",
+      "reel-christmas-childhood-30s",
+    ]);
+    expect(isRecentLibraryItem({ createdAt: "2026-09-21T21:13:00Z" }, Date.parse("2026-09-21T22:00:00Z"))).toBe(true);
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -236,9 +245,10 @@ describe("admin video library", () => {
     expect(page).toContain("Schedule batch");
     expect(page).not.toContain("download=");
     expect(page).not.toMatch(/Higgsfield|Budget USD|Assemble Reel from selected shorts/);
+    expect(page).toContain("five silent 30s theme Reels");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
-    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isRecentLibraryItem");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Share / Schedule");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/social-accounts");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/publishing");

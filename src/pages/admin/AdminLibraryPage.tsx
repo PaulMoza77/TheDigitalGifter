@@ -112,7 +112,8 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Finished Reels, Shorts, Photos, and long-form ambience. Preview, save, and schedule.
+              Finished Reels, Shorts, Photos, and long-form ambience. Christmas Reels lists the newest first —
+              including the five silent 30s theme Reels.
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
@@ -145,7 +146,7 @@ export default function AdminLibraryPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search title or filename"
+              placeholder="Search Magic, New York, 30s…"
               className="w-full rounded-2xl border border-slate-700 bg-slate-900 py-2 pl-9 pr-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400/50"
             />
           </label>
