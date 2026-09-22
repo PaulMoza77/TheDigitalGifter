@@ -147,9 +147,10 @@ function PlannerAppShell() {
         </aside>
         <main className="tdg-planner-main">
           {access?.access_source === "qa_grant" ? (
-            <p className="tdg-planner-qa-note" data-testid="planner-qa-access">
-              Test access is on for this account. It is not a Stripe payment.
-            </p>
+            <details className="tdg-planner-qa-note" data-testid="planner-qa-access">
+              <summary>QA ACCESS</summary>
+              <p>Test access is on for this account. It is not a Stripe payment.</p>
+            </details>
           ) : null}
           {loading ? <p className="tdg-planner-muted">Opening your Christmas…</p> : !profile ? <PlannerOnboarding /> : <Outlet />}
         </main>

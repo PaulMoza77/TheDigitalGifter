@@ -16,7 +16,7 @@ import { useCopilotUi } from "../copilot/CopilotHost";
 import { PlannerEmptyState, PlannerProgress, PlannerStatusChip } from "../plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { GIFT_ITEM_STATUSES, type GiftItem, type GiftItemStatus, type GiftRecipient } from "../types";
-import { christmasIdentityForPerson } from "./giftIdentity";
+import { christmasIdentitiesForPeople, christmasIdentityForPerson } from "./giftIdentity";
 import {
   giftLifecycle,
   giftsOverviewStats,
@@ -129,6 +129,18 @@ export function ChristmasPlannerGiftsPage() {
         );
       });
   }, [people, gifts, filter, query]);
+
+  const covers = useMemo(
+    () =>
+      christmasIdentitiesForPeople(
+        people.map((person) => ({
+          id: person.id,
+          displayName: person.display_name,
+          relationship: person.relationship,
+        })),
+      ),
+    [people],
+  );
 
   const attention = useMemo(() => {
     return people
@@ -253,6 +265,7 @@ export function ChristmasPlannerGiftsPage() {
         <p className="tdg-planner-kicker">Thoughtful gifts. Happier moments.</p>
         <h1>Gifts</h1>
         <p>Everyone you love. Everything in one place.</p>
+        <p className="tdg-planner-sr">People first.</p>
       </div>
       <div className="tdg-gifts-head-actions">
         {people.length > 0 ? (
@@ -351,13 +364,14 @@ export function ChristmasPlannerGiftsPage() {
                     key={person.id}
                     person={person}
                     stats={stats}
+                    look={covers.get(person.id)}
                     onOpen={() => openPerson(person.id)}
                   />
                 );
               })}
               <button type="button" className="tdg-gifts-add-card" onClick={openAddSomeone} disabled={!limit.canAdd}>
-                <span>+ Add Someone</span>
-                <em>Name, optional relationship and budget</em>
+                <span>Add Someone</span>
+                <em>Start shopping for someone new</em>
               </button>
             </div>
             <div className="tdg-gifts-mobile-inspire">
@@ -379,6 +393,13 @@ export function ChristmasPlannerGiftsPage() {
             ) : null}
           </div>
           <aside className="tdg-gifts-context" aria-label="Gift help">
+            <div className="tdg-gifts-context-mood">
+              <p>
+                It’s not just about gifts…
+                <br />
+                It’s about the people who make Christmas special.
+              </p>
+            </div>
             {attention ? (
               <div className="tdg-gifts-context-card">
                 <p className="tdg-planner-kicker">Need inspiration?</p>
@@ -608,27 +629,31 @@ function GiftsSummary({
 function PersonCard({
   person,
   stats,
+  look,
   onOpen,
 }: {
   person: GiftRecipient;
   stats: ReturnType<typeof personGiftStats>;
+  look?: ReturnType<typeof christmasIdentityForPerson>;
   onOpen: () => void;
 }) {
-  const look = christmasIdentityForPerson({
-    id: person.id,
-    displayName: person.display_name,
-    relationship: person.relationship,
-  });
-  const remaining = stats.done ? "All done!" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
+  const cover =
+    look ||
+    christmasIdentityForPerson({
+      id: person.id,
+      displayName: person.display_name,
+      relationship: person.relationship,
+    });
+  const remaining = stats.done ? "All done! 🎉" : stats.total === 0 ? "Add a gift" : `${stats.toBuy} left to buy`;
   return (
     <button type="button" className="tdg-gifts-card" onClick={onOpen}>
       <span className="tdg-gifts-card-visual">
-        <img src={look.src} alt="" />
+        <img src={cover.src} alt="" />
       </span>
       <span className="tdg-gifts-card-body">
         <strong>{person.display_name}</strong>
         <span className="tdg-gifts-card-meta">
-          {stats.bought} of {stats.total} gifts
+          {stats.total === 0 ? "No gifts yet" : `${stats.bought} of ${stats.total} gifts`}
         </span>
         <PlannerProgress value={stats.progress} compact />
         <span className={`tdg-gifts-card-next${stats.done ? " is-done" : ""}`}>{remaining}</span>

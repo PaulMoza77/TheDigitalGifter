@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { christmasIdentityForPerson, CHRISTMAS_IDENTITIES } from "./giftIdentity";
+import { christmasIdentitiesForPeople, christmasIdentityForPerson, CHRISTMAS_IDENTITIES } from "./giftIdentity";
 import {
   giftLifecycle,
   giftsOverviewStats,
@@ -92,6 +92,13 @@ describe("christmas identity cards", () => {
     const mom = christmasIdentityForPerson({ id: "1", displayName: "Mom", relationship: "family" });
     const dad = christmasIdentityForPerson({ id: "2", displayName: "Dad", relationship: "family" });
     expect(mom.src).not.toEqual(dad.src);
+    const covers = christmasIdentitiesForPeople([
+      { id: "1", displayName: "Andreas", relationship: "family" },
+      { id: "2", displayName: "name", relationship: "family" },
+      { id: "3", displayName: "Emil", relationship: "family" },
+      { id: "4", displayName: "Emil", relationship: "family" },
+    ]);
+    expect(new Set([...covers.values()].map((row) => row.src)).size).toBe(4);
     expect(mom.caption).toContain("not a portrait");
     for (const look of CHRISTMAS_IDENTITIES) {
       expect(look.src.toLowerCase()).not.toContain("portrait");
@@ -101,10 +108,13 @@ describe("christmas identity cards", () => {
     const page = readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx");
     expect(page).not.toContain("avatar");
     expect(page).not.toContain("initials");
-    expect(page).toContain("christmasIdentityForPerson");
+    expect(page).toContain("christmasIdentitiesForPeople");
     expect(page).toContain("+ Add Someone");
     expect(page).toContain("Everyone you love. Everything in one place.");
     expect(page).toContain("<GiftConcierge");
-    expect(page).not.toContain("/christmas/gift-finder?plannerRecipient");
+    expect(page).not.toContain("CABIN LIGHT");
+    expect(page).not.toContain("look.label");
+    expect(CHRISTMAS_IDENTITIES.some((look) => look.src.includes("scene-ambient"))).toBe(false);
+    expect(CHRISTMAS_IDENTITIES.some((look) => look.src.includes("portrait"))).toBe(false);
   });
 });

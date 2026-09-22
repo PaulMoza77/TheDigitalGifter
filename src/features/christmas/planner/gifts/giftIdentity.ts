@@ -1,108 +1,71 @@
-import { recipientFinderKeys } from "../giftConcierge/context";
-
 export type ChristmasIdentity = {
   id: string;
   src: string;
   alt: string;
-  label: string;
   caption: string;
 };
 
-/** Editorial Christmas objects only. Never portraits or initials. */
+/** Editorial Christmas objects only. Never portraits, initials, UI chrome, or blurred placeholders. */
 export const CHRISTMAS_IDENTITIES: ChristmasIdentity[] = [
   {
-    id: "red-wrap",
+    id: "ivory-ribbon",
     src: "/christmas/planner/gifts-editorial.webp",
-    alt: "Wrapped Christmas presents with ribbon",
-    label: "Festive wrap",
+    alt: "Ivory wrapped Christmas gift with burgundy velvet ribbon",
     caption: "Christmas decoration, not a portrait",
   },
   {
-    id: "still-life",
+    id: "burgundy-gifts",
     src: "/christmas/gifts-still-life.png",
-    alt: "Christmas gifts in warm still life light",
-    label: "Still life",
+    alt: "Burgundy and gold wrapped Christmas presents under a tree",
     caption: "Christmas decoration, not a portrait",
   },
   {
-    id: "finder",
-    src: "/christmas/gifts/finder-still.webp",
-    alt: "Soft Christmas gift scene",
-    label: "Soft glow",
+    id: "tree-presents",
+    src: "/christmas/gifts/scene-desktop.jpg",
+    alt: "Christmas tree with wrapped presents by a fireplace",
     caption: "Christmas decoration, not a portrait",
   },
   {
-    id: "ambient",
-    src: "/christmas/gifts/scene-ambient.jpg",
-    alt: "Warm Christmas gift room",
-    label: "Cabin light",
+    id: "green-room",
+    src: "/assets/christmas/christmas_hero_room.webp",
+    alt: "Evergreen Christmas room with gifts beside the hearth",
     caption: "Christmas decoration, not a portrait",
   },
   {
-    id: "tree",
-    src: "/christmas/gifts/tree-hero-desktop.webp",
-    alt: "Christmas tree and presents",
-    label: "Under the tree",
+    id: "gold-hearth",
+    src: "/assets/christmas/christmas_finale_room.webp",
+    alt: "Gold-wrapped Christmas presents by a firelit tree",
     caption: "Christmas decoration, not a portrait",
   },
   {
-    id: "scene",
-    src: "/christmas/gifts/scene-desktop.poster.webp",
-    alt: "Christmas presents by the tree",
-    label: "Tree gifts",
-    caption: "Christmas decoration, not a portrait",
-  },
-  {
-    id: "letter",
-    src: "/assets/christmas/wishlist_letter.webp",
-    alt: "Handwritten Christmas letter",
-    label: "Letter",
-    caption: "Christmas decoration, not a portrait",
-  },
-  {
-    id: "card",
-    src: "/assets/christmas/christmas_card_open.webp",
-    alt: "Open Christmas card",
-    label: "Card",
-    caption: "Christmas decoration, not a portrait",
-  },
-  {
-    id: "table",
-    src: "/christmas/planner/dinner-table.webp",
-    alt: "Christmas table with festive details",
-    label: "Table",
-    caption: "Christmas decoration, not a portrait",
-  },
-  {
-    id: "advent",
-    src: "/christmas/advent/advent-loop.poster.webp",
-    alt: "Christmas ornaments and lights",
-    label: "Ornaments",
+    id: "stockings",
+    src: "/christmas/cabin-hero-1280.webp",
+    alt: "Christmas cabin with stockings, wreath and wrapped gifts",
     caption: "Christmas decoration, not a portrait",
   },
 ];
 
 const BY_ROLE: Record<string, string> = {
-  mom: "red-wrap",
-  mother: "red-wrap",
-  mum: "red-wrap",
-  dad: "still-life",
-  father: "still-life",
-  child: "tree",
-  son: "tree",
-  daughter: "scene",
-  teen: "finder",
-  partner: "card",
-  wife: "card",
-  husband: "card",
-  girlfriend: "card",
-  boyfriend: "card",
-  grandma: "table",
-  grandpa: "table",
-  grandmother: "table",
-  grandfather: "table",
-  friend: "ambient",
-  grandparent: "table",
+  mom: "ivory-ribbon",
+  mother: "ivory-ribbon",
+  mum: "ivory-ribbon",
+  dad: "burgundy-gifts",
+  father: "burgundy-gifts",
+  child: "tree-presents",
+  son: "tree-presents",
+  daughter: "tree-presents",
+  teen: "tree-presents",
+  partner: "gold-hearth",
+  wife: "gold-hearth",
+  husband: "gold-hearth",
+  girlfriend: "gold-hearth",
+  boyfriend: "gold-hearth",
+  grandma: "green-room",
+  grandpa: "green-room",
+  grandmother: "green-room",
+  grandfather: "green-room",
+  grandparent: "green-room",
+  friend: "stockings",
 };
 
 function hashKey(value: string): number {
@@ -117,13 +80,41 @@ export function christmasIdentityForPerson(input: {
   relationship: string;
 }): ChristmasIdentity {
   const name = String(input.displayName || "").trim().toLowerCase();
-  const rel = String(input.relationship || "").trim().toLowerCase();
   const fromName = Object.keys(BY_ROLE).find((key) => name === key || name.includes(key));
-  const fromRel = recipientFinderKeys(input.relationship).recipientKey;
-  const preferred = (fromName && BY_ROLE[fromName]) || BY_ROLE[rel] || BY_ROLE[fromRel];
+  const preferred = fromName && BY_ROLE[fromName];
   if (preferred) {
     const found = CHRISTMAS_IDENTITIES.find((row) => row.id === preferred);
     if (found) return found;
   }
   return CHRISTMAS_IDENTITIES[hashKey(input.id || name) % CHRISTMAS_IDENTITIES.length];
 }
+
+/** Stable unique covers for a list. Same id always keeps the same image. */
+export function christmasIdentitiesForPeople(
+  people: Array<{ id: string; displayName: string; relationship: string }>,
+): Map<string, ChristmasIdentity> {
+  const assigned = new Map<string, ChristmasIdentity>();
+  const taken = new Set<string>();
+  const ordered = [...people].sort((a, b) => a.id.localeCompare(b.id));
+  for (const person of ordered) {
+    const preferred = christmasIdentityForPerson(person);
+    if (!taken.has(preferred.id)) {
+      taken.add(preferred.id);
+      assigned.set(person.id, preferred);
+      continue;
+    }
+    const start = hashKey(person.id) % CHRISTMAS_IDENTITIES.length;
+    let next = preferred;
+    for (let i = 0; i < CHRISTMAS_IDENTITIES.length; i += 1) {
+      const candidate = CHRISTMAS_IDENTITIES[(start + i) % CHRISTMAS_IDENTITIES.length];
+      if (!taken.has(candidate.id)) {
+        next = candidate;
+        break;
+      }
+    }
+    taken.add(next.id);
+    assigned.set(person.id, next);
+  }
+  return assigned;
+}
+
