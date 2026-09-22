@@ -2230,7 +2230,7 @@
   padding-bottom: 1px;
 }
 
-.tdg-planner.tdg-pl .tdg-pl__topbar-cta {
+.tdg-planner.tdg-pl .tdg-pl__topbar button.tdg-pl__topbar-cta {
   appearance: none;
   border: 0;
   border-radius: 999px;
