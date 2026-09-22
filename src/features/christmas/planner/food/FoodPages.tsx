@@ -9,7 +9,7 @@ import { hasFeature } from "../entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { PlannerPaywall } from "../Paywall";
 import { GROCERY_AISLES, type GroceryAisle } from "../types";
-import { PlannerEmptyState, PlannerPageHeader } from "../plannerUi";
+import { PlannerEmptyState, PlannerPageHeader, PlannerLoading } from "../plannerUi";
 import { bumpPlannerWorkspace } from "../workspaceSync";
 import { applyGroceryOps } from "./persistGrocery";
 import {
@@ -144,7 +144,7 @@ export function ChristmasPlannerFoodPage() {
   const headcount = meal?.guest_count || people;
   const groceryNeed = 0;
 
-  if (loading) return <p>Loading meals…</p>;
+  if (loading) return <PlannerLoading label="Loading meals…" />;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "food_planner")) {
     return (
@@ -392,7 +392,7 @@ export function ChristmasPlannerRecipesPage() {
   const canAll = hasFeature(access, "recipes");
   const countries = uniqueFacetValues(recipes, "country");
 
-  if (loading) return <p>Loading recipes…</p>;
+  if (loading) return <PlannerLoading label="Loading recipes…" />;
   if (!profile) return <PlannerOnboarding />;
 
   async function addToMeal(recipe: RecipeCatalogRow, section: "christmas_eve" | "christmas_day") {
@@ -661,7 +661,7 @@ export function ChristmasPlannerGroceryPage() {
     trackPlannerEvent("planner_module_opened", { module: "grocery", metadata: { activation: "grocery" } });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading grocery…</p>;
+  if (loading) return <PlannerLoading label="Loading grocery…" />;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "food_planner")) {
     return (

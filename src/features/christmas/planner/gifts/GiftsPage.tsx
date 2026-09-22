@@ -14,7 +14,7 @@ import { FoundingPassUnlockButton } from "../FoundingPassUnlock";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "../PlannerGiftLink";
 import { copilotEnabled } from "../copilot/ask";
 import { useCopilotUi } from "../copilot/CopilotHost";
-import { PlannerEmptyState, PlannerProgress, PlannerStatusChip } from "../plannerUi";
+import { PlannerEmptyState, PlannerLoading, PlannerProgress, PlannerStatusChip } from "../plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { GIFT_ITEM_STATUSES, type GiftItem, type GiftItemStatus, type GiftRecipient } from "../types";
 import { christmasIdentitiesForPeople, christmasIdentityForPerson } from "./giftIdentity";
@@ -243,7 +243,7 @@ export function ChristmasPlannerGiftsPage() {
     trackPlannerEvent("planner_gift_status_changed", { module: "gifts" });
   }
 
-  if (loading) return <p className="tdg-planner-muted">Loading gifts…</p>;
+  if (loading) return <PlannerLoading label="Loading gifts…" />;
   if (!profile) return <PlannerOnboarding />;
 
   const currency = profile.currency;
@@ -264,7 +264,7 @@ export function ChristmasPlannerGiftsPage() {
   const header = (
     <header className="tdg-gifts-head">
       <div className="tdg-gifts-head-copy">
-        <p className="tdg-planner-kicker">Thoughtful gifts. Happier moments.</p>
+        <p className="tdg-planner-kicker">Gift list</p>
         <h1>Gifts</h1>
         <p>Everyone you love. Everything in one place.</p>
         <p className="tdg-planner-sr">People first.</p>

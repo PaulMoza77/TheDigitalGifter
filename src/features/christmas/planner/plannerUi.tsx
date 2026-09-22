@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useId, useState, type ComponentType, type ReactNode } from "react";
+import { FormEvent, useEffect, useId, useState, type ButtonHTMLAttributes, type ComponentType, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { TASK_CATEGORIES, type PlannerFeatureKey, type PlannerTask, type TaskCategory } from "./types";
 import { deleteTask, patchTask } from "./api";
@@ -85,22 +85,139 @@ export function PlannerEmptyState({
   );
 }
 
+export function PlannerPage({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={["tdg-planner-page", className].filter(Boolean).join(" ")}>{children}</div>;
+}
+
+export function PlannerLoading({ label = "Opening your Christmas…" }: { label?: string }) {
+  return (
+    <p className="tdg-planner-muted tdg-planner-loading" role="status" aria-live="polite">
+      {label}
+    </p>
+  );
+}
+
 export function PlannerPageHeader({
   title,
   lede,
+  kicker,
   children,
 }: {
   title: string;
   lede: string;
+  kicker?: string;
   children?: ReactNode;
 }) {
   return (
     <header className="tdg-planner-page-head">
+      {kicker ? <p className="tdg-planner-kicker">{kicker}</p> : null}
       <h1>{title}</h1>
       <p>{lede}</p>
       {children}
     </header>
   );
+}
+
+export function PlannerButton({
+  variant = "default",
+  className,
+  type = "button",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "default" | "primary" | "ghost" | "danger" }) {
+  return (
+    <button
+      type={type}
+      className={["tdg-planner-btn", variant === "default" ? "" : variant, className].filter(Boolean).join(" ")}
+      {...props}
+    />
+  );
+}
+
+export function PlannerField({ label, htmlFor, children }: { label: string; htmlFor?: string; children: ReactNode }) {
+  return (
+    <label className="tdg-planner-field" htmlFor={htmlFor}>
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+export function PlannerCard({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={["tdg-planner-card", className].filter(Boolean).join(" ")}>{children}</div>;
+}
+
+export function PlannerSeg<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: T;
+  onChange: (next: T) => void;
+  options: Array<{ id: T; label: string }>;
+  label?: string;
+}) {
+  return (
+    <div className="tdg-planner-seg" role="tablist" aria-label={label}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          role="tab"
+          aria-selected={value === opt.id}
+          className={value === opt.id ? "on" : ""}
+          onClick={() => onChange(opt.id)}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function PlannerSheet({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const titleId = useId();
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="tdg-planner-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <button type="button" className="tdg-planner-sheet-backdrop" aria-label="Close" onClick={onClose} />
+      <div className="tdg-planner-sheet-card">
+        <div className="tdg-planner-sheet-head">
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="tdg-planner-btn ghost" onClick={onClose}>
+            Close
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function PlannerErrorState({
+  title = "Something went quiet.",
+  body = "Try again in a moment. Your plan is still here.",
+  action,
+}: {
+  title?: string;
+  body?: string;
+  action?: ReactNode;
+}) {
+  return <PlannerEmptyState mark="star" title={title} body={body} action={action} />;
 }
 
 export function PlannerStatusChip({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "gold" | "done" }) {
@@ -388,21 +505,11 @@ export function PlannerTaskRow({
         </button>
       </div>
       {open ? (
-        <div className="tdg-planner-sheet" role="dialog" aria-modal="true" aria-labelledby={`${titleId}-edit`}>
-          <button type="button" className="tdg-planner-sheet-backdrop" aria-label="Close" onClick={() => setOpen(false)} />
-          <div className="tdg-planner-sheet-card">
-            <div className="tdg-planner-sheet-head">
-              <h2 id={`${titleId}-edit`}>Edit task</h2>
-              <button type="button" className="tdg-planner-btn ghost" onClick={() => setOpen(false)}>
-                Close
-              </button>
-            </div>
-            <label>
-              Title
+        <PlannerSheet title="Edit task" onClose={() => setOpen(false)}>
+            <PlannerField label="Title">
               <input className="tdg-planner-input" value={title} onChange={(e) => setTitle(e.target.value)} />
-            </label>
-            <label>
-              Category
+            </PlannerField>
+            <PlannerField label="Category">
               <select className="tdg-planner-select" value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)}>
                 {TASK_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -410,23 +517,20 @@ export function PlannerTaskRow({
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              Due date
+            </PlannerField>
+            <PlannerField label="Due date">
               <input className="tdg-planner-input" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-            </label>
-            <label>
-              Priority
+            </PlannerField>
+            <PlannerField label="Priority">
               <select className="tdg-planner-select" value={priority} onChange={(e) => setPriority(e.target.value as PlannerTask["priority"])}>
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
               </select>
-            </label>
-            <label>
-              Notes
+            </PlannerField>
+            <PlannerField label="Notes">
               <textarea className="tdg-planner-area" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional note" />
-            </label>
+            </PlannerField>
             <div className="tdg-planner-actions">
               <button type="button" className="tdg-planner-btn primary" onClick={() => void save()}>
                 {due && due !== task.due_on ? "Reschedule" : "Save"}
@@ -451,8 +555,7 @@ export function PlannerTaskRow({
                 </button>
               ) : null}
             </div>
-          </div>
-        </div>
+        </PlannerSheet>
       ) : null}
     </>
   );

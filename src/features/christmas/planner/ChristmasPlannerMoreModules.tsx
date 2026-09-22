@@ -11,7 +11,7 @@ import { deriveCalendarItems, deriveShoppingItems, shoppingForTab, executePlanne
 import { PlannerRecommendationSheet } from "./intelligence/components";
 import { HOME_AREAS, type GiftItem, type PlannerTask } from "./types";
 import { formatPlannerDate, giftStatusLabel, prettyLabel } from "./date";
-import { PlannerComposer, PlannerEmptyState, PlannerPageHeader, PlannerStatusChip } from "./plannerUi";
+import { PlannerComposer, PlannerEmptyState, PlannerField, PlannerLoading, PlannerPageHeader, PlannerSeg, PlannerStatusChip } from "./plannerUi";
 import { PlannerGiftOutboundLink, PlannerGiftPriceLabel } from "./PlannerGiftLink";
 import { cardsStudioCues, memoriesStudioCues, PlannerStudioCue } from "./studio/PlannerStudioCue";
 
@@ -27,7 +27,7 @@ export function ChristmasPlannerShoppingPage() {
     trackPlannerEvent("planner_module_opened", { module: "shopping" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading shopping…</p>;
+  if (loading) return <PlannerLoading label="Loading shopping…" />;
   if (!profile) return <PlannerOnboarding />;
 
   const filtered = shoppingForTab(deriveShoppingItems(gifts), tab)
@@ -70,13 +70,15 @@ export function ChristmasPlannerShoppingPage() {
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Gift shopping" lede="Presents to buy, ordered, arriving, and returns. Groceries stay in Grocery." />
-      <div className="tdg-planner-seg" role="tablist">
-        {(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => (
-          <button key={t} type="button" className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
-            {t === "need" ? "To buy" : prettyLabel(t)}
-          </button>
-        ))}
-      </div>
+      <PlannerSeg
+        label="Shopping lanes"
+        value={tab}
+        onChange={setTab}
+        options={(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => ({
+          id: t,
+          label: t === "need" ? "To buy" : prettyLabel(t),
+        }))}
+      />
       {filtered.length === 0 ? (
         <PlannerEmptyState mark="shopping" title="Nothing in this lane yet." body="Add a purchase, or move gifts along as you order them." />
       ) : (
@@ -138,7 +140,7 @@ export function ChristmasPlannerCalendarPage() {
     trackPlannerEvent("planner_module_opened", { module: "calendar" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading calendar…</p>;
+  if (loading) return <PlannerLoading label="Loading calendar…" />;
   if (!profile) return <PlannerOnboarding />;
 
   const derived = deriveCalendarItems({
@@ -196,14 +198,15 @@ export function ChristmasPlannerCalendarPage() {
   return (
     <div className="tdg-planner-page tdg-planner-cal-page">
       <PlannerPageHeader title="Calendar" lede="See your season at a glance." />
-      <div className="tdg-planner-seg" role="tablist">
-        <button type="button" className={view === "month" ? "on" : ""} onClick={() => setView("month")}>
-          Month
-        </button>
-        <button type="button" className={view === "agenda" ? "on" : ""} onClick={() => setView("agenda")}>
-          Agenda
-        </button>
-      </div>
+      <PlannerSeg
+        label="Calendar views"
+        value={view}
+        onChange={setView}
+        options={[
+          { id: "month", label: "Month" },
+          { id: "agenda", label: "Agenda" },
+        ]}
+      />
       {view === "month" ? (
         <>
           <div className="tdg-planner-cal-nav">
@@ -340,7 +343,7 @@ export function ChristmasPlannerHostingPage() {
     trackPlannerEvent("planner_module_opened", { module: "hosting" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading hosting…</p>;
+  if (loading) return <PlannerLoading label="Loading hosting…" />;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "hosting")) {
     return (
@@ -356,6 +359,7 @@ export function ChristmasPlannerHostingPage() {
       <PlannerPageHeader title="Hosting" lede="Guests, prep, and a calm house - no extra sensitive data." />
       <section className="tdg-planner-section">
         <h2>Guests</h2>
+        <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Name or household" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
         <input className="tdg-planner-input" placeholder="Dietary notes" value={draft.dietary} onChange={(e) => setDraft({ ...draft, dietary: e.target.value })} />
         <input className="tdg-planner-input" placeholder="Sleeping" value={draft.sleeping} onChange={(e) => setDraft({ ...draft, sleeping: e.target.value })} />
@@ -384,6 +388,10 @@ export function ChristmasPlannerHostingPage() {
         >
           Add guest
         </button>
+        </PlannerComposer>
+        {guests.length === 0 ? (
+          <PlannerEmptyState mark="home" title="No guests yet." body="Add the first household so RSVPs and dietary notes live here." />
+        ) : null}
         {guests.map((g) => (
           <div key={g.id} className="tdg-planner-row">
             <div>
@@ -449,12 +457,15 @@ export function ChristmasPlannerHomePage() {
     trackPlannerEvent("planner_module_opened", { module: "home" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading home…</p>;
+  if (loading) return <PlannerLoading label="Loading home…" />;
   if (!profile) return <PlannerOnboarding />;
 
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Home" lede="Tree, rooms, and the little setups that make the house feel ready." />
+      {rows.length === 0 ? (
+        <PlannerEmptyState mark="home" title="The house is still a blank page." body="Add tree, lights, and rooms so Christmas feels ready." />
+      ) : null}
       {HOME_AREAS.map((area) => (
         <section key={area} className="tdg-planner-section">
           <h2>{area.replace(/_/g, " ")}</h2>
@@ -475,7 +486,7 @@ export function ChristmasPlannerHomePage() {
             ))}
         </section>
       ))}
-      <div className="tdg-planner-card">
+      <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Buy tree, test lights…" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
         <select className="tdg-planner-select" value={draft.area} onChange={(e) => setDraft({ ...draft, area: e.target.value })}>
           {HOME_AREAS.map((a) => (
@@ -500,7 +511,7 @@ export function ChristmasPlannerHomePage() {
         >
           Add
         </button>
-      </div>
+      </PlannerComposer>
     </div>
   );
 }
@@ -527,7 +538,7 @@ export function ChristmasPlannerTravelPage() {
     trackPlannerEvent("planner_module_opened", { module: "travel" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading travel…</p>;
+  if (loading) return <PlannerLoading label="Loading travel…" />;
   if (!profile) return <PlannerOnboarding />;
   if (!hasFeature(access, "travel")) {
     return (
@@ -604,7 +615,10 @@ export function ChristmasPlannerTravelPage() {
           Add trip
         </button>
       </div>
-      {trips.map((t) => (
+      {trips.length === 0 ? (
+        <PlannerEmptyState mark="travel" title="No trips yet." body="Add a destination and dates. We never store passport or card data." />
+      ) : (
+        trips.map((t) => (
         <div key={t.id} className="tdg-planner-card">
           <strong>{t.destination}</strong>
           <div className="tdg-planner-muted">
@@ -615,7 +629,8 @@ export function ChristmasPlannerTravelPage() {
           {t.gifts_to_take ? <p className="tdg-planner-muted">Gifts: {t.gifts_to_take}</p> : null}
           {t.home_arrangements ? <p className="tdg-planner-muted">{t.home_arrangements}</p> : null}
         </div>
-      ))}
+        ))
+      )}
       {sheet ? (
         <PlannerRecommendationSheet
           title="Move these tasks before your trip?"
@@ -660,7 +675,7 @@ export function ChristmasPlannerTraditionsPage() {
     trackPlannerEvent("planner_module_opened", { module: "traditions" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading traditions…</p>;
+  if (loading) return <PlannerLoading label="Loading traditions…" />;
   if (!profile) return <PlannerOnboarding />;
 
   async function saveIdea(title: string, section: string) {
@@ -738,7 +753,7 @@ export function ChristmasPlannerCardsPage() {
     trackPlannerEvent("planner_module_opened", { module: "cards" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading cards…</p>;
+  if (loading) return <PlannerLoading label="Loading cards…" />;
   if (!profile) return <PlannerOnboarding />;
 
   return (
@@ -753,11 +768,11 @@ export function ChristmasPlannerCardsPage() {
           Create Card
         </Link>
       </div>
-      <div className="tdg-planner-card">
+      <PlannerComposer>
         <input className="tdg-planner-input" placeholder="Who needs a card?" value={name} onChange={(e) => setName(e.target.value)} />
         <button
           type="button"
-          className="tdg-planner-btn"
+          className="tdg-planner-btn primary"
           onClick={async () => {
             if (!name.trim()) return;
             const { data } = await supabase
@@ -773,7 +788,10 @@ export function ChristmasPlannerCardsPage() {
         >
           Add
         </button>
-      </div>
+      </PlannerComposer>
+      {rows.length === 0 ? (
+        <PlannerEmptyState mark="star" title="No cards to track yet." body="Add who still needs a greeting. Making a card uses separate credits." />
+      ) : null}
       {rows.map((r) => (
         <div key={r.id} className="tdg-planner-row">
           <div>
@@ -810,7 +828,7 @@ export function ChristmasPlannerMemoriesPage() {
     trackPlannerEvent("planner_module_opened", { module: "memories" });
   }, [profile?.id]);
 
-  if (loading) return <p>Loading memories…</p>;
+  if (loading) return <PlannerLoading label="Loading memories…" />;
   if (!profile) return <PlannerOnboarding />;
 
   return (
@@ -848,13 +866,17 @@ export function ChristmasPlannerMemoriesPage() {
           Save memory
         </button>
       </div>
-      {rows.map((r) => (
-        <div key={r.id} className="tdg-planner-card">
-          <div className="tdg-planner-muted">{r.entry_kind}</div>
-          <strong>{r.title || "Untitled"}</strong>
-          <p>{r.body}</p>
-        </div>
-      ))}
+      {rows.length === 0 ? (
+        <PlannerEmptyState mark="memory" title="No memories saved yet." body="Keep a quiet note for this season, or for next year." />
+      ) : (
+        rows.map((r) => (
+          <div key={r.id} className="tdg-planner-card">
+            <div className="tdg-planner-muted">{r.entry_kind}</div>
+            <strong>{r.title || "Untitled"}</strong>
+            <p>{r.body}</p>
+          </div>
+        ))
+      )}
     </div>
   );
 }
@@ -901,13 +923,14 @@ export function ChristmasPlannerSettingsPage() {
     });
   }, [profile]);
 
-  if (loading) return <p>Loading settings…</p>;
+  if (loading) return <PlannerLoading label="Loading settings…" />;
   if (!profile) return <PlannerOnboarding />;
 
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="Settings" lede="Season preferences. This Planner is private - there is no share setting." />
       <div className="tdg-planner-card">
+        <PlannerField label="Currency">
         <select className="tdg-planner-select" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
           {["eur", "usd", "gbp", "ron"].map((c) => (
             <option key={c} value={c}>
@@ -915,7 +938,10 @@ export function ChristmasPlannerSettingsPage() {
             </option>
           ))}
         </select>
+        </PlannerField>
+        <PlannerField label="Country">
         <input className="tdg-planner-input" value={form.country_code} onChange={(e) => setForm({ ...form, country_code: e.target.value.slice(0, 8) })} placeholder="Country" />
+        </PlannerField>
         <div className="tdg-planner-chips">
           <button type="button" className={`tdg-planner-chip ${form.hosting ? "on" : ""}`} onClick={() => setForm((f) => ({ ...f, hosting: !f.hosting }))}>
             Hosting
@@ -924,6 +950,7 @@ export function ChristmasPlannerSettingsPage() {
             Travelling
           </button>
         </div>
+        <PlannerField label="How prepared you feel">
         <select className="tdg-planner-select" value={form.prepared_level} onChange={(e) => setForm({ ...form, prepared_level: e.target.value })}>
           {["starting", "some", "mostly", "rescue"].map((l) => (
             <option key={l} value={l}>
@@ -931,7 +958,10 @@ export function ChristmasPlannerSettingsPage() {
             </option>
           ))}
         </select>
+        </PlannerField>
+        <PlannerField label="Total budget">
         <input className="tdg-planner-input" type="number" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} placeholder="Total budget" />
+        </PlannerField>
         <button
           type="button"
           className="tdg-planner-btn primary"
