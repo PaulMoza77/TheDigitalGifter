@@ -68,7 +68,7 @@ export function buildCopilotSuggestions(
   const done = new Set(snapshot.gifts.filter((g) => progressedGift(g.status)).map((g) => g.recipient_id));
   const missingPeople = snapshot.recipients.filter((r) => !done.has(r.id));
   const firstMissing = missingPeople[0]?.display_name;
-  const remaining = Math.max(0, budget.remainingMinor);
+  const remaining = Math.max(0, budget.remainingMinor ?? 0);
   const groceryNeed = grocery.filter((g) => g.status === "need").length;
   const topTask = todayPriorities[0]?.title;
 
@@ -256,7 +256,7 @@ export function buildCopilotNextWin(
   }
 
   if (module === "budget") {
-    const remaining = Math.max(0, budget.remainingMinor);
+    const remaining = Math.max(0, budget.remainingMinor ?? 0);
     return {
       title: "Your next little win",
       body: remaining > 0 ? `${money(remaining)} left in your Christmas budget` : "Review spending before Christmas",
