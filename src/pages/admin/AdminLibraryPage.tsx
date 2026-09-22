@@ -112,7 +112,7 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Finished Reels, Shorts, Photos, and long-form ambience. Preview, save, and schedule.
+              Finished Reels, Shorts, Photos, and long-form ambience. Newest videos stay on top.
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">

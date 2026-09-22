@@ -165,6 +165,29 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
+    id: "reel-pick-one-christmas",
+    title: "You can only pick one 🎄",
+    description:
+      "6.93s 1080×1920 silent still Reel. Hard cuts: cozy cabin → NYC penthouse → alpine chalet/hot tub → Christmas mansion. Persistent hook YOU CAN ONLY PICK ONE. Numbers 1–4 only. No VO, no music, no transitions.",
+    src: "/assets/christmas/reels/final/you-can-only-pick-one.mp4",
+    filename: "you-can-only-pick-one.mp4",
+    category: "christmas_reels",
+    kind: "reel",
+    durationSeconds: 6.93,
+    poster: "/assets/christmas/reels/posters/reel-pick-one-christmas.jpg",
+    width: 1080,
+    height: 1920,
+    fileSizeBytes: 4214634,
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_REEL_TAGS, "pick-one", "still-reel", "silent", "loop"],
+    clipsUsed: [
+      "photo-pick-one-01-cabin",
+      "photo-pick-one-02-penthouse",
+      "photo-pick-one-03-chalet",
+      "photo-pick-one-04-mansion",
+    ],
+  },
+  {
     id: "reel-lauren-overwhelm-master",
     title: "Lauren — Christmas Overwhelm Story 01 · MASTER",
     description:
@@ -242,29 +265,6 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
       "short-lauren-04-peak",
       "short-lauren-05-discovery",
       "short-lauren-06-payoff",
-    ],
-  },
-  {
-    id: "reel-pick-one-christmas",
-    title: "You can only pick one 🎄",
-    description:
-      "6.93s 1080×1920 silent still Reel. Hard cuts: cozy cabin → NYC penthouse → alpine chalet/hot tub → Christmas mansion. Persistent hook YOU CAN ONLY PICK ONE. Numbers 1–4 only. No VO, no music, no transitions.",
-    src: "/assets/christmas/reels/final/you-can-only-pick-one.mp4",
-    filename: "you-can-only-pick-one.mp4",
-    category: "christmas_reels",
-    kind: "reel",
-    durationSeconds: 6.93,
-    poster: "/assets/christmas/reels/posters/reel-pick-one-christmas.jpg",
-    width: 1080,
-    height: 1920,
-    fileSizeBytes: 4214634,
-    createdAt: "2026-09-22T14:30:00Z",
-    tags: [...CINEMATIC_REEL_TAGS, "pick-one", "still-reel", "silent", "loop"],
-    clipsUsed: [
-      "pick_one_01_cozy_cabin.jpg",
-      "pick_one_02_nyc_penthouse.jpg",
-      "pick_one_03_alpine_chalet.jpg",
-      "pick_one_04_christmas_mansion.jpg",
     ],
   },
   {
@@ -1830,6 +1830,50 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
 
 const NEW_STILL_PHOTOS: LibraryVideo[] = [
   {
+    id: "photo-pick-one-01-cabin",
+    title: "Photo · Pick one · Cozy cabin",
+    description: "Still 1/4 for the pick-one Reel: snowy log cabin with warm windows.",
+    src: "/assets/christmas/library-stills/pick_one_01_cozy_cabin.jpg",
+    filename: "pick_one_01_cozy_cabin.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_SOURCE_TAGS, "pick-one"],
+  },
+  {
+    id: "photo-pick-one-02-penthouse",
+    title: "Photo · Pick one · NYC penthouse",
+    description: "Still 2/4 for the pick-one Reel: city penthouse Christmas night.",
+    src: "/assets/christmas/library-stills/pick_one_02_nyc_penthouse.jpg",
+    filename: "pick_one_02_nyc_penthouse.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_SOURCE_TAGS, "pick-one"],
+  },
+  {
+    id: "photo-pick-one-03-chalet",
+    title: "Photo · Pick one · Alpine chalet",
+    description: "Still 3/4 for the pick-one Reel: alpine chalet and hot tub.",
+    src: "/assets/christmas/library-stills/pick_one_03_alpine_chalet.jpg",
+    filename: "pick_one_03_alpine_chalet.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_SOURCE_TAGS, "pick-one"],
+  },
+  {
+    id: "photo-pick-one-04-mansion",
+    title: "Photo · Pick one · Christmas mansion",
+    description: "Still 4/4 for the pick-one Reel: lit Christmas mansion.",
+    src: "/assets/christmas/library-stills/pick_one_04_christmas_mansion.jpg",
+    filename: "pick_one_04_christmas_mansion.jpg",
+    category: "christmas_reels",
+    kind: "photo",
+    createdAt: "2026-09-22T14:30:00Z",
+    tags: [...CINEMATIC_SOURCE_TAGS, "pick-one"],
+  },
+  {
     id: "photo-lauren-01-intro",
     title: "Photo · Lauren intro kitchen worry",
     description: "Lauren leans on the kitchen island, mildly overloaded, family wrapping gifts behind her.",
@@ -2612,6 +2656,28 @@ export function videosForCategory(
   return videos.filter((video) => video.category === categoryId);
 }
 
+function createdAtMs(video: LibraryVideo): number {
+  if (!video.createdAt) return Number.NaN;
+  const value = Date.parse(video.createdAt);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+/** Newest `createdAt` first. Items without a date keep their original relative order, after dated items. */
+export function sortLibraryNewestFirst(videos: LibraryVideo[]): LibraryVideo[] {
+  return videos
+    .map((video, index) => ({ video, index }))
+    .sort((a, b) => {
+      const aTime = createdAtMs(a.video);
+      const bTime = createdAtMs(b.video);
+      const aDated = Number.isFinite(aTime);
+      const bDated = Number.isFinite(bTime);
+      if (aDated && bDated && aTime !== bTime) return bTime - aTime;
+      if (aDated !== bDated) return aDated ? -1 : 1;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.video);
+}
+
 export function searchLibraryCatalog(
   videos: LibraryVideo[],
   query: string,
@@ -2621,13 +2687,15 @@ export function searchLibraryCatalog(
   const needle = query.trim().toLowerCase();
   let list = videosForCategory(categoryId, videos);
   if (kind !== "all") list = list.filter((item) => item.kind === kind);
-  if (!needle) return list;
-  return list.filter((video) =>
-    [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
-      .join(" ")
-      .toLowerCase()
-      .includes(needle),
-  );
+  if (needle) {
+    list = list.filter((video) =>
+      [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
+  }
+  return sortLibraryNewestFirst(list);
 }
 
 export function searchLibraryVideos(

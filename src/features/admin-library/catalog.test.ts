@@ -11,6 +11,7 @@ import {
   isLibraryPhoto,
   librarySrcPath,
   searchLibraryVideos,
+  sortLibraryNewestFirst,
 } from "./catalog";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -50,7 +51,9 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lauren-overwhelm-master");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-christmas");
+    expect(searchLibraryVideos("", "christmas_reels", "reel")[0]?.id).toBe("reel-pick-one-christmas");
+    expect(searchLibraryVideos("", "christmas_reels", "photo")[0]?.id).toBe("photo-pick-one-01-cabin");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -233,6 +236,19 @@ describe("admin video library", () => {
     expect(manifest.wording_shortened).toBe(true);
   });
 
+  it("sorts library results newest-first without requiring a search", () => {
+    const older = LIBRARY_VIDEOS.find((item) => item.id === "reel-lauren-overwhelm-master");
+    const newest = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-christmas");
+    expect(older && newest).toBeTruthy();
+    const reordered = sortLibraryNewestFirst([older!, newest!]);
+    expect(reordered.map((item) => item.id)).toEqual(["reel-pick-one-christmas", "reel-lauren-overwhelm-master"]);
+    const reels = searchLibraryVideos("", "christmas_reels", "reel");
+    const pickOne = reels.findIndex((item) => item.id === "reel-pick-one-christmas");
+    const lauren = reels.findIndex((item) => item.id === "reel-lauren-overwhelm-master");
+    expect(pickOne).toBe(0);
+    expect(lauren).toBeGreaterThan(pickOne);
+  });
+
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
@@ -240,6 +256,7 @@ describe("admin video library", () => {
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
+    expect(page).toContain("Newest videos stay on top");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
     expect(page).toContain("onShare");
