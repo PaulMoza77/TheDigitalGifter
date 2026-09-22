@@ -2647,7 +2647,8 @@
 .tdg-planner-page,
 .tdg-gifts,
 .tdg-budget-page,
-.tdg-food-product {
+.tdg-food-product,
+.tdg-meals {
   overflow-x: clip;
 }
 
@@ -4323,6 +4324,536 @@
   .tdg-tasks-hero-art {
     height: 220px;
     top: -36px;
+  }
+}
+
+/* Meals — same language as Gifts, not a second mockup system */
+.tdg-planner-page.tdg-meals,
+.tdg-meals {
+  max-width: 1080px;
+  width: 100%;
+}
+
+.tdg-meals-page-head {
+  margin: 0 0 18px;
+  max-width: 42ch;
+}
+
+.tdg-meals-page-head h1 {
+  font-size: clamp(1.55rem, 6.4vw, 2.15rem);
+  line-height: 1.15;
+  margin: 0 0 8px;
+  color: var(--planner-ink);
+}
+
+.tdg-meals-page-head p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--planner-muted);
+}
+
+.tdg-meals-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 232px;
+  margin: 0 0 18px;
+  border-radius: 20px;
+  box-shadow: var(--planner-shadow);
+  background: #1a1410;
+}
+
+.tdg-meals-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  display: block;
+}
+
+.tdg-meals-hero-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(12, 16, 14, 0.78) 0%, rgba(12, 16, 14, 0.52) 46%, rgba(12, 16, 14, 0.22) 100%);
+}
+
+.tdg-meals-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  min-height: 232px;
+  padding: 28px 24px 24px;
+  color: #fffdf8;
+}
+
+.tdg-meals-hero-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f3e6c8;
+}
+
+.tdg-meals-hero-copy h2 {
+  margin: 0;
+  max-width: 16ch;
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  line-height: 1.08;
+  color: #fffdf8;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.tdg-meals-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tdg-meals-hero-badges span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.16);
+  border: 1px solid rgba(255, 253, 248, 0.28);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fffdf8;
+}
+
+.tdg-meals-hero-cta {
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 4px;
+  background: var(--planner-burgundy) !important;
+  border-color: transparent !important;
+  color: #fffdf9 !important;
+  border-radius: 999px;
+  padding: 0 20px;
+}
+
+.tdg-meals-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.tdg-meals-summary > div {
+  min-height: 88px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--planner-line);
+  border-radius: var(--planner-radius-sm);
+  background: var(--planner-surface);
+  box-shadow: var(--planner-shadow);
+}
+
+.tdg-meals-summary svg {
+  display: inline-block;
+  color: var(--planner-burgundy);
+  margin-bottom: 6px;
+}
+
+.tdg-meals-summary strong,
+.tdg-meals-guests-edit .tdg-planner-input {
+  display: block;
+  font-family: var(--planner-sans);
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--planner-ink);
+}
+
+.tdg-meals-guests-edit .tdg-planner-input {
+  width: 4.5rem;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: textfield;
+}
+
+.tdg-meals-guests-edit .tdg-planner-input::-webkit-outer-spin-button,
+.tdg-meals-guests-edit .tdg-planner-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.tdg-meals-summary span {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--planner-muted);
+}
+
+.tdg-meals-menu-head,
+.tdg-meals-ideas-head,
+.tdg-meals-diet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 14px;
+}
+
+.tdg-meals-menu-head h2,
+.tdg-meals-ideas-head h2,
+.tdg-meals-diet-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.tdg-meals-menu-head a,
+.tdg-meals-ideas-head a,
+.tdg-meals-diet-head a {
+  color: var(--planner-burgundy);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tdg-meals-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 12px;
+  margin: 0 0 14px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tdg-meals-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 12px;
+  margin: 0 0 14px;
+}
+
+.tdg-meals-tabs::-webkit-scrollbar,
+.tdg-meals-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.tdg-meals-tabs button,
+.tdg-meals-chips button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--planner-line);
+  background: var(--planner-surface);
+  color: var(--planner-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tdg-meals-tabs button.on,
+.tdg-meals-chips button.on {
+  background: var(--planner-pine);
+  border-color: transparent;
+  color: #f7f1e8;
+}
+
+.tdg-meals-custom {
+  margin: 0 0 16px;
+}
+
+.tdg-meals-courses,
+.tdg-meals-ideas-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.tdg-meals-course,
+.tdg-meals-idea {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--planner-line);
+  background: var(--planner-surface);
+  box-shadow: var(--planner-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tdg-meals-course:hover,
+  .tdg-meals-idea:hover {
+    border-color: rgba(166, 10, 10, 0.28);
+    box-shadow: 0 14px 32px rgba(28, 22, 18, 0.1);
+  }
+}
+
+.tdg-meals-course-visual,
+.tdg-meals-idea-visual {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: var(--planner-parchment);
+  cursor: pointer;
+}
+
+.tdg-meals-course-visual img,
+.tdg-meals-idea-visual img {
+  width: 100%;
+  height: 148px;
+  object-fit: cover;
+  display: block;
+}
+
+.tdg-meals-course[data-course="appetizer"] img {
+  object-position: 12% 62%;
+}
+
+.tdg-meals-course[data-course="main"] img {
+  object-position: 48% 40%;
+}
+
+.tdg-meals-course[data-course="side"] img {
+  object-position: 62% 46%;
+}
+
+.tdg-meals-course[data-course="dessert"] img {
+  object-position: 50% 42%;
+}
+
+.tdg-meals-course-body,
+.tdg-meals-idea-body {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 16px;
+}
+
+.tdg-meals-course-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--planner-burgundy);
+}
+
+.tdg-meals-course-body strong,
+.tdg-meals-idea-body strong {
+  font-family: var(--planner-serif);
+  font-size: 1.22rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.tdg-meals-idea-body p {
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.tdg-meals-idea-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--planner-ink) !important;
+  font-size: 0.84rem !important;
+  font-weight: 600;
+}
+
+.tdg-meals-idea-meta svg {
+  color: var(--planner-burgundy);
+}
+
+.tdg-meals-course-actions,
+.tdg-meals-idea-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tdg-meals-course-actions .tdg-planner-linkish,
+.tdg-meals-grocery {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tdg-meals-gap {
+  margin: 12px 0 0;
+}
+
+.tdg-meals-menu,
+.tdg-meals-ideas,
+.tdg-meals-diet {
+  margin: 0 0 24px;
+}
+
+.tdg-meals-copilot-cta {
+  padding: 20px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--planner-line);
+  background: var(--planner-surface);
+  box-shadow: var(--planner-shadow);
+  display: grid;
+  gap: 8px;
+}
+
+.tdg-meals-copilot-cta .tdg-planner-kicker {
+  color: var(--planner-burgundy);
+}
+
+.tdg-meals-copilot-cta h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.tdg-meals-copilot-cta p {
+  margin: 0;
+  color: var(--planner-muted);
+}
+
+.tdg-meals-copilot-cta .tdg-planner-btn.primary {
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--planner-burgundy);
+  border-color: transparent;
+  color: #fffdf9;
+  border-radius: 999px;
+}
+
+.tdg-meals-picker-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 48vh;
+  overflow: auto;
+}
+
+.tdg-meals-picker-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 0;
+  border: 1px solid var(--planner-line);
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.tdg-meals-picker-row img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+}
+
+.tdg-meals-picker-row span {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding-right: 10px;
+}
+
+.tdg-meals-picker-row em {
+  font-style: normal;
+  color: var(--planner-muted);
+  font-size: 0.86rem;
+}
+
+@media (min-width: 720px) {
+  .tdg-meals-courses,
+  .tdg-meals-ideas-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .tdg-meals-hero {
+    min-height: 256px;
+  }
+  .tdg-meals-hero-copy {
+    min-height: 256px;
+    padding: 32px 28px 28px;
+  }
+  .tdg-meals-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tdg-meals-courses {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .tdg-meals-ideas-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tdg-meals-course-visual img,
+  .tdg-meals-idea-visual img {
+    height: 148px;
+  }
+}
+
+@media (min-width: 744px) and (max-width: 1099px) {
+  .tdg-meals-tabs button {
+    padding: 0 12px;
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 719px) {
+  .tdg-meals-hero {
+    min-height: 220px;
+    border-radius: 16px;
+  }
+  .tdg-meals-hero-copy {
+    min-height: 220px;
+    padding: 20px 16px 18px;
+  }
+  .tdg-meals-hero-copy h2 {
+    max-width: 18ch;
+  }
+  .tdg-meals-hero-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .tdg-meals-summary svg {
+    display: none;
+  }
+  .tdg-meals-course {
+    display: grid;
+    grid-template-columns: 128px minmax(0, 1fr);
+  }
+  .tdg-meals-course-visual img {
+    height: 100%;
+    min-height: 132px;
+  }
+  .tdg-meals-course-body {
+    padding: 12px 14px 12px 0;
+  }
+  .tdg-meals-copilot-cta .tdg-planner-btn.primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1100px) {
+  .tdg-planner-frame--copilot .tdg-meals {
+    max-width: none;
   }
 }
 

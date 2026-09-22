@@ -92,6 +92,18 @@ describe("copilot contextual prompts", () => {
     expect(copilotModuleFromPath("/account/christmas/plan")).toBe("plan");
   });
 
+  it("builds meals suggestions and the Christmas Day four-course next win", () => {
+    const suggestions = buildCopilotSuggestions("meals", intel());
+    expect(suggestions.map((s) => s.label)).toEqual([
+      "Create a dinner plan for 8.",
+      "What should I prep tomorrow?",
+      "Give me a rescue plan.",
+    ]);
+    const win = buildCopilotNextWin("meals", intel());
+    expect(win.body).toBe("Build a balanced four-course menu for Christmas Day.");
+    expect(win.cta).toBe("Plan dinner →");
+  });
+
   it("builds gifts suggestions from real people and budget", () => {
     const suggestions = buildCopilotSuggestions("gifts", intel());
     expect(suggestions[0]?.label).toContain("Andreas");

@@ -1,16 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { planGroceryRegeneration, planManualGroceryAdd } from "@/features/occasions/grocerySync";
 import { CHRISTMAS_2026 } from "@/features/occasions/types";
 import { trackPlannerEvent } from "../analytics";
-import { detectFoodCompleteness, ingredientsFromRecipe, invalidatePlannerSnapshot } from "../intelligence";
+import { ingredientsFromRecipe } from "../intelligence";
 import { hasFeature } from "../entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { PlannerPaywall } from "../Paywall";
 import { GROCERY_AISLES, type GroceryAisle } from "../types";
 import { PlannerEmptyState, PlannerPageHeader, PlannerLoading } from "../plannerUi";
-import { bumpPlannerWorkspace } from "../workspaceSync";
+import { reloadGroceryDerived, RECIPE_SELECT } from "./foodOps";
 import { applyGroceryOps } from "./persistGrocery";
 import {
   RECIPE_DISCOVERY,
@@ -21,17 +21,12 @@ import {
   recipeCourse,
   recipeDifficulty,
   scaleIngredientList,
-  suggestMenu,
   uniqueFacetValues,
   type RecipeCatalogRow,
   type RecipeFilters,
 } from "./recipeCatalog";
-const FOOD_TABS = [
-  ["christmas_eve", "Christmas Eve"],
-  ["christmas_day", "Christmas Day"],
-  ["breakfast", "Christmas Breakfast"],
-  ["other", "Custom meal"],
-] as const;
+
+export { ChristmasPlannerFoodPage } from "./MealsPage";
 
 const AISLE_LABEL: Record<GroceryAisle, string> = {
   produce: "Produce",
@@ -43,325 +38,6 @@ const AISLE_LABEL: Record<GroceryAisle, string> = {
   drinks: "Drinks",
   other: "Other",
 };
-
-type DishRow = {
-  id: string;
-  dish_name: string;
-  servings: number;
-  prep_minutes: number | null;
-  cook_minutes: number | null;
-  notes: string;
-  meal_id: string;
-  recipe_id: string | null;
-};
-
-type MealRow = { id: string; section: string; title: string; guest_count?: number | null };
-
-async function reloadGroceryDerived(profileId: string) {
-  const [mealsRes, dishesRes, recipesRes, groceryRes] = await Promise.all([
-    supabase.from("christmas_meals").select("id,section,title").eq("profile_id", profileId),
-    supabase.from("christmas_meal_items").select("id,meal_id,recipe_id,dish_name,servings").eq("profile_id", profileId),
-    supabase.from("christmas_recipes").select("id,title,servings,prep_minutes,cook_minutes,category,tags,ingredients").eq("published", true),
-    supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_type,meal_item_id,ingredient_key,source_notes").eq("profile_id", profileId),
-  ]);
-  const recipes = ((recipesRes.data || []) as Array<RecipeCatalogRow & { id: string }>).map((r) => ({
-    id: r.id,
-    title: r.title,
-    servings: r.servings,
-    prep_minutes: r.prep_minutes,
-    cook_minutes: r.cook_minutes,
-    category: r.category,
-    tags: r.tags || [],
-    ingredients: r.ingredients,
-  }));
-  const dishes = (dishesRes.data || []) as Array<{ id: string; meal_id: string; recipe_id: string | null; dish_name: string; servings: number }>;
-  const derived = dishes.flatMap((dish) => {
-    if (!dish.recipe_id) return [];
-    const recipe = recipes.find((r) => r.id === dish.recipe_id);
-    if (!recipe) return [];
-    return ingredientsFromRecipe(recipe, dish.servings).map((item) => ({
-      key: item.key,
-      name: item.name,
-      aisle: item.aisle,
-      displayQuantity: item.displayQuantity,
-      status: "need" as const,
-      persistedId: null,
-      derived: true,
-      sources: item.sources,
-    }));
-  });
-  const stored = (groceryRes.data || []) as Array<{
-    id: string;
-    name: string;
-    quantity: string;
-    status: "have" | "need" | "bought";
-    source_type: string;
-    meal_item_id: string | null;
-    ingredient_key?: string | null;
-  }>;
-  const plan = planGroceryRegeneration({ derived, stored, occasion: CHRISTMAS_2026 });
-  await applyGroceryOps(profileId, plan.ops);
-  invalidatePlannerSnapshot(profileId);
-}
-
-const RECIPE_SELECT =
-  "id,slug,title,description,teaser,entitlement_key,category,prep_minutes,cook_minutes,servings,image_path,ingredients,steps,tags,cuisine_country,cuisine_region,course,difficulty,dietary,allergens,notes";
-
-export function ChristmasPlannerFoodPage() {
-  const navigate = useNavigate();
-  const { loading, access, profile } = usePlannerBundle();
-  const [tab, setTab] = useState<(typeof FOOD_TABS)[number][0]>("christmas_day");
-  const [dishes, setDishes] = useState<DishRow[]>([]);
-  const [meals, setMeals] = useState<MealRow[]>([]);
-  const [recipes, setRecipes] = useState<RecipeCatalogRow[]>([]);
-  const [people, setPeople] = useState(8);
-  const [diet, setDiet] = useState("all");
-  const [country, setCountry] = useState("all");
-  const [customTitle, setCustomTitle] = useState("");
-  const [wizard, setWizard] = useState<"plan" | "menu">("plan");
-
-  useEffect(() => {
-    if (!profile) return;
-    void Promise.all([
-      supabase.from("christmas_meals").select("id,section,title,guest_count").eq("profile_id", profile.id),
-      supabase.from("christmas_meal_items").select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id,recipe_id").eq("profile_id", profile.id),
-      supabase.from("christmas_recipes").select(RECIPE_SELECT).eq("published", true),
-      supabase.from("christmas_guests").select("adults,kids").eq("profile_id", profile.id),
-    ]).then(([m, d, rec, guests]) => {
-      setMeals((m.data as MealRow[]) || []);
-      setDishes((d.data as DishRow[]) || []);
-      setRecipes((rec.data as RecipeCatalogRow[]) || []);
-      const list = (guests.data as Array<{ adults: number; kids: number }>) || [];
-      const n = list.reduce((s, g) => s + (g.adults || 0) + (g.kids || 0), 0);
-      if (n) setPeople(n);
-    });
-    trackPlannerEvent("planner_module_opened", { module: "food", metadata: { activation: "meals" } });
-  }, [profile?.id]);
-
-  const meal = meals.find((row) => row.section === tab);
-  const sitting = dishes.filter((d) => d.meal_id === meal?.id);
-  const totalPrep = sitting.reduce((s, d) => s + (d.prep_minutes || 0) + (d.cook_minutes || 0), 0);
-  const headcount = meal?.guest_count || people;
-  const groceryNeed = 0;
-
-  if (loading) return <PlannerLoading label="Loading meals…" />;
-  if (!profile) return <PlannerOnboarding />;
-  if (!hasFeature(access, "food_planner")) {
-    return (
-      <div className="tdg-planner-page">
-        <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
-        <PlannerPaywall feature="food_planner" title="Meals are part of Christmas Planner" body="Get my Christmas Planner for $17 to plan the occasion, guests, recipes, portions, menu, and grocery list." />
-      </div>
-    );
-  }
-
-  async function ensureMeal(guestCount = people) {
-    if (meal) {
-      if (guestCount && meal.guest_count !== guestCount) {
-        await supabase.from("christmas_meals").update({ guest_count: guestCount }).eq("id", meal.id);
-        setMeals((p) => p.map((row) => (row.id === meal.id ? { ...row, guest_count: guestCount } : row)));
-      }
-      return meal;
-    }
-    const title =
-      tab === "other" ? customTitle.trim().slice(0, 120) || "Custom meal" : FOOD_TABS.find((t) => t[0] === tab)?.[1] || tab;
-    const { data } = await supabase
-      .from("christmas_meals")
-      .insert({ profile_id: profile!.id, section: tab, title, guest_count: guestCount || null })
-      .select("id,section,title,guest_count")
-      .maybeSingle();
-    if (data) setMeals((p) => [...p, data as MealRow]);
-    return data as MealRow | null;
-  }
-
-  async function addRecipeToSitting(recipe: RecipeCatalogRow) {
-    const host = await ensureMeal(people);
-    if (!host) return;
-    const { data } = await supabase
-      .from("christmas_meal_items")
-      .insert({
-        profile_id: profile!.id,
-        meal_id: host.id,
-        recipe_id: recipe.id,
-        dish_name: recipe.title.slice(0, 120),
-        servings: people,
-        prep_minutes: recipe.prep_minutes,
-        cook_minutes: recipe.cook_minutes,
-      })
-      .select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id,recipe_id")
-      .maybeSingle();
-    if (data) setDishes((p) => [...p, data as DishRow]);
-    await reloadGroceryDerived(profile!.id);
-    bumpPlannerWorkspace();
-    trackPlannerEvent("planner_meal_created", { module: "food" });
-  }
-
-  async function setServings(dish: DishRow, servings: number) {
-    const next = Math.min(50, Math.max(1, servings));
-    await supabase.from("christmas_meal_items").update({ servings: next }).eq("id", dish.id);
-    setDishes((p) => p.map((x) => (x.id === dish.id ? { ...x, servings: next } : x)));
-    await reloadGroceryDerived(profile!.id);
-    bumpPlannerWorkspace();
-  }
-
-  const suggested = suggestMenu(recipes, {
-    guests: people,
-    dietary: diet,
-    country,
-    sitting: tab === "breakfast" ? "breakfast" : tab === "christmas_eve" ? "christmas_eve" : "christmas_day",
-  });
-  const completeness = detectFoodCompleteness({
-    meals: meals.map((m) => ({ id: m.id, section: m.section, title: m.title, meal_on: null })),
-    dishes: dishes.map((d) => ({
-      id: d.id,
-      meal_id: d.meal_id,
-      recipe_id: d.recipe_id,
-      dish_name: d.dish_name,
-      servings: d.servings,
-      prep_minutes: d.prep_minutes,
-      cook_minutes: d.cook_minutes,
-      day_time: "",
-    })),
-    recipes: recipes.map((r) => ({
-      id: r.id,
-      title: r.title,
-      servings: r.servings,
-      prep_minutes: r.prep_minutes,
-      cook_minutes: r.cook_minutes,
-      category: r.category,
-      tags: r.tags || [],
-      ingredients: r.ingredients,
-    })),
-  }).find((row) => row.mealId === meal?.id);
-
-  const byCourse = (course: string) => sitting.filter((d) => {
-    const recipe = recipes.find((r) => r.id === d.recipe_id);
-    return recipe ? recipeCourse(recipe) === course : false;
-  });
-
-  return (
-    <div className="tdg-planner-page tdg-food-product">
-      <PlannerPageHeader title="Meals" lede="Occasion, guests, recipes, portions, menu, then grocery." />
-      <ol className="tdg-meal-steps" aria-label="Meal steps">
-        {[
-          ["Occasion", true],
-          ["Guests", people > 0],
-          ["Recipes", sitting.length > 0],
-          ["Portions", sitting.some((dish) => dish.servings > 0)],
-          ["Menu", sitting.length > 0 && wizard === "menu"],
-          ["Grocery", false],
-        ].map(([label, on]) => (
-          <li key={String(label)} className={on ? "is-on" : undefined}>
-            {label}
-          </li>
-        ))}
-      </ol>
-      <div className="tdg-planner-seg" role="tablist">
-        {FOOD_TABS.map(([id, label]) => (
-          <button key={id} type="button" className={tab === id ? "on" : ""} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
-      </div>
-      {tab === "other" ? (
-        <input className="tdg-planner-input" placeholder="Name this meal" value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />
-      ) : null}
-
-      {sitting.length === 0 || wizard === "plan" ? (
-        <section className="tdg-meal-wizard">
-          <label>
-            Guests
-            <input className="tdg-planner-input" type="number" min={1} max={50} value={people} onChange={(e) => setPeople(Math.min(50, Math.max(1, Number(e.target.value || 1))))} />
-          </label>
-          <label>
-            Food style
-            <select className="tdg-planner-select" value={country} onChange={(e) => setCountry(e.target.value)}>
-              <option value="all">Any tradition</option>
-              {uniqueFacetValues(recipes, "country").map((c) => (
-                <option key={c} value={c}>
-                  {c.replace(/-/g, " ")}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Dietary
-            <select className="tdg-planner-select" value={diet} onChange={(e) => setDiet(e.target.value)}>
-              <option value="all">No restriction</option>
-              <option value="vegetarian">Vegetarian</option>
-              <option value="vegan">Vegan</option>
-              <option value="gluten-free">Gluten-free</option>
-            </select>
-          </label>
-          <button
-            type="button"
-            className="tdg-planner-btn primary tdg-sticky-cta"
-            onClick={async () => {
-              await ensureMeal(people);
-              for (const recipe of suggested) {
-                if (sitting.some((d) => d.recipe_id === recipe.id)) continue;
-                await addRecipeToSitting(recipe);
-              }
-              setWizard("menu");
-            }}
-          >
-            Suggest a menu
-          </button>
-          <Link className="tdg-planner-btn" to="/account/christmas/recipes">
-            Choose recipes myself
-          </Link>
-        </section>
-      ) : null}
-
-      {sitting.length ? (
-        <section className="tdg-meal-summary">
-          <h2>{meal?.title || FOOD_TABS.find((t) => t[0] === tab)?.[1]}</h2>
-          <p className="tdg-planner-muted">{headcount} guests</p>
-          {["appetizer", "main", "side", "dessert"].map((course) => {
-            const rows = byCourse(course);
-            const leftover = course === "appetizer" ? sitting.filter((d) => !recipes.find((r) => r.id === d.recipe_id)) : [];
-            const list = course === "main" ? [...rows, ...leftover.filter((d) => !byCourse("appetizer").includes(d) && !byCourse("side").includes(d) && !byCourse("dessert").includes(d))] : rows;
-            if (!list.length) return null;
-            return (
-              <div key={course} className="tdg-meal-course">
-                <h3>{course === "main" ? "Main" : course[0].toUpperCase() + course.slice(1)}</h3>
-                {list.map((d) => (
-                  <div key={d.id} className="tdg-planner-row">
-                    <div>
-                      <strong>{d.dish_name}</strong>
-                      <div className="tdg-planner-muted">{d.prep_minutes || d.cook_minutes ? `${(d.prep_minutes || 0) + (d.cook_minutes || 0)} min` : ""}</div>
-                    </div>
-                    <label className="tdg-servings-inline">
-                      Servings
-                      <input
-                        className="tdg-planner-input"
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={d.servings}
-                        onChange={(e) => void setServings(d, Number(e.target.value || d.servings))}
-                      />
-                    </label>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-          <p className="tdg-meal-totals">
-            Estimated preparation: {formatMinutes(totalPrep)}
-            {completeness?.missing.length ? ` · Menu still needs ${completeness.missing.join(", ")}` : " · Menu looks complete"}
-          </p>
-          <button type="button" className="tdg-planner-btn primary tdg-sticky-cta" onClick={() => navigate("/account/christmas/grocery")}>
-            Open grocery
-          </button>
-        </section>
-      ) : (
-        <PlannerEmptyState mark="food" title="No dishes yet." body="Suggest a menu or pick recipes. Servings follow your guest count." />
-      )}
-      <p className="tdg-planner-muted">{groceryNeed ? `${groceryNeed} ingredients still needed.` : null}</p>
-    </div>
-  );
-}
 
 export function ChristmasPlannerRecipesPage() {
   const { loading, access, profile } = usePlannerBundle();

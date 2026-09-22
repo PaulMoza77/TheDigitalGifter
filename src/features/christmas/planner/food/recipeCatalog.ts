@@ -192,14 +192,17 @@ export function suggestMenu(
   input: {
     guests: number;
     dietary?: string;
+    allergen?: string;
     country?: string;
     sitting: "christmas_eve" | "christmas_day" | "breakfast" | "custom";
   },
 ): RecipeCatalogRow[] {
   const diet = input.dietary && input.dietary !== "all" ? input.dietary : "";
   const country = input.country && input.country !== "all" ? input.country : "";
+  const allergen = input.allergen && input.allergen !== "all" ? input.allergen : "";
   const pool = recipes.filter((recipe) => {
     if (diet && !recipeDietary(recipe).includes(diet)) return false;
+    if (allergen && recipeAllergens(recipe).includes(allergen)) return false;
     if (country && recipeCountry(recipe) !== country && recipeCountry(recipe) !== "international") return false;
     return true;
   });
@@ -223,5 +226,29 @@ export function formatMinutes(total: number): string {
   if (hours <= 0) return `${minutes}m`;
   if (minutes <= 0) return `${hours}h`;
   return `${hours}h ${minutes}m`;
+}
+
+export function pickIdeasForTable(
+  recipes: RecipeCatalogRow[],
+  input: { dietary?: string; allergen?: string; excludeIds?: Set<string> } = {},
+): RecipeCatalogRow[] {
+  const filtered = filterRecipes(recipes, {
+    dietary: input.dietary && input.dietary !== "all" ? input.dietary : "all",
+    allergen: input.allergen && input.allergen !== "all" ? input.allergen : "all",
+  });
+  const exclude = input.excludeIds || new Set<string>();
+  const unused = filtered.filter((recipe) => !exclude.has(recipe.id));
+  const pool = unused.length ? unused : filtered;
+  const picked: RecipeCatalogRow[] = [];
+  for (const course of ["main", "dessert", "appetizer", "side", "breakfast"]) {
+    const next = pool.find((recipe) => recipeCourse(recipe) === course && !picked.some((row) => row.id === recipe.id));
+    if (next) picked.push(next);
+    if (picked.length === 3) return picked;
+  }
+  for (const recipe of pool) {
+    if (!picked.some((row) => row.id === recipe.id)) picked.push(recipe);
+    if (picked.length === 3) break;
+  }
+  return picked.slice(0, 3);
 }
 
