@@ -3,6 +3,8 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  ChevronsLeft,
+  ChevronsRight,
   Gift,
   Home,
   LayoutList,
@@ -27,6 +29,8 @@ import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi
 import { PlannerGiftMark, PlannerTreeMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
 import "./plannerApp.css";
+
+const SIDE_COLLAPSE_KEY = "tdg-planner-sidebar-collapsed";
 
 const SIDE = [
   { to: "/account/christmas", label: "Home", icon: Home, end: true as const },
@@ -57,6 +61,27 @@ function PlannerAppShell() {
   const { loading, profile, access, reload } = usePlannerBundle();
   const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
+  const [sideCollapsed, setSideCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setSideCollapsed(window.localStorage.getItem(SIDE_COLLAPSE_KEY) === "1");
+    } catch {
+      /* ignore private mode */
+    }
+  }, []);
+
+  function toggleSide() {
+    setSideCollapsed((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SIDE_COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   const daysLeft = useMemo(() => daysUntilChristmas(new Date(), profile?.timezone), [profile?.timezone]);
 
@@ -107,7 +132,7 @@ function PlannerAppShell() {
   return (
     <>
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex nofollow exactTitle />
-      <div className="tdg-planner-frame">
+      <div className={`tdg-planner-frame${sideCollapsed ? " is-side-collapsed" : ""}`}>
         <header className="tdg-planner-header">
           <a className="tdg-planner-logo" href="/account/christmas" aria-label="Christmas Planner">
             <img src="/TheDigitalGifter.png" alt="" width={36} height={36} decoding="async" />
@@ -137,13 +162,27 @@ function PlannerAppShell() {
           </div>
         </header>
         <aside className="tdg-planner-side" aria-label="Planner modules">
+          <div className="tdg-planner-side-head">
+            <a className="tdg-planner-side-home" href="/account/christmas" aria-label="Christmas Planner home">
+              <PlannerGiftMark size={sideCollapsed ? 28 : 40} />
+            </a>
+            <button
+              type="button"
+              className="tdg-planner-side-toggle"
+              aria-expanded={!sideCollapsed}
+              aria-controls="planner-side-nav"
+              aria-label={sideCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={toggleSide}
+            >
+              {sideCollapsed ? <ChevronsRight size={18} strokeWidth={2} aria-hidden /> : <ChevronsLeft size={18} strokeWidth={2} aria-hidden />}
+            </button>
+          </div>
           <div className="tdg-planner-side-brand">
-            <PlannerGiftMark size={44} />
             <strong>Christmas Planner</strong>
             <i className="tdg-planner-side-flourish" aria-hidden="true" />
             <span>Your calm Christmas starts here.</span>
           </div>
-          <nav className="tdg-planner-side-nav">
+          <nav id="planner-side-nav" className="tdg-planner-side-nav">
             {SIDE.map((item) => (
               <PlannerSidebarItem
                 key={item.to}
@@ -155,13 +194,13 @@ function PlannerAppShell() {
             ))}
           </nav>
           <div className="tdg-planner-side-foot">
-            <button type="button" className="tdg-planner-side-copilot" onClick={() => copilot?.openCopilot(undefined, "sidebar")}>
-              <Sparkles size={16} strokeWidth={1.7} aria-hidden />
-              AI Copilot
+            <button type="button" className="tdg-planner-side-copilot" title="AI Copilot" onClick={() => copilot?.openCopilot(undefined, "sidebar")}>
+              <Sparkles size={18} strokeWidth={1.7} aria-hidden />
+              <span className="tdg-planner-side-text">AI Copilot</span>
             </button>
-            <a href="/account">
-              <UserRound size={16} strokeWidth={1.6} aria-hidden />
-              Account
+            <a href="/account" title="Account">
+              <UserRound size={18} strokeWidth={1.6} aria-hidden />
+              <span className="tdg-planner-side-text">Account</span>
             </a>
           </div>
         </aside>
