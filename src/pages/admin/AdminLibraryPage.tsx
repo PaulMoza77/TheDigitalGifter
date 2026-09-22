@@ -70,6 +70,7 @@ export default function AdminLibraryPage() {
         poster: typeof row.poster === "string" ? row.poster : undefined,
         width: typeof row.width === "number" ? row.width : 1080,
         height: typeof row.height === "number" ? row.height : 1920,
+        createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
       }));
       const longRows = (longForm.videos || []).map((row) => ({
         id: String(row.id),
@@ -83,6 +84,7 @@ export default function AdminLibraryPage() {
         poster: typeof row.poster === "string" ? row.poster : undefined,
         width: typeof row.width === "number" ? row.width : 1920,
         height: typeof row.height === "number" ? row.height : 1080,
+        createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
       }));
       setFactoryVideos([...longRows, ...factoryRows]);
     });
@@ -112,7 +114,7 @@ export default function AdminLibraryPage() {
               Library
             </h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-              Finished Reels, Shorts, Photos, and long-form ambience. Preview, save, and schedule.
+              Finished Reels, Shorts, Photos, and long-form ambience. Newest videos stay on top.
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
