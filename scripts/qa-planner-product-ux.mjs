@@ -108,9 +108,9 @@ const pages = {
             <section class="tdg-planner-section">
               <h2>Today</h2>
               <div class="tdg-planner-list">
-                <article class="tdg-planner-task"><strong>Order posted gifts</strong><span>Due today</span></article>
-                <article class="tdg-planner-task"><strong>Confirm guest count</strong><span>Meals</span></article>
-                <article class="tdg-planner-task"><strong>Set a wrapping evening</strong><span>Later this week</span></article>
+                <article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Order posted gifts</div><div class="tdg-planner-task-meta">Due today</div></div></article>
+                <article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Confirm guest count</div><div class="tdg-planner-task-meta">Meals</div></div></article>
+                <article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Set a wrapping evening</div><div class="tdg-planner-task-meta">Later this week</div></div></article>
               </div>
             </section>
           </div>
@@ -155,15 +155,16 @@ const pages = {
         </div>
         <section class="tdg-tasks-stats tdg-tasks-stats--plan">
           <article class="tdg-tasks-stat tdg-tasks-stat--plan">
+            <svg class="tdg-tasks-ring" viewBox="0 0 56 56" width="56" height="56"><circle cx="28" cy="28" r="20" fill="none" stroke="#e6ddd2" stroke-width="5"/><circle cx="28" cy="28" r="20" fill="none" stroke="#2a4d3e" stroke-width="5" stroke-dasharray="80" stroke-dashoffset="60" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#6a5f55">25%</text></svg>
             <div><h2>Your Christmas plan</h2><p>3 of 12 tasks completed</p><div class="tdg-tasks-stat-bar"><span style="width:25%"></span></div></div>
           </article>
         </section>
         <section class="tdg-tasks-today">
           <div class="tdg-tasks-today-head"><h2>All <span class="tdg-tasks-count">5</span></h2><p>Tue, Sep 22</p></div>
-          <section class="tdg-planner-section"><h3>Overdue</h3><article class="tdg-planner-task"><strong>Order posted gifts</strong><span>Yesterday</span></article></section>
-          <section class="tdg-planner-section"><h3>Today</h3><article class="tdg-planner-task"><strong>Confirm guest count</strong><span>Today</span></article></section>
-          <section class="tdg-planner-section"><h3>This week</h3><article class="tdg-planner-task"><strong>Buy wrapping paper</strong><span>Thu</span></article></section>
-          <section class="tdg-planner-section"><h3>Later</h3><article class="tdg-planner-task"><strong>Write cards</strong><span>Dec</span></article></section>
+          <section class="tdg-planner-section"><h3>Overdue</h3><article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Order posted gifts</div><div class="tdg-planner-task-meta">Yesterday</div></div></article></section>
+          <section class="tdg-planner-section"><h3>Today</h3><article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Confirm guest count</div><div class="tdg-planner-task-meta">Today</div></div></article></section>
+          <section class="tdg-planner-section"><h3>This week</h3><article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Buy wrapping paper</div><div class="tdg-planner-task-meta">Thu</div></div></article></section>
+          <section class="tdg-planner-section"><h3>Later</h3><article class="tdg-planner-task"><div></div><div class="tdg-planner-task-body"><div class="tdg-planner-task-title">Write cards</div><div class="tdg-planner-task-meta">Dec</div></div></article></section>
         </section>
       </div>`,
   }),
@@ -218,11 +219,11 @@ const pages = {
           </div>
           <div class="tdg-meals-courses">
             ${[
-              ["Starter", dinner, "Smoked salmon blinis"],
+              ["Starter", resolve("public/assets/christmas/library-stills/prague_balcony_christmas_spread.jpg"), "Smoked salmon blinis"],
               ["Main", dinner, "Roast turkey"],
-              ["Sides", dinner, "Honey carrots"],
+              ["Sides", resolve("public/assets/christmas/library-stills/prague_market_gingerbread_stall.jpg"), "Honey carrots"],
               ["Dessert", bakery, "Mince pies"],
-              ["Drinks", bakery, "Mulled wine"],
+              ["Drinks", resolve("public/assets/christmas/library-stills/alpine_village_cocoa_bridge.jpg"), "Mulled wine"],
             ]
               .map(
                 ([label, img, dish]) => `<article class="tdg-meals-course"><img src="${img}" alt="" /><p class="tdg-meals-course-label">${label}</p><strong>${dish}</strong><p class="tdg-planner-muted">45m</p></article>`,

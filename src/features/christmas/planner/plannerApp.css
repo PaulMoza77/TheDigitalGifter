@@ -759,8 +759,8 @@
 }
 
 .tdg-planner-chip.on {
-  background: var(--planner-pine);
-  color: var(--planner-cream);
+  background: var(--planner-burgundy);
+  color: #fffdf9;
   border-color: transparent;
 }
 
@@ -1747,8 +1747,8 @@
 }
 
 .tdg-planner-seg button.on {
-  background: var(--planner-pine);
-  color: #f7f0e4;
+  background: var(--planner-burgundy);
+  color: #fffdf9;
 }
 
 .tdg-planner-panel,
@@ -2714,9 +2714,12 @@
     font-size: 0.66rem;
   }
   .tdg-planner-logo span {
-    max-width: 34vw;
+    position: absolute;
+    width: 1px;
+    height: 1px;
     overflow: hidden;
-    text-overflow: ellipsis;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   .tdg-planner-hero h1 {
     font-size: clamp(1.45rem, 7vw, 1.85rem);
@@ -3838,8 +3841,8 @@
 }
 
 .tdg-tasks-seg button.on {
-  background: var(--planner-pine);
-  color: #f7f0e4;
+  background: var(--planner-burgundy);
+  color: #fffdf9;
 }
 
 .tdg-tasks .tdg-planner-composer.tdg-planner-panel {
@@ -4643,7 +4646,7 @@
   font-size: 0.78rem;
 }
 
-.tdg-tasks-stats--plan {
+.tdg-tasks-stats.tdg-tasks-stats--plan {
   grid-template-columns: minmax(0, 1fr);
 }
 

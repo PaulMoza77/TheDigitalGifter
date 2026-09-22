@@ -221,9 +221,11 @@ export function recipePhoto(recipe: Pick<RecipeCatalogRow, "image_path" | "cours
   const raw = String(recipe?.image_path || "").trim();
   if (/^https?:\/\//i.test(raw) || raw.startsWith("/")) return raw;
   const course = recipe ? recipeCourse(recipe as RecipeCatalogRow) : "";
-  if (course === "dessert" || course === "drink" || course === "breakfast") {
-    return "/assets/christmas/library-stills/prague_bakery_window.jpg";
-  }
+  if (course === "dessert") return "/assets/christmas/library-stills/prague_bakery_window.jpg";
+  if (course === "drink") return "/assets/christmas/library-stills/alpine_village_cocoa_bridge.jpg";
+  if (course === "breakfast") return "/assets/christmas/library-stills/prague_cafe_street_cookies.jpg";
+  if (course === "appetizer") return "/assets/christmas/library-stills/prague_balcony_christmas_spread.jpg";
+  if (course === "side") return "/assets/christmas/library-stills/prague_market_gingerbread_stall.jpg";
   return "/christmas/planner/dinner-table.webp";
 }
 
