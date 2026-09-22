@@ -2025,7 +2025,8 @@
   object-fit: cover;
   object-position: center 40%;
   mix-blend-mode: screen;
-  opacity: 0.95;
+  opacity: 1;
+  filter: contrast(1.08) saturate(1.12) brightness(1.06);
   pointer-events: none;
   border: 0;
 }
