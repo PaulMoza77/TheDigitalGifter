@@ -1564,7 +1564,7 @@
 
 @media (min-width: 1100px) {
   .tdg-planner-frame--copilot {
-    grid-template-columns: 216px minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-frame--copilot .tdg-planner-header {
     grid-column: 2;
@@ -1596,13 +1596,13 @@
 
 @media (min-width: 1280px) {
   .tdg-planner-frame--copilot {
-    grid-template-columns: 220px minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-frame {
     grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr);
   }
   .tdg-planner-frame--copilot.tdg-planner-frame {
-    grid-template-columns: 220px minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 280px) minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-main {
     padding: 24px 36px 56px;
