@@ -2009,10 +2009,25 @@
   background-size: cover;
   background-position: center 40%;
   background-repeat: no-repeat;
+  overflow: hidden;
 }
 
 .tdg-xmas-copilot-photo img {
   display: none;
+}
+
+/* Full-frame fire loop aligned to the static cozy photo (black = transparent via screen). */
+.tdg-xmas-copilot-fire {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+  pointer-events: none;
+  border: 0;
 }
 
 .tdg-xmas-copilot-veil {
@@ -2021,6 +2036,13 @@
   background:
     linear-gradient(180deg, rgba(8, 16, 12, 0.55) 0%, rgba(8, 16, 12, 0.28) 34%, rgba(8, 16, 12, 0.42) 68%, rgba(8, 16, 12, 0.72) 100%),
     radial-gradient(120% 70% at 50% 100%, rgba(8, 14, 12, 0.45), transparent 55%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tdg-xmas-copilot-fire {
+    display: none;
+  }
 }
 
 .tdg-xmas-copilot-head,

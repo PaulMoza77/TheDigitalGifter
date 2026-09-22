@@ -1,10 +1,13 @@
 import { Gift, Lightbulb, Send, ShoppingBag, Sparkles, UtensilsCrossed, Wallet, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePrefersReducedMotion } from "@/features/christmas/landing/usePrefersReducedMotion";
 import type { CopilotCard, CopilotResponse } from "./ask";
 import type { CopilotNextWin, CopilotSuggestion } from "./context";
 import type { PlannerIntelligence } from "../intelligence/types";
 
 export const COPILOT_PHOTO = "/christmas/planner/copilot-cozy.webp";
+export const COPILOT_FIRE_WEBM = "/christmas/planner/copilot-fire.webm";
+export const COPILOT_FIRE_MP4 = "/christmas/planner/copilot-fire.mp4";
 
 export type CopilotTurn = {
   id: string;
@@ -103,6 +106,7 @@ export function ChristmasCopilotPanel({
 }) {
   const hasConversation = turns.length > 0;
   const latest = turns[turns.length - 1] || null;
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
     <section
@@ -115,6 +119,21 @@ export function ChristmasCopilotPanel({
         aria-hidden="true"
         style={{ backgroundImage: `url(${COPILOT_PHOTO})` }}
       >
+        {!prefersReducedMotion ? (
+          <video
+            className="tdg-xmas-copilot-fire"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            tabIndex={-1}
+          >
+            <source src={COPILOT_FIRE_WEBM} type="video/webm" />
+            <source src={COPILOT_FIRE_MP4} type="video/mp4" />
+          </video>
+        ) : null}
         <div className="tdg-xmas-copilot-veil" />
       </div>
 
