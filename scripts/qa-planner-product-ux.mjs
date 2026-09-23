@@ -299,15 +299,15 @@ const pages = {
         <section class="tdg-shop-group">
           <h2>Groceries</h2>
           <ul class="tdg-shop-list">
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>smoked salmon</strong><small>Smoked salmon with capers and rye</small></span><em>400 g</em></label></li>
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>rye bread</strong><small>Christmas Dinner</small></span><em>8 pieces</em></label></li>
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Brussels sprouts</strong><small>Christmas Dinner</small></span><em>800 g</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>smoked salmon</strong><small>Smoked salmon with capers and rye</small><em>400 g</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>rye bread</strong><small>Christmas Dinner</small><em>8 pieces</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>Brussels sprouts</strong><small>Christmas Dinner</small><em>800 g</em></label></li>
           </ul>
         </section>
         <section class="tdg-shop-group">
           <h2>Gifts</h2>
           <ul class="tdg-shop-list">
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Cashmere scarf</strong><small>Andreas</small></span><em>€48</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>Cashmere scarf</strong><small>Andreas</small><em>€48</em></label></li>
           </ul>
         </section>
       </div>`,

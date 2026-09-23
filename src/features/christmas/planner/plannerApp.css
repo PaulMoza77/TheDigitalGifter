@@ -4617,7 +4617,7 @@
 }
 
 .tdg-shop {
-  max-width: 980px;
+  max-width: 1020px;
   overflow-x: hidden;
 }
 
@@ -4637,7 +4637,6 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-width: 40rem;
 }
 
 .tdg-shop-list > li {
@@ -4651,50 +4650,54 @@
 
 .tdg-shop-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 22rem) max-content;
-  justify-content: start;
-  align-items: center;
-  column-gap: 20px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "check name name"
+    "check source qty";
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: baseline;
   min-height: 58px;
   padding: 10px 0;
   cursor: pointer;
-  max-width: 40rem;
 }
 
 .tdg-shop-row input[type="checkbox"] {
+  grid-area: check;
+  align-self: center;
   width: 22px;
   height: 22px;
   margin: 0;
   accent-color: var(--planner-burgundy);
 }
 
-.tdg-shop-row span {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
 .tdg-shop-row strong {
+  grid-area: name;
   font-size: 1.02rem;
   font-weight: 650;
   line-height: 1.2;
   color: var(--planner-ink);
+  min-width: 0;
+}
+
+.tdg-shop-row small {
+  grid-area: source;
+  color: var(--planner-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+  min-width: 0;
 }
 
 .tdg-shop-row em {
+  grid-area: qty;
   font-style: normal;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--planner-muted);
   text-align: right;
-  justify-self: end;
   white-space: nowrap;
-}
-
-.tdg-shop-row small {
-  color: var(--planner-muted);
-  font-size: 0.78rem;
-  font-weight: 400;
+  justify-self: end;
+  align-self: baseline;
 }
 
 .tdg-shop-extra {
@@ -4944,13 +4947,8 @@
     height: 120px;
   }
   .tdg-shop-row {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
-    max-width: none;
     width: 100%;
     column-gap: 10px;
-  }
-  .tdg-shop-list {
-    max-width: none;
   }
   .tdg-shop-row em {
     justify-self: end;
@@ -4991,7 +4989,7 @@
     max-width: 1080px;
   }
   .tdg-planner-frame--copilot .tdg-planner-main > .tdg-shop {
-    max-width: 980px;
+    max-width: 1020px;
   }
   .tdg-planner-frame--copilot .tdg-gifts,
   .tdg-planner-frame--copilot .tdg-gifts-layout {
