@@ -90,6 +90,7 @@ const AdminLongFormStudioPage = lazy(() => import("@/pages/admin/AdminLongFormSt
 const AdminStudioPage = lazy(() => import("@/pages/admin/AdminStudioPage"));
 const AdminSocialAccountsPage = lazy(() => import("@/pages/admin/AdminSocialAccountsPage"));
 const AdminPublishingPage = lazy(() => import("@/pages/admin/AdminPublishingPage"));
+const AdminPublisherPage = lazy(() => import("@/pages/admin/AdminPublisherPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -1045,6 +1046,7 @@ function AppInner() {
             <Route path="studio" element={<AdminStudioPage />} />
             <Route path="social-accounts" element={<AdminSocialAccountsPage />} />
             <Route path="publishing" element={<AdminPublishingPage />} />
+            <Route path="publisher" element={<AdminPublisherPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 

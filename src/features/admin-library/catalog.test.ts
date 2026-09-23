@@ -336,11 +336,13 @@ describe("admin video library", () => {
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/social-accounts");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/publishing");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/studio");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/publisher");
     expect(page).toContain('/admin/social-accounts');
     expect(page).toContain('/admin/publishing');
     expect(page).toContain("Social Accounts");
     expect(page).toContain("Publishing");
     expect(readSrc("src/App.tsx")).toContain("path=\"social-accounts\"");
     expect(readSrc("src/App.tsx")).toContain("path=\"publishing\"");
+    expect(readSrc("src/App.tsx")).toContain("path=\"publisher\"");
   });
 });
