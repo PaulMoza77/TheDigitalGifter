@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useUserCreditsQuery } from "@/data";
+import { invalidatePlannerSnapshot } from "./intelligence/loadSnapshot";
 
 export function PlannerAccountChrome({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export function PlannerAccountChrome({ compact = false }: { compact?: boolean })
   const initial = (user.email || "A").slice(0, 1).toUpperCase();
 
   async function logout() {
+    invalidatePlannerSnapshot();
     await supabase.auth.signOut();
     window.location.assign("/christmas/planner");
   }

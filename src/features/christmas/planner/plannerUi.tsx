@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useId, useState, type ButtonHTMLAttributes, type 
 import { Link, NavLink } from "react-router-dom";
 import { TASK_CATEGORIES, type PlannerFeatureKey, type PlannerTask, type TaskCategory } from "./types";
 import { deleteTask, patchTask } from "./api";
+import { prefetchPlannerRoute } from "./prefetch";
 import { bumpPlannerWorkspace } from "./workspaceSync";
 import { trackPlannerEvent } from "./analytics";
 import { formatPlannerDate, taskCategoryLabel, taskPriorityLabel } from "./date";
@@ -322,7 +323,15 @@ export function PlannerSidebarItem({
   end?: boolean;
 }) {
   return (
-    <NavLink to={to} end={end} title={label} className={({ isActive }) => (isActive ? "active" : "")}>
+    <NavLink
+      to={to}
+      end={end}
+      title={label}
+      className={({ isActive }) => (isActive ? "active" : "")}
+      onMouseEnter={() => prefetchPlannerRoute(to)}
+      onFocus={() => prefetchPlannerRoute(to)}
+      onTouchStart={() => prefetchPlannerRoute(to)}
+    >
       <Icon size={18} strokeWidth={1.6} aria-hidden />
       <span className="tdg-planner-side-text">{label}</span>
     </NavLink>
@@ -423,6 +432,8 @@ export function PlannerTaskRow({
 }) {
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [title, setTitle] = useState(task.title);
   const [due, setDue] = useState(task.due_on || "");
   const [category, setCategory] = useState<TaskCategory>(task.category);
@@ -440,24 +451,44 @@ export function PlannerTaskRow({
   }, [open]);
 
   async function complete() {
+    if (busy) return;
     const status = task.status === "done" ? "open" : "done";
+    setBusy(true);
+    setSaveError(null);
     if (status === "done") setLeaving(true);
-    await patchTask(task.id, { status, completed_at: status === "done" ? new Date().toISOString() : null } as Partial<PlannerTask>);
+    const ok = await patchTask(task.id, { status, completed_at: status === "done" ? new Date().toISOString() : null } as Partial<PlannerTask>);
+    setBusy(false);
+    if (!ok) {
+      setLeaving(false);
+      setSaveError("Could not update this task. Try again.");
+      return;
+    }
     onChange({ ...task, status });
     bumpPlannerWorkspace();
     if (status === "done") trackPlannerEvent("planner_task_completed", { module: "plan" });
   }
 
   async function skip() {
-    await patchTask(task.id, { status: "skipped" });
+    if (busy) return;
+    setBusy(true);
+    setSaveError(null);
+    const ok = await patchTask(task.id, { status: "skipped" });
+    setBusy(false);
+    if (!ok) {
+      setSaveError("Could not update this task. Try again.");
+      return;
+    }
     onChange({ ...task, status: "skipped" });
     bumpPlannerWorkspace();
     setOpen(false);
   }
 
   async function save() {
+    if (busy) return;
+    setBusy(true);
+    setSaveError(null);
     const moved = Boolean(due && due !== task.due_on);
-    await patchTask(task.id, {
+    const ok = await patchTask(task.id, {
       title: title.trim().slice(0, 160) || task.title,
       due_on: due || null,
       category,
@@ -465,6 +496,11 @@ export function PlannerTaskRow({
       notes: notes.slice(0, 2000),
       status: moved ? "rescheduled" : task.status === "rescheduled" ? "open" : task.status,
     });
+    setBusy(false);
+    if (!ok) {
+      setSaveError("Could not save this task. Try again.");
+      return;
+    }
     if (moved) trackPlannerEvent("planner_task_rescheduled", { module: "plan" });
     onChange({
       ...task,
@@ -486,6 +522,7 @@ export function PlannerTaskRow({
           type="button"
           className={`tdg-planner-check${task.status === "done" ? " is-on" : ""}`}
           onClick={() => void complete()}
+          disabled={busy}
           aria-label={task.status === "done" ? "Mark incomplete" : `Complete ${task.title}`}
           aria-pressed={task.status === "done"}
         >
@@ -535,21 +572,30 @@ export function PlannerTaskRow({
               <textarea className="tdg-planner-area" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional note" />
             </PlannerField>
             <div className="tdg-planner-actions">
-              <button type="button" className="tdg-planner-btn primary" onClick={() => void save()}>
+              {saveError ? <p role="alert">{saveError}</p> : null}
+              <button type="button" className="tdg-planner-btn primary" disabled={busy} onClick={() => void save()}>
                 {due && due !== task.due_on ? "Reschedule" : "Save"}
               </button>
-              <button type="button" className="tdg-planner-btn" onClick={() => void complete()}>
+              <button type="button" className="tdg-planner-btn" disabled={busy} onClick={() => void complete()}>
                 {task.status === "done" ? "Reopen" : "Mark complete"}
               </button>
-              <button type="button" className="tdg-planner-btn" onClick={() => void skip()}>
+              <button type="button" className="tdg-planner-btn" disabled={busy} onClick={() => void skip()}>
                 Skip this
               </button>
               {task.origin === "user" ? (
                 <button
                   type="button"
                   className="tdg-planner-btn danger"
+                  disabled={busy}
                   onClick={async () => {
-                    await deleteTask(task.id);
+                    if (busy) return;
+                    setBusy(true);
+                    const ok = await deleteTask(task.id);
+                    setBusy(false);
+                    if (!ok) {
+                      setSaveError("Could not delete this task. Try again.");
+                      return;
+                    }
                     onChange(null);
                     bumpPlannerWorkspace();
                   }}

@@ -5,6 +5,7 @@ import { planGroceryRegeneration, planManualGroceryAdd } from "@/features/occasi
 import { CHRISTMAS_2026 } from "@/features/occasions/types";
 import { trackPlannerEvent } from "../analytics";
 import { detectFoodCompleteness, ingredientsFromRecipe, invalidatePlannerSnapshot } from "../intelligence";
+import { loadPublishedRecipeList, loadRecipeBodies, mergeRecipeBody, recipeBody } from "./recipeCatalogQuery";
 import { hasFeature } from "../entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "../Onboarding";
 import { PlannerPaywall } from "../Paywall";
@@ -58,13 +59,18 @@ type DishRow = {
 type MealRow = { id: string; section: string; title: string; guest_count?: number | null };
 
 async function reloadGroceryDerived(profileId: string) {
-  const [mealsRes, dishesRes, recipesRes, groceryRes] = await Promise.all([
-    supabase.from("christmas_meals").select("id,section,title").eq("profile_id", profileId),
+  const [dishesRes, groceryRes] = await Promise.all([
     supabase.from("christmas_meal_items").select("id,meal_id,recipe_id,dish_name,servings").eq("profile_id", profileId),
-    supabase.from("christmas_recipes").select("id,title,servings,prep_minutes,cook_minutes,category,tags,ingredients").eq("published", true),
     supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_type,meal_item_id,ingredient_key,source_notes").eq("profile_id", profileId),
   ]);
-  const recipes = ((recipesRes.data || []) as Array<RecipeCatalogRow & { id: string }>).map((r) => ({
+  const dishRows = (dishesRes.data || []) as Array<{ id: string; meal_id: string; recipe_id: string | null; dish_name: string; servings: number }>;
+  const recipeIds = dishRows.map((dish) => dish.recipe_id).filter((id): id is string => Boolean(id));
+  await loadRecipeBodies(recipeIds);
+  const catalog = await loadPublishedRecipeList();
+  const recipes = catalog
+    .filter((recipe) => recipeIds.includes(recipe.id))
+    .map((recipe) => mergeRecipeBody(recipe))
+    .map((r) => ({
     id: r.id,
     title: r.title,
     servings: r.servings,
@@ -74,7 +80,7 @@ async function reloadGroceryDerived(profileId: string) {
     tags: r.tags || [],
     ingredients: r.ingredients,
   }));
-  const dishes = (dishesRes.data || []) as Array<{ id: string; meal_id: string; recipe_id: string | null; dish_name: string; servings: number }>;
+  const dishes = dishRows;
   const derived = dishes.flatMap((dish) => {
     if (!dish.recipe_id) return [];
     const recipe = recipes.find((r) => r.id === dish.recipe_id);
@@ -104,9 +110,6 @@ async function reloadGroceryDerived(profileId: string) {
   invalidatePlannerSnapshot(profileId);
 }
 
-const RECIPE_SELECT =
-  "id,slug,title,description,teaser,entitlement_key,category,prep_minutes,cook_minutes,servings,image_path,ingredients,steps,tags,cuisine_country,cuisine_region,course,difficulty,dietary,allergens,notes";
-
 export function ChristmasPlannerFoodPage() {
   const navigate = useNavigate();
   const { loading, access, profile } = usePlannerBundle();
@@ -119,23 +122,42 @@ export function ChristmasPlannerFoodPage() {
   const [country, setCountry] = useState("all");
   const [customTitle, setCustomTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
+    let cancelled = false;
     void Promise.all([
       supabase.from("christmas_meals").select("id,section,title,guest_count").eq("profile_id", profile.id),
       supabase.from("christmas_meal_items").select("id,dish_name,servings,prep_minutes,cook_minutes,notes,meal_id,recipe_id").eq("profile_id", profile.id),
-      supabase.from("christmas_recipes").select(RECIPE_SELECT).eq("published", true),
+      loadPublishedRecipeList(),
       supabase.from("christmas_guests").select("adults,kids").eq("profile_id", profile.id),
-    ]).then(([m, d, rec, guests]) => {
-      setMeals((m.data as MealRow[]) || []);
-      setDishes((d.data as DishRow[]) || []);
-      setRecipes((rec.data as RecipeCatalogRow[]) || []);
-      const list = (guests.data as Array<{ adults: number; kids: number }>) || [];
-      const n = list.reduce((s, g) => s + (g.adults || 0) + (g.kids || 0), 0);
-      if (n) setPeople(n);
-    });
+    ])
+      .then(async ([m, d, rec, guests]) => {
+        if (cancelled) return;
+        const dishRows = (d.data as DishRow[]) || [];
+        const ids = dishRows.map((row) => row.recipe_id).filter((id): id is string => Boolean(id));
+        if (ids.length) await loadRecipeBodies(ids);
+        if (cancelled) return;
+        setMeals((m.data as MealRow[]) || []);
+        setDishes(dishRows);
+        setRecipes(rec.map(mergeRecipeBody));
+        const list = (guests.data as Array<{ adults: number; kids: number }>) || [];
+        const n = list.reduce((s, g) => s + (g.adults || 0) + (g.kids || 0), 0);
+        if (n) setPeople(n);
+        setCatalogReady(true);
+        setLoadError(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError("Could not load meals. Try again.");
+        setCatalogReady(true);
+      });
     trackPlannerEvent("planner_module_opened", { module: "food", metadata: { activation: "meals" } });
+    return () => {
+      cancelled = true;
+    };
   }, [profile?.id]);
 
   const meal = meals.find((row) => row.section === tab);
@@ -145,6 +167,14 @@ export function ChristmasPlannerFoodPage() {
 
   if (loading) return <PlannerLoading label="Loading meals…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!catalogReady) return <PlannerLoading label="Loading meals…" />;
+  if (loadError && recipes.length === 0 && meals.length === 0) {
+    return (
+      <div className="tdg-planner-page">
+        <p role="alert">{loadError}</p>
+      </div>
+    );
+  }
   if (!hasFeature(access, "food_planner")) {
     return (
       <div className="tdg-planner-page">
@@ -287,7 +317,7 @@ export function ChristmasPlannerFoodPage() {
               <button
                 type="button"
                 className="tdg-planner-btn primary"
-                disabled={busy}
+                disabled={busy || !catalogReady}
                 onClick={async () => {
                   setBusy(true);
                   try {
@@ -401,13 +431,33 @@ export function ChristmasPlannerRecipesPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [servings, setServings] = useState<Record<string, number>>({});
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [shown, setShown] = useState(24);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
-    void supabase.from("christmas_recipes").select(RECIPE_SELECT).eq("published", true).then(({ data }) => {
-      setRecipes((data as RecipeCatalogRow[]) || []);
-    });
+    let cancelled = false;
+    void loadPublishedRecipeList()
+      .then((rows) => {
+        if (cancelled) return;
+        setRecipes(rows);
+        setCatalogReady(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCatalogError("Could not load recipes. Try again.");
+        setCatalogReady(true);
+      });
     trackPlannerEvent("planner_module_opened", { module: "recipes", feature: "recipes", metadata: { activation: "recipes" } });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    setShown(24);
+  }, [filters.query, filters.course, filters.dietary, filters.difficulty, filters.country, filters.tag, filters.maxPrepMinutes]);
 
   useEffect(() => {
     if (!profile) return;
@@ -424,6 +474,14 @@ export function ChristmasPlannerRecipesPage() {
 
   if (loading) return <PlannerLoading label="Loading recipes…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!catalogReady) return <PlannerLoading label="Loading recipes…" />;
+  if (catalogError && recipes.length === 0) {
+    return (
+      <div className="tdg-planner-page">
+        <p role="alert">{catalogError}</p>
+      </div>
+    );
+  }
 
   async function addToMeal(recipe: RecipeCatalogRow, section: "christmas_eve" | "christmas_day") {
     const existing = await supabase.from("christmas_meals").select("id").eq("profile_id", profile!.id).eq("section", section).maybeSingle();
@@ -452,7 +510,24 @@ export function ChristmasPlannerRecipesPage() {
     setMenuFor(null);
   }
 
+  async function openRecipe(id: string) {
+    setOpenId((current) => (current === id ? null : id));
+    if (recipeBody(id)) {
+      setRecipes((prev) => prev.map(mergeRecipeBody));
+      return;
+    }
+    try {
+      await loadRecipeBodies([id]);
+      setRecipes((prev) => prev.map(mergeRecipeBody));
+      setDetailError(null);
+    } catch {
+      setDetailError("Could not open that recipe. Try again.");
+    }
+  }
+
   async function addIngredients(recipe: RecipeCatalogRow) {
+    await loadRecipeBodies([recipe.id]);
+    recipe = mergeRecipeBody(recipe);
     const serve = servings[recipe.id] || recipe.servings;
     const items = ingredientsFromRecipe(
       {
@@ -593,17 +668,18 @@ export function ChristmasPlannerRecipesPage() {
           </select>
         </label>
       </details>
+      {detailError ? <p role="alert">{detailError}</p> : null}
       {visible.length === 0 ? <PlannerEmptyState mark="food" title="No recipes match." body="Clear a filter or try another search." /> : null}
       <div className="tdg-recipe-grid">
-        {visible.map((r) => {
+        {visible.slice(0, shown).map((r) => {
           const locked = r.entitlement_key !== "free" && !r.teaser && !canAll;
           const serve = servings[r.id] || r.servings;
           const open = openId === r.id;
           const scaled = scaleIngredientList(r.ingredients, r.servings, serve);
           return (
             <article key={r.id} className="tdg-recipe-card">
-              <button type="button" className="tdg-recipe-open" onClick={() => setOpenId(open ? null : r.id)}>
-                <img className="tdg-recipe-art" src={recipePhoto(r)} alt="" loading="lazy" />
+              <button type="button" className="tdg-recipe-open" onClick={() => void openRecipe(r.id)}>
+                <img className="tdg-recipe-art" src={recipePhoto(r)} alt="" width={640} height={168} decoding="async" loading="lazy" />
                 <strong>{r.title}</strong>
                 <p className="tdg-planner-muted">
                   {formatMinutes((r.prep_minutes || 0) + (r.cook_minutes || 0))} · {serve} servings
@@ -627,6 +703,7 @@ export function ChristmasPlannerRecipesPage() {
                       onChange={(e) => setServings((p) => ({ ...p, [r.id]: Math.min(50, Math.max(1, Number(e.target.value || r.servings))) }))}
                     />
                   </label>
+                  {!recipeBody(r.id) ? <p className="tdg-planner-muted">Loading recipe…</p> : null}
                   <h3>Ingredients</h3>
                   <ul>
                     {scaled.map((raw, i) => {
@@ -683,6 +760,11 @@ export function ChristmasPlannerRecipesPage() {
           );
         })}
       </div>
+      {shown < visible.length ? (
+        <button type="button" className="tdg-planner-btn" onClick={() => setShown((count) => count + 24)}>
+          Show more recipes ({visible.length - shown} left)
+        </button>
+      ) : null}
     </div>
   );
 }

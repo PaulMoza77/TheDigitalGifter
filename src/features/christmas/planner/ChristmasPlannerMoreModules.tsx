@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { CHRISTMAS_CLUB_ROUTE } from "@/features/christmas/club/config";
@@ -7,6 +7,7 @@ import { hasFeature } from "./entitlements";
 import { PlannerPaywall } from "./Paywall";
 import { trackPlannerEvent } from "./analytics";
 import { loadGifts, loadTasks } from "./api";
+import { peekPlannerQuery, plannerListKey } from "./plannerQueryCache";
 import { deriveCalendarItems, deriveShoppingItems, shoppingForTab, executePlannerAction, invalidatePlannerSnapshot, detectTravelConflicts, buildPlannerSnapshot } from "./intelligence";
 import { PlannerRecommendationSheet } from "./intelligence/components";
 import { HOME_AREAS, type GiftItem, type PlannerTask } from "./types";
@@ -21,21 +22,44 @@ export function ChristmasPlannerShoppingPage() {
   const [grocery, setGrocery] = useState<Array<{ id: string; name: string; quantity: string; status: string; source_notes?: string | null }>>([]);
   const [tab, setTab] = useState<"need" | "ordered" | "arriving" | "arrived" | "returns">("need");
   const [extra, setExtra] = useState({ name: "", store: "", price: "", delivery: "" });
+  const [ready, setReady] = useState(() => Boolean(profile && peekPlannerQuery(plannerListKey("gifts", profile.id))));
+  const [notice, setNotice] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
 
   useEffect(() => {
     if (!profile) return;
+    let cancelled = false;
+    const giftsHit = peekPlannerQuery<GiftItem[]>(plannerListKey("gifts", profile.id));
+    if (giftsHit) {
+      setGifts(giftsHit);
+      setReady(true);
+    }
     void Promise.all([
       loadGifts(profile.id),
       supabase.from("christmas_grocery_items").select("id,name,quantity,status,source_notes").eq("profile_id", profile.id),
-    ]).then(([g, groc]) => {
-      setGifts(g);
-      setGrocery((groc.data as typeof grocery) || []);
-    });
+    ])
+      .then(([g, groc]) => {
+        if (cancelled) return;
+        setGifts(g);
+        setGrocery((groc.data as typeof grocery) || []);
+        setReady(true);
+        if (groc.error) setNotice("Could not load groceries. Gifts are still shown.");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setNotice("Could not load shopping. Try again.");
+        setReady(true);
+      });
     trackPlannerEvent("planner_module_opened", { module: "shopping" });
+    return () => {
+      cancelled = true;
+    };
   }, [profile?.id]);
 
   if (loading) return <PlannerLoading label="Loading shopping…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!ready) return <PlannerLoading label="Loading shopping…" />;
 
   const derivedShopping = deriveShoppingItems(gifts);
   const filtered = shoppingForTab(derivedShopping, tab)
@@ -43,7 +67,9 @@ export function ChristmasPlannerShoppingPage() {
     .filter((g): g is GiftItem => Boolean(g));
 
   async function addPurchase() {
-    if (!profile || !extra.name.trim()) return;
+    if (saveLock.current || !profile || !extra.name.trim()) return;
+    saveLock.current = true;
+    setSaving(true);
     let household = (await supabase.from("christmas_gift_recipients").select("*").eq("profile_id", profile.id).eq("display_name", "Household").maybeSingle()).data;
     if (!household) {
       const created = await supabase
@@ -53,7 +79,12 @@ export function ChristmasPlannerShoppingPage() {
         .maybeSingle();
       household = created.data;
     }
-    if (!household) return;
+    if (!household) {
+      setNotice("Could not add that purchase. Try again.");
+      saveLock.current = false;
+      setSaving(false);
+      return;
+    }
     const { data } = await supabase
       .from("christmas_gift_items")
       .insert({
@@ -71,8 +102,13 @@ export function ChristmasPlannerShoppingPage() {
     if (data) {
       setGifts((p) => [...p, data as GiftItem]);
       setExtra({ name: "", store: "", price: "", delivery: "" });
+      setNotice(null);
       trackPlannerEvent("planner_gift_added", { module: "shopping" });
+    } else {
+      setNotice("Could not add that purchase. Try again.");
     }
+    saveLock.current = false;
+    setSaving(false);
   }
 
   const groceryNeed = grocery.filter((row) => row.status === "need");
@@ -87,6 +123,7 @@ export function ChristmasPlannerShoppingPage() {
   return (
     <div className="tdg-planner-page tdg-shop">
       <PlannerPageHeader title="Shopping" lede="Everything you still need, in one place." />
+      {notice ? <p role="alert">{notice}</p> : null}
       <PlannerSeg
         className="tdg-planner-seg--status"
         label="Shopping lanes"
@@ -109,8 +146,17 @@ export function ChristmasPlannerShoppingPage() {
                     type="checkbox"
                     checked={false}
                     onChange={async () => {
-                      await supabase.from("christmas_grocery_items").update({ status: "bought" }).eq("id", row.id);
+                      const { error } = await supabase
+                        .from("christmas_grocery_items")
+                        .update({ status: "bought" })
+                        .eq("id", row.id)
+                        .eq("profile_id", profile.id);
+                      if (error) {
+                        setNotice("Could not update that item. Try again.");
+                        return;
+                      }
                       setGrocery((p) => p.map((x) => (x.id === row.id ? { ...x, status: "bought" } : x)));
+                      setNotice(null);
                     }}
                   />
                   <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
@@ -137,8 +183,17 @@ export function ChristmasPlannerShoppingPage() {
                     disabled={tab !== "need"}
                     onChange={async () => {
                       if (tab !== "need") return;
-                      await supabase.from("christmas_gift_items").update({ status: "ordered" }).eq("id", g.id);
+                      const { error } = await supabase
+                        .from("christmas_gift_items")
+                        .update({ status: "ordered" })
+                        .eq("id", g.id)
+                        .eq("profile_id", profile.id);
+                      if (error) {
+                        setNotice("Could not update that gift. Try again.");
+                        return;
+                      }
                       setGifts((p) => p.map((x) => (x.id === g.id ? { ...x, status: "ordered" } : x)));
+                      setNotice(null);
                     }}
                   />
                   <strong>{g.selected_gift || g.idea}</strong>
@@ -164,7 +219,7 @@ export function ChristmasPlannerShoppingPage() {
         <input className="tdg-planner-input" placeholder="Store" value={extra.store} onChange={(e) => setExtra({ ...extra, store: e.target.value })} />
         <input className="tdg-planner-input" placeholder="Price" type="number" value={extra.price} onChange={(e) => setExtra({ ...extra, price: e.target.value })} />
         <input className="tdg-planner-input" type="date" value={extra.delivery} onChange={(e) => setExtra({ ...extra, delivery: e.target.value })} />
-        <button type="button" className="tdg-planner-btn primary" onClick={() => void addPurchase()}>
+        <button type="button" className="tdg-planner-btn primary" disabled={saving || !extra.name.trim()} onClick={() => void addPurchase()}>
           Add purchase
         </button>
         </PlannerComposer>

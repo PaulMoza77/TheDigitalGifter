@@ -116,10 +116,14 @@ export function CopilotHost({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
     async function load() {
-      const snapshot = await loadPlannerWorkspace(profile!);
-      if (cancelled) return;
-      const dismissed = loadDismissedInsightIds(profile!.id, profile!.season_year);
-      setIntel(runPlannerIntelligence(snapshot, dismissed));
+      try {
+        const snapshot = await loadPlannerWorkspace(profile!);
+        if (cancelled) return;
+        const dismissed = loadDismissedInsightIds(profile!.id, profile!.season_year);
+        setIntel(runPlannerIntelligence(snapshot, dismissed));
+      } catch {
+        if (!cancelled) setIntel(null);
+      }
     }
     void load();
     const stop = onPlannerWorkspaceBump(() => {
@@ -129,7 +133,7 @@ export function CopilotHost({ children }: { children: ReactNode }) {
       cancelled = true;
       stop();
     };
-  }, [profile, location.pathname]);
+  }, [profile]);
 
   const ask = useCallback(
     (prompt?: string) => {

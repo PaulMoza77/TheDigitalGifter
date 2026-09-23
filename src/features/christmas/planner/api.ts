@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { PLANNER_PRODUCT_KEY, plannerCheckoutReturnPath } from "./commerce";
 import { startChristmasCheckout } from "../photoApi";
 import { attributionParamsForInternal, captureFunnelAttribution } from "@/features/pet/funnelAttribution";
+import { invalidatePlannerQueries, plannerListKey, plannerQuery } from "./plannerQueryCache";
 import type {
   BudgetEntry,
   GiftItem,
@@ -238,46 +239,62 @@ export async function upsertProfile(
 }
 
 export async function loadTasks(profileId: string): Promise<PlannerTask[]> {
-  const { data } = await supabase
-    .from("christmas_planner_tasks")
-    .select("*")
-    .eq("profile_id", profileId)
-    .order("due_on", { ascending: true, nullsFirst: false });
-  return (data as PlannerTask[]) || [];
+  return plannerQuery(plannerListKey("tasks", profileId), async () => {
+    const { data, error } = await supabase
+      .from("christmas_planner_tasks")
+      .select("*")
+      .eq("profile_id", profileId)
+      .order("due_on", { ascending: true, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    return (data as PlannerTask[]) || [];
+  });
 }
 
 export async function insertTasks(
   rows: Array<Omit<PlannerTask, "id"> & { id?: string }>,
 ): Promise<PlannerTask[]> {
   if (!rows.length) return [];
-  const { data } = await supabase.from("christmas_planner_tasks").insert(rows).select("*");
+  const { data, error } = await supabase.from("christmas_planner_tasks").insert(rows).select("*");
+  if (error) return [];
+  for (const row of rows) invalidatePlannerQueries(row.profile_id);
   return (data as PlannerTask[]) || [];
 }
 
-export async function patchTask(id: string, patch: Partial<PlannerTask>): Promise<void> {
-  await supabase.from("christmas_planner_tasks").update(patch).eq("id", id);
+export async function patchTask(id: string, patch: Partial<PlannerTask>): Promise<boolean> {
+  const { error } = await supabase.from("christmas_planner_tasks").update(patch).eq("id", id);
+  if (error) return false;
+  invalidatePlannerQueries();
+  return true;
 }
 
-export async function deleteTask(id: string): Promise<void> {
-  await supabase.from("christmas_planner_tasks").delete().eq("id", id);
+export async function deleteTask(id: string): Promise<boolean> {
+  const { error } = await supabase.from("christmas_planner_tasks").delete().eq("id", id);
+  if (error) return false;
+  invalidatePlannerQueries();
+  return true;
 }
 
 export async function insertTask(
   row: Omit<PlannerTask, "id"> & { id?: string },
 ): Promise<PlannerTask | null> {
-  const { data } = await supabase.from("christmas_planner_tasks").insert(row).select("*").maybeSingle();
-  return (data as PlannerTask) || null;
+  const { data, error } = await supabase.from("christmas_planner_tasks").insert(row).select("*").maybeSingle();
+  if (error || !data) return null;
+  invalidatePlannerQueries(row.profile_id);
+  return data as PlannerTask;
 }
 
 export async function loadRecipients(profileId: string): Promise<GiftRecipient[]> {
-  const userId = await requirePlannerUserId();
-  if (!userId) return [];
-  const { data } = await supabase
-    .from("christmas_gift_recipients")
-    .select("*")
-    .eq("profile_id", profileId)
-    .order("sort_order");
-  return ((data as GiftRecipient[]) || []).filter((row) => row.profile_id === profileId);
+  return plannerQuery(plannerListKey("recipients", profileId), async () => {
+    const userId = await requirePlannerUserId();
+    if (!userId) return [];
+    const { data, error } = await supabase
+      .from("christmas_gift_recipients")
+      .select("*")
+      .eq("profile_id", profileId)
+      .order("sort_order");
+    if (error) throw new Error(error.message);
+    return ((data as GiftRecipient[]) || []).filter((row) => row.profile_id === profileId);
+  });
 }
 
 export async function loadEvents(profileId: string): Promise<Array<{ id: string; title: string; starts_on: string; event_kind: string }>> {
@@ -289,21 +306,21 @@ export async function loadEvents(profileId: string): Promise<Array<{ id: string;
 }
 
 export async function loadGifts(profileId: string): Promise<GiftItem[]> {
-  const userId = await requirePlannerUserId();
-  if (!userId) return [];
-  const { data } = await supabase
-    .from("christmas_gift_items")
-    .select("*")
-    .eq("profile_id", profileId);
-  return ((data as GiftItem[]) || []).filter((row) => row.profile_id === profileId);
+  return plannerQuery(plannerListKey("gifts", profileId), async () => {
+    const userId = await requirePlannerUserId();
+    if (!userId) return [];
+    const { data, error } = await supabase.from("christmas_gift_items").select("*").eq("profile_id", profileId);
+    if (error) throw new Error(error.message);
+    return ((data as GiftItem[]) || []).filter((row) => row.profile_id === profileId);
+  });
 }
 
 export async function loadBudget(profileId: string): Promise<BudgetEntry[]> {
-  const { data } = await supabase
-    .from("christmas_budget_entries")
-    .select("*")
-    .eq("profile_id", profileId);
-  return (data as BudgetEntry[]) || [];
+  return plannerQuery(plannerListKey("budget", profileId), async () => {
+    const { data, error } = await supabase.from("christmas_budget_entries").select("*").eq("profile_id", profileId);
+    if (error) throw new Error(error.message);
+    return (data as BudgetEntry[]) || [];
+  });
 }
 
 export async function upsertCategoryBudget(input: {

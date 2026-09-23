@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "../analytics";
 import { loadGifts, loadRecipients } from "../api";
+import { peekPlannerQuery, plannerListKey } from "../plannerQueryCache";
 import { computeRecipientBudgets, formatPlannerMoney } from "../intelligence";
 import { giftStatusLabel, prettyLabel } from "../date";
 import { giftPeopleLimit, giftPeopleLimitCopy, isHouseholdGiftList } from "../giftPeople";
@@ -68,25 +69,47 @@ export function ChristmasPlannerGiftsPage() {
   const [filter, setFilter] = useState<PersonFilter>("all");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [ready, setReady] = useState(() => Boolean(profile && peekPlannerQuery(plannerListKey("recipients", profile.id))));
+  const [saving, setSaving] = useState(false);
   const ideaRef = useRef<HTMLInputElement>(null);
+  const saveLock = useRef(false);
 
   useEffect(() => {
     if (!profile) return;
-    void Promise.all([loadRecipients(profile.id), loadGifts(profile.id)]).then(([r, g]) => {
-      setRecipients(r);
-      setGifts(g);
-      const giftId = params.get("gift");
-      const fromGift = giftId ? g.find((item) => item.id === giftId) : null;
-      if (fromGift) {
-        setEditing(fromGift);
-        if (!params.get("person")) {
-          const next = new URLSearchParams(params);
-          next.set("person", fromGift.recipient_id);
-          setParams(next, { replace: true });
+    let cancelled = false;
+    const peopleHit = peekPlannerQuery<GiftRecipient[]>(plannerListKey("recipients", profile.id));
+    const giftsHit = peekPlannerQuery<GiftItem[]>(plannerListKey("gifts", profile.id));
+    if (peopleHit && giftsHit) {
+      setRecipients(peopleHit);
+      setGifts(giftsHit);
+      setReady(true);
+    }
+    void Promise.all([loadRecipients(profile.id), loadGifts(profile.id)])
+      .then(([r, g]) => {
+        if (cancelled) return;
+        setRecipients(r);
+        setGifts(g);
+        setReady(true);
+        const giftId = params.get("gift");
+        const fromGift = giftId ? g.find((item) => item.id === giftId) : null;
+        if (fromGift) {
+          setEditing(fromGift);
+          if (!params.get("person")) {
+            const next = new URLSearchParams(params);
+            next.set("person", fromGift.recipient_id);
+            setParams(next, { replace: true });
+          }
         }
-      }
-    });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPersonError("Could not load gifts. Try again.");
+        setReady(true);
+      });
     trackPlannerEvent("planner_module_opened", { module: "gifts" });
+    return () => {
+      cancelled = true;
+    };
   }, [profile?.id]);
 
   const people = useMemo(() => recipients.filter((person) => !isHouseholdGiftList(person)), [recipients]);
@@ -169,14 +192,20 @@ export function ChristmasPlannerGiftsPage() {
 
   async function addPerson(event: FormEvent) {
     event.preventDefault();
-    if (!profile || !name.trim()) return;
+    if (saveLock.current || !profile || !name.trim()) return;
+    saveLock.current = true;
+    setSaving(true);
     if (isHouseholdGiftList({ display_name: name })) {
       setPersonError("Household is reserved for general gift shopping. Choose another name, or add that item in Gift shopping.");
+      saveLock.current = false;
+      setSaving(false);
       return;
     }
     if (!limit.canAdd) {
       setPersonError(giftPeopleLimitCopy(limit));
       trackPlannerEvent("planner_paywall_viewed", { feature: "gift_planner" });
+      saveLock.current = false;
+      setSaving(false);
       return;
     }
     const { data, error } = await supabase
@@ -191,6 +220,8 @@ export function ChristmasPlannerGiftsPage() {
       .maybeSingle();
     if (error || !data) {
       setPersonError(String(error?.message || "").includes("free_recipient_limit") ? giftPeopleLimitCopy(limit) : "Could not add this person.");
+      saveLock.current = false;
+      setSaving(false);
       return;
     }
     const row = data as GiftRecipient;
@@ -203,13 +234,17 @@ export function ChristmasPlannerGiftsPage() {
     bumpPlannerWorkspace();
     trackPlannerEvent("planner_recipient_added", { countBucket: String(limit.giftPeople + 1) });
     openPerson(row.id);
+    saveLock.current = false;
+    setSaving(false);
   }
 
   async function addGift(event?: FormEvent) {
     event?.preventDefault();
-    if (!profile || !active || !idea.trim()) return;
+    if (saveLock.current || !profile || !active || !idea.trim()) return;
+    saveLock.current = true;
+    setSaving(true);
     const planned = giftPrice ? Math.max(0, Number(giftPrice) * 100) : null;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("christmas_gift_items")
       .insert({
         profile_id: profile.id,
@@ -233,11 +268,20 @@ export function ChristmasPlannerGiftsPage() {
       setGiftOpen(false);
       bumpPlannerWorkspace();
       trackPlannerEvent("planner_gift_added", { countBucket: "1" });
+    } else {
+      setPersonError("Could not add that gift. Try again.");
     }
+    saveLock.current = false;
+    setSaving(false);
+    if (error) return;
   }
 
   async function setGiftStatus(gift: GiftItem, status: GiftItemStatus) {
-    await supabase.from("christmas_gift_items").update({ status }).eq("id", gift.id);
+    const { error } = await supabase.from("christmas_gift_items").update({ status }).eq("id", gift.id).eq("profile_id", gift.profile_id);
+    if (error) {
+      setPersonError("Could not update that gift. Try again.");
+      return;
+    }
     setGifts((p) => p.map((x) => (x.id === gift.id ? { ...x, status } : x)));
     bumpPlannerWorkspace();
     trackPlannerEvent("planner_gift_status_changed", { module: "gifts" });
@@ -245,6 +289,7 @@ export function ChristmasPlannerGiftsPage() {
 
   if (loading) return <PlannerLoading label="Loading gifts…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!ready) return <PlannerLoading label="Loading gifts…" />;
 
   const currency = profile.currency;
   const personGifts = active ? gifts.filter((g) => g.recipient_id === active.id) : [];
@@ -494,7 +539,7 @@ export function ChristmasPlannerGiftsPage() {
               <input className="tdg-planner-input" type="number" min="0" value={budget} onChange={(e) => setBudget(e.target.value)} />
             </label>
             {personError ? <p role="alert">{personError}</p> : null}
-            <button type="submit" className="tdg-planner-btn primary">
+            <button type="submit" className="tdg-planner-btn primary" disabled={saving || !name.trim()}>
               Add person
             </button>
           </form>
@@ -538,7 +583,7 @@ export function ChristmasPlannerGiftsPage() {
               <span className="tdg-planner-muted">Optional</span>
               <input className="tdg-planner-input" value={giftNote} onChange={(e) => setGiftNote(e.target.value.slice(0, 120))} />
             </label>
-            <button type="submit" className="tdg-planner-btn primary">
+            <button type="submit" className="tdg-planner-btn primary" disabled={saving || !idea.trim()}>
               Save gift
             </button>
           </form>
