@@ -4637,6 +4637,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  max-width: 40rem;
 }
 
 .tdg-shop-list > li {
@@ -4947,6 +4948,9 @@
     max-width: none;
     width: 100%;
     column-gap: 10px;
+  }
+  .tdg-shop-list {
+    max-width: none;
   }
   .tdg-shop-row em {
     justify-self: end;
