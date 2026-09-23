@@ -1,6 +1,13 @@
 export type AdapterResult =
   | { ok: true; remotePostId: string; remoteUrl?: string | null; provider: "meta" | "tiktok" | "youtube" }
-  | { ok: false; code: string; message: string; retryable: boolean; waitingForApproval?: boolean };
+  | {
+      ok: false;
+      code: string;
+      message: string;
+      retryable: boolean;
+      waitingForApproval?: boolean;
+      containerId?: string | null;
+    };
 
 type Account = {
   provider: "meta" | "tiktok" | "youtube";
@@ -15,35 +22,52 @@ function asString(value: unknown): string {
 }
 
 function waiting(message: string): AdapterResult {
+  const safe = String(message || "")
+    .replace(/access_token=[^&\s]+/gi, "access_token=[redacted]")
+    .replace(/EAA[A-Za-z0-9]{10,}/g, "[redacted]")
+    .slice(0, 240);
   return {
     ok: false,
     code: "waiting_for_provider_approval",
-    message: `IMPLEMENTED — WAITING FOR PROVIDER APPROVAL. ${message}`,
+    message: `IMPLEMENTED — WAITING FOR PROVIDER APPROVAL. ${safe}`,
     retryable: true,
     waitingForApproval: true,
   };
 }
 
-function fail(code: string, message: string, retryable = true): AdapterResult {
-  return { ok: false, code, message, retryable };
+function fail(code: string, message: string, retryable = true, containerId?: string | null): AdapterResult {
+  const messageSafe = String(message || "provider_error")
+    .replace(/access_token=[^&\s]+/gi, "access_token=[redacted]")
+    .replace(/EAA[A-Za-z0-9]{10,}/g, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 280);
+  return { ok: false, code, message: messageSafe || "provider_error", retryable, containerId: containerId || null };
+}
+
+async function instagramPermalink(mediaId: string, token: string): Promise<string | null> {
+  const status = await graphGet(mediaId, token, { fields: "permalink" });
+  const permalink = asString(status.json.permalink);
+  return permalink || null;
 }
 
 async function graphGet(path: string, token: string, params: Record<string, string> = {}) {
   const url = new URL(`https://graph.facebook.com/v21.0/${path.replace(/^\//, "")}`);
-  url.searchParams.set("access_token", token);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const json = (await res.json()) as Record<string, unknown>;
   return { ok: res.ok, status: res.status, json };
 }
 
 async function graphPost(path: string, token: string, body: Record<string, string>) {
   const url = new URL(`https://graph.facebook.com/v21.0/${path.replace(/^\//, "")}`);
-  const params = new URLSearchParams({ access_token: token, ...body });
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(body),
   });
   const json = (await res.json()) as Record<string, unknown>;
   return { ok: res.ok, status: res.status, json };
@@ -53,53 +77,133 @@ async function sleep(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
 }
 
+function metaToken(account: Account): string {
+  return asString(account.metadata.page_access_token) || account.accessToken;
+}
+
 export async function publishInstagram(input: {
   videoUrl: string;
   caption: string;
   account: Account;
+  mediaKind?: "photo" | "video" | "reel";
+  containerId?: string | null;
 }): Promise<AdapterResult> {
   const igUserId = asString(input.account.metadata.instagram_user_id) || asString(input.account.metadata.ig_user_id);
+  const token = metaToken(input.account);
   if (!igUserId) {
     return fail(
       "missing_instagram_user",
       "Instagram professional account id is missing. Reconnect Meta and select a Page with an Instagram account.",
     );
   }
-  const create = await graphPost(`${igUserId}/media`, input.account.accessToken, {
-    media_type: "REELS",
-    video_url: input.videoUrl,
-    caption: input.caption,
-    share_to_feed: "true",
-  });
-  const creationId = asString(create.json.id);
-  if (!create.ok || !creationId) {
-    const err = asString((create.json.error as { message?: string } | undefined)?.message) || JSON.stringify(create.json);
-    if (/permission|not been authorized|insufficient/i.test(err)) {
-      return waiting(`Instagram Graph publish: ${err}`);
+  const kind = input.mediaKind || "reel";
+  let creationId = asString(input.containerId);
+  if (!creationId) {
+    const body: Record<string, string> =
+      kind === "photo"
+        ? { image_url: input.videoUrl, caption: input.caption }
+        : kind === "video"
+          ? {
+              media_type: "VIDEO",
+              video_url: input.videoUrl,
+              caption: input.caption,
+              share_to_feed: "true",
+            }
+          : {
+              media_type: "REELS",
+              video_url: input.videoUrl,
+              caption: input.caption,
+              share_to_feed: "true",
+            };
+    const create = await graphPost(`${igUserId}/media`, token, body);
+    creationId = asString(create.json.id);
+    if (!create.ok || !creationId) {
+      const err = asString((create.json.error as { message?: string } | undefined)?.message) || "instagram_create_failed";
+      if (/permission|not been authorized|insufficient/i.test(err)) {
+        return waiting(`Instagram Graph publish: ${err}`);
+      }
+      return fail("instagram_create_failed", err);
     }
-    return fail("instagram_create_failed", err);
   }
 
-  for (let i = 0; i < 12; i++) {
-    const status = await graphGet(creationId, input.account.accessToken, { fields: "status_code" });
-    const code = asString(status.json.status_code);
-    if (code === "FINISHED") break;
-    if (code === "ERROR") return fail("instagram_processing_failed", JSON.stringify(status.json), false);
-    await sleep(5000);
+  if (kind !== "photo") {
+    for (let i = 0; i < 12; i++) {
+      const status = await graphGet(creationId, token, { fields: "status_code" });
+      const code = asString(status.json.status_code);
+      if (code === "FINISHED") break;
+      if (code === "ERROR") return fail("instagram_processing_failed", "Instagram could not process the media.", false, creationId);
+      if (i === 11) return fail("instagram_processing_timeout", "Instagram is still processing the media.", true, creationId);
+      await sleep(5000);
+    }
   }
 
-  const publish = await graphPost(`${igUserId}/media_publish`, input.account.accessToken, {
+  const publish = await graphPost(`${igUserId}/media_publish`, token, {
     creation_id: creationId,
   });
   const postId = asString(publish.json.id);
   if (!publish.ok || !postId) {
-    const err = asString((publish.json.error as { message?: string } | undefined)?.message) || JSON.stringify(publish.json);
-    return fail("instagram_publish_failed", err);
+    const err = asString((publish.json.error as { message?: string } | undefined)?.message) || "instagram_publish_failed";
+    return fail("instagram_publish_failed", err, true, creationId);
+  }
+  const permalink = await instagramPermalink(postId, token);
+  return {
+    ok: true,
+    remotePostId: postId,
+    remoteUrl: permalink || (kind === "reel" ? `https://www.instagram.com/reel/${postId}/` : null),
+    provider: "meta",
+  };
+}
+
+export async function publishFacebookPhoto(input: {
+  imageUrl: string;
+  caption: string;
+  account: Account;
+}): Promise<AdapterResult> {
+  const pageId = asString(input.account.metadata.facebook_page_id) || asString(input.account.metadata.page_id);
+  const pageToken = metaToken(input.account);
+  if (!pageId) return fail("missing_facebook_page", "Facebook Page id is missing. Reconnect Meta and choose a Page.");
+  const posted = await graphPost(`${pageId}/photos`, pageToken, {
+    url: input.imageUrl,
+    caption: input.caption,
+    published: "true",
+  });
+  const postId = asString(posted.json.post_id) || asString(posted.json.id);
+  if (!posted.ok || !postId) {
+    const err = asString((posted.json.error as { message?: string } | undefined)?.message) || "facebook_photo_failed";
+    if (/permission|not been authorized|insufficient/i.test(err)) return waiting(`Facebook photo: ${err}`);
+    return fail("facebook_photo_failed", err);
   }
   return {
     ok: true,
     remotePostId: postId,
-    remoteUrl: `https://www.instagram.com/reel/${postId}/`,
+    remoteUrl: `https://www.facebook.com/${postId}`,
+    provider: "meta",
+  };
+}
+
+export async function publishFacebookVideo(input: {
+  videoUrl: string;
+  caption: string;
+  account: Account;
+}): Promise<AdapterResult> {
+  const pageId = asString(input.account.metadata.facebook_page_id) || asString(input.account.metadata.page_id);
+  const pageToken = metaToken(input.account);
+  if (!pageId) return fail("missing_facebook_page", "Facebook Page id is missing. Reconnect Meta and choose a Page.");
+  const posted = await graphPost(`${pageId}/videos`, pageToken, {
+    file_url: input.videoUrl,
+    description: input.caption,
+    published: "true",
+  });
+  const videoId = asString(posted.json.id);
+  if (!posted.ok || !videoId) {
+    const err = asString((posted.json.error as { message?: string } | undefined)?.message) || "facebook_video_failed";
+    if (/permission|not been authorized|insufficient/i.test(err)) return waiting(`Facebook video: ${err}`);
+    return fail("facebook_video_failed", err);
+  }
+  return {
+    ok: true,
+    remotePostId: videoId,
+    remoteUrl: `https://www.facebook.com/${pageId}/videos/${videoId}`,
     provider: "meta",
   };
 }
@@ -110,7 +214,7 @@ export async function publishFacebook(input: {
   account: Account;
 }): Promise<AdapterResult> {
   const pageId = asString(input.account.metadata.facebook_page_id) || asString(input.account.metadata.page_id);
-  const pageToken = asString(input.account.metadata.page_access_token) || input.account.accessToken;
+  const pageToken = metaToken(input.account);
   if (!pageId) {
     return fail("missing_facebook_page", "Facebook Page id is missing. Reconnect Meta and choose a Page.");
   }
@@ -279,16 +383,38 @@ export async function publishYouTube(input: {
 }
 
 export async function dispatchPublish(input: {
-  platform: "instagram_reels" | "facebook_reels" | "tiktok" | "youtube_shorts";
+  platform:
+    | "instagram_reels"
+    | "instagram_photo"
+    | "instagram_video"
+    | "facebook_reels"
+    | "facebook_photo"
+    | "facebook_video"
+    | "tiktok"
+    | "youtube_shorts";
   videoUrl: string;
   caption: string;
   hashtags: string;
   title?: string | null;
+  containerId?: string | null;
   account: Account;
 }): Promise<AdapterResult> {
   const caption = [input.caption, input.hashtags].filter(Boolean).join("\n\n").trim();
-  if (input.platform === "instagram_reels") {
-    return publishInstagram({ videoUrl: input.videoUrl, caption, account: input.account });
+  if (input.platform === "instagram_reels" || input.platform === "instagram_photo" || input.platform === "instagram_video") {
+    const mediaKind = input.platform === "instagram_photo" ? "photo" : input.platform === "instagram_video" ? "video" : "reel";
+    return publishInstagram({
+      videoUrl: input.videoUrl,
+      caption,
+      account: input.account,
+      mediaKind,
+      containerId: input.containerId,
+    });
+  }
+  if (input.platform === "facebook_photo") {
+    return publishFacebookPhoto({ imageUrl: input.videoUrl, caption, account: input.account });
+  }
+  if (input.platform === "facebook_video") {
+    return publishFacebookVideo({ videoUrl: input.videoUrl, caption, account: input.account });
   }
   if (input.platform === "facebook_reels") {
     return publishFacebook({ videoUrl: input.videoUrl, caption, account: input.account });

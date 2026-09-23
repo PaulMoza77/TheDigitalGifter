@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { publisherApi } from "@/features/publisher/api";
@@ -159,7 +160,7 @@ export default function AdminPublisherPage() {
         <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Admin Panel</p>
         <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Publisher</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
-          Library assets, rolling seven-day schedules, approval, and dry-run publishing. Live social APIs are not connected.
+          Library assets, rolling seven-day schedules, approval, and dry-run publishing. Meta accounts are connected separately and are not posted from this dry-run.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -196,7 +197,13 @@ export default function AdminPublisherPage() {
             ))}
             <div className="sm:col-span-2 lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
               <p className="text-sm font-medium">Connections</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <Link
+                  to="/admin/social-accounts"
+                  className="rounded-full bg-indigo-500 px-3 py-1 text-white"
+                >
+                  Connect Facebook &amp; Instagram
+                </Link>
                 {connections.map((item) => (
                   <span key={item.provider} className="rounded-full border border-slate-700 px-3 py-1 text-slate-300">
                     {item.provider}: {item.status.replace("_", " ")}

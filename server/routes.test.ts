@@ -23,6 +23,7 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/long-form-studio").kind).toBe("api");
     expect(classifyPath("/api/publisher").kind).toBe("api");
     expect(classifyPath("/api/publisher-cron").kind).toBe("api");
+    expect(classifyPath("/api/meta-oauth/callback").kind).toBe("api");
     expect(classifyPath("/api/christmas/gift-tree").kind).toBe("api");
     expect(classifyPath("/api/christmas-gift-tree").kind).toBe("api");
     expect(classifyPath("/sitemap.xml").kind).toBe("api");

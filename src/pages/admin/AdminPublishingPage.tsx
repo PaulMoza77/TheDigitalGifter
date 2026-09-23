@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { socialPublisherApi, type SocialPublicationRow } from "@/features/social-publisher/api";
 import { PLATFORM_CONSTRAINTS, type SocialPlatform } from "@/features/social-publisher/platforms";
+import { queueState } from "@/features/social-publisher/meta";
 import { formatZonedDateTime } from "@/features/social-publisher/timezone";
 
 const TABS = ["Calendar", "Upcoming", "Published", "Failed"] as const;
@@ -10,10 +11,22 @@ type Tab = (typeof TABS)[number];
 
 const SHORT: Record<string, string> = {
   instagram_reels: "IG",
+  instagram_photo: "IG photo",
+  instagram_video: "IG video",
   facebook_reels: "FB",
+  facebook_photo: "FB photo",
+  facebook_video: "FB video",
   tiktok: "TT",
   youtube_shorts: "YT",
 };
+
+function targetLabel(platform: string, status: string) {
+  if (platform.startsWith("instagram_") || platform.startsWith("facebook_")) {
+    const state = queueState(status);
+    return state === "other" ? status : state;
+  }
+  return status;
+}
 
 export default function AdminPublishingPage() {
   const [tab, setTab] = React.useState<Tab>("Calendar");
@@ -132,7 +145,7 @@ export default function AdminPublishingPage() {
                               : "text-slate-400"
                         }
                       >
-                        {SHORT[target.platform] || target.platform} {target.status === "published" ? "✓" : target.status === "failed" ? "✗" : "○"}
+                        {SHORT[target.platform] || target.platform} {targetLabel(target.platform, target.status)}
                       </span>
                     ))}
                   </div>

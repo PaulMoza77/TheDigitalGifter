@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { previewBulkSchedule } from "./bulkSchedule";
+import {
+  buildMetaBusinessLoginUrl,
+  diffMetaPermissions,
+  isAllowedAdminReturn,
+  metaRetryPlan,
+  publicPageSummary,
+  sanitizeProviderError,
+  selectLinkedProfessionalPage,
+} from "./meta";
 import { buildMetaAuthorizeUrl, buildTikTokAuthorizeUrl, buildYouTubeAuthorizeUrl } from "./oauth";
 import { PLATFORM_CONSTRAINTS } from "./platforms";
 import {
@@ -255,6 +264,23 @@ describe("oauth builders", () => {
     });
     expect(meta).toContain("facebook.com/v21.0/dialog/oauth");
     expect(meta).toContain("instagram_content_publish");
+    const business = buildMetaAuthorizeUrl({
+      appId: "1771898293934621",
+      redirectUri: "https://www.thedigitalgifter.com/api/meta-oauth/callback",
+      state: "csrf-state",
+      configurationId: "1117038350677281",
+    });
+    expect(business).toContain("config_id=1117038350677281");
+    expect(business).toContain("state=csrf-state");
+    expect(business).toContain("response_type=code");
+    expect(business).not.toContain("client_secret");
+    expect(business).not.toContain("scope=");
+    expect(buildMetaBusinessLoginUrl({
+      appId: "app",
+      redirectUri: "https://www.thedigitalgifter.com/api/meta-oauth/callback",
+      state: "s",
+      configurationId: "cfg",
+    })).toContain("override_default_response_type=true");
     expect(buildTikTokAuthorizeUrl({ clientKey: "k", redirectUri: "https://example.com/cb", state: "s" })).toContain(
       "tiktok.com/v2/auth/authorize",
     );
@@ -262,5 +288,84 @@ describe("oauth builders", () => {
       "accounts.google.com/o/oauth2/v2/auth",
     );
     expect(JSON.stringify(PLATFORM_CONSTRAINTS)).not.toMatch(/sk_|secret|EAA/);
+  });
+});
+
+describe("meta account selection", () => {
+  it("keeps the Facebook Page that has a linked professional Instagram account", () => {
+    const selected = selectLinkedProfessionalPage([
+      { id: "page-a", name: "Other", accessToken: "page-token-a" },
+      {
+        id: "page-b",
+        name: "The Digital Gifter",
+        accessToken: "page-token-b",
+        instagram: { id: "ig-1", username: "thedigitalgifter", accountType: "BUSINESS" },
+      },
+    ]);
+    expect(selected.reason).toBe("ok");
+    expect(selected.page?.id).toBe("page-b");
+    expect(JSON.stringify(publicPageSummary(selected.page))).not.toContain("page-token");
+  });
+
+  it("rejects a personal Instagram account and an open redirect", () => {
+    const personal = selectLinkedProfessionalPage([
+      {
+        id: "page-a",
+        name: "Page",
+        instagram: { id: "ig-1", username: "personal", accountType: "PERSONAL" },
+      },
+    ]);
+    expect(personal.reason).toBe("instagram_not_professional");
+    const permissions = diffMetaPermissions(["pages_show_list", "instagram_content_publishing"]);
+    expect(permissions.granted).toContain("instagram_content_publish");
+    expect(permissions.missing).toContain("pages_manage_posts");
+    expect(isAllowedAdminReturn("https://evil.example/admin/social-accounts", "https://www.thedigitalgifter.com")).toBe(
+      false,
+    );
+    expect(
+      isAllowedAdminReturn("https://www.thedigitalgifter.com/admin/social-accounts", "https://www.thedigitalgifter.com"),
+    ).toBe(true);
+    const sanitized = sanitizeProviderError("failed access_token=EAABsecretvalue1234567890 extra");
+    expect(sanitized).not.toContain("EAABsecret");
+    expect(sanitized).toContain("[redacted]");
+  });
+
+  it("retries a Meta target without creating a second post after the remote id exists", () => {
+    expect(
+      metaRetryPlan({
+        platform: "instagram_reels",
+        attempts: 1,
+        retryable: true,
+        remotePostId: null,
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).status,
+    ).toBe("scheduled");
+    expect(
+      metaRetryPlan({
+        platform: "instagram_photo",
+        attempts: 3,
+        retryable: true,
+        remotePostId: null,
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).status,
+    ).toBe("failed");
+    expect(
+      metaRetryPlan({
+        platform: "facebook_video",
+        attempts: 1,
+        retryable: true,
+        remotePostId: "fb_123",
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).nextRetryAt,
+    ).toBeNull();
+    expect(
+      metaRetryPlan({
+        platform: "youtube_shorts",
+        attempts: 1,
+        retryable: true,
+        remotePostId: null,
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).status,
+    ).toBe("failed");
   });
 });

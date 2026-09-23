@@ -2,11 +2,37 @@ import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { assertAdmin, getAuthUser, getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { dispatchPublish } from "../_shared/social/adapters.ts";
 import { decryptSecret, encryptSecret } from "../_shared/social/crypto.ts";
+import {
+  callbackRedirect,
+  finishMetaOAuth,
+  inspectMetaToken,
+  metaAuthorizeUrl,
+  metaRedirectUri,
+  safeOauthError,
+} from "../_shared/social/metaAuth.ts";
+import { isAllowedAdminReturn, isMetaPlatform, metaMediaKind, metaRetryPlan, publicAccountMetadata, sanitizeProviderError } from "../_shared/social/meta.ts";
 
-type Platform = "instagram_reels" | "facebook_reels" | "tiktok" | "youtube_shorts";
+type Platform =
+  | "instagram_reels"
+  | "instagram_photo"
+  | "instagram_video"
+  | "facebook_reels"
+  | "facebook_photo"
+  | "facebook_video"
+  | "tiktok"
+  | "youtube_shorts";
 type Provider = "meta" | "tiktok" | "youtube";
 
-const PLATFORMS: Platform[] = ["instagram_reels", "facebook_reels", "tiktok", "youtube_shorts"];
+const PLATFORMS: Platform[] = [
+  "instagram_reels",
+  "instagram_photo",
+  "instagram_video",
+  "facebook_reels",
+  "facebook_photo",
+  "facebook_video",
+  "tiktok",
+  "youtube_shorts",
+];
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();
@@ -53,7 +79,7 @@ function htmlRedirect(to: string) {
 
 function oauthConfigured() {
   return {
-    meta: Boolean(env("META_APP_ID") && env("META_APP_SECRET")),
+    meta: Boolean(env("META_APP_ID") && env("META_APP_SECRET") && env("META_CONFIGURATION_ID")),
     tiktok: Boolean((env("TIKTOK_CLIENT_KEY") || env("TIKTOK_CLIENT_KEY_ID")) && env("TIKTOK_CLIENT_SECRET")),
     youtube: Boolean(
       (env("YOUTUBE_CLIENT_ID") || env("GOOGLE_OAUTH_CLIENT_ID") || env("GOOGLE_CLIENT_ID")) &&
@@ -64,7 +90,9 @@ function oauthConfigured() {
 
 function providerReadiness(configured: ReturnType<typeof oauthConfigured>, live: boolean) {
   const missingMeta: string[] = [];
-  if (!configured.meta) missingMeta.push("META_APP_ID", "META_APP_SECRET");
+  if (!env("META_APP_ID")) missingMeta.push("META_APP_ID");
+  if (!env("META_APP_SECRET")) missingMeta.push("META_APP_SECRET");
+  if (!env("META_CONFIGURATION_ID")) missingMeta.push("META_CONFIGURATION_ID");
   missingMeta.push("instagram_content_publish App Review", "pages_manage_posts");
   const missingTt: string[] = [];
   if (!configured.tiktok) missingTt.push("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET");
@@ -114,20 +142,7 @@ function sanitizeAccount(row: Record<string, unknown>) {
 }
 
 function publicMetadata(meta: Record<string, unknown> | null) {
-  const src = meta || {};
-  const out: Record<string, unknown> = {};
-  for (const key of [
-    "instagram_user_id",
-    "instagram_username",
-    "facebook_page_id",
-    "facebook_page_name",
-    "tiktok_username",
-    "youtube_channel_id",
-    "youtube_channel_title",
-  ]) {
-    if (src[key] != null) out[key] = src[key];
-  }
-  return out;
+  return publicAccountMetadata(meta);
 }
 
 function isAssetSrcAllowed(src: string): boolean {
@@ -164,14 +179,32 @@ function validateAsset(asset: Record<string, unknown>, platforms: Platform[]) {
   const width = Number(asset.width ?? 1080);
   const height = Number(asset.height ?? 1920);
   if (!isAssetSrcAllowed(src)) issues.push({ code: "media_missing", message: "Asset path is not a library media file." });
-  if (kind === "photo" || /\.(jpe?g|png|webp)$/i.test(filename)) {
-    issues.push({ code: "not_a_reel", message: "Photos cannot be published as Reels." });
+  const photoPlatforms = platforms.filter((platform) => metaMediaKind(platform) === "photo");
+  const videoPlatforms = platforms.filter((platform) => metaMediaKind(platform) !== "photo");
+  const isPhoto = kind === "photo" || /\.(jpe?g|png|webp)$/i.test(filename);
+  if (isPhoto && videoPlatforms.length) {
+    issues.push({ code: "not_a_reel", message: "Photos cannot be published as Reels or videos." });
+  }
+  if (!isPhoto && photoPlatforms.length) {
+    issues.push({ code: "not_a_photo", message: "This file is not an image." });
   }
   if (!platforms.length) issues.push({ code: "no_platforms", message: "Select at least one platform." });
-  if (Number.isFinite(width) && Number.isFinite(height) && Math.abs(width / height - 9 / 16) > 0.08) {
+  const verticalPlatforms = platforms.filter(
+    (platform) =>
+      platform === "instagram_reels" ||
+      platform === "facebook_reels" ||
+      platform === "tiktok" ||
+      platform === "youtube_shorts",
+  );
+  if (
+    verticalPlatforms.length &&
+    Number.isFinite(width) &&
+    Number.isFinite(height) &&
+    Math.abs(width / height - 9 / 16) > 0.08
+  ) {
     issues.push({ code: "aspect_ratio", message: `Vertical 9:16 required. File is ${width}×${height}.` });
   }
-  for (const platform of platforms) {
+  for (const platform of verticalPlatforms) {
     const max = platform === "instagram_reels" || platform === "facebook_reels" ? 90 : 60;
     if (Number.isFinite(duration) && duration > max) {
       issues.push({ code: "too_long", platform, message: `${platform} max duration is ${max}s.` });
@@ -260,42 +293,55 @@ async function upsertAccount(
   return data.id as string;
 }
 
-async function exchangeMeta(code: string) {
-  const appId = env("META_APP_ID");
-  const secret = env("META_APP_SECRET");
-  const tokenUrl = new URL("https://graph.facebook.com/v21.0/oauth/access_token");
-  tokenUrl.searchParams.set("client_id", appId);
-  tokenUrl.searchParams.set("client_secret", secret);
-  tokenUrl.searchParams.set("redirect_uri", oauthRedirectUri());
-  tokenUrl.searchParams.set("code", code);
-  const shortRes = await fetch(tokenUrl);
-  const shortJson = (await shortRes.json()) as { access_token?: string; error?: { message?: string } };
-  if (!shortJson.access_token) throw new Error(shortJson.error?.message || "Meta token exchange failed");
-  const longUrl = new URL("https://graph.facebook.com/v21.0/oauth/access_token");
-  longUrl.searchParams.set("grant_type", "fb_exchange_token");
-  longUrl.searchParams.set("client_id", appId);
-  longUrl.searchParams.set("client_secret", secret);
-  longUrl.searchParams.set("fb_exchange_token", shortJson.access_token);
-  const longRes = await fetch(longUrl);
-  const longJson = (await longRes.json()) as { access_token?: string; expires_in?: number };
-  const access = longJson.access_token || shortJson.access_token;
-  const pagesRes = await fetch(
-    `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(access)}`,
-  );
-  const pagesJson = (await pagesRes.json()) as {
-    data?: Array<{
-      id: string;
-      name: string;
-      access_token: string;
-      instagram_business_account?: { id?: string; username?: string };
-    }>;
-  };
-  const page = pagesJson.data?.[0];
-  return {
-    access,
-    expiresIn: longJson.expires_in || 60 * 24 * 3600,
-    page,
-  };
+async function consumeOauthState(service: ReturnType<typeof getServiceClient>, state: string) {
+  if (!state || state.length > 80) return { error: "invalid_state" as const };
+  const { data: row } = await service.from("social_oauth_states").select("*").eq("state", state).maybeSingle();
+  if (!row) return { error: "invalid_state" as const };
+  if (row.expires_at && new Date(String(row.expires_at)).getTime() < Date.now()) {
+    await service.from("social_oauth_states").delete().eq("state", state);
+    return { error: "expired_state" as const };
+  }
+  await service.from("social_oauth_states").delete().eq("state", state);
+  return { row: row as Record<string, unknown> };
+}
+
+function oauthReturn(row: Record<string, unknown> | null, params: Record<string, string>) {
+  const requested = asString(row?.redirect_to);
+  if (requested && isAllowedAdminReturn(requested, publicBaseUrl())) {
+    const url = new URL(requested);
+    for (const [key, value] of Object.entries(params)) {
+      if (value) url.searchParams.set(key, value);
+    }
+    return url.toString();
+  }
+  return callbackRedirect(params);
+}
+
+async function runMetaCallback(
+  service: ReturnType<typeof getServiceClient>,
+  input: { code: string; state: string; error: string },
+) {
+  if (input.error) {
+    if (input.state) await service.from("social_oauth_states").delete().eq("state", input.state);
+    return callbackRedirect({ oauth: "error", message: safeOauthError(input.error) });
+  }
+  const consumed = await consumeOauthState(service, input.state);
+  if ("error" in consumed && consumed.error) {
+    return callbackRedirect({ oauth: "error", message: consumed.error });
+  }
+  const row = consumed.row;
+  if (!row || asString(row.provider) !== "meta") {
+    return callbackRedirect({ oauth: "error", message: "invalid_state" });
+  }
+  try {
+    const result = await finishMetaOAuth(service, input.code, asString(row.oauth_redirect_uri) || metaRedirectUri());
+    if (result.status !== "connected") {
+      return oauthReturn(row, { oauth: "error", message: safeOauthError(result.connectionError || "oauth_failed") });
+    }
+    return oauthReturn(row, { oauth: "meta", ok: "1" });
+  } catch {
+    return oauthReturn(row, { oauth: "error", message: "exchange_failed" });
+  }
 }
 
 async function exchangeTikTok(code: string) {
@@ -349,35 +395,25 @@ async function handleOauthCallback(req: Request) {
   const state = asString(url.searchParams.get("state"));
   const err = asString(url.searchParams.get("error"));
   const service = getServiceClient();
-  const destBase = `${publicBaseUrl()}/admin/social-accounts`;
-  if (err) return htmlRedirect(`${destBase}?oauth=error&message=${encodeURIComponent(err)}`);
-  const { data: row } = await service.from("social_oauth_states").select("*").eq("state", state).maybeSingle();
-  if (!row) return htmlRedirect(`${destBase}?oauth=error&message=invalid_state`);
-  await service.from("social_oauth_states").delete().eq("state", state);
-  const provider = asString(row.provider) as Provider;
+  const peeked = state
+    ? await service.from("social_oauth_states").select("provider").eq("state", state).maybeSingle()
+    : { data: null };
+  if (asString(peeked.data?.provider) === "meta" || (!peeked.data && err)) {
+    return htmlRedirect(await runMetaCallback(service, { code, state, error: err }));
+  }
+  if (err) {
+    if (state) await service.from("social_oauth_states").delete().eq("state", state);
+    return htmlRedirect(callbackRedirect({ oauth: "error", message: safeOauthError(err) }));
+  }
+  const consumed = await consumeOauthState(service, state);
+  if ("error" in consumed && consumed.error) {
+    return htmlRedirect(callbackRedirect({ oauth: "error", message: consumed.error }));
+  }
+  const row = consumed.row;
+  const provider = asString(row?.provider) as Provider;
   try {
     if (provider === "meta") {
-      const exchanged = await exchangeMeta(code);
-      const page = exchanged.page;
-      await upsertAccount(service, {
-        provider: "meta",
-        account_id: page?.id || "meta",
-        account_name: page?.name || "Meta",
-        status: "connected",
-        access_token_ciphertext: await encryptSecret(page?.access_token || exchanged.access),
-        refresh_token_ciphertext: null,
-        expires_at: new Date(Date.now() + exchanged.expiresIn * 1000).toISOString(),
-        metadata: {
-          facebook_page_id: page?.id || null,
-          facebook_page_name: page?.name || null,
-          page_access_token: undefined,
-          instagram_user_id: page?.instagram_business_account?.id || null,
-          instagram_username: page?.instagram_business_account?.username || null,
-          page_access_token_ciphertext: page?.access_token
-            ? await encryptSecret(page.access_token)
-            : null,
-        },
-      });
+      return htmlRedirect(callbackRedirect({ oauth: "error", message: "invalid_state" }));
     } else if (provider === "tiktok") {
       const exchanged = await exchangeTikTok(code);
       if (!exchanged.access_token) {
@@ -413,10 +449,9 @@ async function handleOauthCallback(req: Request) {
         metadata: {},
       });
     }
-    return htmlRedirect(`${destBase}?oauth=${provider}&ok=1`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "oauth_failed";
-    return htmlRedirect(`${destBase}?oauth=error&message=${encodeURIComponent(message)}`);
+    return htmlRedirect(oauthReturn(row || null, { oauth: provider, ok: "1" }));
+  } catch {
+    return htmlRedirect(callbackRedirect({ oauth: "error", message: "exchange_failed" }));
   }
 }
 
@@ -536,6 +571,7 @@ async function processTarget(
     caption,
     hashtags,
     title: asString(target.platform_title) || null,
+    containerId: asString(target.provider_container_id) || null,
     account: {
       provider: account.provider,
       accountId: account.accountId,
@@ -554,6 +590,7 @@ async function processTarget(
         remote_url: result.remoteUrl || null,
         published_at: new Date().toISOString(),
         last_error: null,
+        provider_container_id: null,
         lease_expires_at: null,
         social_account_id: account.id,
         updated_at: new Date().toISOString(),
@@ -564,16 +601,30 @@ async function processTarget(
     return { ok: true, remotePostId: result.remotePostId };
   }
 
+  const retry = metaRetryPlan({
+    platform,
+    attempts: Number(target.attempts || 1),
+    retryable: Boolean(result.retryable),
+    remotePostId: asString(target.remote_post_id) || null,
+    nowMs: Date.now(),
+  });
+  const metaFailure = isMetaPlatform(platform);
   await service
     .from("social_publication_targets")
     .update({
-      status: "failed",
-      last_error: `${result.code}: ${result.message}`,
+      status: metaFailure ? retry.status : "failed",
+      last_error: sanitizeProviderError(`${result.code}: ${result.message}`),
       lease_expires_at: null,
-      next_retry_at: result.retryable ? new Date(Date.now() + 5 * 60 * 1000).toISOString() : null,
+      next_retry_at: metaFailure
+        ? retry.nextRetryAt
+        : result.retryable
+          ? new Date(Date.now() + 5 * 60 * 1000).toISOString()
+          : null,
+      provider_container_id: result.containerId || asString(target.provider_container_id) || null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", target.id);
+    .eq("id", target.id)
+    .is("remote_post_id", null);
   await refreshPublicationStatus(service, String(publication.id));
   return { ok: false, code: result.code, message: result.message };
 }
@@ -647,11 +698,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   const url = new URL(req.url);
 
-  if (req.method === "GET" && (url.searchParams.get("code") || url.searchParams.get("state") || url.searchParams.get("error"))) {
+    if (req.method === "GET" && (url.searchParams.get("code") || url.searchParams.get("state") || url.searchParams.get("error"))) {
     try {
       return await handleOauthCallback(req);
-    } catch (error) {
-      return apiError(error instanceof Error ? error.message : "oauth_failed", 400);
+    } catch {
+      return htmlRedirect(callbackRedirect({ oauth: "error", message: "oauth_failed" }));
     }
   }
 
@@ -665,6 +716,17 @@ Deno.serve(async (req) => {
       const settings = await loadSettings(service);
       const result = await tickWorker(service, livePostsEnabled(settings.live_posts_enabled));
       return jsonResponse({ ok: true, ...result, livePostsEnabled: livePostsEnabled(settings.live_posts_enabled) });
+    }
+
+    if (action === "meta_oauth_callback") {
+      if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
+      const service = getServiceClient();
+      const redirect = await runMetaCallback(service, {
+        code: asString(body.code),
+        state: asString(body.state),
+        error: asString(body.error),
+      });
+      return jsonResponse({ redirect });
     }
 
     const { user } = await getAuthUser(req);
@@ -684,35 +746,82 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "connection_health") {
+      const { data } = await service
+        .from("social_accounts")
+        .select("*")
+        .eq("provider", "meta")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data || data.status === "revoked") {
+        return jsonResponse({ ok: true, valid: false, status: "not_connected", published: false });
+      }
+      const report = await inspectMetaToken(service, data as Record<string, unknown>);
+      return jsonResponse(report);
+    }
+
+    if (action === "publish_test") {
+      const { data } = await service
+        .from("social_accounts")
+        .select("status,metadata")
+        .eq("provider", "meta")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const meta = publicMetadata((data?.metadata || {}) as Record<string, unknown>);
+      const missing = Array.isArray(meta.missing_permissions) ? meta.missing_permissions.map(String) : [];
+      const blockers: string[] = [];
+      if (!data || data.status !== "connected") blockers.push("meta_not_connected");
+      if (!meta.facebook_page_id) blockers.push("facebook_page_missing");
+      if (!meta.instagram_user_id || meta.instagram_linked === false) blockers.push("instagram_not_linked");
+      if (meta.instagram_is_professional === false) blockers.push("instagram_not_professional");
+      if (missing.length) blockers.push("missing_permissions");
+      blockers.push("live_posts_disabled");
+      return jsonResponse({
+        ok: true,
+        published: false,
+        executed: false,
+        ready: blockers.length === 1 && blockers[0] === "live_posts_disabled",
+        blockers,
+        facebook_page_id: meta.facebook_page_id || null,
+        facebook_page_name: meta.facebook_page_name || null,
+        instagram_user_id: meta.instagram_user_id || null,
+        instagram_username: meta.instagram_username || null,
+        granted_permissions: meta.granted_permissions || [],
+        missing_permissions: missing,
+        message: "No post was sent to Facebook or Instagram. Live posting stays off until you approve it.",
+      });
+    }
+
     if (action === "connect_url") {
       const provider = asString(body.provider) as Provider;
       const state = crypto.randomUUID();
+      const redirectUri = oauthRedirectUri();
+      if (provider === "meta") {
+        const authorized = metaAuthorizeUrl(state);
+        if (!authorized.url) {
+          return jsonResponse({
+            url: null,
+            waitingForApproval: true,
+            missing: authorized.missing,
+          });
+        }
+        await service.from("social_oauth_states").insert({
+          state,
+          provider: "meta",
+          created_by: user?.id || null,
+          redirect_to: `${publicBaseUrl()}/admin/social-accounts`,
+          oauth_redirect_uri: metaRedirectUri(),
+        });
+        return jsonResponse({ url: authorized.url });
+      }
       await service.from("social_oauth_states").insert({
         state,
         provider,
         created_by: user?.id || null,
         redirect_to: `${publicBaseUrl()}/admin/social-accounts`,
       });
-      const redirectUri = oauthRedirectUri();
-      if (provider === "meta") {
-        if (!configured.meta) {
-          return jsonResponse({
-            url: null,
-            waitingForApproval: true,
-            missing: ["META_APP_ID", "META_APP_SECRET"],
-          });
-        }
-        const auth = new URL("https://www.facebook.com/v21.0/dialog/oauth");
-        auth.searchParams.set("client_id", env("META_APP_ID"));
-        auth.searchParams.set("redirect_uri", redirectUri);
-        auth.searchParams.set("state", state);
-        auth.searchParams.set("response_type", "code");
-        auth.searchParams.set(
-          "scope",
-          "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,business_management",
-        );
-        return jsonResponse({ url: auth.toString() });
-      }
       if (provider === "tiktok") {
         if (!configured.tiktok) {
           return jsonResponse({
@@ -752,12 +861,17 @@ Deno.serve(async (req) => {
 
     if (action === "disconnect") {
       const id = asString(body.account_id);
+      const { data: existing } = await service.from("social_accounts").select("metadata").eq("id", id).maybeSingle();
+      const metadata = { ...((existing?.metadata || {}) as Record<string, unknown>) };
+      delete metadata.page_access_token_ciphertext;
+      delete metadata.page_access_token;
       await service
         .from("social_accounts")
         .update({
           status: "revoked",
           access_token_ciphertext: null,
           refresh_token_ciphertext: null,
+          metadata,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id);
@@ -942,7 +1056,7 @@ Deno.serve(async (req) => {
 
     return apiError("Unknown action");
   } catch (error) {
-    const message = error instanceof Error ? error.message : "social_publisher_failed";
+    const message = sanitizeProviderError(error instanceof Error ? error.message : "social_publisher_failed");
     const status = /admin|forbidden|auth/i.test(message) ? 403 : 500;
     return apiError(message, status);
   }

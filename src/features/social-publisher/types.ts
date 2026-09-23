@@ -1,6 +1,10 @@
 export const SOCIAL_PLATFORMS = [
   "instagram_reels",
+  "instagram_photo",
+  "instagram_video",
   "facebook_reels",
+  "facebook_photo",
+  "facebook_video",
   "tiktok",
   "youtube_shorts",
 ] as const;

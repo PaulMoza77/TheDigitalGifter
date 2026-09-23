@@ -66,6 +66,32 @@ export const socialPublisherApi = {
       provider,
     }),
   disconnect: (accountId: string) => invoke<{ ok: true }>("disconnect", { account_id: accountId }),
+  connectionHealth: () =>
+    invoke<{
+      ok: true;
+      valid: boolean;
+      status: string;
+      missing_permissions?: string[];
+      scopes?: string[];
+      facebook_page_name?: string | null;
+      instagram_username?: string | null;
+      instagram_is_professional?: boolean;
+      instagram_linked?: boolean;
+      error?: string | null;
+    }>("connection_health"),
+  publishTest: () =>
+    invoke<{
+      ok: true;
+      published: false;
+      executed: false;
+      ready: boolean;
+      blockers: string[];
+      facebook_page_name?: string | null;
+      instagram_username?: string | null;
+      granted_permissions?: string[];
+      missing_permissions?: string[];
+      message: string;
+    }>("publish_test"),
   listPublications: (tab: "upcoming" | "published" | "failed" | "calendar") =>
     invoke<{ items: SocialPublicationRow[] }>("list_publications", { tab }),
   createPublication: (payload: Record<string, unknown>) =>

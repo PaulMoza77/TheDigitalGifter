@@ -37,7 +37,33 @@ export default function AdminSocialAccountsPage() {
     void load();
   }, [load]);
 
-  const meta = accounts.find((a) => a.provider === "meta" && a.status === "connected");
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauth = params.get("oauth");
+    const message = params.get("message");
+    if (!oauth) return;
+    const known: Record<string, string> = {
+      access_denied: "Facebook login was cancelled.",
+      invalid_state: "The login session expired. Use Connect Facebook & Instagram again.",
+      expired_state: "The login session expired. Use Connect Facebook & Instagram again.",
+      exchange_failed: "Meta did not complete the login. No token was stored.",
+      no_pages: "No Facebook Page was available for this login.",
+      instagram_not_linked: "The Facebook Page has no linked Instagram professional account.",
+      instagram_not_professional: "The Instagram account is not a professional account.",
+      missing_permissions: "Meta did not grant every permission required to publish.",
+      oauth_failed: "Meta login failed.",
+    };
+    if (oauth === "meta" && params.get("ok") === "1") {
+      toast.success("Facebook Page and Instagram were saved. Tokens stayed on the server.");
+    } else if (oauth === "error") {
+      toast.error(known[message || ""] || "Meta login failed.");
+    }
+    window.history.replaceState({}, "", "/admin/social-accounts");
+  }, []);
+
+  const meta =
+    accounts.find((a) => a.provider === "meta" && a.status === "connected") ||
+    accounts.find((a) => a.provider === "meta" && a.status !== "revoked");
   const tiktok = accounts.find((a) => a.provider === "tiktok" && a.status === "connected");
   const youtube = accounts.find((a) => a.provider === "youtube" && a.status === "connected");
 
@@ -97,6 +123,33 @@ export default function AdminSocialAccountsPage() {
     }
   }
 
+  async function checkMeta() {
+    try {
+      const health = await socialPublisherApi.connectionHealth();
+      if (health.valid && health.status === "connected") {
+        toast.success("Meta token is valid.");
+      } else {
+        toast.message(`Connection ${health.status || "needs attention"}. Nothing was published.`);
+      }
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not check the connection.");
+    }
+  }
+
+  async function publishTest() {
+    try {
+      const report = await socialPublisherApi.publishTest();
+      if (report.published || report.executed) {
+        toast.error("Publish test refused to run.");
+        return;
+      }
+      toast.message(report.ready ? "Ready for your approval. No post was sent." : report.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Publish test failed.");
+    }
+  }
+
   async function disconnect(provider: CardSpec["provider"]) {
     const row = accounts.find((a) => a.provider === provider);
     if (!row) return;
@@ -146,8 +199,32 @@ export default function AdminSocialAccountsPage() {
                     onClick={() => void connect(card.provider)}
                     className="rounded-xl bg-indigo-500 px-3 py-2 text-sm font-medium"
                   >
-                    {anyConnected ? "Reconnect" : "Connect"}
+                    {card.provider === "meta"
+                      ? anyConnected
+                        ? "Reconnect Facebook & Instagram"
+                        : "Connect Facebook & Instagram"
+                      : anyConnected
+                        ? "Reconnect"
+                        : "Connect"}
                   </button>
+                  {card.provider === "meta" && anyConnected ? (
+                    <button
+                      type="button"
+                      onClick={() => void checkMeta()}
+                      className="rounded-xl border border-slate-700 px-3 py-2 text-sm"
+                    >
+                      Check connection
+                    </button>
+                  ) : null}
+                  {card.provider === "meta" ? (
+                    <button
+                      type="button"
+                      onClick={() => void publishTest()}
+                      className="rounded-xl border border-amber-500/40 px-3 py-2 text-sm text-amber-100"
+                    >
+                      Publish test
+                    </button>
+                  ) : null}
                   {anyConnected ? (
                     <button
                       type="button"
@@ -158,6 +235,26 @@ export default function AdminSocialAccountsPage() {
                     </button>
                   ) : null}
                 </div>
+                {card.provider === "meta" && meta ? (
+                  <div className="mt-4 space-y-1 text-[11px] leading-4 text-slate-400">
+                    <p>Status: {String(meta.status)}</p>
+                    <p>
+                      Permissions:{" "}
+                      {Array.isArray(meta.metadata?.granted_permissions)
+                        ? (meta.metadata.granted_permissions as string[]).join(", ") || "none recorded"
+                        : "not recorded yet"}
+                    </p>
+                    {Array.isArray(meta.metadata?.missing_permissions) &&
+                    (meta.metadata.missing_permissions as string[]).length ? (
+                      <p>Missing: {(meta.metadata.missing_permissions as string[]).join(", ")}</p>
+                    ) : null}
+                    <p>
+                      Instagram{" "}
+                      {meta.metadata?.instagram_is_professional ? "professional" : "not confirmed professional"}
+                      {meta.metadata?.instagram_linked ? " and linked to the Page" : ""}.
+                    </p>
+                  </div>
+                ) : null}
                 {info ? (
                   <p className="mt-4 text-[11px] leading-4 text-slate-500">
                     Publishing: {info.publishing}
