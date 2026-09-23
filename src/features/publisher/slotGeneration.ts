@@ -1,4 +1,4 @@
-import { addDaysIso, formatZonedDateTime, zonedWallTimeToUtcMs } from "@/features/social-publisher/timezone";
+import { addDaysIso, formatZonedDateTime, zonedWallTimeToUtcMs } from "../social-publisher/timezone";
 import { ROLLING_HORIZON_DAYS } from "./types";
 import type { PublisherScheduleRule } from "./types";
 
