@@ -105,6 +105,17 @@ function oauthConfigured() {
   };
 }
 
+async function youtubeConfigured(service: ReturnType<typeof getServiceClient>) {
+  const envReady = oauthConfigured().youtube;
+  if (envReady) return true;
+  const { data } = await service
+    .from("social_provider_configs")
+    .select("client_id,client_secret_ciphertext")
+    .eq("provider", "youtube")
+    .maybeSingle();
+  return Boolean(data?.client_id && data?.client_secret_ciphertext);
+}
+
 function providerReadiness(configured: ReturnType<typeof oauthConfigured>, live: boolean) {
   const missingMeta: string[] = [];
   if (!env("META_APP_ID")) missingMeta.push("META_APP_ID");
@@ -827,11 +838,45 @@ Deno.serve(async (req) => {
       return jsonResponse({ redirect });
     }
 
+    if (action === "upsert_youtube_provider_config") {
+      if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
+      const service = getServiceClient();
+      const clientId = asString(body.client_id);
+      const clientSecret = asString(body.client_secret);
+      const redirectUri = asString(body.redirect_uri) || youtubeRedirectUri();
+      if (!clientId || !clientSecret) return apiError("client_id and client_secret required");
+      const row = {
+        provider: "youtube",
+        client_id: clientId,
+        client_secret_ciphertext: await encryptSecret(clientSecret),
+        redirect_uri: redirectUri,
+        metadata: {
+          oauth_app_status: "testing",
+          updated_by: "service_role",
+          updated_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      };
+      const { data: existing } = await service
+        .from("social_provider_configs")
+        .select("provider")
+        .eq("provider", "youtube")
+        .maybeSingle();
+      if (existing?.provider) {
+        await service.from("social_provider_configs").update(row).eq("provider", "youtube");
+      } else {
+        const inserted = await service.from("social_provider_configs").insert(row);
+        if (inserted.error) throw inserted.error;
+      }
+      return jsonResponse({ ok: true, provider: "youtube", has_client_id: true, has_secret: true });
+    }
+
     const { user } = await getAuthUser(req);
     await assertAdmin(user?.email);
     const service = getServiceClient();
     const settings = await loadSettings(service);
     const configured = oauthConfigured();
+    configured.youtube = configured.youtube || (await youtubeConfigured(service));
 
     if (action === "bootstrap" || !action) {
       const { data: accounts } = await service.from("social_accounts").select("*").order("provider");
@@ -962,7 +1007,7 @@ Deno.serve(async (req) => {
         return jsonResponse({ url: authorized.url });
       }
       if (provider === "youtube") {
-        const authorized = youtubeAuthorizeUrl(state, { forceConsent: true });
+        const authorized = await youtubeAuthorizeUrl(state, { forceConsent: true, service });
         if (!authorized.url) {
           return jsonResponse({
             url: null,

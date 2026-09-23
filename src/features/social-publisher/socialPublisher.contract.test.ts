@@ -69,7 +69,12 @@ describe("social publisher wiring", () => {
     expect(functionDeploy).toBeGreaterThan(migrationStop);
     expect(deploy).toContain("20260923180000_meta_login_publishing.sql");
     expect(deploy).toContain("20260923190000_youtube_oauth_publishing.sql");
+    expect(deploy).toContain("20260923193000_social_provider_configs.sql");
     expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
+    expect(edge).toContain("upsert_youtube_provider_config");
+    expect(read("supabase/migrations/20260923193000_social_provider_configs.sql")).toContain(
+      "social_provider_configs",
+    );
     expect(deploy).not.toMatch(/SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS=/);
     expect(deploy).not.toMatch(/META_APP_SECRET=/);
     expect(read("supabase/functions/_shared/social/metaAuth.ts")).toContain("delete nextMeta.page_access_token");
