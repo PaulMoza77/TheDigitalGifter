@@ -37,6 +37,63 @@ export function youtubeClientSecret(): string {
   return env("YOUTUBE_CLIENT_SECRET") || env("GOOGLE_OAUTH_CLIENT_SECRET") || env("GOOGLE_CLIENT_SECRET");
 }
 
+let cachedDbConfig: { clientId: string; clientSecret: string; redirectUri: string } | null | undefined;
+
+async function loadYouTubeConfigFromDb(service?: Service) {
+  if (cachedDbConfig !== undefined) return cachedDbConfig;
+  if (!service) {
+    cachedDbConfig = null;
+    return null;
+  }
+  try {
+    const { data } = await service
+      .from("social_provider_configs")
+      .select("client_id,client_secret_ciphertext,redirect_uri")
+      .eq("provider", "youtube")
+      .maybeSingle();
+    if (!data?.client_id || !data?.client_secret_ciphertext) {
+      cachedDbConfig = null;
+      return null;
+    }
+    const secret = await decryptSecret(asString(data.client_secret_ciphertext));
+    if (!secret) {
+      cachedDbConfig = null;
+      return null;
+    }
+    cachedDbConfig = {
+      clientId: asString(data.client_id),
+      clientSecret: secret,
+      redirectUri: asString(data.redirect_uri),
+    };
+    return cachedDbConfig;
+  } catch {
+    cachedDbConfig = null;
+    return null;
+  }
+}
+
+export async function resolveYouTubeClientConfig(service?: Service): Promise<{
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  missing: string[];
+}> {
+  const fromEnvId = youtubeClientId();
+  const fromEnvSecret = youtubeClientSecret();
+  const fromEnvRedirect = youtubeRedirectUri();
+  if (fromEnvId && fromEnvSecret) {
+    return { clientId: fromEnvId, clientSecret: fromEnvSecret, redirectUri: fromEnvRedirect, missing: [] };
+  }
+  const fromDb = await loadYouTubeConfigFromDb(service);
+  const clientId = fromEnvId || fromDb?.clientId || "";
+  const clientSecret = fromEnvSecret || fromDb?.clientSecret || "";
+  const redirectUri = fromEnvRedirect || fromDb?.redirectUri || youtubeRedirectUri();
+  const missing: string[] = [];
+  if (!clientId) missing.push("YOUTUBE_CLIENT_ID");
+  if (!clientSecret) missing.push("YOUTUBE_CLIENT_SECRET");
+  return { clientId, clientSecret, redirectUri, missing };
+}
+
 export function publicBase(): string {
   return (
     env("SOCIAL_PUBLISHER_PUBLIC_BASE_URL") ||
@@ -53,25 +110,21 @@ export function youtubeRedirectUri(): string {
   });
 }
 
-export function youtubeAuthorizeUrl(
+export async function youtubeAuthorizeUrl(
   state: string,
-  options: { forceConsent?: boolean } = {},
-): { url: string | null; missing: string[]; redirectUri: string } {
-  const missing: string[] = [];
-  if (!youtubeClientId()) missing.push("YOUTUBE_CLIENT_ID");
-  if (!youtubeClientSecret()) missing.push("YOUTUBE_CLIENT_SECRET");
-  const redirectUri = youtubeRedirectUri();
-  if (!redirectUri) missing.push("YOUTUBE_REDIRECT_URI");
-  if (missing.length) return { url: null, missing, redirectUri };
+  options: { forceConsent?: boolean; service?: Service } = {},
+): Promise<{ url: string | null; missing: string[]; redirectUri: string }> {
+  const resolved = await resolveYouTubeClientConfig(options.service);
+  if (resolved.missing.length) return { url: null, missing: resolved.missing, redirectUri: resolved.redirectUri };
   return {
     url: buildYouTubeAuthorizeUrl({
-      clientId: youtubeClientId(),
-      redirectUri,
+      clientId: resolved.clientId,
+      redirectUri: resolved.redirectUri,
       state,
       forceConsent: options.forceConsent !== false,
     }),
     missing: [],
-    redirectUri,
+    redirectUri: resolved.redirectUri,
   };
 }
 
@@ -85,13 +138,14 @@ async function postForm(url: string, body: Record<string, string>) {
   return { ok: res.ok, json };
 }
 
-export async function exchangeYouTubeCode(code: string, redirectUri: string) {
-  if (!isExactYouTubeRedirectUri(redirectUri, youtubeRedirectUri())) {
+export async function exchangeYouTubeCode(code: string, redirectUri: string, service?: Service) {
+  const resolved = await resolveYouTubeClientConfig(service);
+  if (!isExactYouTubeRedirectUri(redirectUri, resolved.redirectUri || youtubeRedirectUri())) {
     throw new Error("invalid_redirect_uri");
   }
   const result = await postForm("https://oauth2.googleapis.com/token", {
-    client_id: youtubeClientId(),
-    client_secret: youtubeClientSecret(),
+    client_id: resolved.clientId,
+    client_secret: resolved.clientSecret,
     code,
     grant_type: "authorization_code",
     redirect_uri: redirectUri,
@@ -107,10 +161,11 @@ export async function exchangeYouTubeCode(code: string, redirectUri: string) {
   };
 }
 
-export async function refreshYouTubeAccessToken(refreshToken: string) {
+export async function refreshYouTubeAccessToken(refreshToken: string, service?: Service) {
+  const resolved = await resolveYouTubeClientConfig(service);
   const result = await postForm("https://oauth2.googleapis.com/token", {
-    client_id: youtubeClientId(),
-    client_secret: youtubeClientSecret(),
+    client_id: resolved.clientId,
+    client_secret: resolved.clientSecret,
     grant_type: "refresh_token",
     refresh_token: refreshToken,
   });
@@ -187,7 +242,7 @@ async function upsertYouTubeAccount(service: Service, row: Record<string, unknow
 }
 
 export async function finishYouTubeOAuth(service: Service, code: string, redirectUri: string) {
-  const exchanged = await exchangeYouTubeCode(code, redirectUri);
+  const exchanged = await exchangeYouTubeCode(code, redirectUri, service);
   const scopeDiff = diffYouTubeScopes(exchanged.scope.length ? exchanged.scope : [...REQUIRED_YOUTUBE_SCOPES]);
   const channel = await fetchYouTubeChannel(exchanged.access);
   const summary = publicYouTubeChannelSummary(channel);
@@ -274,7 +329,7 @@ export async function ensureYouTubeAccessToken(
     return { accessToken: "", status: "expired", refreshed: false };
   }
   try {
-    const refreshed = await refreshYouTubeAccessToken(refresh);
+    const refreshed = await refreshYouTubeAccessToken(refresh, service);
     const expiresIso = new Date(Date.now() + Math.max(60, refreshed.expiresIn) * 1000).toISOString();
     const metadata = {
       ...((account.metadata || {}) as Record<string, unknown>),
