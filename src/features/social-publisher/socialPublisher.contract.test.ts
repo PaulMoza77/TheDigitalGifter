@@ -47,6 +47,16 @@ describe("social publisher wiring", () => {
     expect(read("server/routes.mjs")).toContain("/api/meta-oauth/callback");
     expect(read("api/meta-oauth-callback.ts")).toContain("Referrer-Policy");
     expect(read("api/meta-oauth-callback.ts")).not.toContain("console.log");
+
+    const deploy = read("scripts/deploy-social-publisher.sh");
+    const migrationStop = deploy.indexOf("BLOCKED: migration failed. social-publisher was not deployed.");
+    const functionDeploy = deploy.indexOf("functions deploy social-publisher");
+    expect(migrationStop).toBeGreaterThan(0);
+    expect(functionDeploy).toBeGreaterThan(migrationStop);
+    expect(deploy).toContain("20260923180000_meta_login_publishing.sql");
+    expect(deploy).not.toMatch(/SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS=/);
+    expect(deploy).not.toMatch(/META_APP_SECRET=/);
+    expect(read("supabase/functions/_shared/social/metaAuth.ts")).toContain("delete nextMeta.page_access_token");
   });
 
   it("does not put generation controls back on Library and keeps generation APIs", () => {

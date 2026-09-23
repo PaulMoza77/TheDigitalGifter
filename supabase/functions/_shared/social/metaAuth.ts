@@ -316,7 +316,7 @@ export async function inspectMetaToken(service: Service, account: Record<string,
   else if (!linked || !professional || permissionDiff.missing.length) status = "error";
   else status = "connected";
 
-  const nextMeta = {
+  const nextMeta: Record<string, unknown> = {
     ...metadata,
     granted_permissions: permissionDiff.granted.length ? permissionDiff.granted : metadata.granted_permissions,
     missing_permissions: permissionDiff.missing,
@@ -326,6 +326,9 @@ export async function inspectMetaToken(service: Service, account: Record<string,
     instagram_is_professional: professional,
     connection_error: valid ? (status === "connected" ? null : status === "error" ? "connection_incomplete" : null) : "token_invalid",
   };
+  delete nextMeta.page_access_token;
+  delete nextMeta.access_token;
+  delete nextMeta.accessToken;
 
   await service
     .from("social_accounts")
