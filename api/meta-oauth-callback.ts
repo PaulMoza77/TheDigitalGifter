@@ -1,5 +1,5 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
-import { isAllowedAdminReturn } from "../src/features/social-publisher/meta";
+import { isAllowedAdminReturn } from "./_lib/metaAdminReturn";
 
 function one(value: string | string[] | undefined): string {
   const raw = Array.isArray(value) ? value[0] : value;
