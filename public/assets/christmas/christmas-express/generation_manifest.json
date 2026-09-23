@@ -1,0 +1,158 @@
+{
+  "created_at": "2026-09-23T08:54:25.909672+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration": 5,
+  "sound": "off",
+  "estimated_total_usd": 1.4000000000000001,
+  "regenerations": 0,
+  "clips": [
+    {
+      "id": "cx_01_night_viaduct",
+      "title": "Christmas Express night moon viaduct",
+      "source_image": "christmas_express_night_moon_viaduct.jpg",
+      "job_id": "07afd95e-32ee-40c2-9f31-494273c48e10",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas footage. This exact photograph comes alive for five seconds. The train MUST physically move forward along the visible railway tracks \u2014 locomotive advancing along the rails, wheels rotating consistently with travel, coupling remaining rigid. Thick steam and smoke flow naturally backward from the stack. Subtle snowfall. Warm Christmas lights shimmer gently. Tiny natural environmental movement only. Gifts stay physically attached to the train. Architecture, mountains, lake, castle, and village stay rigid. Preserve the black steam locomotive numbered 1225, THE POLAR EXPRESS plate, wreath with red bow, red passenger cars, stone viaduct arches wrapped in lights, lantern, wooden sign reading ALL ABOARD A BRIGHTER CHRISTMAS TOGETHER, snow-laden pines, alpine village, lake, moon, and mountains exactly as in the first frame. The train eases slowly forward toward camera along the curved viaduct rails. Headlamps glow steadily. Coach windows stay warm. Do not mutate sign letters. No extra cars. Critical physics lock: the locomotive and every carriage MUST stay on the visible rails for the entire shot. The train never floats, never leaves the rails, never falls toward the village, never teleports, never bends, and never changes shape. Track geometry and the direction of travel stay physically coherent. Wheels rotate in sync with forward travel. Do not morph faces, buildings, vehicles, animals, gifts, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions. No wild camera spins or random orbits. Slow cinematic push-in / slight tracking only. Subtle cinematic motion. Keep architecture, viaduct arches, and sign lettering rigid and readable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/christmas-express/masters/cx_01_night_viaduct.mp4",
+      "probe": {
+        "filename": "cx_01_night_viaduct.mp4",
+        "path": "/workspace/public/assets/christmas/christmas-express/masters/cx_01_night_viaduct.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 38845965,
+        "size": 24481053
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-christmas-express/qc/cx_01_night_viaduct_first.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_01_night_viaduct_mid.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_01_night_viaduct_last.jpg"
+      ],
+      "created_at": "2026-09-23T08:57:36.354096+00:00"
+    },
+    {
+      "id": "cx_02_sunset_viaduct",
+      "title": "Christmas Express sunset viaduct",
+      "source_image": "christmas_express_sunset_viaduct.jpg",
+      "job_id": "07070964-f4d4-417e-9821-8806990b6fbd",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas footage. This exact photograph comes alive for five seconds. The train MUST physically move forward along the visible railway tracks \u2014 locomotive advancing along the rails, wheels rotating consistently with travel, coupling remaining rigid. Thick steam and smoke flow naturally backward from the stack. Subtle snowfall. Warm Christmas lights shimmer gently. Tiny natural environmental movement only. Gifts stay physically attached to the train. Architecture, mountains, lake, castle, and village stay rigid. Preserve the black steam locomotive numbered 1225, THE POLAR EXPRESS plate, wreath with red bow, red passenger cars, stone viaduct, balcony lantern, snow-laden pines, alpine village, lake, castle, and sunset mountains exactly as in the first frame. The train eases slowly forward along the tracks toward camera with physically correct wheel rotation. Steam billows and drifts backward. Warm coach lights flicker extremely subtly. Passengers stay seated as small silhouettes. No extra cars or warped wheels. Critical physics lock: the locomotive and every carriage MUST stay on the visible rails for the entire shot. The train never floats, never leaves the rails, never falls toward the village, never teleports, never bends, and never changes shape. Track geometry and the direction of travel stay physically coherent. Wheels rotate in sync with forward travel. Do not morph faces, buildings, vehicles, animals, gifts, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions. No wild camera spins or random orbits. Slow cinematic push-in / slight tracking only. Subtle cinematic motion. Keep architecture, viaduct arches, and sign lettering rigid and readable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/christmas-express/masters/cx_02_sunset_viaduct.mp4",
+      "probe": {
+        "filename": "cx_02_sunset_viaduct.mp4",
+        "path": "/workspace/public/assets/christmas/christmas-express/masters/cx_02_sunset_viaduct.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 39200554,
+        "size": 24704518
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-christmas-express/qc/cx_02_sunset_viaduct_first.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_02_sunset_viaduct_mid.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_02_sunset_viaduct_last.jpg"
+      ],
+      "created_at": "2026-09-23T08:57:41.679192+00:00"
+    },
+    {
+      "id": "cx_03_station",
+      "title": "North Pole Express station arrival",
+      "source_image": "christmas_express_north_pole_station.jpg",
+      "job_id": "8f8b2141-71f8-4713-9778-ebb48586f113",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas footage. This exact photograph comes alive for five seconds. The train MUST physically move forward along the visible railway tracks \u2014 locomotive advancing along the rails, wheels rotating consistently with travel, coupling remaining rigid. Thick steam and smoke flow naturally backward from the stack. Subtle snowfall. Warm Christmas lights shimmer gently. Tiny natural environmental movement only. Gifts stay physically attached to the train. Architecture, mountains, lake, castle, and village stay rigid. Preserve the black steam locomotive numbered 1225, POLAR EXPRESS plate, wreath, red cowcatcher, passenger cars, wet rails, NORTH POLE EXPRESS sign, ALL ABOARD FOR A BRIGHTER TOMORROW plaque, the child in the red coat and knit hat waving, golden retriever, gift piles, lanterns, village, and moon exactly as in the first frame. The train eases slowly forward along the station rails toward camera with correct wheel and steam physics. The child keeps a tiny natural wave. The dog stays seated with a small breath. Gifts remain stacked on the platform. Do not mutate sign letters or add extra people. Critical physics lock: the locomotive and every carriage MUST stay on the visible rails for the entire shot. The train never floats, never leaves the rails, never falls toward the village, never teleports, never bends, and never changes shape. Track geometry and the direction of travel stay physically coherent. Wheels rotate in sync with forward travel. Do not morph faces, buildings, vehicles, animals, gifts, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions. No wild camera spins or random orbits. Slow cinematic push-in / slight tracking only. Subtle cinematic motion. Keep architecture, viaduct arches, and sign lettering rigid and readable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/christmas-express/masters/cx_03_station.mp4",
+      "probe": {
+        "filename": "cx_03_station.mp4",
+        "path": "/workspace/public/assets/christmas/christmas-express/masters/cx_03_station.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 33298164,
+        "size": 20984782
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-christmas-express/qc/cx_03_station_first.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_03_station_mid.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_03_station_last.jpg"
+      ],
+      "created_at": "2026-09-23T08:57:46.727044+00:00"
+    },
+    {
+      "id": "cx_04_aurora_viaduct",
+      "title": "Christmas Express aurora viaduct",
+      "source_image": "christmas_express_aurora_viaduct.jpg",
+      "job_id": "db6b6c37-0fc6-4adb-8930-c29e46a44aca",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas footage. This exact photograph comes alive for five seconds. The train MUST physically move forward along the visible railway tracks \u2014 locomotive advancing along the rails, wheels rotating consistently with travel, coupling remaining rigid. Thick steam and smoke flow naturally backward from the stack. Subtle snowfall. Warm Christmas lights shimmer gently. Tiny natural environmental movement only. Gifts stay physically attached to the train. Architecture, mountains, lake, castle, and village stay rigid. Preserve the black steam locomotive numbered 1225, THE POLAR EXPRESS plate, wreath with red bow, red passenger cars, stone viaduct, balcony lanterns, alpine village, lake, castle, mountains, aurora, and starry sky exactly as in the first frame. The train moves slowly forward along the curved viaduct rails. Aurora drifts very slowly. Steam flows backward. Coach lights shimmer. No extra cars. Do not warp the viaduct arches or the locomotive silhouette. Critical physics lock: the locomotive and every carriage MUST stay on the visible rails for the entire shot. The train never floats, never leaves the rails, never falls toward the village, never teleports, never bends, and never changes shape. Track geometry and the direction of travel stay physically coherent. Wheels rotate in sync with forward travel. Do not morph faces, buildings, vehicles, animals, gifts, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions. No wild camera spins or random orbits. Slow cinematic push-in / slight tracking only. Subtle cinematic motion. Keep architecture, viaduct arches, and sign lettering rigid and readable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/christmas-express/masters/cx_04_aurora_viaduct.mp4",
+      "probe": {
+        "filename": "cx_04_aurora_viaduct.mp4",
+        "path": "/workspace/public/assets/christmas/christmas-express/masters/cx_04_aurora_viaduct.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 38724329,
+        "size": 24404397
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-christmas-express/qc/cx_04_aurora_viaduct_first.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_04_aurora_viaduct_mid.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_04_aurora_viaduct_last.jpg"
+      ],
+      "created_at": "2026-09-23T08:57:52.048421+00:00"
+    },
+    {
+      "id": "cx_05_santa_gifts",
+      "title": "Christmas Express Santa gift train",
+      "source_image": "christmas_express_santa_gift_train.jpg",
+      "job_id": "6c378a91-f265-4fc1-9d40-bf90c82829c7",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "prompt": "Photoreal cinematic 9:16 Christmas footage. This exact photograph comes alive for five seconds. The train MUST physically move forward along the visible railway tracks \u2014 locomotive advancing along the rails, wheels rotating consistently with travel, coupling remaining rigid. Thick steam and smoke flow naturally backward from the stack. Subtle snowfall. Warm Christmas lights shimmer gently. Tiny natural environmental movement only. Gifts stay physically attached to the train. Architecture, mountains, lake, castle, and village stay rigid. Preserve Santa in the locomotive cab, the black steam locomotive numbered 1225, THE POLAR EXPRESS plate, wreath, red cowcatcher, open cars filled with wrapped gifts, people and elves riding the gift cars, stone viaduct, alpine village, lake, castle, moon, and mountains exactly as in the first frame. The train moves slowly forward along the viaduct rails toward a tunnel. Gifts remain physically attached inside the cars \u2014 they do not fly off. Santa uses only a subtle believable wave or breath. Elves and riders make tiny natural shifts, no morphing faces. Steam flows backward. No extra cars, no warped wheels. Critical physics lock: the locomotive and every carriage MUST stay on the visible rails for the entire shot. The train never floats, never leaves the rails, never falls toward the village, never teleports, never bends, and never changes shape. Track geometry and the direction of travel stay physically coherent. Wheels rotate in sync with forward travel. Do not morph faces, buildings, vehicles, animals, gifts, or text. No duplicated people, no extra limbs, no melting objects, no random text, logos, or captions. No wild camera spins or random orbits. Slow cinematic push-in / slight tracking only. Subtle cinematic motion. Keep architecture, viaduct arches, and sign lettering rigid and readable.",
+      "generation_cost_usd": 0.28,
+      "credits": "4.480",
+      "file": "/workspace/public/assets/christmas/christmas-express/masters/cx_05_santa_gifts.mp4",
+      "probe": {
+        "filename": "cx_05_santa_gifts.mp4",
+        "path": "/workspace/public/assets/christmas/christmas-express/masters/cx_05_santa_gifts.mp4",
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 24.0,
+        "bitrate": 44697524,
+        "size": 28168754
+      },
+      "qc_frames": [
+        "/workspace/generated/batch-christmas-express/qc/cx_05_santa_gifts_first.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_05_santa_gifts_mid.jpg",
+        "/workspace/generated/batch-christmas-express/qc/cx_05_santa_gifts_last.jpg"
+      ],
+      "created_at": "2026-09-23T08:57:57.644321+00:00"
+    }
+  ],
+  "pending": [],
+  "failed": [],
+  "reels": [],
+  "status": "MASTERS_READY",
+  "actual_cost_usd": 1.4,
+  "success_count": 5,
+  "failed_count": 0
+}

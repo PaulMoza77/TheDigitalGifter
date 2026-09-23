@@ -1,0 +1,155 @@
+{
+  "reels": [
+    {
+      "id": "reel-christmas-express",
+      "title": "The Christmas Express \u2014 30s",
+      "file": "/workspace/public/assets/christmas/christmas-express/final/the-christmas-express-30s.mp4",
+      "probe": {
+        "duration": 29.966667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15844067,
+        "size": 59349238,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cx-05-santa-gifts",
+        "short-cx-01-night-viaduct",
+        "short-cx-02-sunset-viaduct",
+        "short-cinematic-polar-express",
+        "short-cx-04-aurora-viaduct",
+        "short-npj-04-viaduct-wide",
+        "short-cx-03-station",
+        "short-christmas-master-10",
+        "short-npj-01-train-window"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/christmas-express/posters/reel-christmas-express.jpg"
+    },
+    {
+      "id": "reel-christmas-is-coming",
+      "title": "Christmas Is Coming \u2014 30s",
+      "file": "/workspace/public/assets/christmas/christmas-express/final/christmas-is-coming-30s.mp4",
+      "probe": {
+        "duration": 29.9,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15347601,
+        "size": 57361659,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cx-03-station",
+        "short-christmas-master-06",
+        "short-cx-01-night-viaduct",
+        "short-cinematic-santa-london",
+        "short-cx-05-santa-gifts",
+        "short-christmas-master-08",
+        "short-npj-05-village-arrival",
+        "short-cinematic-workshop",
+        "short-christmas-master-07"
+      ],
+      "clip_count": 9,
+      "overlay": "93 days until Christmas",
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/christmas-express/posters/reel-christmas-is-coming.jpg"
+    },
+    {
+      "id": "reel-pov-christmas-looked-like-this",
+      "title": "POV: Christmas Looked Like This \u2014 30s",
+      "file": "/workspace/public/assets/christmas/christmas-express/final/pov-christmas-looked-like-this-30s.mp4",
+      "probe": {
+        "duration": 29.9,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15175494,
+        "size": 56718411,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cinematic-santa-london",
+        "short-cx-04-aurora-viaduct",
+        "short-global-01-lapland",
+        "short-cx-02-sunset-viaduct",
+        "short-npj-04-viaduct-wide",
+        "short-global-02-alps",
+        "short-cinematic-polar-express",
+        "short-npj-09-window-sleigh",
+        "short-cinematic-workshop"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/christmas-express/posters/reel-pov-christmas-looked-like-this.jpg"
+    },
+    {
+      "id": "reel-magic-getting-closer",
+      "title": "The Magic Is Getting Closer \u2014 30s",
+      "file": "/workspace/public/assets/christmas/christmas-express/final/the-magic-is-getting-closer-30s.mp4",
+      "probe": {
+        "duration": 29.933333,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 16094354,
+        "size": 60219709,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-christmas-master-08",
+        "short-santa-02-sleigh",
+        "short-cinematic-santa-london",
+        "short-cx-05-santa-gifts",
+        "short-cx-03-station",
+        "short-npj-05-village-arrival",
+        "short-christmas-master-07",
+        "short-npj-10-snowman",
+        "short-cx-01-night-viaduct"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/christmas-express/posters/reel-magic-getting-closer.jpg"
+    },
+    {
+      "id": "reel-all-aboard-christmas",
+      "title": "All Aboard for Christmas \u2014 30s",
+      "file": "/workspace/public/assets/christmas/christmas-express/final/all-aboard-for-christmas-30s.mp4",
+      "probe": {
+        "duration": 29.966667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15807620,
+        "size": 59212711,
+        "codec": "h264",
+        "fps": 30.0
+      },
+      "clips_used": [
+        "short-cx-05-santa-gifts",
+        "short-cx-04-aurora-viaduct",
+        "short-cinematic-santa-london",
+        "short-cx-02-sunset-viaduct",
+        "short-cx-01-night-viaduct",
+        "short-cinematic-polar-express",
+        "short-cx-03-station",
+        "short-christmas-master-10",
+        "short-npj-04-viaduct-wide"
+      ],
+      "clip_count": 9,
+      "overlay": null,
+      "audio": "none",
+      "poster": "/workspace/public/assets/christmas/christmas-express/posters/reel-all-aboard-christmas.jpg"
+    }
+  ],
+  "reels_assembled_at": "2026-09-23T09:01:44.521844+00:00",
+  "days_until_christmas": 93,
+  "status": "COMPLETE",
+  "execution_seconds": 165.26,
+  "audio": "none",
+  "model": "kling-video/v3.0/pro/image-to-video"
+}
