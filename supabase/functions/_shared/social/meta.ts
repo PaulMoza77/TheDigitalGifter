@@ -44,6 +44,10 @@ const OAUTH_ERROR_CODES = new Set([
   "instagram_not_professional",
   "missing_permissions",
   "oauth_failed",
+  "no_channel",
+  "missing_scopes",
+  "reconnect_required",
+  "invalid_redirect_uri",
 ]);
 
 export function metaOauthRedirectUri(input: { explicit?: string; publicBaseUrl: string }): string {
@@ -238,6 +242,12 @@ export const PUBLIC_ACCOUNT_METADATA_KEYS = [
   "tiktok_username",
   "youtube_channel_id",
   "youtube_channel_title",
+  "youtube_channel_handle",
+  "granted_scopes",
+  "missing_scopes",
+  "oauth_app_status",
+  "refresh_token_warning",
+  "has_refresh_token",
 ] as const;
 
 export function publicAccountMetadata(meta: Record<string, unknown> | null | undefined): Record<string, unknown> {

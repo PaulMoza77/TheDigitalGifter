@@ -11,6 +11,21 @@ import {
   safeOauthError,
 } from "../_shared/social/metaAuth.ts";
 import { isAllowedAdminReturn, isMetaPlatform, metaMediaKind, metaRetryPlan, publicAccountMetadata, sanitizeProviderError } from "../_shared/social/meta.ts";
+import {
+  ensureYouTubeAccessToken,
+  finishYouTubeOAuth,
+  inspectYouTubeToken,
+  safeYouTubeOauthError,
+  youtubeAuthorizeUrl,
+  youtubeCallbackRedirect,
+  youtubeRedirectUri,
+} from "../_shared/social/youtubeAuth.ts";
+import {
+  isYouTubePlatform,
+  normalizePrivacyStatus,
+  parseYouTubeTags,
+  youtubeRetryPlan,
+} from "../_shared/social/youtube.ts";
 
 type Platform =
   | "instagram_reels"
@@ -20,7 +35,8 @@ type Platform =
   | "facebook_photo"
   | "facebook_video"
   | "tiktok"
-  | "youtube_shorts";
+  | "youtube_shorts"
+  | "youtube_video";
 type Provider = "meta" | "tiktok" | "youtube";
 
 const PLATFORMS: Platform[] = [
@@ -32,6 +48,7 @@ const PLATFORMS: Platform[] = [
   "facebook_video",
   "tiktok",
   "youtube_shorts",
+  "youtube_video",
 ];
 
 function asString(value: unknown): string {
@@ -65,7 +82,7 @@ function livePostsEnabled(settingsFlag: boolean): boolean {
 
 function providerFor(platform: Platform): Provider {
   if (platform === "tiktok") return "tiktok";
-  if (platform === "youtube_shorts") return "youtube";
+  if (platform === "youtube_shorts" || platform === "youtube_video") return "youtube";
   return "meta";
 }
 
@@ -98,8 +115,9 @@ function providerReadiness(configured: ReturnType<typeof oauthConfigured>, live:
   if (!configured.tiktok) missingTt.push("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET");
   missingTt.push("TikTok Content Posting API audit / video.publish");
   const missingYt: string[] = [];
-  if (!configured.youtube) missingYt.push("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET");
-  missingYt.push("YouTube Data API enabled", "OAuth consent for youtube.upload");
+  if (!configured.youtube) missingYt.push("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REDIRECT_URI");
+  missingYt.push("YouTube Data API enabled", "OAuth consent for youtube.upload + youtube.readonly");
+  missingYt.push("OAuth app currently in Testing (refresh tokens may expire after 7 days)");
   if (!live) {
     missingMeta.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
     missingTt.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
@@ -212,6 +230,15 @@ function validateAsset(asset: Record<string, unknown>, platforms: Platform[]) {
     if (Number.isFinite(duration) && duration < 1) {
       issues.push({ code: "too_short", platform, message: `${platform} video is too short.` });
     }
+  }
+  if (platforms.includes("youtube_video") && Number.isFinite(duration) && duration < 1) {
+    issues.push({ code: "too_short", platform: "youtube_video", message: "youtube_video is too short." });
+  }
+  if (
+    platforms.includes("youtube_shorts") ||
+    platforms.includes("youtube_video")
+  ) {
+    // title is validated at create time via youtube_title
   }
   return { ok: issues.length === 0, issues };
 }
@@ -344,6 +371,38 @@ async function runMetaCallback(
   }
 }
 
+async function runYouTubeCallback(
+  service: ReturnType<typeof getServiceClient>,
+  input: { code: string; state: string; error: string },
+) {
+  if (input.error) {
+    if (input.state) await service.from("social_oauth_states").delete().eq("state", input.state);
+    return youtubeCallbackRedirect({ oauth: "error", message: safeYouTubeOauthError(input.error) });
+  }
+  const consumed = await consumeOauthState(service, input.state);
+  if ("error" in consumed && consumed.error) {
+    return youtubeCallbackRedirect({ oauth: "error", message: consumed.error });
+  }
+  const row = consumed.row;
+  if (!row || asString(row.provider) !== "youtube") {
+    return youtubeCallbackRedirect({ oauth: "error", message: "invalid_state" });
+  }
+  try {
+    const redirectUri = asString(row.oauth_redirect_uri) || youtubeRedirectUri();
+    const result = await finishYouTubeOAuth(service, input.code, redirectUri);
+    if (result.status !== "connected") {
+      return oauthReturn(row, {
+        oauth: "error",
+        message: safeYouTubeOauthError(result.connectionError || "oauth_failed"),
+      });
+    }
+    return oauthReturn(row, { oauth: "youtube", ok: "1" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "exchange_failed";
+    return oauthReturn(row, { oauth: "error", message: safeYouTubeOauthError(message) });
+  }
+}
+
 async function exchangeTikTok(code: string) {
   const body = new URLSearchParams({
     client_key: env("TIKTOK_CLIENT_KEY") || env("TIKTOK_CLIENT_KEY_ID"),
@@ -367,28 +426,6 @@ async function exchangeTikTok(code: string) {
   };
 }
 
-async function exchangeYouTube(code: string) {
-  const body = new URLSearchParams({
-    client_id: env("YOUTUBE_CLIENT_ID") || env("GOOGLE_OAUTH_CLIENT_ID") || env("GOOGLE_CLIENT_ID"),
-    client_secret: env("YOUTUBE_CLIENT_SECRET") || env("GOOGLE_OAUTH_CLIENT_SECRET") || env("GOOGLE_CLIENT_SECRET"),
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: oauthRedirectUri(),
-  });
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  return (await res.json()) as {
-    access_token?: string;
-    refresh_token?: string;
-    expires_in?: number;
-    error?: string;
-    error_description?: string;
-  };
-}
-
 async function handleOauthCallback(req: Request) {
   const url = new URL(req.url);
   const code = asString(url.searchParams.get("code"));
@@ -398,8 +435,12 @@ async function handleOauthCallback(req: Request) {
   const peeked = state
     ? await service.from("social_oauth_states").select("provider").eq("state", state).maybeSingle()
     : { data: null };
-  if (asString(peeked.data?.provider) === "meta" || (!peeked.data && err)) {
+  const providerPeek = asString(peeked.data?.provider);
+  if (providerPeek === "meta" || (!peeked.data && err)) {
     return htmlRedirect(await runMetaCallback(service, { code, state, error: err }));
+  }
+  if (providerPeek === "youtube") {
+    return htmlRedirect(await runYouTubeCallback(service, { code, state, error: err }));
   }
   if (err) {
     if (state) await service.from("social_oauth_states").delete().eq("state", state);
@@ -412,7 +453,7 @@ async function handleOauthCallback(req: Request) {
   const row = consumed.row;
   const provider = asString(row?.provider) as Provider;
   try {
-    if (provider === "meta") {
+    if (provider === "meta" || provider === "youtube") {
       return htmlRedirect(callbackRedirect({ oauth: "error", message: "invalid_state" }));
     } else if (provider === "tiktok") {
       const exchanged = await exchangeTikTok(code);
@@ -432,22 +473,7 @@ async function handleOauthCallback(req: Request) {
         metadata: { open_id: exchanged.open_id || null },
       });
     } else {
-      const exchanged = await exchangeYouTube(code);
-      if (!exchanged.access_token) {
-        throw new Error(exchanged.error_description || exchanged.error || "YouTube token exchange failed");
-      }
-      await upsertAccount(service, {
-        provider: "youtube",
-        account_id: "youtube",
-        account_name: "YouTube",
-        status: "connected",
-        access_token_ciphertext: await encryptSecret(exchanged.access_token),
-        refresh_token_ciphertext: exchanged.refresh_token ? await encryptSecret(exchanged.refresh_token) : null,
-        expires_at: exchanged.expires_in
-          ? new Date(Date.now() + exchanged.expires_in * 1000).toISOString()
-          : null,
-        metadata: {},
-      });
+      return htmlRedirect(callbackRedirect({ oauth: "error", message: "invalid_state" }));
     }
     return htmlRedirect(oauthReturn(row || null, { oauth: provider, ok: "1" }));
   } catch {
@@ -480,13 +506,26 @@ async function accountForPlatform(
     .limit(1)
     .maybeSingle();
   if (!data) return null;
-  const access = await decryptSecret(data.access_token_ciphertext as string);
   const meta = (data.metadata || {}) as Record<string, unknown>;
   const pageCipher = asString(meta.page_access_token_ciphertext);
   if (pageCipher) {
     const pageToken = await decryptSecret(pageCipher);
     if (pageToken) meta.page_access_token = pageToken;
   }
+
+  if (provider === "youtube") {
+    const ensured = await ensureYouTubeAccessToken(service, data as Record<string, unknown>);
+    return {
+      id: data.id as string,
+      provider,
+      accountId: asString(data.account_id),
+      status: ensured.status,
+      accessToken: ensured.accessToken,
+      metadata: meta,
+    };
+  }
+
+  const access = await decryptSecret(data.access_token_ciphertext as string);
   if (data.expires_at && new Date(String(data.expires_at)).getTime() < Date.now()) {
     await service.from("social_accounts").update({ status: "expired", updated_at: new Date().toISOString() }).eq("id", data.id);
     return {
@@ -565,6 +604,15 @@ async function processTarget(
     return { skipped: true, reason: "live_posting_disabled" };
   }
 
+  if (isYouTubePlatform(platform)) {
+    await service
+      .from("social_publication_targets")
+      .update({ status: "uploading", updated_at: new Date().toISOString() })
+      .eq("id", target.id)
+      .is("remote_post_id", null);
+  }
+
+  const options = (target.platform_options || {}) as Record<string, unknown>;
   const result = await dispatchPublish({
     platform,
     videoUrl,
@@ -579,6 +627,28 @@ async function processTarget(
       accessToken: account.accessToken,
       metadata: account.metadata,
     },
+    youtube: isYouTubePlatform(platform)
+      ? {
+          tags: parseYouTubeTags(options.tags ?? hashtags),
+          categoryId: asString(options.categoryId) || "24",
+          privacyStatus: normalizePrivacyStatus(options.privacyStatus, "private"),
+          madeForKids: options.madeForKids === true,
+          publishAt: asString(options.publishAt) || null,
+        }
+      : null,
+    persistYouTubeUploadSession: isYouTubePlatform(platform)
+      ? async (uploadUri: string) => {
+          await service
+            .from("social_publication_targets")
+            .update({
+              status: "uploading",
+              provider_container_id: uploadUri,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", target.id)
+            .is("remote_post_id", null);
+        }
+      : undefined,
   });
 
   if (result.ok) {
@@ -601,21 +671,29 @@ async function processTarget(
     return { ok: true, remotePostId: result.remotePostId };
   }
 
-  const retry = metaRetryPlan({
-    platform,
-    attempts: Number(target.attempts || 1),
-    retryable: Boolean(result.retryable),
-    remotePostId: asString(target.remote_post_id) || null,
-    nowMs: Date.now(),
-  });
-  const metaFailure = isMetaPlatform(platform);
+  const retry = isYouTubePlatform(platform)
+    ? youtubeRetryPlan({
+        platform,
+        attempts: Number(target.attempts || 1),
+        retryable: Boolean(result.retryable),
+        remotePostId: asString(target.remote_post_id) || null,
+        nowMs: Date.now(),
+      })
+    : metaRetryPlan({
+        platform,
+        attempts: Number(target.attempts || 1),
+        retryable: Boolean(result.retryable),
+        remotePostId: asString(target.remote_post_id) || null,
+        nowMs: Date.now(),
+      });
+  const managedRetry = isMetaPlatform(platform) || isYouTubePlatform(platform);
   await service
     .from("social_publication_targets")
     .update({
-      status: metaFailure ? retry.status : "failed",
+      status: managedRetry ? retry.status : "failed",
       last_error: sanitizeProviderError(`${result.code}: ${result.message}`),
       lease_expires_at: null,
-      next_retry_at: metaFailure
+      next_retry_at: managedRetry
         ? retry.nextRetryAt
         : result.retryable
           ? new Date(Date.now() + 5 * 60 * 1000).toISOString()
@@ -653,6 +731,7 @@ async function createPublicationRow(
     caption: string;
     hashtags: string;
     youtubeTitle?: string;
+    youtubeOptions?: Record<string, unknown>;
     platformCaptions?: Record<string, string>;
     scheduledAt: string;
     timezone: string;
@@ -675,12 +754,20 @@ async function createPublicationRow(
     .select("*")
     .single();
   if (error) throw error;
+  const ytOptions = {
+    privacyStatus: normalizePrivacyStatus(input.youtubeOptions?.privacyStatus, "private"),
+    madeForKids: input.youtubeOptions?.madeForKids === true,
+    categoryId: asString(input.youtubeOptions?.categoryId) || "24",
+    tags: parseYouTubeTags(input.youtubeOptions?.tags ?? input.hashtags),
+    publishAt: asString(input.youtubeOptions?.publishAt) || null,
+  };
   const targets = input.platforms.map((platform) => ({
     publication_id: publication.id,
     provider: providerFor(platform),
     platform,
     platform_caption: input.platformCaptions?.[platform] || null,
-    platform_title: platform === "youtube_shorts" ? input.youtubeTitle || null : null,
+    platform_title: isYouTubePlatform(platform) ? input.youtubeTitle || null : null,
+    platform_options: isYouTubePlatform(platform) ? ytOptions : {},
     status: "scheduled",
     idempotency_key: `${publication.id}:${platform}`,
   }));
@@ -729,6 +816,17 @@ Deno.serve(async (req) => {
       return jsonResponse({ redirect });
     }
 
+    if (action === "youtube_oauth_callback") {
+      if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
+      const service = getServiceClient();
+      const redirect = await runYouTubeCallback(service, {
+        code: asString(body.code),
+        state: asString(body.state),
+        error: asString(body.error),
+      });
+      return jsonResponse({ redirect });
+    }
+
     const { user } = await getAuthUser(req);
     await assertAdmin(user?.email);
     const service = getServiceClient();
@@ -747,21 +845,68 @@ Deno.serve(async (req) => {
     }
 
     if (action === "connection_health") {
+      const provider = asString(body.provider) || "meta";
       const { data } = await service
         .from("social_accounts")
         .select("*")
-        .eq("provider", "meta")
+        .eq("provider", provider)
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (!data || data.status === "revoked") {
-        return jsonResponse({ ok: true, valid: false, status: "not_connected", published: false });
+        return jsonResponse({ ok: true, valid: false, status: "not_connected", published: false, provider });
+      }
+      if (provider === "youtube") {
+        const report = await inspectYouTubeToken(service, data as Record<string, unknown>);
+        return jsonResponse({ ...report, provider: "youtube", published: false });
       }
       const report = await inspectMetaToken(service, data as Record<string, unknown>);
-      return jsonResponse(report);
+      return jsonResponse({ ...report, provider: "meta" });
     }
 
-    if (action === "publish_test") {
+    if (action === "publish_test" || action === "prepare_test_upload") {
+      const provider = asString(body.provider) || (action === "prepare_test_upload" ? "youtube" : "meta");
+      if (provider === "youtube") {
+        const { data } = await service
+          .from("social_accounts")
+          .select("status,metadata,expires_at")
+          .eq("provider", "youtube")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const meta = publicMetadata((data?.metadata || {}) as Record<string, unknown>);
+        const missing = Array.isArray(meta.missing_scopes)
+          ? meta.missing_scopes.map(String)
+          : Array.isArray(meta.missing_permissions)
+            ? meta.missing_permissions.map(String)
+            : [];
+        const blockers: string[] = [];
+        if (!data || data.status !== "connected") blockers.push("youtube_not_connected");
+        if (!meta.youtube_channel_id) blockers.push("youtube_channel_missing");
+        if (missing.length) blockers.push("missing_scopes");
+        if (meta.has_refresh_token === false) blockers.push("refresh_token_missing");
+        blockers.push("live_posts_disabled");
+        blockers.push("oauth_app_in_testing");
+        return jsonResponse({
+          ok: true,
+          published: false,
+          executed: false,
+          upload_started: false,
+          prepared: blockers.filter((item) => item !== "live_posts_disabled" && item !== "oauth_app_in_testing").length === 0,
+          ready: blockers.length === 2 && blockers.includes("live_posts_disabled") && blockers.includes("oauth_app_in_testing"),
+          blockers,
+          youtube_channel_id: meta.youtube_channel_id || null,
+          youtube_channel_title: meta.youtube_channel_title || null,
+          youtube_channel_handle: meta.youtube_channel_handle || null,
+          granted_scopes: meta.granted_scopes || meta.granted_permissions || [],
+          missing_scopes: missing,
+          oauth_app_status: meta.oauth_app_status || "testing",
+          refresh_token_warning: meta.refresh_token_warning || null,
+          has_refresh_token: meta.has_refresh_token !== false,
+          message:
+            "No YouTube upload was started. Live posting stays off until you approve it. OAuth app is in Testing.",
+        });
+      }
       const { data } = await service
         .from("social_accounts")
         .select("status,metadata")
@@ -816,6 +961,24 @@ Deno.serve(async (req) => {
         });
         return jsonResponse({ url: authorized.url });
       }
+      if (provider === "youtube") {
+        const authorized = youtubeAuthorizeUrl(state, { forceConsent: true });
+        if (!authorized.url) {
+          return jsonResponse({
+            url: null,
+            waitingForApproval: true,
+            missing: authorized.missing,
+          });
+        }
+        await service.from("social_oauth_states").insert({
+          state,
+          provider: "youtube",
+          created_by: user?.id || null,
+          redirect_to: `${publicBaseUrl()}/admin/social-accounts`,
+          oauth_redirect_uri: authorized.redirectUri,
+        });
+        return jsonResponse({ url: authorized.url });
+      }
       await service.from("social_oauth_states").insert({
         state,
         provider,
@@ -838,25 +1001,11 @@ Deno.serve(async (req) => {
         auth.searchParams.set("scope", "user.info.basic,video.upload,video.publish");
         return jsonResponse({ url: auth.toString() });
       }
-      if (!configured.youtube) {
-        return jsonResponse({
-          url: null,
-          waitingForApproval: true,
-          missing: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
-        });
-      }
-      const auth = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-      auth.searchParams.set(
-        "client_id",
-        env("YOUTUBE_CLIENT_ID") || env("GOOGLE_OAUTH_CLIENT_ID") || env("GOOGLE_CLIENT_ID"),
-      );
-      auth.searchParams.set("redirect_uri", redirectUri);
-      auth.searchParams.set("state", state);
-      auth.searchParams.set("response_type", "code");
-      auth.searchParams.set("access_type", "offline");
-      auth.searchParams.set("prompt", "consent");
-      auth.searchParams.set("scope", "https://www.googleapis.com/auth/youtube.upload");
-      return jsonResponse({ url: auth.toString() });
+      return jsonResponse({
+        url: null,
+        waitingForApproval: true,
+        missing: ["unsupported_provider"],
+      });
     }
 
     if (action === "disconnect") {
@@ -917,6 +1066,7 @@ Deno.serve(async (req) => {
         caption: asString(body.caption),
         hashtags: asString(body.hashtags),
         youtubeTitle: asString(body.youtube_title),
+        youtubeOptions: (body.youtube_options || {}) as Record<string, unknown>,
         platformCaptions: (body.platform_captions || {}) as Record<string, string>,
         scheduledAt,
         timezone,
@@ -987,6 +1137,7 @@ Deno.serve(async (req) => {
             caption: asString(body.caption),
             hashtags: asString(body.hashtags),
             youtubeTitle: asString(body.youtube_title),
+            youtubeOptions: (body.youtube_options || {}) as Record<string, unknown>,
             scheduledAt: slot.scheduledAtIso,
             timezone,
             createdBy: user?.id,

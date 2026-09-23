@@ -66,32 +66,67 @@ export const socialPublisherApi = {
       provider,
     }),
   disconnect: (accountId: string) => invoke<{ ok: true }>("disconnect", { account_id: accountId }),
-  connectionHealth: () =>
+  connectionHealth: (provider: "meta" | "youtube" = "meta") =>
     invoke<{
       ok: true;
       valid: boolean;
       status: string;
+      provider?: string;
       missing_permissions?: string[];
+      missing_scopes?: string[];
       scopes?: string[];
       facebook_page_name?: string | null;
       instagram_username?: string | null;
       instagram_is_professional?: boolean;
       instagram_linked?: boolean;
+      youtube_channel_id?: string | null;
+      youtube_channel_title?: string | null;
+      youtube_channel_handle?: string | null;
+      oauth_app_status?: string | null;
+      refresh_token_warning?: string | null;
+      has_refresh_token?: boolean;
       error?: string | null;
-    }>("connection_health"),
-  publishTest: () =>
+    }>("connection_health", { provider }),
+  publishTest: (provider: "meta" | "youtube" = "meta") =>
     invoke<{
       ok: true;
       published: false;
       executed: false;
       ready: boolean;
+      prepared?: boolean;
+      upload_started?: boolean;
       blockers: string[];
       facebook_page_name?: string | null;
       instagram_username?: string | null;
       granted_permissions?: string[];
       missing_permissions?: string[];
+      youtube_channel_id?: string | null;
+      youtube_channel_title?: string | null;
+      youtube_channel_handle?: string | null;
+      granted_scopes?: string[];
+      missing_scopes?: string[];
+      oauth_app_status?: string | null;
+      refresh_token_warning?: string | null;
       message: string;
-    }>("publish_test"),
+    }>("publish_test", { provider }),
+  prepareTestUpload: () =>
+    invoke<{
+      ok: true;
+      published: false;
+      executed: false;
+      upload_started: false;
+      prepared: boolean;
+      ready: boolean;
+      blockers: string[];
+      youtube_channel_id?: string | null;
+      youtube_channel_title?: string | null;
+      youtube_channel_handle?: string | null;
+      granted_scopes?: string[];
+      missing_scopes?: string[];
+      oauth_app_status?: string | null;
+      refresh_token_warning?: string | null;
+      message: string;
+    }>("prepare_test_upload", { provider: "youtube" }),
   listPublications: (tab: "upcoming" | "published" | "failed" | "calendar") =>
     invoke<{ items: SocialPublicationRow[] }>("list_publications", { tab }),
   createPublication: (payload: Record<string, unknown>) =>

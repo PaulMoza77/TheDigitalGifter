@@ -24,6 +24,7 @@ export const API_MODULES = {
   "/api/long-form-studio": "long-form-studio.ts",
   "/api/social-publisher-cron": "social-publisher-cron.ts",
   "/api/meta-oauth/callback": "meta-oauth-callback.ts",
+  "/api/admin/social/youtube/callback": "youtube-oauth-callback.ts",
   "/api/publisher": "publisher.ts",
   "/api/publisher-cron": "publisher-cron.ts",
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",

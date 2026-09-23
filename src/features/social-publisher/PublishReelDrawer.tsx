@@ -21,6 +21,10 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
   const [caption, setCaption] = React.useState("");
   const [hashtags, setHashtags] = React.useState("");
   const [youtubeTitle, setYoutubeTitle] = React.useState("");
+  const [youtubePrivacy, setYoutubePrivacy] = React.useState<"private" | "unlisted" | "public">("private");
+  const [youtubeTags, setYoutubeTags] = React.useState("");
+  const [youtubeCategory, setYoutubeCategory] = React.useState("24");
+  const [madeForKids, setMadeForKids] = React.useState(false);
   const [overridesOpen, setOverridesOpen] = React.useState(false);
   const [platformCaptions, setPlatformCaptions] = React.useState<Record<string, string>>({});
   const [mode, setMode] = React.useState<"now" | "schedule">("schedule");
@@ -33,6 +37,10 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
     setCaption("");
     setHashtags("");
     setYoutubeTitle(video.title.slice(0, 90));
+    setYoutubePrivacy("private");
+    setYoutubeTags("");
+    setYoutubeCategory("24");
+    setMadeForKids(false);
     setPlatforms([...PLATFORM_ORDER]);
     setMode("schedule");
   }, [video?.id]);
@@ -41,6 +49,7 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
 
   const asset = snapshotFromCatalog(video);
   const validation = validateLibraryAssetForPlatforms(asset, platforms);
+  const youtubeSelected = platforms.some((platform) => platform === "youtube_shorts" || platform === "youtube_video");
 
   function toggle(platform: SocialPlatform) {
     setPlatforms((current) =>
@@ -69,6 +78,15 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
         caption,
         hashtags,
         youtube_title: youtubeTitle,
+        youtube_options: youtubeSelected
+          ? {
+              privacyStatus: youtubePrivacy,
+              tags: youtubeTags,
+              categoryId: youtubeCategory,
+              madeForKids,
+              publishAt: mode === "schedule" && youtubePrivacy === "private" ? scheduledAt : null,
+            }
+          : undefined,
         platform_captions: platformCaptions,
         mode,
         scheduled_at: scheduledAt,
@@ -112,8 +130,11 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
         />
 
         <p className="mb-2 text-sm font-medium text-slate-200">Publish to</p>
+        <p className="mb-2 text-xs text-slate-500">
+          Select Facebook, Instagram, and YouTube together for the same asset.
+        </p>
         <div className="mb-4 grid grid-cols-2 gap-2">
-          {([...PLATFORM_ORDER, "instagram_photo", "instagram_video", "facebook_photo", "facebook_video"] as SocialPlatform[]).map((platform) => {
+          {([...PLATFORM_ORDER, "instagram_photo", "instagram_video", "facebook_photo", "facebook_video", "youtube_video"] as SocialPlatform[]).map((platform) => {
             const spec = PLATFORM_CONSTRAINTS[platform];
             const on = platforms.includes(platform);
             return (
@@ -139,7 +160,7 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
           className="mb-4 text-left text-xs text-slate-500 underline-offset-2 hover:underline"
           onClick={() => setPlatforms([...PLATFORM_ORDER])}
         >
-          Select all
+          Select all (FB + IG + TikTok + YouTube Shorts)
         </button>
 
         <label className="mb-3 block text-sm text-slate-300">
@@ -160,15 +181,53 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
             className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400/50"
           />
         </label>
-        {platforms.includes("youtube_shorts") ? (
-          <label className="mb-3 block text-sm text-slate-300">
-            YouTube title
-            <input
-              value={youtubeTitle}
-              onChange={(e) => setYoutubeTitle(e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400/50"
-            />
-          </label>
+        {youtubeSelected ? (
+          <div className="mb-3 space-y-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-3">
+            <label className="block text-sm text-slate-300">
+              YouTube title
+              <input
+                value={youtubeTitle}
+                onChange={(e) => setYoutubeTitle(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400/50"
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Privacy
+              <select
+                value={youtubePrivacy}
+                onChange={(e) => setYoutubePrivacy(e.target.value as "private" | "unlisted" | "public")}
+                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              >
+                <option value="private">private</option>
+                <option value="unlisted">unlisted</option>
+                <option value="public">public</option>
+              </select>
+            </label>
+            <label className="block text-sm text-slate-300">
+              Tags
+              <input
+                value={youtubeTags}
+                onChange={(e) => setYoutubeTags(e.target.value)}
+                placeholder="gift, christmas, short"
+                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              />
+            </label>
+            <label className="block text-sm text-slate-300">
+              Category ID
+              <input
+                value={youtubeCategory}
+                onChange={(e) => setYoutubeCategory(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input type="checkbox" checked={madeForKids} onChange={(e) => setMadeForKids(e.target.checked)} />
+              Made for kids
+            </label>
+            <p className="text-[11px] text-slate-500">
+              Default is not made for kids. Scheduled private videos can use YouTube publishAt when privacy is private.
+            </p>
+          </div>
         ) : null}
 
         <button

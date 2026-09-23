@@ -1,4 +1,5 @@
 import { buildMetaBusinessLoginUrl } from "./meta";
+import { REQUIRED_YOUTUBE_SCOPES, buildYouTubeAuthorizeUrl as buildYouTubeAuthorizeUrlShared } from "./youtube";
 import type { SocialProvider } from "./types";
 
 export const META_OAUTH_SCOPES = [
@@ -12,7 +13,7 @@ export const META_OAUTH_SCOPES = [
 
 export const TIKTOK_OAUTH_SCOPES = ["user.info.basic", "video.upload", "video.publish"] as const;
 
-export const YOUTUBE_OAUTH_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"] as const;
+export const YOUTUBE_OAUTH_SCOPES = REQUIRED_YOUTUBE_SCOPES;
 
 export function buildMetaAuthorizeUrl(input: {
   appId: string;
@@ -55,17 +56,9 @@ export function buildYouTubeAuthorizeUrl(input: {
   clientId: string;
   redirectUri: string;
   state: string;
+  forceConsent?: boolean;
 }): string {
-  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.searchParams.set("client_id", input.clientId);
-  url.searchParams.set("redirect_uri", input.redirectUri);
-  url.searchParams.set("state", input.state);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
-  url.searchParams.set("include_granted_scopes", "true");
-  url.searchParams.set("scope", YOUTUBE_OAUTH_SCOPES.join(" "));
-  return url.toString();
+  return buildYouTubeAuthorizeUrlShared(input);
 }
 
 export function oauthRedirectPath(provider: SocialProvider): string {

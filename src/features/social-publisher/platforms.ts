@@ -167,6 +167,24 @@ export const PLATFORM_CONSTRAINTS: Record<SocialPlatform, PlatformConstraint> = 
     requiresTitle: true,
     notes: "YouTube Data API videos.insert; vertical ≤60s is Shorts-compatible.",
   },
+  youtube_video: {
+    platform: "youtube_video",
+    provider: "youtube",
+    label: "YouTube Video",
+    shortLabel: "YT video",
+    kind: "video",
+    minDurationSeconds: 1,
+    maxDurationSeconds: 12 * 60 * 60,
+    minWidth: 480,
+    minHeight: 360,
+    aspect: "any",
+    aspectTolerance: 0.2,
+    maxFileSizeBytes: 256 * 1024 * 1024 * 1024,
+    containers: ["mp4", "mov", "mpeg", "avi"],
+    codecs: ["h264", "avc1", "vp9"],
+    requiresTitle: true,
+    notes: "YouTube Data API videos.insert for standard / long-form uploads.",
+  },
 };
 
 export const PLATFORM_ORDER: SocialPlatform[] = [

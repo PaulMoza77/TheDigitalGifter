@@ -12,6 +12,13 @@ import {
 } from "./meta";
 import { isAllowedAdminReturn as originAdminReturn } from "../../../api/_lib/metaAdminReturn";
 import { buildMetaAuthorizeUrl, buildTikTokAuthorizeUrl, buildYouTubeAuthorizeUrl } from "./oauth";
+import {
+  diffYouTubeScopes,
+  isExactYouTubeRedirectUri,
+  youtubeOauthRedirectUri,
+  youtubeQueueState,
+  youtubeRetryPlan,
+} from "./youtube";
 import { PLATFORM_CONSTRAINTS } from "./platforms";
 import {
   canRetryTarget,
@@ -288,6 +295,56 @@ describe("oauth builders", () => {
     expect(buildYouTubeAuthorizeUrl({ clientId: "id", redirectUri: "https://example.com/cb", state: "s" })).toContain(
       "accounts.google.com/o/oauth2/v2/auth",
     );
+    const yt = buildYouTubeAuthorizeUrl({
+      clientId: "id",
+      redirectUri: "https://www.thedigitalgifter.com/api/admin/social/youtube/callback",
+      state: "s",
+    });
+    expect(yt).toContain("youtube.upload");
+    expect(yt).toContain("youtube.readonly");
+    expect(yt).toContain("access_type=offline");
+    expect(yt).toContain("prompt=consent");
+    expect(yt).not.toContain("client_secret");
+    expect(
+      youtubeOauthRedirectUri({
+        publicBaseUrl: "https://www.thedigitalgifter.com",
+      }),
+    ).toBe("https://www.thedigitalgifter.com/api/admin/social/youtube/callback");
+    expect(
+      isExactYouTubeRedirectUri(
+        "https://www.thedigitalgifter.com/api/admin/social/youtube/callback",
+        "https://www.thedigitalgifter.com/api/admin/social/youtube/callback",
+      ),
+    ).toBe(true);
+    expect(
+      isExactYouTubeRedirectUri(
+        "https://evil.example/api/admin/social/youtube/callback",
+        "https://www.thedigitalgifter.com/api/admin/social/youtube/callback",
+      ),
+    ).toBe(false);
+    expect(diffYouTubeScopes(["https://www.googleapis.com/auth/youtube.upload"]).missing).toContain(
+      "https://www.googleapis.com/auth/youtube.readonly",
+    );
+    expect(youtubeQueueState("scheduled")).toBe("queued");
+    expect(youtubeQueueState("uploading")).toBe("uploading");
+    expect(
+      youtubeRetryPlan({
+        platform: "youtube_shorts",
+        attempts: 1,
+        retryable: true,
+        remotePostId: null,
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).status,
+    ).toBe("scheduled");
+    expect(
+      youtubeRetryPlan({
+        platform: "youtube_shorts",
+        attempts: 1,
+        retryable: true,
+        remotePostId: "yt_123",
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).nextRetryAt,
+    ).toBeNull();
     expect(JSON.stringify(PLATFORM_CONSTRAINTS)).not.toMatch(/sk_|secret|EAA/);
   });
 });
@@ -375,5 +432,14 @@ describe("meta account selection", () => {
         nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
       }).status,
     ).toBe("failed");
+    expect(
+      youtubeRetryPlan({
+        platform: "youtube_video",
+        attempts: 1,
+        retryable: true,
+        remotePostId: null,
+        nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
+      }).status,
+    ).toBe("scheduled");
   });
 });

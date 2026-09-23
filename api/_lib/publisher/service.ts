@@ -314,11 +314,14 @@ export async function tickPublisherWorker(workerId = "publisher-origin") {
   return { ok: true, slotsCreated: generated.created, claimed: jobs.length, processed, dryRun: true, livePosts: false };
 }
 
-async function metaConnectionLabel(service: DbClient): Promise<"connected" | "not_connected"> {
+async function socialConnectionLabel(
+  service: DbClient,
+  provider: "meta" | "tiktok" | "youtube",
+): Promise<"connected" | "not_connected"> {
   const { data } = await service
     .from("social_accounts")
     .select("status")
-    .eq("provider", "meta")
+    .eq("provider", provider)
     .eq("status", "connected")
     .limit(1)
     .maybeSingle();
@@ -369,10 +372,10 @@ export async function publisherBootstrap() {
     timezone: settings?.timezone || DEFAULT_PUBLISHER_TIMEZONE,
     livePostsEnabled: false,
     connections: [
-      { provider: "meta", status: await metaConnectionLabel(service) },
+      { provider: "meta", status: await socialConnectionLabel(service, "meta") },
       { provider: "threads", status: "not_connected" },
-      { provider: "youtube", status: "not_connected" },
-      { provider: "tiktok", status: "not_connected" },
+      { provider: "youtube", status: await socialConnectionLabel(service, "youtube") },
+      { provider: "tiktok", status: await socialConnectionLabel(service, "tiktok") },
       { provider: "dry_run", status: "connected" },
     ],
     overview,
