@@ -1,9 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
 import { fetchPlannerAccess, insertTasks, loadProfile, upsertProfile } from "./api";
 import { daysUntilChristmas, localDateParts, resolvePlanMode, upcomingChristmasYear } from "./date";
+import { invalidatePlannerSnapshot } from "./intelligence/loadSnapshot";
 import { generateInitialPlan, progressiveSurface } from "./planGenerator";
 import { initializePlannerFromPersonalization } from "./initializeProfile";
 import { personalizationComplete, readPlannerPersonalization } from "./personalization";
@@ -27,6 +28,7 @@ export function PlannerBundleProvider({ children }: { children: ReactNode }) {
     access: PlannerAccess | null;
     profile: PlannerProfile | null;
   }>({ loading: true, access: null, profile: null });
+  const userIdRef = useRef<string | null>(null);
 
   const reload = useCallback(async () => {
     const access = await fetchPlannerAccess();
@@ -35,12 +37,34 @@ export function PlannerBundleProvider({ children }: { children: ReactNode }) {
     if (!profile && personalizationComplete(readPlannerPersonalization())) {
       profile = await initializePlannerFromPersonalization();
     }
+    const nextUser = profile?.user_id || null;
+    if (userIdRef.current && nextUser && userIdRef.current !== nextUser) {
+      invalidatePlannerSnapshot();
+    }
+    userIdRef.current = nextUser;
     setState({ loading: false, access, profile });
     trackPlannerEvent("planner_opened", { planMode: profile?.plan_mode });
   }, []);
 
   useEffect(() => {
     void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        userIdRef.current = null;
+        invalidatePlannerSnapshot();
+        setState({ loading: false, access: null, profile: null });
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void reload();
+      }
+    });
+    return () => subscription.unsubscribe();
   }, [reload]);
 
   const value = useMemo(() => ({ ...state, reload }), [state, reload]);

@@ -50,8 +50,12 @@ describe("planner navigation does not refetch the shared workspace", () => {
     expect(copilot).not.toContain("}, [profile, location.pathname]);");
     expect(snapshot).toContain('.in("id", recipeIds)');
     expect(snapshot).not.toContain('.eq("published", true)');
+    expect(snapshot).toContain("inflight?.promise === promise");
     expect(recipes).toContain("loadPublishedRecipeList");
     expect(recipes).toContain("Show more recipes");
     expect(recipes).not.toContain("RECIPE_SELECT");
+    const onboarding = readFileSync("src/features/christmas/planner/Onboarding.tsx", "utf8");
+    expect(onboarding).toContain('event === "SIGNED_OUT"');
+    expect(onboarding).toContain("invalidatePlannerSnapshot");
   });
 });

@@ -42,7 +42,10 @@ export async function loadPlannerWorkspace(profile: PlannerProfile, now = new Da
   const gen = generation;
   const promise = fetchPlannerWorkspace(profile, now)
     .then((snapshot) => {
-      if (gen === generation) cache = { profileId: profile.id, at: Date.now(), snapshot };
+      // Never let a superseded in-flight load (or another profile) overwrite newer cache.
+      if (gen === generation && inflight?.promise === promise) {
+        cache = { profileId: profile.id, at: Date.now(), snapshot };
+      }
       return snapshot;
     })
     .finally(() => {
