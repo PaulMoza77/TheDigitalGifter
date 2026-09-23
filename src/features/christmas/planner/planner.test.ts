@@ -806,6 +806,7 @@ describe("private planner privacy surface", () => {
     expect(pages).not.toContain("Today’s checklist");
     expect(more).toContain("See your season at a glance.");
     expect(more).toContain("Need to buy");
+    expect(more).toContain("Everything you still need, in one place.");
     expect(ui).toContain("PlannerPageHeader");
     expect(ui).toContain("PlannerLockedModule");
     expect(ui).toContain("FoundingPassUnlockButton");

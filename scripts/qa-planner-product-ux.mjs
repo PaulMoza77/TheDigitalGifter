@@ -12,6 +12,21 @@ const bakery = resolve("public/assets/christmas/library-stills/prague_bakery_win
 const cozy = resolve("public/christmas/planner/copilot-cozy.webp");
 const clip = resolve("public/assets/christmas/cozy-reel/posters/clip1.jpg");
 
+const family = resolve("public/assets/christmas/library-stills/family_christmas_boardgame.jpg");
+
+function copilotChips(nav) {
+  if (nav === "shopping") {
+    return `
+            <button type="button" class="tdg-xmas-copilot-chip"><span>What am I missing?</span></button>
+            <button type="button" class="tdg-xmas-copilot-chip"><span>What should I buy next?</span></button>
+            <button type="button" class="tdg-xmas-copilot-chip"><span>Consolidate my list</span></button>`;
+  }
+  return `
+            <button type="button" class="tdg-xmas-copilot-chip"><span>What should I do next?</span></button>
+            <button type="button" class="tdg-xmas-copilot-chip"><span>Help me catch up</span></button>
+            <button type="button" class="tdg-xmas-copilot-chip"><span>What is urgent?</span></button>`;
+}
+
 function shell({ title, nav, copilot = false, main }) {
   return `<!doctype html>
 <html lang="en">
@@ -43,8 +58,22 @@ function shell({ title, nav, copilot = false, main }) {
         <a class="${nav === "meals" ? "active" : ""}" href="#">Meals</a>
         <a class="${nav === "recipes" ? "active" : ""}" href="#">Recipes</a>
         <a class="${nav === "shopping" ? "active" : ""}" href="#">Shopping</a>
-        <a class="${nav === "budget" ? "active" : ""}" href="#">More</a>
+        <a class="${nav === "more" || nav === "budget" ? "active" : ""}" href="#">More</a>
       </nav>
+      <div class="tdg-planner-side-foot">
+        <a class="tdg-planner-magic tdg-planner-magic--side" href="/generator?occasion=christmas">
+          <span class="tdg-planner-magic-visual" aria-hidden="true"><img src="${gifts}" alt="" /></span>
+          <span class="tdg-planner-magic-copy">
+            <span class="tdg-planner-magic-kicker">Create Christmas magic</span>
+            <span class="tdg-planner-magic-lede">Turn your favorite moments into something magical.</span>
+            <span class="tdg-planner-magic-cta">Create a memory →</span>
+          </span>
+        </a>
+        <div class="tdg-planner-side-account">
+          <button type="button" class="tdg-planner-side-copilot">AI Copilot</button>
+          <a href="#">Account</a>
+        </div>
+      </div>
     </aside>
     <main class="tdg-planner-main">${main}</main>
     ${copilot ? `<aside class="tdg-planner-copilot-rail" aria-label="Christmas Copilot">
@@ -52,15 +81,12 @@ function shell({ title, nav, copilot = false, main }) {
         <div class="tdg-xmas-copilot-photo" style="background-image:url('${cozy}')"><div class="tdg-xmas-copilot-veil"></div></div>
         <header class="tdg-xmas-copilot-head"><div><p class="tdg-xmas-copilot-brand">Christmas Copilot</p><p class="tdg-xmas-copilot-sub">A little help. A little Christmas magic.</p><p class="tdg-xmas-copilot-meta">42% ready · 94 days left</p></div></header>
         <div class="tdg-xmas-copilot-scroll">
-          <div class="tdg-xmas-copilot-suggestions">
-            <button type="button" class="tdg-xmas-copilot-chip"><span>What should I do next?</span></button>
-            <button type="button" class="tdg-xmas-copilot-chip"><span>Help me catch up</span></button>
-            <button type="button" class="tdg-xmas-copilot-chip"><span>What is urgent?</span></button>
+          <div class="tdg-xmas-copilot-suggestions">${copilotChips(nav)}
           </div>
           <div class="tdg-xmas-copilot-win">
-            <p class="tdg-xmas-copilot-win-kicker">Next best step</p>
-            <p class="tdg-xmas-copilot-win-body">Choose a gift for Andreas before the weekend post.</p>
-            <button type="button" class="tdg-xmas-copilot-win-cta">Find a gift</button>
+            <p class="tdg-xmas-copilot-win-kicker">Your next little win</p>
+            <p class="tdg-xmas-copilot-win-body">${nav === "shopping" ? "Tick smoked salmon off the Christmas Day list." : "Choose a gift for Andreas before the weekend post."}</p>
+            <button type="button" class="tdg-xmas-copilot-win-cta">${nav === "shopping" ? "Open shopping" : "Find a gift"}</button>
           </div>
         </div>
         <form class="tdg-xmas-copilot-composer"><input class="tdg-xmas-copilot-input" placeholder="Ask anything..." /></form>
@@ -71,7 +97,7 @@ function shell({ title, nav, copilot = false, main }) {
       <a class="${nav === "plan" ? "active" : ""}" href="#">Plan</a>
       <button class="tdg-planner-nav-copilot" type="button">AI Copilot</button>
       <a class="${nav === "shopping" ? "active" : ""}" href="#">Shopping</a>
-      <a href="#">More</a>
+      <a class="${nav === "more" || nav === "budget" ? "active" : ""}" href="#">More</a>
     </nav>
   </div>
 </div>
@@ -262,16 +288,19 @@ const pages = {
     copilot: true,
     main: `
       <div class="tdg-planner-page tdg-shop">
-        <header class="tdg-planner-page-head"><h1>Shopping</h1><p>Need to buy, then tick it off.</p></header>
-        <div class="tdg-planner-seg">
-          <button type="button" class="on">Need to buy</button>
+        <header class="tdg-planner-page-head"><h1>Shopping</h1><p>Everything you still need, in one place.</p></header>
+        <div class="tdg-planner-seg tdg-planner-seg--status" role="tablist">
+          <button type="button" class="on">Need to buy <span class="tdg-planner-seg-count">4</span></button>
           <button type="button">Ordered</button>
           <button type="button">Arriving</button>
+          <button type="button">Arrived</button>
+          <button type="button">Returns</button>
         </div>
         <section class="tdg-shop-group">
           <h2>Groceries</h2>
           <ul class="tdg-shop-list">
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Butter</strong><small>Christmas Dinner</small></span><em>2 packs</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>smoked salmon</strong><small>Smoked salmon with capers and rye</small></span><em>400 g</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>rye bread</strong><small>Christmas Dinner</small></span><em>8 pieces</em></label></li>
             <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Brussels sprouts</strong><small>Christmas Dinner</small></span><em>800 g</em></label></li>
           </ul>
         </section>
@@ -279,8 +308,38 @@ const pages = {
           <h2>Gifts</h2>
           <ul class="tdg-shop-list">
             <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Cashmere scarf</strong><small>Andreas</small></span><em>€48</em></label></li>
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Wrapping paper</strong><small>Gifts</small></span><em>2 rolls</em></label></li>
           </ul>
+        </section>
+      </div>`,
+  }),
+  more: shell({
+    title: "More",
+    nav: "more",
+    copilot: true,
+    main: `
+      <div class="tdg-planner-page">
+        <header class="tdg-planner-page-head"><h1>More</h1><p>Everything else for your Christmas season.</p></header>
+        <a class="tdg-planner-magic tdg-planner-magic--more" href="/generator?occasion=christmas">
+          <span class="tdg-planner-magic-visual" aria-hidden="true"><img src="${family}" alt="" /></span>
+          <span class="tdg-planner-magic-copy">
+            <span class="tdg-planner-magic-kicker">Create Christmas magic</span>
+            <strong>Your plans make Christmas happen. Now create something worth remembering.</strong>
+            <span class="tdg-planner-magic-lede">Create Christmas images and videos from your favorite moments.</span>
+            <span class="tdg-planner-magic-cta">Start creating →</span>
+          </span>
+        </a>
+        <section class="tdg-planner-section">
+          <p class="tdg-planner-kicker">Plan</p>
+          <div class="tdg-planner-more">
+            <a href="#"><span></span><span>Calendar<span class="desc">See every date, task and delivery</span></span></a>
+            <a href="#"><span></span><span>Traditions<span class="desc">Make time for what matters</span></span></a>
+          </div>
+        </section>
+        <section class="tdg-planner-section">
+          <p class="tdg-planner-kicker">Home</p>
+          <div class="tdg-planner-more">
+            <a href="#"><span></span><span>Hosting<span class="desc">Guests, prep and home</span></span></a>
+          </div>
         </section>
       </div>`,
   }),

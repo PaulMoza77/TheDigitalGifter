@@ -28,6 +28,7 @@ import { ChristmasCopilotRail, CopilotHost, useCopilotUi } from "./copilot/Copil
 import { PlannerLoading, PlannerProgress, PlannerSidebarItem } from "./plannerUi";
 import { PlannerGiftMark, PlannerTreeMark } from "./plannerMarks";
 import { PlannerAccountChrome } from "./PlannerAccountChrome";
+import { PlannerGeneratorMagicCard } from "./studio/PlannerGeneratorMagic";
 import "./plannerApp.css";
 
 const SIDE_COLLAPSE_KEY = "tdg-planner-sidebar-collapsed";
@@ -201,14 +202,17 @@ function PlannerAppShell() {
             ))}
           </nav>
           <div className="tdg-planner-side-foot">
-            <button type="button" className="tdg-planner-side-copilot" title="AI Copilot" onClick={() => copilot?.openCopilot(undefined, "sidebar")}>
-              <Sparkles size={18} strokeWidth={1.7} aria-hidden />
-              <span className="tdg-planner-side-text">AI Copilot</span>
-            </button>
-            <a href="/account" title="Account">
-              <UserRound size={18} strokeWidth={1.6} aria-hidden />
-              <span className="tdg-planner-side-text">Account</span>
-            </a>
+            <PlannerGeneratorMagicCard variant="sidebar" />
+            <div className="tdg-planner-side-account">
+              <button type="button" className="tdg-planner-side-copilot" title="AI Copilot" onClick={() => copilot?.openCopilot(undefined, "sidebar")}>
+                <Sparkles size={18} strokeWidth={1.7} aria-hidden />
+                <span className="tdg-planner-side-text">AI Copilot</span>
+              </button>
+              <a href="/account" title="Account">
+                <UserRound size={18} strokeWidth={1.6} aria-hidden />
+                <span className="tdg-planner-side-text">Account</span>
+              </a>
+            </div>
           </div>
         </aside>
         <main className="tdg-planner-main">
