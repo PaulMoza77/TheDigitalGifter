@@ -1,0 +1,176 @@
+{
+  "status": "INGESTED",
+  "count": 5,
+  "assets": [
+    {
+      "id": "photo-cx-night-viaduct",
+      "title": "Photo \u00b7 Christmas Express night viaduct",
+      "description": "Polar Express 1225 on a lit stone viaduct at night under a full moon.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "christmas-express",
+        "polar-express",
+        "train",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_express_night_moon_viaduct.jpg",
+      "generation_still": "source/batch-christmas-express/01_night_moon_viaduct_1080x1920.png",
+      "original_bytes": 809584,
+      "upload_id": "46BA21A4-F71D-4891-97BC-2AE631A8FA28_L0_001.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5336887,
+      "created_at": "2026-09-23T08:53:02.903171+00:00"
+    },
+    {
+      "id": "photo-cx-sunset-viaduct",
+      "title": "Photo \u00b7 Christmas Express sunset viaduct",
+      "description": "Polar Express 1225 crossing a decorated alpine viaduct at sunset.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "christmas-express",
+        "polar-express",
+        "train",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_express_sunset_viaduct.jpg",
+      "generation_still": "source/batch-christmas-express/02_sunset_viaduct_1080x1920.png",
+      "original_bytes": 864796,
+      "upload_id": "11394852-75DB-4668-824B-7837B90971CC_L0_001.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5512722,
+      "created_at": "2026-09-23T08:53:03.245497+00:00"
+    },
+    {
+      "id": "photo-cx-station",
+      "title": "Photo \u00b7 North Pole Express station",
+      "description": "Child waving with a golden retriever as Polar Express 1225 arrives at the station.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "christmas-express",
+        "polar-express",
+        "train",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_express_north_pole_station.jpg",
+      "generation_still": "source/batch-christmas-express/03_north_pole_station_1080x1920.png",
+      "original_bytes": 825399,
+      "upload_id": "8C34D012-1401-4D1C-8280-D97C0361AFF5_L0_001.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5383615,
+      "created_at": "2026-09-23T08:53:03.620391+00:00"
+    },
+    {
+      "id": "photo-cx-aurora-viaduct",
+      "title": "Photo \u00b7 Christmas Express aurora viaduct",
+      "description": "Polar Express 1225 on a snowy viaduct under aurora and starlight.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "christmas-express",
+        "polar-express",
+        "train",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_express_aurora_viaduct.jpg",
+      "generation_still": "source/batch-christmas-express/04_aurora_viaduct_1080x1920.png",
+      "original_bytes": 809951,
+      "upload_id": "3FF778C0-C44A-4E93-8626-7AA735DEE4FE_L0_001.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5279900,
+      "created_at": "2026-09-23T08:53:03.962498+00:00"
+    },
+    {
+      "id": "photo-cx-santa-gifts",
+      "title": "Photo \u00b7 Christmas Express Santa gift train",
+      "description": "Santa leaning from Polar Express 1225 with gift-filled open cars on a viaduct.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "christmas-express",
+        "polar-express",
+        "train",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_express_santa_gift_train.jpg",
+      "generation_still": "source/batch-christmas-express/05_santa_gift_train_1080x1920.png",
+      "original_bytes": 893194,
+      "upload_id": "DA51D6B5-4CD3-4FB1-854B-7FABB0B130CF_L0_001.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5433784,
+      "created_at": "2026-09-23T08:53:04.301928+00:00"
+    }
+  ]
+}

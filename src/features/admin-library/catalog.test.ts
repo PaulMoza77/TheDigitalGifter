@@ -50,7 +50,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-express");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -237,6 +237,17 @@ describe("admin video library", () => {
       "public/assets/christmas/countdown-93/posters/countdown_93_days_until_christmas.jpg",
       "public/assets/christmas/countdown-93/generation_manifest.json",
       "source/countdown-93/93_days_until_christmas_1080x1920.png",
+      "public/assets/christmas/library-stills/christmas_express_night_moon_viaduct.jpg",
+      "public/assets/christmas/library-stills/christmas_express_sunset_viaduct.jpg",
+      "public/assets/christmas/library-stills/christmas_express_north_pole_station.jpg",
+      "public/assets/christmas/library-stills/christmas_express_aurora_viaduct.jpg",
+      "public/assets/christmas/library-stills/christmas_express_santa_gift_train.jpg",
+      "public/assets/christmas/christmas-express/masters/cx_01_night_viaduct.mp4",
+      "public/assets/christmas/christmas-express/masters/cx_05_santa_gifts.mp4",
+      "public/assets/christmas/christmas-express/final/the-christmas-express-30s.mp4",
+      "public/assets/christmas/christmas-express/final/all-aboard-for-christmas-30s.mp4",
+      "public/assets/christmas/christmas-express/generation_manifest.json",
+      "public/assets/christmas/christmas-express/reels_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
@@ -250,7 +261,15 @@ describe("admin video library", () => {
     const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-pick-one-i2v");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-express");
+    const cxShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-cx-"));
+    expect(cxShorts).toHaveLength(5);
+    expect(cxShorts.every((item) => item.kind === "short")).toBe(true);
+    expect(cxShorts.every((item) => item.model === "kling-video/v3.0/pro/image-to-video")).toBe(true);
+    expect(cxShorts.every((item) => Boolean(item.jobId))).toBe(true);
+    expect(cxShorts.reduce((sum, item) => sum + (item.costUsd ?? 0), 0)).toBeCloseTo(1.4, 5);
+    expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-christmas-express")?.clipsUsed).toHaveLength(9);
+    expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-all-aboard-christmas")?.durationSeconds).toBe(29.97);
     const cozyShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-cozy-"));
     expect(cozyShorts).toHaveLength(4);
     expect(cozyShorts.every((item) => item.kind === "short")).toBe(true);
