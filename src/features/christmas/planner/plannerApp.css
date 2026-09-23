@@ -4650,12 +4650,14 @@
 
 .tdg-shop-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 22rem) max-content;
+  justify-content: start;
   align-items: center;
-  column-gap: 10px;
+  column-gap: 20px;
   min-height: 58px;
   padding: 10px 0;
   cursor: pointer;
+  max-width: 40rem;
 }
 
 .tdg-shop-row input[type="checkbox"] {
@@ -4686,7 +4688,6 @@
   text-align: right;
   justify-self: end;
   white-space: nowrap;
-  padding-left: 12px;
 }
 
 .tdg-shop-row small {
@@ -4814,6 +4815,10 @@
   padding: 10px 12px 12px;
 }
 
+.tdg-planner-magic--side .tdg-planner-magic-kicker {
+  letter-spacing: 0.1em;
+}
+
 .tdg-planner-magic--side .tdg-planner-magic-lede {
   font-size: 0.78rem;
   line-height: 1.35;
@@ -4939,6 +4944,9 @@
   }
   .tdg-shop-row {
     grid-template-columns: 44px minmax(0, 1fr) auto;
+    max-width: none;
+    width: 100%;
+    column-gap: 10px;
   }
   .tdg-shop-row em {
     justify-self: end;
@@ -4949,10 +4957,19 @@
   }
   .tdg-planner-seg--status {
     width: 100%;
+    gap: 6px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
   }
   .tdg-planner-seg--status button {
-    flex: 1 1 auto;
-    min-height: 40px;
+    flex: 0 0 auto;
+    min-height: 36px;
+    background: rgba(28, 22, 18, 0.05);
+  }
+  .tdg-planner-seg--status button.on {
+    background: var(--planner-burgundy);
+    color: #fffdf9;
   }
   .tdg-planner-magic--more {
     margin-top: 0;

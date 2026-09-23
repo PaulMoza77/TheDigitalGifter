@@ -382,7 +382,8 @@ for (const [name, html] of Object.entries(pages)) {
     await page.goto(`file://${file}`, { waitUntil: "load" });
     await page.waitForTimeout(400);
     const out = `${OUT}/planner-${name}-${label}.png`;
-    await page.screenshot({ path: out, fullPage: true });
+    const fullPage = name !== "shopping" && name !== "more";
+    await page.screenshot({ path: out, fullPage });
     console.log(out);
     await page.close();
   }
