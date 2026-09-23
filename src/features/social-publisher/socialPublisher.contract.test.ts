@@ -47,6 +47,8 @@ describe("social publisher wiring", () => {
     expect(read("server/routes.mjs")).toContain("/api/meta-oauth/callback");
     expect(read("api/meta-oauth-callback.ts")).toContain("Referrer-Policy");
     expect(read("api/meta-oauth-callback.ts")).not.toContain("console.log");
+    expect(read("api/meta-oauth-callback.ts")).not.toContain("supabase/functions");
+    expect(read("api/_lib/metaAdminReturn.ts")).toContain('pathname !== "/admin/social-accounts"');
 
     const deploy = read("scripts/deploy-social-publisher.sh");
     const migrationStop = deploy.indexOf("BLOCKED: migration failed. social-publisher was not deployed.");

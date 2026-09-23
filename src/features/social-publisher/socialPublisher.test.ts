@@ -10,6 +10,7 @@ import {
   sanitizeProviderError,
   selectLinkedProfessionalPage,
 } from "./meta";
+import { isAllowedAdminReturn as originAdminReturn } from "../../../api/_lib/metaAdminReturn";
 import { buildMetaAuthorizeUrl, buildTikTokAuthorizeUrl, buildYouTubeAuthorizeUrl } from "./oauth";
 import { PLATFORM_CONSTRAINTS } from "./platforms";
 import {
@@ -324,6 +325,13 @@ describe("meta account selection", () => {
     );
     expect(
       isAllowedAdminReturn("https://www.thedigitalgifter.com/admin/social-accounts", "https://www.thedigitalgifter.com"),
+    ).toBe(true);
+    expect(originAdminReturn("https://evil.example/admin/social-accounts", "https://www.thedigitalgifter.com")).toBe(false);
+    expect(
+      originAdminReturn(
+        "https://www.thedigitalgifter.com/admin/social-accounts?oauth=error&message=oauth_failed",
+        "https://www.thedigitalgifter.com",
+      ),
     ).toBe(true);
     const sanitized = sanitizeProviderError("failed access_token=EAABsecretvalue1234567890 extra");
     expect(sanitized).not.toContain("EAABsecret");
