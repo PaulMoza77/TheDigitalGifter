@@ -44,6 +44,11 @@ const UnsubscribePage = lazy(() =>
     default: m.UnsubscribePage,
   }))
 );
+const DataDeletionPage = lazy(() =>
+  import("@/pages/website/DataDeletionPage").then((m) => ({
+    default: m.DataDeletionPage,
+  }))
+);
 
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
@@ -781,6 +786,7 @@ function AppInner() {
             <Route path="/refunds" element={<RefundPolicyPage />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            <Route path="/data-deletion" element={<DataDeletionPage />} />
 
             <Route
               path="/new_years_eve"
