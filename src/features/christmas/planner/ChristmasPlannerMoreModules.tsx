@@ -113,10 +113,8 @@ export function ChristmasPlannerShoppingPage() {
                       setGrocery((p) => p.map((x) => (x.id === row.id ? { ...x, status: "bought" } : x)));
                     }}
                   />
-                  <span>
-                    <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
-                    <small>{row.source_notes || "Christmas menu"}</small>
-                  </span>
+                  <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
+                  <small>{row.source_notes || "Christmas menu"}</small>
                   <em>{row.quantity || ""}</em>
                 </label>
               </li>
@@ -143,10 +141,8 @@ export function ChristmasPlannerShoppingPage() {
                       setGifts((p) => p.map((x) => (x.id === g.id ? { ...x, status: "ordered" } : x)));
                     }}
                   />
-                  <span>
-                    <strong>{g.selected_gift || g.idea}</strong>
-                    <small>{g.store || "Gifts"}</small>
-                  </span>
+                  <strong>{g.selected_gift || g.idea}</strong>
+                  <small>{g.store || "Gifts"}</small>
                   <em>
                     <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
                   </em>
