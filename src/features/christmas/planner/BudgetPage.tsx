@@ -88,17 +88,31 @@ export function ChristmasPlannerBudgetPage() {
   const [expense, setExpense] = useState<ExpenseDraft>(EMPTY_EXPENSE);
   const [capDrafts, setCapDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
-    void Promise.all([loadBudget(profile.id), loadGifts(profile.id)]).then(([b, g]) => {
-      setRows(b);
-      setGifts(g);
-    });
+    let cancelled = false;
+    void Promise.all([loadBudget(profile.id), loadGifts(profile.id)])
+      .then(([b, g]) => {
+        if (cancelled) return;
+        setRows(b);
+        setGifts(g);
+        setReady(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError("Could not load the budget. Try again.");
+        setReady(true);
+      });
     setTotalDraft(profile.total_budget_minor ? String(profile.total_budget_minor / 100) : "");
     setSetupAmount(profile.total_budget_minor ? String(profile.total_budget_minor / 100) : "");
     setSetupCurrency(profile.currency || "eur");
     trackPlannerEvent("planner_module_opened", { module: "budget" });
+    return () => {
+      cancelled = true;
+    };
   }, [profile?.id]);
 
   const snapshot = useMemo(
@@ -232,6 +246,14 @@ export function ChristmasPlannerBudgetPage() {
 
   if (loading) return <PlannerLoading label="Loading budget…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!ready) return <PlannerLoading label="Loading budget…" />;
+  if (loadError && rows.length === 0 && gifts.length === 0) {
+    return (
+      <div className="tdg-planner-page">
+        <p role="alert">{loadError}</p>
+      </div>
+    );
+  }
 
   const money = (minor: number) => formatPlannerMoney(minor, currency);
   const total = totals?.totalBudgetMinor || 0;

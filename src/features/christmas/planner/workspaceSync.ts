@@ -1,3 +1,4 @@
+import { invalidatePlannerSnapshot } from "./intelligence/loadSnapshot";
 import { computeReadiness } from "./readiness";
 
 const EVENT = "tdg-planner-reconcile";
@@ -16,6 +17,7 @@ export function subscribePlannerReadiness(listener: (percent: number) => void) {
 
 /** Ask the shell to reload readiness from the saved workspace. */
 export function bumpPlannerWorkspace() {
+  invalidatePlannerSnapshot();
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(EVENT));
 }

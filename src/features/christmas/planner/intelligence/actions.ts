@@ -31,7 +31,12 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
   const profileId = ctx.profile.id;
 
   if (request.type === "create_task") {
-    const tasks = await loadTasks(profileId);
+    let tasks;
+    try {
+      tasks = await loadTasks(profileId);
+    } catch {
+      return { ok: false, error: "Could not read tasks.", code: "write_failed" };
+    }
     const gate = canAddCustomTask(
       ctx.access,
       tasks.filter((t) => t.origin === "user").length,
@@ -230,7 +235,12 @@ export async function executePlannerAction(ctx: ActionContext, request: PlannerA
 
   if (request.type === "ensure_hosting_tasks") {
     if (!ctx.profile.hosting) return { ok: true, data: { inserted: 0 } };
-    const tasks = await loadTasks(profileId);
+    let tasks;
+    try {
+      tasks = await loadTasks(profileId);
+    } catch {
+      return { ok: false, error: "Could not read tasks.", code: "write_failed" };
+    }
     const snapshot = buildPlannerSnapshot({
       profile: ctx.profile as PlannerProfile,
       tasks,

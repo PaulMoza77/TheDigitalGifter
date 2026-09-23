@@ -16,10 +16,10 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { countdownCopy, daysUntilChristmas } from "./date";
 import { loadPlannerWorkspace, runPlannerIntelligence } from "./intelligence";
-import { invalidatePlannerSnapshot } from "./intelligence/loadSnapshot";
+import { prefetchPlannerRoute, prefetchPlannerShell } from "./prefetch";
 import { onPlannerWorkspaceBump, subscribePlannerReadiness } from "./workspaceSync";
 import { claimPlannerOrder } from "./api";
 import { readPlannerOrderRecovery } from "./guest";
@@ -118,14 +118,22 @@ function PlannerAppShell() {
   useEffect(() => subscribePlannerReadiness(setReadiness), []);
 
   useEffect(() => {
+    const idle = window.setTimeout(prefetchPlannerShell, 300);
+    return () => window.clearTimeout(idle);
+  }, []);
+
+  useEffect(() => {
     if (!profile) return;
     const current = profile;
     let cancelled = false;
     async function reconcile() {
-      invalidatePlannerSnapshot(current.id);
-      const snapshot = await loadPlannerWorkspace(current);
-      if (cancelled) return;
-      setReadiness(runPlannerIntelligence(snapshot).readiness.percent);
+      try {
+        const snapshot = await loadPlannerWorkspace(current);
+        if (cancelled) return;
+        setReadiness(runPlannerIntelligence(snapshot).readiness.percent);
+      } catch {
+        if (!cancelled) setReadiness(null);
+      }
     }
     void reconcile();
     const stop = onPlannerWorkspaceBump(() => {
@@ -135,7 +143,7 @@ function PlannerAppShell() {
       cancelled = true;
       stop();
     };
-  }, [profile, location.pathname]);
+  }, [profile]);
 
   return (
     <>
@@ -222,15 +230,23 @@ function PlannerAppShell() {
               <p>Test access is on for this account. It is not a Stripe payment.</p>
             </details>
           ) : null}
-          {loading ? <PlannerLoading /> : !profile ? <PlannerOnboarding /> : <Outlet />}
+          {loading ? (
+            <PlannerLoading />
+          ) : !profile ? (
+            <PlannerOnboarding />
+          ) : (
+            <Suspense fallback={<PlannerLoading label="Opening this section…" />}>
+              <Outlet />
+            </Suspense>
+          )}
         </main>
         <ChristmasCopilotRail />
         <nav className="tdg-planner-nav" aria-label="Christmas planner">
-          <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")}>
+          <NavLink to="/account/christmas" end className={({ isActive }) => (isActive ? "active" : "")} onMouseEnter={() => prefetchPlannerRoute("/account/christmas")} onFocus={() => prefetchPlannerRoute("/account/christmas")}>
             <Home size={18} strokeWidth={1.7} aria-hidden />
             Home
           </NavLink>
-          <NavLink to="/account/christmas/plan" className={({ isActive }) => (isActive ? "active" : "")}>
+          <NavLink to="/account/christmas/plan" className={({ isActive }) => (isActive ? "active" : "")} onMouseEnter={() => prefetchPlannerRoute("/account/christmas/plan")} onFocus={() => prefetchPlannerRoute("/account/christmas/plan")}>
             <LayoutList size={18} strokeWidth={1.7} aria-hidden />
             Plan
           </NavLink>
@@ -238,11 +254,11 @@ function PlannerAppShell() {
             <Sparkles size={18} strokeWidth={1.7} aria-hidden />
             AI Copilot
           </button>
-          <NavLink to="/account/christmas/shopping" className={({ isActive }) => (isActive ? "active" : "")}>
+          <NavLink to="/account/christmas/shopping" className={({ isActive }) => (isActive ? "active" : "")} onMouseEnter={() => prefetchPlannerRoute("/account/christmas/shopping")} onFocus={() => prefetchPlannerRoute("/account/christmas/shopping")}>
             <ShoppingBag size={18} strokeWidth={1.7} aria-hidden />
             Shopping
           </NavLink>
-          <NavLink to="/account/christmas/more" className={({ isActive }) => (isActive ? "active" : "")}>
+          <NavLink to="/account/christmas/more" className={({ isActive }) => (isActive ? "active" : "")} onMouseEnter={() => prefetchPlannerRoute("/account/christmas/more")} onFocus={() => prefetchPlannerRoute("/account/christmas/more")}>
             <MoreHorizontal size={18} strokeWidth={1.7} aria-hidden />
             More
           </NavLink>

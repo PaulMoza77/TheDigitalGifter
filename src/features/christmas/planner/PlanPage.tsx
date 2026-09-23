@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronRight, Plus } from "lucide-react";
 import { trackPlannerEvent } from "./analytics";
 import { insertTask, insertTasks, loadTasks } from "./api";
+import { peekPlannerQuery, plannerListKey } from "./plannerQueryCache";
 import { daysUntilChristmas, formatPlannerDate, taskCategoryLabel } from "./date";
 import { canAddCustomTask } from "./entitlements";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
@@ -29,16 +30,49 @@ export function ChristmasPlannerPlanPage() {
   const [category, setCategory] = useState<TaskCategory>("other");
   const [exploreOwn, setExploreOwn] = useState(false);
   const [addingAll, setAddingAll] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const cachedTasks = profile ? peekPlannerQuery<PlannerTask[]>(plannerListKey("tasks", profile.id)) : undefined;
+  const [ready, setReady] = useState(cachedTasks != null);
+  const addLock = useRef(false);
 
   useEffect(() => {
     if (!profile) return;
-    void loadTasks(profile.id).then(setTasks);
+    let cancelled = false;
+    const hit = peekPlannerQuery<PlannerTask[]>(plannerListKey("tasks", profile.id));
+    if (hit) {
+      setTasks(hit);
+      setReady(true);
+    }
+    void loadTasks(profile.id)
+      .then((rows) => {
+        if (cancelled) return;
+        setTasks(rows);
+        setReady(true);
+        setLoadError(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError("Could not load tasks. Try again.");
+        setReady(true);
+      });
     setExploreOwn(window.localStorage.getItem(exploreOnOwnStorageKey(profile.id)) === "1");
     trackPlannerEvent("planner_module_opened", { module: "plan" });
+    return () => {
+      cancelled = true;
+    };
   }, [profile?.id]);
 
   if (loading) return <PlannerLoading label="Loading plan…" />;
   if (!profile) return <PlannerOnboarding />;
+  if (!ready) return <PlannerLoading label="Loading plan…" />;
+  if (loadError && tasks.length === 0) {
+    return (
+      <div className="tdg-planner-page">
+        <p role="alert">{loadError}</p>
+      </div>
+    );
+  }
 
   const tz = profile.timezone;
   const now = new Date();
@@ -57,7 +91,10 @@ export function ChristmasPlannerPlanPage() {
   }).format(now);
 
   async function addCustom() {
-    if (!profile || !title.trim()) return;
+    if (addLock.current || !profile || !title.trim()) return;
+    addLock.current = true;
+    setAdding(true);
+    try {
     const gate = canAddCustomTask(
       access,
       tasks.filter((t) => t.origin === "user").length,
@@ -80,6 +117,12 @@ export function ChristmasPlannerPlanPage() {
       setTitle("");
       bumpPlannerWorkspace();
       trackPlannerEvent("planner_task_added", { module: "plan" });
+    } else {
+      setLoadError("Could not add that task. Try again.");
+    }
+    } finally {
+      addLock.current = false;
+      setAdding(false);
     }
   }
 
@@ -199,7 +242,7 @@ export function ChristmasPlannerPlanPage() {
               </option>
             ))}
           </select>
-          <button type="submit" className="tdg-planner-btn primary tdg-tasks-add">
+          <button type="submit" className="tdg-planner-btn primary tdg-tasks-add" disabled={adding || !title.trim()}>
             <Plus size={16} strokeWidth={2.4} aria-hidden />
             Add task
           </button>

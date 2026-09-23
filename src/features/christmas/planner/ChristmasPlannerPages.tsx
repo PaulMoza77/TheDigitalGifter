@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { trackPlannerEvent } from "./analytics";
@@ -52,10 +52,12 @@ export default function ChristmasPlannerTodayPage() {
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [quick, setQuick] = useState<"task" | "gift" | "event" | "meal" | null>(null);
   const [draft, setDraft] = useState("");
+  const [dataReady, setDataReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const quickLock = useRef(false);
 
   async function refreshIntelligence(nextProfile = profile, nextDismissed = dismissed) {
     if (!nextProfile) return;
-    invalidatePlannerSnapshot(nextProfile.id);
     const snapshot = await loadPlannerWorkspace(nextProfile);
     const engine = runPlannerIntelligence(snapshot, nextDismissed);
     setIntel(engine);
@@ -90,7 +92,13 @@ export default function ChristmasPlannerTodayPage() {
     if (!profile) return;
     const stored = loadDismissedInsightIds(profile.id, profile.season_year);
     setDismissed(stored);
-    void refreshIntelligence(profile, stored);
+    setLoadError(null);
+    void refreshIntelligence(profile, stored)
+      .then(() => setDataReady(true))
+      .catch(() => {
+        setLoadError("Could not load your Christmas. Try again.");
+        setDataReady(true);
+      });
   }, [profile?.id]);
 
   useEffect(() => {
@@ -104,6 +112,30 @@ export default function ChristmasPlannerTodayPage() {
 
   if (loading) return <PlannerLoading />;
   if (!profile) return <PlannerOnboarding />;
+  if (!dataReady) return <PlannerLoading label="Opening your Christmas…" />;
+  if (loadError && !intel) {
+    return (
+      <div className="tdg-planner-page">
+        <p role="alert">{loadError}</p>
+        <button
+          type="button"
+          className="tdg-planner-btn primary"
+          onClick={() => {
+            setDataReady(false);
+            setLoadError(null);
+            void refreshIntelligence()
+              .then(() => setDataReady(true))
+              .catch(() => {
+                setLoadError("Could not load your Christmas. Try again.");
+                setDataReady(true);
+              });
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   const tz = profile.timezone;
   const now = new Date();
@@ -125,7 +157,9 @@ export default function ChristmasPlannerTodayPage() {
 
   async function addQuick(event: FormEvent) {
     event.preventDefault();
-    if (!profile || !draft.trim() || !quick) return;
+    if (quickLock.current || !profile || !draft.trim() || !quick) return;
+    quickLock.current = true;
+    try {
     if (quick === "task") {
       const gate = canAddCustomTask(access, tasks.filter((t) => t.origin === "user").length, tasks.filter((t) => t.status === "open" || t.status === "rescheduled").length);
       if (!gate.ok) return;
@@ -179,6 +213,9 @@ export default function ChristmasPlannerTodayPage() {
     setDraft("");
     setQuick(null);
     bumpPlannerWorkspace();
+    } finally {
+      quickLock.current = false;
+    }
   }
 
   const primary = intel?.nextBestAction || null;
