@@ -36,7 +36,7 @@
 }
 
 .tdg-planner-frame {
-  --planner-side: 216px;
+  --planner-side: 272px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -1405,7 +1405,7 @@
   }
   .tdg-planner-frame {
     display: grid;
-    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     height: 100%;
     min-height: 0;
@@ -1559,7 +1559,7 @@
 
 @media (min-width: 744px) and (max-width: 1279px) {
   .tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 200px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 256px) minmax(0, 1fr);
   }
   .tdg-planner-side {
     padding: 16px 12px 14px;
@@ -1585,7 +1585,7 @@
 
 @media (min-width: 1440px) {
   .tdg-planner-frame--copilot {
-    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr) var(--planner-copilot-w);
+    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr) var(--planner-copilot-w);
   }
   .tdg-planner-frame--copilot .tdg-planner-header {
     grid-column: 2;
@@ -1620,7 +1620,7 @@
 
 @media (min-width: 1280px) {
   .tdg-planner-frame {
-    grid-template-columns: var(--planner-side, 216px) minmax(0, 1fr);
+    grid-template-columns: var(--planner-side, 272px) minmax(0, 1fr);
   }
   .tdg-planner-main {
     padding: 24px 36px 56px;
