@@ -4637,6 +4637,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  max-width: 42rem;
 }
 
 .tdg-shop-list > li {
@@ -4652,11 +4653,11 @@
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) auto;
   grid-template-areas:
-    "check name name"
+    "check name qty"
     "check source qty";
-  column-gap: 12px;
+  column-gap: 14px;
   row-gap: 2px;
-  align-items: baseline;
+  align-items: center;
   min-height: 58px;
   padding: 10px 0;
   cursor: pointer;
@@ -4697,7 +4698,7 @@
   text-align: right;
   white-space: nowrap;
   justify-self: end;
-  align-self: baseline;
+  align-self: center;
 }
 
 .tdg-shop-extra {
@@ -4949,6 +4950,9 @@
   .tdg-shop-row {
     width: 100%;
     column-gap: 10px;
+  }
+  .tdg-shop-list {
+    max-width: none;
   }
   .tdg-shop-row em {
     justify-self: end;
