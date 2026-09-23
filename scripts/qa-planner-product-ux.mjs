@@ -372,7 +372,7 @@ const pages = {
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "/usr/local/bin/google-chrome",
   headless: true,
-  args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  args: ["--no-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"],
 });
 
 for (const [name, html] of Object.entries(pages)) {
@@ -384,7 +384,7 @@ for (const [name, html] of Object.entries(pages)) {
   ]) {
     const page = await browser.newPage({ viewport });
     await page.goto(`file://${file}`, { waitUntil: "load" });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(name === "gifts" || name === "shopping" ? 900 : 400);
     const out = `${OUT}/planner-${name}-${label}.png`;
     const fullPage = name !== "shopping" && name !== "more";
     await page.screenshot({ path: out, fullPage });
