@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 # Production deploy for the existing social-publisher Edge function.
-# 1) Apply the Meta login migration.
-# 2) Set only missing non-secret Meta config, never printing values.
+# 1) Apply Meta + YouTube migrations.
+# 2) Set public OAuth redirects and optional YouTube client config when provided.
 # 3) Deploy the function.
 # Refuses another project. Does not set META_APP_SECRET.
 # Does not set SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS.
-# If the migration fails, the function is not deployed.
+# If a migration fails, the function is not deployed.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-MIGRATION="supabase/migrations/20260923180000_meta_login_publishing.sql"
+MIGRATIONS=(
+  "supabase/migrations/20260923180000_meta_login_publishing.sql"
+  "supabase/migrations/20260923190000_youtube_oauth_publishing.sql"
+)
 PROJECT_REF="${SUPABASE_PROJECT_REF:-kjlsocejpmnzhhduyumy}"
 PUBLIC_BASE="https://www.thedigitalgifter.com"
 OAUTH_REDIRECT="${PUBLIC_BASE}/api/meta-oauth/callback"
+YOUTUBE_OAUTH_REDIRECT="${YOUTUBE_REDIRECT_URI:-${PUBLIC_BASE}/api/admin/social/youtube/callback}"
 FALLBACK_APP_ID="${META_APP_ID:-1771898293934621}"
 FALLBACK_CONFIGURATION_ID="${META_CONFIGURATION_ID:-1117038350677281}"
 
@@ -28,15 +32,16 @@ if [[ "$PROJECT_REF" != "kjlsocejpmnzhhduyumy" ]]; then
   exit 2
 fi
 
-if [[ ! -f "$MIGRATION" ]]; then
-  echo "Missing migration file."
-  exit 1
-fi
-
-if grep -Eiq 'drop table|truncate ' "$MIGRATION"; then
-  echo "BLOCKED: migration contains destructive SQL patterns."
-  exit 2
-fi
+for MIGRATION in "${MIGRATIONS[@]}"; do
+  if [[ ! -f "$MIGRATION" ]]; then
+    echo "Missing migration file: $MIGRATION"
+    exit 1
+  fi
+  if grep -Eiq 'drop table|truncate ' "$MIGRATION"; then
+    echo "BLOCKED: migration contains destructive SQL patterns: $MIGRATION"
+    exit 2
+  fi
+done
 
 redact_file() {
   local file="$1"
@@ -47,18 +52,20 @@ redact_file() {
     -e 's/(access_token|client_secret|fb_exchange_token|input_token|refresh_token)=[^&[:space:]"]+/\1=[redacted]/gi' \
     -e 's/Bearer[[:space:]]+[A-Za-z0-9._~+/-]+=*/Bearer [redacted]/g' \
     -e 's/EAA[A-Za-z0-9]+/EAA[redacted]/g' \
+    -e 's/GOCSPX-[A-Za-z0-9_-]+/GOCSPX-[redacted]/g' \
     "$file" | head -c 240 || true
   echo
 }
 
 apply_via_management_api() {
+  local migration_file="$1"
   echo "Applying SQL via Management API database/query…"
   local payload code
   payload="$(node -e '
     const fs = require("fs");
     const q = fs.readFileSync(process.argv[1], "utf8");
     process.stdout.write(JSON.stringify({ query: q }));
-  ' "$MIGRATION")"
+  ' "$migration_file")"
   code="$(curl -sS -o /tmp/social-publisher-sql.json -w '%{http_code}' \
     -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query" \
     -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
@@ -73,49 +80,57 @@ apply_via_management_api() {
   return 1
 }
 
-APPLIED=0
+apply_one_migration() {
+  local migration_file="$1"
+  local APPLIED=0
+  echo "Applying ${migration_file}…"
 
-if [[ -n "${DATABASE_URL:-}" ]] && command -v psql >/dev/null 2>&1; then
-  echo "Applying via DATABASE_URL…"
-  if psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$MIGRATION" >/tmp/social-publisher-psql.txt 2>&1; then
-    APPLIED=1
-  else
-    echo "DATABASE_URL apply failed (output withheld)."
-  fi
-fi
-
-if [[ "$APPLIED" != "1" && -n "${SUPABASE_DB_PASSWORD:-}" ]] && command -v psql >/dev/null 2>&1; then
-  for HOST in \
-    "aws-0-eu-west-1.pooler.supabase.com" \
-    "aws-1-eu-west-1.pooler.supabase.com" \
-    "aws-0-eu-central-1.pooler.supabase.com" \
-    "db.${PROJECT_REF}.supabase.co"
-  do
-    CAND="postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@${HOST}:5432/postgres"
-    echo "Trying pooler host ${HOST}…"
-    if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
-      echo "Connected via ${HOST} — applying migration…"
-      if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$MIGRATION" >/tmp/social-publisher-psql.txt 2>&1; then
-        APPLIED=1
-        break
-      fi
-      echo "psql apply failed on ${HOST} (output withheld)."
+  if [[ -n "${DATABASE_URL:-}" ]] && command -v psql >/dev/null 2>&1; then
+    if psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration_file" >/tmp/social-publisher-psql.txt 2>&1; then
+      APPLIED=1
+    else
+      echo "DATABASE_URL apply failed (output withheld)."
     fi
-  done
-fi
-
-if [[ "$APPLIED" != "1" ]]; then
-  if apply_via_management_api; then
-    APPLIED=1
   fi
-fi
 
-if [[ "$APPLIED" != "1" ]]; then
-  echo "BLOCKED: migration failed. social-publisher was not deployed."
-  exit 1
-fi
+  if [[ "$APPLIED" != "1" && -n "${SUPABASE_DB_PASSWORD:-}" ]] && command -v psql >/dev/null 2>&1; then
+    for HOST in \
+      "aws-0-eu-west-1.pooler.supabase.com" \
+      "aws-1-eu-west-1.pooler.supabase.com" \
+      "aws-0-eu-central-1.pooler.supabase.com" \
+      "db.${PROJECT_REF}.supabase.co"
+    do
+      CAND="postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@${HOST}:5432/postgres"
+      echo "Trying pooler host ${HOST}…"
+      if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
+        echo "Connected via ${HOST} — applying migration…"
+        if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$migration_file" >/tmp/social-publisher-psql.txt 2>&1; then
+          APPLIED=1
+          break
+        fi
+        echo "psql apply failed on ${HOST} (output withheld)."
+      fi
+    done
+  fi
 
-echo "Migration applied to ${PROJECT_REF}."
+  if [[ "$APPLIED" != "1" ]]; then
+    if apply_via_management_api "$migration_file"; then
+      APPLIED=1
+    fi
+  fi
+
+  if [[ "$APPLIED" != "1" ]]; then
+    echo "BLOCKED: migration failed. social-publisher was not deployed."
+    exit 1
+  fi
+  echo "Migration applied: ${migration_file}"
+}
+
+for MIGRATION in "${MIGRATIONS[@]}"; do
+  apply_one_migration "$MIGRATION"
+done
+
+echo "Migrations applied to ${PROJECT_REF}."
 
 secret_names_file="$(mktemp)"
 cleanup() {
@@ -186,11 +201,16 @@ set_from_env_file() {
 
 umask 077
 public_env="$(mktemp)"
-printf 'META_OAUTH_REDIRECT_URL=%s\nSOCIAL_PUBLISHER_PUBLIC_BASE_URL=%s\n' "$OAUTH_REDIRECT" "$PUBLIC_BASE" > "$public_env"
+{
+  printf 'META_OAUTH_REDIRECT_URL=%s\n' "$OAUTH_REDIRECT"
+  printf 'SOCIAL_PUBLISHER_PUBLIC_BASE_URL=%s\n' "$PUBLIC_BASE"
+  printf 'YOUTUBE_REDIRECT_URI=%s\n' "$YOUTUBE_OAUTH_REDIRECT"
+} > "$public_env"
 set_from_env_file "$public_env"
 rm -f "$public_env"
 echo "SET_PUBLIC: META_OAUTH_REDIRECT_URL"
 echo "SET_PUBLIC: SOCIAL_PUBLISHER_PUBLIC_BASE_URL"
+echo "SET_PUBLIC: YOUTUBE_REDIRECT_URI"
 
 if has_secret META_APP_ID; then
   echo "PRESENT: META_APP_ID"
@@ -213,6 +233,26 @@ else
 fi
 
 report_presence META_APP_SECRET
+
+if [[ -n "${YOUTUBE_CLIENT_ID:-}" ]]; then
+  yt_env="$(mktemp)"
+  printf 'YOUTUBE_CLIENT_ID=%s\n' "$YOUTUBE_CLIENT_ID" > "$yt_env"
+  set_from_env_file "$yt_env"
+  rm -f "$yt_env"
+  echo "SET: YOUTUBE_CLIENT_ID"
+else
+  report_presence YOUTUBE_CLIENT_ID
+fi
+
+if [[ -n "${YOUTUBE_CLIENT_SECRET:-}" ]]; then
+  yt_secret_env="$(mktemp)"
+  printf 'YOUTUBE_CLIENT_SECRET=%s\n' "$YOUTUBE_CLIENT_SECRET" > "$yt_secret_env"
+  set_from_env_file "$yt_secret_env"
+  rm -f "$yt_secret_env"
+  echo "SET: YOUTUBE_CLIENT_SECRET"
+else
+  report_presence YOUTUBE_CLIENT_SECRET
+fi
 
 if has_secret SOCIAL_TOKEN_ENCRYPTION_KEY || has_secret PET_TOKEN_ENCRYPTION_KEY; then
   report_presence SOCIAL_TOKEN_ENCRYPTION_KEY
@@ -240,7 +280,7 @@ EDGE_URL="https://${PROJECT_REF}.supabase.co/functions/v1/social-publisher"
 CODE="$(curl -sS -m 25 -o /tmp/social-publisher-probe.txt -w '%{http_code}' \
   -X POST "$EDGE_URL" \
   -H 'Content-Type: application/json' \
-  -d '{"action":"meta_oauth_callback"}' || true)"
+  -d '{"action":"youtube_oauth_callback"}' || true)"
 echo "Probe HTTP ${CODE}"
 if grep -qi '<html' /tmp/social-publisher-probe.txt 2>/dev/null; then
   echo "ERROR: social-publisher returned HTML."

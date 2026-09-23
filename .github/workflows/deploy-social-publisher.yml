@@ -1,6 +1,6 @@
 name: deploy-social-publisher
 
-# Applies the Meta login migration, then deploys the existing social-publisher
+# Applies Meta + YouTube migrations, then deploys the existing social-publisher
 # function. Does not enable live posts and does not deploy the frontend.
 
 on:
@@ -12,6 +12,7 @@ on:
       - "supabase/functions/social-publisher/**"
       - "supabase/functions/_shared/social/**"
       - "supabase/migrations/20260923180000_meta_login_publishing.sql"
+      - "supabase/migrations/20260923190000_youtube_oauth_publishing.sql"
       - "scripts/deploy-social-publisher.sh"
       - ".github/workflows/deploy-social-publisher.yml"
 
@@ -41,7 +42,7 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Apply Meta migration and deploy social-publisher
+      - name: Apply migrations and deploy social-publisher
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: kjlsocejpmnzhhduyumy
@@ -49,6 +50,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           META_APP_ID: ${{ secrets.META_APP_ID }}
           META_CONFIGURATION_ID: ${{ secrets.META_CONFIGURATION_ID }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
         run: |
           chmod +x scripts/deploy-social-publisher.sh
           bash scripts/deploy-social-publisher.sh

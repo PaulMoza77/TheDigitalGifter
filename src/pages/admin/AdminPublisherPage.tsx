@@ -204,6 +204,12 @@ export default function AdminPublisherPage() {
                 >
                   Connect Facebook &amp; Instagram
                 </Link>
+                <Link
+                  to="/admin/social-accounts"
+                  className="rounded-full border border-slate-600 px-3 py-1 text-slate-100"
+                >
+                  Connect YouTube
+                </Link>
                 {connections.map((item) => (
                   <span key={item.provider} className="rounded-full border border-slate-700 px-3 py-1 text-slate-300">
                     {item.provider}: {item.status.replace("_", " ")}

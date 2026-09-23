@@ -25,7 +25,11 @@ describe("social publisher wiring", () => {
     expect(edge).toContain("action === \"tick\"");
     expect(edge).toContain("claim_social_publication_targets");
     expect(edge).toContain("meta_oauth_callback");
+    expect(edge).toContain("youtube_oauth_callback");
+    expect(edge).toContain("prepare_test_upload");
     expect(read("supabase/functions/_shared/social/meta.ts")).toContain("config_id");
+    expect(read("supabase/functions/_shared/social/youtube.ts")).toContain("youtube.readonly");
+    expect(read("supabase/functions/_shared/social/youtubeAuth.ts")).toContain("finishYouTubeOAuth");
     expect(edge).toContain("encryptSecret");
     expect(edge).not.toContain("page_access_token: undefined");
     expect(edge).toContain("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
@@ -39,16 +43,22 @@ describe("social publisher wiring", () => {
     expect(adapters).toContain("video_reels");
     expect(adapters).toContain("open.tiktokapis.com/v2/post/publish/video/init/");
     expect(adapters).toContain("googleapis.com/upload/youtube/v3/videos");
+    expect(adapters).toContain("selfDeclaredMadeForKids");
+    expect(adapters).toContain("publishAt");
 
     const cron = read("api/social-publisher-cron.ts");
     expect(cron).toContain("SOCIAL_PUBLISHER_CRON_SECRET");
     expect(cron).toContain("action: \"tick\"");
     expect(read("server/routes.mjs")).toContain("/api/social-publisher-cron");
     expect(read("server/routes.mjs")).toContain("/api/meta-oauth/callback");
+    expect(read("server/routes.mjs")).toContain("/api/admin/social/youtube/callback");
     expect(read("api/meta-oauth-callback.ts")).toContain("Referrer-Policy");
     expect(read("api/meta-oauth-callback.ts")).not.toContain("console.log");
     expect(read("api/meta-oauth-callback.ts")).not.toContain("supabase/functions");
     expect(read("api/_lib/metaAdminReturn.ts")).toContain('pathname !== "/admin/social-accounts"');
+    expect(read("api/youtube-oauth-callback.ts")).toContain("youtube_oauth_callback");
+    expect(read("api/youtube-oauth-callback.ts")).not.toContain("console.log");
+    expect(read("api/youtube-oauth-callback.ts")).not.toContain("supabase/functions");
 
     const deploy = read("scripts/deploy-social-publisher.sh");
     const migrationStop = deploy.indexOf("BLOCKED: migration failed. social-publisher was not deployed.");
@@ -56,9 +66,13 @@ describe("social publisher wiring", () => {
     expect(migrationStop).toBeGreaterThan(0);
     expect(functionDeploy).toBeGreaterThan(migrationStop);
     expect(deploy).toContain("20260923180000_meta_login_publishing.sql");
+    expect(deploy).toContain("20260923190000_youtube_oauth_publishing.sql");
+    expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
     expect(deploy).not.toMatch(/SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS=/);
     expect(deploy).not.toMatch(/META_APP_SECRET=/);
     expect(read("supabase/functions/_shared/social/metaAuth.ts")).toContain("delete nextMeta.page_access_token");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("Connect YouTube");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("Prepare test upload");
   });
 
   it("does not put generation controls back on Library and keeps generation APIs", () => {

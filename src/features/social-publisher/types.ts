@@ -7,6 +7,7 @@ export const SOCIAL_PLATFORMS = [
   "facebook_video",
   "tiktok",
   "youtube_shorts",
+  "youtube_video",
 ] as const;
 
 export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];

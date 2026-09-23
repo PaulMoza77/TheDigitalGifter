@@ -315,49 +315,100 @@ export async function publishTikTok(input: {
   };
 }
 
+function youtubePrivacy(value: unknown): "private" | "unlisted" | "public" {
+  const raw = asString(value).toLowerCase();
+  if (raw === "public" || raw === "unlisted" || raw === "private") return raw;
+  return "private";
+}
+
+function youtubeTags(value: unknown, hashtags: string): string[] {
+  const fromInput = Array.isArray(value)
+    ? value.map((item) => asString(item)).filter(Boolean)
+    : asString(value)
+        .split(/[,#]+/)
+        .map((item) => item.trim().replace(/^#+/, ""))
+        .filter(Boolean);
+  const fromHashtags = hashtags
+    .split(/[\s,#]+/)
+    .map((item) => item.trim().replace(/^#+/, ""))
+    .filter(Boolean);
+  return [...new Set([...fromInput, ...fromHashtags])].slice(0, 30);
+}
+
 export async function publishYouTube(input: {
   videoUrl: string;
   caption: string;
   title: string;
   account: Account;
+  platform?: "youtube_shorts" | "youtube_video";
+  tags?: string[] | string | null;
+  categoryId?: string | null;
+  privacyStatus?: string | null;
+  madeForKids?: boolean | null;
+  publishAt?: string | null;
+  uploadSessionUri?: string | null;
 }): Promise<AdapterResult> {
+  const platform = input.platform === "youtube_video" ? "youtube_video" : "youtube_shorts";
   const fileRes = await fetch(input.videoUrl);
-  if (!fileRes.ok) return fail("media_fetch_failed", `Could not fetch Reel bytes (${fileRes.status}).`, false);
+  if (!fileRes.ok) return fail("media_fetch_failed", `Could not fetch video bytes (${fileRes.status}).`, false);
   const bytes = new Uint8Array(await fileRes.arrayBuffer());
-  const title = (input.title || input.caption || "TDG Short").slice(0, 100);
-  const description = `${input.caption}\n\n#Shorts`.slice(0, 5000);
-
-  const start = await fetch(
-    "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${input.account.accessToken}`,
-        "Content-Type": "application/json; charset=UTF-8",
-        "X-Upload-Content-Type": "video/mp4",
-        "X-Upload-Content-Length": String(bytes.byteLength),
-      },
-      body: JSON.stringify({
-        snippet: {
-          title,
-          description,
-          categoryId: "24",
-        },
-        status: {
-          privacyStatus: "public",
-          selfDeclaredMadeForKids: false,
-        },
-      }),
-    },
-  );
-  if (start.status === 401 || start.status === 403) {
-    const text = await start.text();
-    return waiting(`YouTube Data API upload: HTTP ${start.status} ${text.slice(0, 300)}`);
+  const title = (input.title || input.caption || "TDG Video").slice(0, 100);
+  const descriptionBase = input.caption || "";
+  const description =
+    platform === "youtube_shorts"
+      ? `${descriptionBase}${descriptionBase.includes("#Shorts") ? "" : "\n\n#Shorts"}`.slice(0, 5000)
+      : descriptionBase.slice(0, 5000);
+  const privacyStatus = youtubePrivacy(input.privacyStatus);
+  const madeForKids = input.madeForKids === true;
+  const categoryId = asString(input.categoryId) || "24";
+  const tags = youtubeTags(input.tags, "");
+  const publishAt = asString(input.publishAt);
+  // YouTube only accepts publishAt with private videos.
+  const statusBody: Record<string, unknown> = {
+    privacyStatus: publishAt && privacyStatus !== "private" ? "private" : privacyStatus,
+    selfDeclaredMadeForKids: madeForKids,
+  };
+  if (publishAt) {
+    statusBody.publishAt = publishAt;
+    statusBody.privacyStatus = "private";
   }
-  const uploadUri = start.headers.get("location");
-  if (!start.ok || !uploadUri) {
-    const text = await start.text();
-    return fail("youtube_init_failed", text.slice(0, 500));
+
+  let uploadUri = asString(input.uploadSessionUri);
+  if (!uploadUri) {
+    const start = await fetch(
+      "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${input.account.accessToken}`,
+          "Content-Type": "application/json; charset=UTF-8",
+          "X-Upload-Content-Type": "video/mp4",
+          "X-Upload-Content-Length": String(bytes.byteLength),
+        },
+        body: JSON.stringify({
+          snippet: {
+            title,
+            description,
+            categoryId,
+            tags,
+          },
+          status: statusBody,
+        }),
+      },
+    );
+    if (start.status === 401 || start.status === 403) {
+      const text = await start.text();
+      return fail(
+        start.status === 401 ? "youtube_unauthorized" : "youtube_forbidden",
+        `YouTube Data API upload: HTTP ${start.status} ${text.slice(0, 300)}`,
+        start.status === 401,
+      );
+    }
+    uploadUri = start.headers.get("location") || "";
+    if (!start.ok || !uploadUri) {
+      const text = await start.text();
+      return fail("youtube_init_failed", text.slice(0, 500), true);
+    }
   }
 
   const upload = await fetch(uploadUri, {
@@ -369,15 +420,28 @@ export async function publishYouTube(input: {
     },
     body: bytes,
   });
-  const json = (await upload.json()) as { id?: string; error?: { message?: string } };
+  const json = (await upload.json()) as {
+    id?: string;
+    status?: { uploadStatus?: string; privacyStatus?: string };
+    error?: { message?: string };
+  };
   const videoId = asString(json.id);
   if (!upload.ok || !videoId) {
-    return fail("youtube_upload_failed", asString(json.error?.message) || JSON.stringify(json));
+    return fail(
+      "youtube_upload_failed",
+      asString(json.error?.message) || JSON.stringify(json),
+      true,
+      uploadUri,
+    );
   }
+  const remoteUrl =
+    platform === "youtube_shorts"
+      ? `https://www.youtube.com/shorts/${videoId}`
+      : `https://www.youtube.com/watch?v=${videoId}`;
   return {
     ok: true,
     remotePostId: videoId,
-    remoteUrl: `https://www.youtube.com/shorts/${videoId}`,
+    remoteUrl,
     provider: "youtube",
   };
 }
@@ -391,13 +455,21 @@ export async function dispatchPublish(input: {
     | "facebook_photo"
     | "facebook_video"
     | "tiktok"
-    | "youtube_shorts";
+    | "youtube_shorts"
+    | "youtube_video";
   videoUrl: string;
   caption: string;
   hashtags: string;
   title?: string | null;
   containerId?: string | null;
   account: Account;
+  youtube?: {
+    tags?: string[] | string | null;
+    categoryId?: string | null;
+    privacyStatus?: string | null;
+    madeForKids?: boolean | null;
+    publishAt?: string | null;
+  } | null;
 }): Promise<AdapterResult> {
   const caption = [input.caption, input.hashtags].filter(Boolean).join("\n\n").trim();
   if (input.platform === "instagram_reels" || input.platform === "instagram_photo" || input.platform === "instagram_video") {
@@ -427,5 +499,12 @@ export async function dispatchPublish(input: {
     caption,
     title: asString(input.title) || caption.slice(0, 80),
     account: input.account,
+    platform: input.platform === "youtube_video" ? "youtube_video" : "youtube_shorts",
+    tags: input.youtube?.tags ?? youtubeTags(null, input.hashtags),
+    categoryId: input.youtube?.categoryId,
+    privacyStatus: input.youtube?.privacyStatus,
+    madeForKids: input.youtube?.madeForKids,
+    publishAt: input.youtube?.publishAt,
+    uploadSessionUri: input.containerId,
   });
 }
