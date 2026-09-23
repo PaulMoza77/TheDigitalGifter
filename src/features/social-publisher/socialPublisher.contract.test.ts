@@ -24,7 +24,10 @@ describe("social publisher wiring", () => {
     const edge = read("supabase/functions/social-publisher/index.ts");
     expect(edge).toContain("action === \"tick\"");
     expect(edge).toContain("claim_social_publication_targets");
+    expect(edge).toContain("meta_oauth_callback");
+    expect(read("supabase/functions/_shared/social/meta.ts")).toContain("config_id");
     expect(edge).toContain("encryptSecret");
+    expect(edge).not.toContain("page_access_token: undefined");
     expect(edge).toContain("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
     expect(edge).toContain("IMPLEMENTED — WAITING FOR PROVIDER APPROVAL");
     expect(edge).not.toContain("VITE_META_APP_SECRET");
@@ -41,6 +44,19 @@ describe("social publisher wiring", () => {
     expect(cron).toContain("SOCIAL_PUBLISHER_CRON_SECRET");
     expect(cron).toContain("action: \"tick\"");
     expect(read("server/routes.mjs")).toContain("/api/social-publisher-cron");
+    expect(read("server/routes.mjs")).toContain("/api/meta-oauth/callback");
+    expect(read("api/meta-oauth-callback.ts")).toContain("Referrer-Policy");
+    expect(read("api/meta-oauth-callback.ts")).not.toContain("console.log");
+
+    const deploy = read("scripts/deploy-social-publisher.sh");
+    const migrationStop = deploy.indexOf("BLOCKED: migration failed. social-publisher was not deployed.");
+    const functionDeploy = deploy.indexOf("functions deploy social-publisher");
+    expect(migrationStop).toBeGreaterThan(0);
+    expect(functionDeploy).toBeGreaterThan(migrationStop);
+    expect(deploy).toContain("20260923180000_meta_login_publishing.sql");
+    expect(deploy).not.toMatch(/SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS=/);
+    expect(deploy).not.toMatch(/META_APP_SECRET=/);
+    expect(read("supabase/functions/_shared/social/metaAuth.ts")).toContain("delete nextMeta.page_access_token");
   });
 
   it("does not put generation controls back on Library and keeps generation APIs", () => {

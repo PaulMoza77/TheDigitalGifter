@@ -113,7 +113,7 @@ export default function PublishReelDrawer({ video, timezone, onClose, onSchedule
 
         <p className="mb-2 text-sm font-medium text-slate-200">Publish to</p>
         <div className="mb-4 grid grid-cols-2 gap-2">
-          {PLATFORM_ORDER.map((platform) => {
+          {([...PLATFORM_ORDER, "instagram_photo", "instagram_video", "facebook_photo", "facebook_video"] as SocialPlatform[]).map((platform) => {
             const spec = PLATFORM_CONSTRAINTS[platform];
             const on = platforms.includes(platform);
             return (

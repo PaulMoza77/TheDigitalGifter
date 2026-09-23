@@ -24,14 +24,6 @@ export function validateLibraryAssetForPlatforms(
     return { ok: false, issues };
   }
 
-  if (asset.kind === "photo") {
-    issues.push({
-      code: "not_a_reel",
-      message: "Photos cannot be published as Reels. Choose a Reel asset.",
-    });
-    return { ok: false, issues };
-  }
-
   const container = containerOf(asset.filename, asset.container);
   const duration = asset.durationSeconds ?? null;
   const width = asset.width ?? null;
@@ -50,7 +42,25 @@ export function validateLibraryAssetForPlatforms(
       continue;
     }
 
-    if (duration != null) {
+    const isPhotoAsset = asset.kind === "photo" || ["jpg", "jpeg", "png", "webp"].includes(container);
+    if (spec.kind === "photo" && !isPhotoAsset) {
+      issues.push({
+        code: "not_a_photo",
+        platform,
+        message: `${spec.label} needs an image file.`,
+      });
+      continue;
+    }
+    if (spec.kind !== "photo" && isPhotoAsset) {
+      issues.push({
+        code: "not_a_reel",
+        platform,
+        message: "Photos cannot be published as Reels. Choose a Reel asset.",
+      });
+      continue;
+    }
+
+    if (spec.kind !== "photo" && duration != null) {
       if (duration < spec.minDurationSeconds) {
         issues.push({
           code: "too_short",
@@ -67,7 +77,7 @@ export function validateLibraryAssetForPlatforms(
       }
     }
 
-    if (width != null && height != null) {
+    if (spec.aspect !== "any" && width != null && height != null) {
       if (width < spec.minWidth || height < spec.minHeight) {
         issues.push({
           code: "resolution_low",
@@ -93,7 +103,7 @@ export function validateLibraryAssetForPlatforms(
       });
     }
 
-    if (codec && !spec.codecs.some((item) => codec.includes(item))) {
+    if (codec && spec.codecs.length > 0 && !spec.codecs.some((item) => codec.includes(item))) {
       issues.push({
         code: "codec",
         platform,

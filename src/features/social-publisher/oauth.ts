@@ -1,3 +1,4 @@
+import { buildMetaBusinessLoginUrl } from "./meta";
 import type { SocialProvider } from "./types";
 
 export const META_OAUTH_SCOPES = [
@@ -17,7 +18,16 @@ export function buildMetaAuthorizeUrl(input: {
   appId: string;
   redirectUri: string;
   state: string;
+  configurationId?: string;
 }): string {
+  if (input.configurationId) {
+    return buildMetaBusinessLoginUrl({
+      appId: input.appId,
+      redirectUri: input.redirectUri,
+      state: input.state,
+      configurationId: input.configurationId,
+    });
+  }
   const url = new URL("https://www.facebook.com/v21.0/dialog/oauth");
   url.searchParams.set("client_id", input.appId);
   url.searchParams.set("redirect_uri", input.redirectUri);

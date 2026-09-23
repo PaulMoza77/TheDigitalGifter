@@ -23,6 +23,7 @@ export const API_MODULES = {
   "/api/clip-factory-tick": "clip-factory-tick.ts",
   "/api/long-form-studio": "long-form-studio.ts",
   "/api/social-publisher-cron": "social-publisher-cron.ts",
+  "/api/meta-oauth/callback": "meta-oauth-callback.ts",
   "/api/publisher": "publisher.ts",
   "/api/publisher-cron": "publisher-cron.ts",
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",
