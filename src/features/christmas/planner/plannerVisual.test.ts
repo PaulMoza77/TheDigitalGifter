@@ -60,7 +60,7 @@ describe("planner visual language is shared from My Planner", () => {
   });
 
   it("keeps Gifts as the visual quality bar without a second copilot column below 1440", () => {
-    expect(css).toContain("--planner-side: 216px");
+    expect(css).toContain("--planner-side: 272px");
     expect(css).toContain("--planner-copilot-w: clamp(300px, 22vw, 340px)");
     expect(readSrc("src/features/christmas/planner/copilot/CopilotHost.tsx")).toContain('matchMedia("(min-width: 1440px)"');
     expect(readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx")).toContain("Start with the people");
