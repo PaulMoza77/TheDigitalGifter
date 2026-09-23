@@ -4642,6 +4642,7 @@
 .tdg-shop-list > li {
   border-bottom: 1px solid rgba(42, 32, 24, 0.08);
   position: relative;
+  width: fit-content;
   max-width: 36rem;
 }
 
@@ -4651,10 +4652,11 @@
 
 .tdg-shop-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 20rem) auto;
+  grid-template-columns: 44px 20rem max-content;
   grid-template-areas:
     "check name qty"
     "check source qty";
+  justify-content: start;
   column-gap: 16px;
   row-gap: 2px;
   align-items: center;
@@ -4949,10 +4951,11 @@
   }
   .tdg-shop-row {
     width: 100%;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr) max-content;
     column-gap: 10px;
   }
   .tdg-shop-list > li {
+    width: auto;
     max-width: none;
   }
   .tdg-shop-row em {
