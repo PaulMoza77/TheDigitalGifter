@@ -353,4 +353,22 @@ server.listen(port, "0.0.0.0", () => {
     setInterval(runLongFormTick, longFormTickMs);
     setTimeout(runLongFormTick, 4000);
   }
+  const publisherTickMs = Number(process.env.PUBLISHER_TICK_MS || 30000);
+  if (publisherTickMs > 0) {
+    const runPublisherTick = () => {
+      import("../api/_lib/publisher/service.ts")
+        .then((mod) => mod.tickPublisherWorker("origin-loop"))
+        .catch((error) => {
+          console.error(
+            JSON.stringify({
+              source: "publisher",
+              event: "origin_tick_failed",
+              message: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        });
+    };
+    setInterval(runPublisherTick, publisherTickMs);
+    setTimeout(runPublisherTick, 6000);
+  }
 });

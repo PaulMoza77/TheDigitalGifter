@@ -24,6 +24,7 @@ import {
   Library,
   WandSparkles,
   Clapperboard,
+  CalendarClock,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
 import { useAdminNavAlerts, type AdminNavAlerts } from "@/hooks/useAdminNavAlerts";
@@ -181,6 +182,11 @@ const SidebarNavigation: React.FC<{
             label: "AI Clip Factory",
             path: "/admin/clip-factory",
             icon: WandSparkles,
+          },
+          {
+            label: "Publisher",
+            path: "/admin/publisher",
+            icon: CalendarClock,
           },
         ],
       },

@@ -119,6 +119,7 @@ export default function AdminLibraryPage() {
             <div className="flex flex-wrap gap-2">
               <LibraryNavBadge to="/admin/social-accounts" icon={Share2} label="Social Accounts" />
               <LibraryNavBadge to="/admin/publishing" icon={CalendarClock} label="Publishing" />
+              <LibraryNavBadge to="/admin/publisher" icon={CalendarClock} label="Publisher" />
             </div>
             <p className="text-sm text-slate-400">{totalLabel}</p>
           </div>

@@ -1,6 +1,4 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
-import { tickClipFactory } from "./_lib/clip-factory/worker";
-import { tickLongForm } from "./_lib/long-form-studio/worker";
 import { tickPublisherWorker } from "./_lib/publisher/service";
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
@@ -8,10 +6,15 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     return res.status(405).json({ error: "Method not allowed" });
   }
   const cronSecret = String(
-    process.env.CLIP_FACTORY_CRON_SECRET || process.env.CRON_SECRET || process.env.SOCIAL_PUBLISHER_CRON_SECRET || "",
+    process.env.PUBLISHER_CRON_SECRET ||
+      process.env.SOCIAL_PUBLISHER_CRON_SECRET ||
+      process.env.CLIP_FACTORY_CRON_SECRET ||
+      process.env.CRON_SECRET ||
+      "",
   ).trim();
   const provided = String(
     req.headers["x-cron-secret"] ||
+      req.headers["x-publisher-cron-secret"] ||
       req.headers.authorization?.toString().replace(/^Bearer\s+/i, "") ||
       req.query.secret ||
       "",
@@ -20,10 +23,8 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    const clip = await tickClipFactory("cron");
-    const longForm = await tickLongForm("cron");
-    const publisher = await tickPublisherWorker("cron");
-    return res.status(200).json({ ok: true, ...clip, longForm, publisher });
+    const result = await tickPublisherWorker("cron");
+    return res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return res.status(500).json({ error: "tick_failed", message: message.slice(0, 300) });
