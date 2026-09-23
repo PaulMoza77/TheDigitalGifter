@@ -72,7 +72,7 @@ describe("planner visual language is shared from My Planner", () => {
     expect(readSrc("src/features/christmas/planner/ChristmasPlannerPages.tsx")).toContain('variant="more"');
     expect(css).toContain(".tdg-shop {");
     expect(css).toContain("max-width: 1020px");
-    expect(css).toContain("height: 32%");
+    expect(css).toContain(".tdg-xmas-copilot-photo {\n  position: absolute;\n  inset: 0;");
     expect(readSrc("src/features/christmas/planner/BudgetPage.tsx")).toContain("spent of");
     expect(readSrc("src/features/christmas/planner/gifts/GiftsPage.tsx")).toContain("People first.");
   });

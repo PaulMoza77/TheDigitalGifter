@@ -1,4 +1,5 @@
 import { Gift, Lightbulb, Send, ShoppingBag, Sparkles, UtensilsCrossed, Wallet, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { usePrefersReducedMotion } from "@/features/christmas/landing/usePrefersReducedMotion";
 import type { CopilotCard, CopilotResponse } from "./ask";
@@ -107,6 +108,24 @@ export function ChristmasCopilotPanel({
   const hasConversation = turns.length > 0;
   const latest = turns[turns.length - 1] || null;
   const prefersReducedMotion = usePrefersReducedMotion();
+  const fireRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = fireRef.current;
+    if (!el || prefersReducedMotion) return;
+    const play = () => {
+      void el.play().catch(() => {
+        /* autoplay can be blocked until muted metadata is ready */
+      });
+    };
+    play();
+    el.addEventListener("canplay", play);
+    el.addEventListener("loadeddata", play);
+    return () => {
+      el.removeEventListener("canplay", play);
+      el.removeEventListener("loadeddata", play);
+    };
+  }, [prefersReducedMotion]);
 
   return (
     <section
@@ -121,12 +140,13 @@ export function ChristmasCopilotPanel({
       >
         {!prefersReducedMotion ? (
           <video
+            ref={fireRef}
             className="tdg-xmas-copilot-fire"
             autoPlay
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="auto"
             disablePictureInPicture
             tabIndex={-1}
           >

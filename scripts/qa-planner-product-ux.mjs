@@ -10,6 +10,7 @@ const dinner = resolve("public/christmas/planner/dinner-table.webp");
 const gifts = resolve("public/christmas/planner/gifts-editorial.webp");
 const bakery = resolve("public/assets/christmas/library-stills/prague_bakery_window.jpg");
 const cozy = resolve("public/christmas/planner/copilot-cozy.webp");
+const fire = resolve("public/christmas/planner/copilot-fire.webm");
 const clip = resolve("public/assets/christmas/cozy-reel/posters/clip1.jpg");
 
 const family = resolve("public/assets/christmas/library-stills/family_christmas_boardgame.jpg");
@@ -78,7 +79,10 @@ function shell({ title, nav, copilot = false, main }) {
     <main class="tdg-planner-main">${main}</main>
     ${copilot ? `<aside class="tdg-planner-copilot-rail" aria-label="Christmas Copilot">
       <section class="tdg-xmas-copilot tdg-xmas-copilot--docked">
-        <div class="tdg-xmas-copilot-photo" style="background-image:url('${cozy}')"><div class="tdg-xmas-copilot-veil"></div></div>
+        <div class="tdg-xmas-copilot-photo" style="background-image:url('${cozy}')">
+          <video class="tdg-xmas-copilot-fire" autoplay muted loop playsinline preload="auto"><source src="${fire}" type="video/webm" /></video>
+          <div class="tdg-xmas-copilot-veil"></div>
+        </div>
         <header class="tdg-xmas-copilot-head"><div><p class="tdg-xmas-copilot-brand">Christmas Copilot</p><p class="tdg-xmas-copilot-sub">A little help. A little Christmas magic.</p><p class="tdg-xmas-copilot-meta">42% ready · 94 days left</p></div></header>
         <div class="tdg-xmas-copilot-scroll">
           <div class="tdg-xmas-copilot-suggestions">${copilotChips(nav)}

@@ -1602,7 +1602,7 @@
     min-width: 0;
     height: 100%;
     border-left: 1px solid var(--planner-line);
-    background: #fffdf9;
+    background: #1c1612;
   }
   .tdg-copilot-today {
     display: none;
@@ -2016,18 +2016,14 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  color: var(--planner-ink);
-  background: #fffdf9;
+  color: #fffdf8;
   isolation: isolate;
 }
 
 .tdg-xmas-copilot-photo {
   position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
+  inset: 0;
   z-index: 0;
-  height: 32%;
   background-size: cover;
   background-position: center 40%;
   background-repeat: no-repeat;
@@ -2038,7 +2034,7 @@
   display: none;
 }
 
-/* Fire loop stays inside the top photography band. */
+/* Full-frame fire loop aligned to the static cozy photo (black = transparent via screen). */
 .tdg-xmas-copilot-fire {
   position: absolute;
   inset: 0;
@@ -2057,7 +2053,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(28, 18, 14, 0.38) 0%, rgba(28, 18, 14, 0.18) 42%, rgba(247, 241, 232, 0.88) 82%, #fffdf9 100%);
+    linear-gradient(180deg, rgba(8, 16, 12, 0.55) 0%, rgba(8, 16, 12, 0.28) 34%, rgba(8, 16, 12, 0.42) 68%, rgba(8, 16, 12, 0.72) 100%),
+    radial-gradient(120% 70% at 50% 100%, rgba(8, 14, 12, 0.45), transparent 55%);
   pointer-events: none;
 }
 
@@ -2079,8 +2076,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  padding: 20px 18px 12px;
-  min-height: 28%;
+  padding: 22px 18px 10px;
   flex-shrink: 0;
 }
 
@@ -2095,21 +2091,19 @@
   letter-spacing: 0.01em;
   color: #fffdf8;
   line-height: 1.15;
-  text-shadow: 0 1px 10px rgba(28, 18, 14, 0.35);
 }
 
 .tdg-xmas-copilot-sub {
   margin: 6px 0 0;
   font-size: 0.9rem;
-  color: rgba(255, 253, 248, 0.9);
-  text-shadow: 0 1px 8px rgba(28, 18, 14, 0.3);
+  color: rgba(255, 253, 248, 0.84);
 }
 
 .tdg-xmas-copilot-meta {
   margin: 8px 0 0;
   font-size: 0.76rem;
   letter-spacing: 0.02em;
-  color: rgba(255, 253, 248, 0.78);
+  color: rgba(255, 253, 248, 0.68);
 }
 
 .tdg-xmas-copilot-close {
@@ -2117,7 +2111,7 @@
   height: 36px;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 253, 248, 0.18);
+  background: rgba(255, 253, 248, 0.16);
   color: #fffdf8;
   display: inline-flex;
   align-items: center;
@@ -2149,16 +2143,17 @@
   width: 100%;
   min-height: 44px;
   padding: 10px 14px;
-  border: 1px solid var(--planner-line);
+  border: 1px solid rgba(255, 253, 248, 0.28);
   border-radius: 999px;
-  background: #fff;
+  background: rgba(250, 248, 246, 0.82);
+  backdrop-filter: blur(10px);
   color: var(--planner-ink);
   text-align: left;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(28, 22, 18, 0.04);
+  box-shadow: 0 8px 20px rgba(8, 14, 12, 0.12);
 }
 
 .tdg-xmas-copilot-chip svg {
@@ -2182,10 +2177,10 @@
   margin-top: auto;
   padding: 16px;
   border-radius: 18px;
-  background: #fff;
+  background: rgba(250, 248, 246, 0.92);
+  backdrop-filter: blur(12px);
   color: var(--planner-ink);
-  border: 1px solid var(--planner-line);
-  box-shadow: 0 8px 20px rgba(28, 22, 18, 0.05);
+  box-shadow: 0 12px 28px rgba(8, 14, 12, 0.16);
 }
 
 .tdg-xmas-copilot-win-kicker {
@@ -2243,16 +2238,15 @@
 .tdg-xmas-copilot-bubble.is-user {
   align-self: flex-end;
   max-width: 92%;
-  background: #fff;
+  background: rgba(250, 248, 246, 0.9);
   color: var(--planner-ink);
-  border: 1px solid var(--planner-line);
 }
 
 .tdg-xmas-copilot-bubble.is-assistant {
   align-self: stretch;
-  background: var(--planner-ivory);
-  color: var(--planner-ink);
-  border: 1px solid var(--planner-line);
+  background: rgba(12, 22, 18, 0.55);
+  color: #fffdf8;
+  border: 1px solid rgba(255, 253, 248, 0.14);
 }
 
 .tdg-xmas-copilot-bubble p {
@@ -2313,20 +2307,18 @@
   align-items: center;
   gap: 8px;
   padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px));
-  background: #fffdf9;
-  border-top: 1px solid var(--planner-line);
 }
 
 .tdg-xmas-copilot-input {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 48px;
-  border: 1px solid var(--planner-line);
+  border: 0;
   border-radius: 999px;
   padding: 0 16px;
-  background: #fff;
+  background: #fffdf8;
   color: var(--planner-ink);
-  box-shadow: none;
+  box-shadow: 0 10px 24px rgba(8, 14, 12, 0.18);
 }
 
 .tdg-xmas-copilot-input::placeholder {
@@ -2374,8 +2366,7 @@
   top: 0;
   bottom: 0;
   width: min(420px, 100%);
-  background: #fffdf9;
-  box-shadow: -16px 0 40px rgba(28, 22, 18, 0.14);
+  box-shadow: -16px 0 40px rgba(8, 14, 12, 0.28);
 }
 
 @media (max-width: 743px) {
@@ -4907,8 +4898,7 @@
 }
 
 .tdg-xmas-copilot--docked .tdg-xmas-copilot-head {
-  padding: 18px 16px 10px;
-  min-height: 28%;
+  padding: 16px 16px 8px;
 }
 
 .tdg-xmas-copilot--docked .tdg-xmas-copilot-brand {
