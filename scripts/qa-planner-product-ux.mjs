@@ -10,6 +10,7 @@ const dinner = resolve("public/christmas/planner/dinner-table.webp");
 const gifts = resolve("public/christmas/planner/gifts-editorial.webp");
 const bakery = resolve("public/assets/christmas/library-stills/prague_bakery_window.jpg");
 const cozy = resolve("public/christmas/planner/copilot-cozy.webp");
+const fire = resolve("public/christmas/planner/copilot-fire.webm");
 const clip = resolve("public/assets/christmas/cozy-reel/posters/clip1.jpg");
 
 const family = resolve("public/assets/christmas/library-stills/family_christmas_boardgame.jpg");
@@ -78,7 +79,10 @@ function shell({ title, nav, copilot = false, main }) {
     <main class="tdg-planner-main">${main}</main>
     ${copilot ? `<aside class="tdg-planner-copilot-rail" aria-label="Christmas Copilot">
       <section class="tdg-xmas-copilot tdg-xmas-copilot--docked">
-        <div class="tdg-xmas-copilot-photo" style="background-image:url('${cozy}')"><div class="tdg-xmas-copilot-veil"></div></div>
+        <div class="tdg-xmas-copilot-photo" style="background-image:url('${cozy}')">
+          <video class="tdg-xmas-copilot-fire" autoplay muted loop playsinline preload="auto"><source src="${fire}" type="video/webm" /></video>
+          <div class="tdg-xmas-copilot-veil"></div>
+        </div>
         <header class="tdg-xmas-copilot-head"><div><p class="tdg-xmas-copilot-brand">Christmas Copilot</p><p class="tdg-xmas-copilot-sub">A little help. A little Christmas magic.</p><p class="tdg-xmas-copilot-meta">42% ready · 94 days left</p></div></header>
         <div class="tdg-xmas-copilot-scroll">
           <div class="tdg-xmas-copilot-suggestions">${copilotChips(nav)}
@@ -299,15 +303,15 @@ const pages = {
         <section class="tdg-shop-group">
           <h2>Groceries</h2>
           <ul class="tdg-shop-list">
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>smoked salmon</strong><small>Smoked salmon with capers and rye</small></span><em>400 g</em></label></li>
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>rye bread</strong><small>Christmas Dinner</small></span><em>8 pieces</em></label></li>
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Brussels sprouts</strong><small>Christmas Dinner</small></span><em>800 g</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>smoked salmon</strong><small>Smoked salmon with capers and rye</small><em>400 g</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>rye bread</strong><small>Christmas Dinner</small><em>8 pieces</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>Brussels sprouts</strong><small>Christmas Dinner</small><em>800 g</em></label></li>
           </ul>
         </section>
         <section class="tdg-shop-group">
           <h2>Gifts</h2>
           <ul class="tdg-shop-list">
-            <li><label class="tdg-shop-row"><input type="checkbox" /><span><strong>Cashmere scarf</strong><small>Andreas</small></span><em>€48</em></label></li>
+            <li><label class="tdg-shop-row"><input type="checkbox" /><strong>Cashmere scarf</strong><small>Andreas</small><em>€48</em></label></li>
           </ul>
         </section>
       </div>`,
@@ -368,7 +372,7 @@ const pages = {
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || "/usr/local/bin/google-chrome",
   headless: true,
-  args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  args: ["--no-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"],
 });
 
 for (const [name, html] of Object.entries(pages)) {
@@ -380,7 +384,7 @@ for (const [name, html] of Object.entries(pages)) {
   ]) {
     const page = await browser.newPage({ viewport });
     await page.goto(`file://${file}`, { waitUntil: "load" });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(name === "gifts" || name === "shopping" ? 900 : 400);
     const out = `${OUT}/planner-${name}-${label}.png`;
     const fullPage = name !== "shopping" && name !== "more";
     await page.screenshot({ path: out, fullPage });

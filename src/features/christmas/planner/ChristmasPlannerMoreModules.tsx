@@ -159,10 +159,8 @@ export function ChristmasPlannerShoppingPage() {
                       setNotice(null);
                     }}
                   />
-                  <span>
-                    <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
-                    <small>{row.source_notes || "Christmas menu"}</small>
-                  </span>
+                  <strong>{row.name.includes("|") ? row.name.split("|").slice(1).join("|") : row.name}</strong>
+                  <small>{row.source_notes || "Christmas menu"}</small>
                   <em>{row.quantity || ""}</em>
                 </label>
               </li>
@@ -198,10 +196,8 @@ export function ChristmasPlannerShoppingPage() {
                       setNotice(null);
                     }}
                   />
-                  <span>
-                    <strong>{g.selected_gift || g.idea}</strong>
-                    <small>{g.store || "Gifts"}</small>
-                  </span>
+                  <strong>{g.selected_gift || g.idea}</strong>
+                  <small>{g.store || "Gifts"}</small>
                   <em>
                     <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
                   </em>
