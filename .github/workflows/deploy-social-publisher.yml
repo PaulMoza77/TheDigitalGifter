@@ -53,6 +53,32 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: ${{ secrets.MOZAS_SSH_USER }}
         run: |
+          set +x
           chmod +x scripts/deploy-social-publisher.sh
+          if [ -z "${YOUTUBE_CLIENT_ID:-}" ] || [ -z "${YOUTUBE_CLIENT_SECRET:-}" ]; then
+            if [ -n "${MOZAS_SSH_HOST:-}" ] && [ -n "${MOZAS_SSH_PRIVATE_KEY:-}" ]; then
+              echo "Loading YouTube client config from VPS app.env (values masked, not printed)…"
+              # shellcheck source=scripts/mozas-ssh.sh
+              source scripts/mozas-ssh.sh
+              mozas_prepare_ssh
+              mozas_verify_remote_identity
+              umask 077
+              yt_env="$(mktemp)"
+              mozas_ssh 'grep -E "^YOUTUBE_(CLIENT_ID|CLIENT_SECRET|REDIRECT_URI)=" /opt/mozas/projects/thedigitalgifter/secrets/app.env' > "$yt_env"
+              while IFS= read -r line; do
+                val="${line#*=}"
+                [ -n "$val" ] && echo "::add-mask::$val"
+              done < "$yt_env"
+              set -a
+              # shellcheck disable=SC1090
+              source "$yt_env"
+              set +a
+              rm -f "$yt_env"
+              echo "VPS YouTube config loaded."
+            fi
+          fi
           bash scripts/deploy-social-publisher.sh
