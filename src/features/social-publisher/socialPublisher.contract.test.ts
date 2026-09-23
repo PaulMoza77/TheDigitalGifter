@@ -45,6 +45,8 @@ describe("social publisher wiring", () => {
     expect(adapters).toContain("googleapis.com/upload/youtube/v3/videos");
     expect(adapters).toContain("selfDeclaredMadeForKids");
     expect(adapters).toContain("publishAt");
+    expect(adapters).toContain("persistUploadSession");
+    expect(edge).toContain("persistYouTubeUploadSession");
 
     const cron = read("api/social-publisher-cron.ts");
     expect(cron).toContain("SOCIAL_PUBLISHER_CRON_SECRET");

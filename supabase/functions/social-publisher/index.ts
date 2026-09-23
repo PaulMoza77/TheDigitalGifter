@@ -636,6 +636,19 @@ async function processTarget(
           publishAt: asString(options.publishAt) || null,
         }
       : null,
+    persistYouTubeUploadSession: isYouTubePlatform(platform)
+      ? async (uploadUri: string) => {
+          await service
+            .from("social_publication_targets")
+            .update({
+              status: "uploading",
+              provider_container_id: uploadUri,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", target.id)
+            .is("remote_post_id", null);
+        }
+      : undefined,
   });
 
   if (result.ok) {

@@ -347,6 +347,7 @@ export async function publishYouTube(input: {
   madeForKids?: boolean | null;
   publishAt?: string | null;
   uploadSessionUri?: string | null;
+  persistUploadSession?: (uploadUri: string) => Promise<void>;
 }): Promise<AdapterResult> {
   const platform = input.platform === "youtube_video" ? "youtube_video" : "youtube_shorts";
   const fileRes = await fetch(input.videoUrl);
@@ -409,6 +410,10 @@ export async function publishYouTube(input: {
       const text = await start.text();
       return fail("youtube_init_failed", text.slice(0, 500), true);
     }
+    // Persist the resumable session before PUT so a crash cannot start a second init.
+    if (input.persistUploadSession) {
+      await input.persistUploadSession(uploadUri);
+    }
   }
 
   const upload = await fetch(uploadUri, {
@@ -470,6 +475,7 @@ export async function dispatchPublish(input: {
     madeForKids?: boolean | null;
     publishAt?: string | null;
   } | null;
+  persistYouTubeUploadSession?: (uploadUri: string) => Promise<void>;
 }): Promise<AdapterResult> {
   const caption = [input.caption, input.hashtags].filter(Boolean).join("\n\n").trim();
   if (input.platform === "instagram_reels" || input.platform === "instagram_photo" || input.platform === "instagram_video") {
@@ -506,5 +512,6 @@ export async function dispatchPublish(input: {
     madeForKids: input.youtube?.madeForKids,
     publishAt: input.youtube?.publishAt,
     uploadSessionUri: input.containerId,
+    persistUploadSession: input.persistYouTubeUploadSession,
   });
 }
