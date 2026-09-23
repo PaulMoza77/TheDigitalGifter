@@ -151,14 +151,16 @@ export function PlannerSeg<T extends string>({
   onChange,
   options,
   label,
+  className,
 }: {
   value: T;
   onChange: (next: T) => void;
-  options: Array<{ id: T; label: string }>;
+  options: Array<{ id: T; label: string; count?: number }>;
   label?: string;
+  className?: string;
 }) {
   return (
-    <div className="tdg-planner-seg" role="tablist" aria-label={label}>
+    <div className={["tdg-planner-seg", className].filter(Boolean).join(" ")} role="tablist" aria-label={label}>
       {options.map((opt) => (
         <button
           key={opt.id}
@@ -169,6 +171,7 @@ export function PlannerSeg<T extends string>({
           onClick={() => onChange(opt.id)}
         >
           {opt.label}
+          {typeof opt.count === "number" && opt.count > 0 ? <span className="tdg-planner-seg-count">{opt.count}</span> : null}
         </button>
       ))}
     </div>

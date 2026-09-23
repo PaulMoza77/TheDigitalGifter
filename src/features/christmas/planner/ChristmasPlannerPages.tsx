@@ -38,6 +38,7 @@ import {
   TaskRow,
 } from "./plannerUi";
 import { PlannerOnboarding, usePlannerBundle } from "./Onboarding";
+import { PlannerGeneratorMagicCard } from "./studio/PlannerGeneratorMagic";
 import { type GiftItem, type GiftRecipient, type PlannerTask } from "./types";
 
 export default function ChristmasPlannerTodayPage() {
@@ -452,6 +453,7 @@ export function ChristmasPlannerMorePage() {
   return (
     <div className="tdg-planner-page">
       <PlannerPageHeader title="More" lede="Everything else for your Christmas season." />
+      <PlannerGeneratorMagicCard variant="more" />
       {groups.map((group) => (
         <section key={group.title} className="tdg-planner-section">
           <p className="tdg-planner-kicker">{group.title}</p>

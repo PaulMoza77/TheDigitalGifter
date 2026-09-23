@@ -37,7 +37,8 @@ export function ChristmasPlannerShoppingPage() {
   if (loading) return <PlannerLoading label="Loading shopping…" />;
   if (!profile) return <PlannerOnboarding />;
 
-  const filtered = shoppingForTab(deriveShoppingItems(gifts), tab)
+  const derivedShopping = deriveShoppingItems(gifts);
+  const filtered = shoppingForTab(derivedShopping, tab)
     .map((row) => gifts.find((g) => g.id === row.giftId))
     .filter((g): g is GiftItem => Boolean(g));
 
@@ -75,17 +76,26 @@ export function ChristmasPlannerShoppingPage() {
   }
 
   const groceryNeed = grocery.filter((row) => row.status === "need");
+  const tabCounts = {
+    need: groceryNeed.length + shoppingForTab(derivedShopping, "need").length,
+    ordered: shoppingForTab(derivedShopping, "ordered").length,
+    arriving: shoppingForTab(derivedShopping, "arriving").length,
+    arrived: shoppingForTab(derivedShopping, "arrived").length,
+    returns: shoppingForTab(derivedShopping, "returns").length,
+  };
 
   return (
     <div className="tdg-planner-page tdg-shop">
-      <PlannerPageHeader title="Shopping" lede="Need to buy, then tick it off. Groceries from your menu, gifts for the people they’re for." />
+      <PlannerPageHeader title="Shopping" lede="Everything you still need, in one place." />
       <PlannerSeg
+        className="tdg-planner-seg--status"
         label="Shopping lanes"
         value={tab}
         onChange={setTab}
         options={(["need", "ordered", "arriving", "arrived", "returns"] as const).map((t) => ({
           id: t,
           label: t === "need" ? "Need to buy" : prettyLabel(t),
+          count: tabCounts[t],
         }))}
       />
       {tab === "need" && groceryNeed.length ? (
@@ -141,7 +151,11 @@ export function ChristmasPlannerShoppingPage() {
                     <PlannerGiftPriceLabel gift={g} currency={profile.currency} />
                   </em>
                 </label>
-                {g.url ? <PlannerGiftOutboundLink gift={g} source="shopping" /> : null}
+                {g.url ? (
+                  <div className="tdg-shop-extra">
+                    <PlannerGiftOutboundLink gift={g} source="shopping" />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
