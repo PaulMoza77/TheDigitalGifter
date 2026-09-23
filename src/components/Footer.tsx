@@ -97,6 +97,14 @@ export default function Footer() {
                 <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
                 Unsubscribe
               </Link>
+
+              <Link
+                to="/data-deletion"
+                className="flex items-center gap-2 text-sm text-[#c1c8d8] transition-colors hover:text-[#ffd976]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[#ffd976]" />
+                Data Deletion
+              </Link>
             </nav>
           </div>
 
