@@ -42,4 +42,6 @@ export const publisherApi = {
     invoke("reschedule", { publication_id: publicationId, scheduled_at: scheduledAt }),
   excludeAsset: (libraryAssetId: string) => invoke("exclude_asset", { library_asset_id: libraryAssetId }),
   tick: () => invoke("tick"),
+  setAutopilot: (enabled: boolean, confirmed: boolean) =>
+    invoke("set_autopilot", { enabled, confirmed }),
 };

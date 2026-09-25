@@ -4,6 +4,7 @@ import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabas
 import { requireClipFactoryAdmin } from "./_lib/clip-factory/admin";
 import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_BYTES, sanitizeFilename } from "./_lib/clip-factory/ingest";
 import { signedPlaybackPath, verifyMediaSignature } from "./_lib/clip-factory/mediaSign";
+import { mintProviderMediaUrl } from "./_lib/publisher/providerMedia";
 import { kickClipFactoryWorker, processClipFactoryJob, renderClipFactoryCandidate, tickClipFactory } from "./_lib/clip-factory/worker";
 import { classifyVideoUrl } from "../src/features/clip-factory/ingest/classify";
 import { detectUrlAdapter } from "../src/features/clip-factory/ingest/registry";
@@ -175,6 +176,25 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
     const result = await tickClipFactory("cron");
     return res.status(200).json({ ok: true, ...result });
+  }
+
+  if (postAction === "provider_signed_url") {
+    if (!isServiceRoleRequest(req.headers.authorization)) {
+      return apiError(res, 401, "unauthorized", "Unauthorized");
+    }
+    try {
+      const minted = mintProviderMediaUrl(asString(body.src));
+      return res.status(200).json({
+        ok: true,
+        url: minted.url,
+        path: minted.path,
+        ttlSec: minted.ttlSec,
+        stable: minted.stable,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "sign_failed";
+      return apiError(res, 400, "invalid_media_ref", message);
+    }
   }
 
   let admin;

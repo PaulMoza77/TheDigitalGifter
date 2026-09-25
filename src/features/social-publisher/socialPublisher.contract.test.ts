@@ -20,10 +20,18 @@ describe("social publisher wiring", () => {
     expect(sql).toContain("unique (publication_id, platform)");
     expect(sql).toContain("revoke all on public.social_accounts from anon, authenticated");
     expect(sql).not.toMatch(/Europe\/Bucharest/);
+    expect(read("supabase/migrations/20260925190000_publisher_social_bridge.sql")).toContain(
+      "publisher_publication_id",
+    );
 
     const edge = read("supabase/functions/social-publisher/index.ts");
     expect(edge).toContain("action === \"tick\"");
+    expect(edge).toContain("action === \"publisher_sync\"");
     expect(edge).toContain("claim_social_publication_targets");
+    expect(edge).toContain("provider_signed_url");
+    expect(edge).toContain("resolveProviderReadableUrl");
+    expect(edge).toContain("skip_reason");
+    expect(edge).toContain("pre_activation");
     expect(edge).toContain("meta_oauth_callback");
     expect(edge).toContain("youtube_oauth_callback");
     expect(edge).toContain("prepare_test_upload");
@@ -46,6 +54,13 @@ describe("social publisher wiring", () => {
     expect(edge).not.toContain("instagram_content_publish App Review");
     expect(edge).not.toContain("VITE_META_APP_SECRET");
     expect(edge).toContain("Already published; will not repost");
+    expect(read("api/clip-factory.ts")).toContain("provider_signed_url");
+    expect(read("api/clip-factory.ts")).toContain("isServiceRoleRequest");
+    expect(read("api/publisher.ts")).toContain("set_autopilot");
+    expect(read("src/pages/admin/AdminPublisherPage.tsx")).toContain("YouTube Shorts");
+    expect(read("src/features/publisher/destinations.ts")).not.toContain("business_management");
+    expect(read("supabase/functions/_shared/social/meta.ts")).toContain("OPTIONAL_META_PERMISSIONS");
+    expect(read("supabase/functions/_shared/social/meta.ts")).toMatch(/OPTIONAL_META_PERMISSIONS = \["business_management"\]/);
 
     const adapters = read("supabase/functions/_shared/social/adapters.ts");
     expect(adapters).toContain("graph.facebook.com/v21.0");
@@ -60,7 +75,8 @@ describe("social publisher wiring", () => {
 
     const cron = read("api/social-publisher-cron.ts");
     expect(cron).toContain("SOCIAL_PUBLISHER_CRON_SECRET");
-    expect(cron).toContain("action: \"tick\"");
+    expect(cron).toContain("tickSocialPublisher");
+    expect(read("api/_lib/social-publisher/invoke.ts")).toContain('action: "tick"');
     expect(read("server/routes.mjs")).toContain("/api/social-publisher-cron");
     expect(read("server/routes.mjs")).toContain("/api/meta-oauth/callback");
     expect(read("server/routes.mjs")).toContain("/api/admin/social/youtube/callback");
@@ -81,6 +97,7 @@ describe("social publisher wiring", () => {
     expect(deploy).toContain("20260923190000_youtube_oauth_publishing.sql");
     expect(deploy).toContain("20260923193000_social_provider_configs.sql");
     expect(deploy).toContain("20260925160000_youtube_live_sessions.sql");
+    expect(deploy).toContain("20260925190000_publisher_social_bridge.sql");
     expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
     expect(edge).toContain("upsert_youtube_provider_config");
     expect(edge).toContain("upsert_meta_provider_config");

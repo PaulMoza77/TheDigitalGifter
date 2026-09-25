@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { publisherApi } from "@/features/publisher/api";
-import { bulkTimes, CONTENT_TYPE_LABELS, DESTINATION_LABELS, WEEKDAY_LABELS } from "@/features/publisher/destinations";
+import { bulkTimes, CONTENT_TYPE_LABELS, DEFAULT_NEW_RULE_DESTINATIONS, DESTINATION_LABELS, WEEKDAY_LABELS } from "@/features/publisher/destinations";
 import { monthGrid } from "@/features/publisher/slotGeneration";
 import { DEFAULT_PUBLISHER_TIMEZONE, type PublisherDestination } from "@/features/publisher/types";
 import { addDaysIso, formatZonedDateTime, zonedWallTimeToUtcMs } from "@/features/social-publisher/timezone";
 
-type Tab = "Overview" | "Calendar" | "Queue" | "Schedule Rules";
+type Tab = "Overview" | "Calendar" | "Queue" | "Published" | "Partial" | "Failed" | "Schedule Rules";
 type CalView = "week" | "day" | "month";
 
 type PublicationRow = {
@@ -51,6 +51,7 @@ type AssetRow = {
   poster?: string | null;
   contentType: string;
   excluded: boolean;
+  kind?: string;
 };
 
 const DESTINATIONS = Object.keys(DESTINATION_LABELS) as PublisherDestination[];
@@ -72,6 +73,16 @@ export default function AdminPublisherPage() {
   const [rules, setRules] = React.useState<RuleRow[]>([]);
   const [assets, setAssets] = React.useState<AssetRow[]>([]);
   const [connections, setConnections] = React.useState<Array<{ provider: string; status: string }>>([]);
+  const [platforms, setPlatforms] = React.useState<{
+    instagram: { status: string; detail: string };
+    facebook: { status: string; detail: string };
+    youtube_shorts: { status: string; detail: string };
+  }>({
+    instagram: { status: "blocked", detail: "" },
+    facebook: { status: "blocked", detail: "" },
+    youtube_shorts: { status: "blocked", detail: "" },
+  });
+  const [autopilot, setAutopilot] = React.useState({ livePostsEnabled: false, livePostsEnabledAt: null as string | null });
   const [timezone, setTimezone] = React.useState(DEFAULT_PUBLISHER_TIMEZONE);
   const [selected, setSelected] = React.useState<PublicationRow | null>(null);
   const [anchor, setAnchor] = React.useState(() => formatZonedDateTime(Date.now(), DEFAULT_PUBLISHER_TIMEZONE).date);
@@ -82,7 +93,7 @@ export default function AdminPublisherPage() {
     weekdays: [1, 2, 3, 4, 5],
     times: ["10:00", "18:00"],
     contentType: "video",
-    destinations: ["instagram_reel_post", "tiktok"] as string[],
+    destinations: [...DEFAULT_NEW_RULE_DESTINATIONS] as string[],
     autoAssign: true,
     reuseCooldownDays: 14,
     approvalRequired: true,
@@ -92,7 +103,7 @@ export default function AdminPublisherPage() {
   const [preview, setPreview] = React.useState<Array<{ scheduledAt: string }>>([]);
   const [manual, setManual] = React.useState({
     libraryAssetId: "",
-    destinations: ["instagram_reel_post"] as string[],
+    destinations: [...DEFAULT_NEW_RULE_DESTINATIONS] as string[],
     caption: "",
     date: formatZonedDateTime(Date.now() + 86400000, DEFAULT_PUBLISHER_TIMEZONE).date,
     time: "12:00",
@@ -108,6 +119,14 @@ export default function AdminPublisherPage() {
         rules: RuleRow[];
         assets: AssetRow[];
         connections: Array<{ provider: string; status: string }>;
+        platforms?: {
+          instagram: { status: string; detail: string };
+          facebook: { status: string; detail: string };
+          youtube_shorts: { status: string; detail: string };
+        };
+        autopilot?: { livePostsEnabled: boolean; livePostsEnabledAt: string | null };
+        livePostsEnabled?: boolean;
+        livePostsEnabledAt?: string | null;
         timezone: string;
       };
       setOverview(data.overview || {});
@@ -115,6 +134,11 @@ export default function AdminPublisherPage() {
       setRules(data.rules || []);
       setAssets(data.assets || []);
       setConnections(data.connections || []);
+      if (data.platforms) setPlatforms(data.platforms);
+      setAutopilot({
+        livePostsEnabled: Boolean(data.autopilot?.livePostsEnabled ?? data.livePostsEnabled),
+        livePostsEnabledAt: data.autopilot?.livePostsEnabledAt || data.livePostsEnabledAt || null,
+      });
       setTimezone(data.timezone || DEFAULT_PUBLISHER_TIMEZONE);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not load Publisher.");
@@ -158,13 +182,61 @@ export default function AdminPublisherPage() {
     <div className="min-h-screen bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Admin Panel</p>
-        <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Publisher</h1>
+        <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Publisher Autopilot</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
-          Library assets, rolling seven-day schedules, approval, and dry-run publishing. Meta accounts are connected separately and are not posted from this dry-run.
+          Library Reel → schedule rule → automatic assignment → one social publication → Instagram Reel, Facebook Reel, and YouTube Short. Real provider posting stays off until Autopilot is explicitly enabled. Existing due items are never backfilled.
         </p>
 
+        <div className="mt-5 grid gap-3 lg:grid-cols-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">AUTOPILOT</p>
+            <p className={`mt-2 text-3xl font-semibold ${autopilot.livePostsEnabled ? "text-emerald-300" : "text-slate-200"}`}>
+              {autopilot.livePostsEnabled ? "ON" : "OFF"}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {autopilot.livePostsEnabled
+                ? `Real posting since ${autopilot.livePostsEnabledAt || "activation"}. Turning it off stops dispatch and keeps the schedule.`
+                : "Real posting is off. Schedule generation still runs."}
+            </p>
+            <button
+              type="button"
+              className={`mt-3 rounded-xl px-3 py-2 text-sm ${
+                autopilot.livePostsEnabled ? "border border-rose-400/40 text-rose-100" : "bg-indigo-500/30 text-indigo-100"
+              }`}
+              onClick={() =>
+                void (async () => {
+                  if (!autopilot.livePostsEnabled) {
+                    const confirmed = window.confirm(
+                      "Enable Autopilot REAL posting? Instagram Reels, Facebook Reels, and YouTube Shorts will publish at their scheduled times. Items already due will NOT be backfilled.",
+                    );
+                    if (!confirmed) return;
+                    await run(() => publisherApi.setAutopilot(true, true), "Autopilot on");
+                    return;
+                  }
+                  await run(() => publisherApi.setAutopilot(false, true), "Autopilot off");
+                })()
+              }
+            >
+              {autopilot.livePostsEnabled ? "Turn Autopilot OFF" : "Turn Autopilot ON"}
+            </button>
+          </div>
+          {([
+            ["Instagram", platforms.instagram],
+            ["Facebook", platforms.facebook],
+            ["YouTube Shorts", platforms.youtube_shorts],
+          ] as const).map(([label, item]) => (
+            <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+              <p className={`mt-2 text-xl font-semibold ${item.status === "connected" ? "text-emerald-300" : "text-amber-300"}`}>
+                {item.status === "connected" ? "Connected" : "blocked"}
+              </p>
+              <p className="mt-1 truncate text-xs text-slate-500">{item.detail || "Check Social Accounts"}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="mt-5 flex flex-wrap gap-2">
-          {(["Overview", "Calendar", "Queue", "Schedule Rules"] as Tab[]).map((item) => (
+          {(["Overview", "Calendar", "Queue", "Published", "Partial", "Failed", "Schedule Rules"] as Tab[]).map((item) => (
             <button
               key={item}
               type="button"
@@ -187,7 +259,8 @@ export default function AdminPublisherPage() {
               ["Needs content", overview.needs_content],
               ["Needs approval", overview.needs_approval],
               ["Scheduled", overview.scheduled],
-              ["Dry-run completed", overview.dry_run_completed],
+              ["Published", overview.published],
+              ["Partial", overview.partial],
               ["Failed", overview.failed],
             ].map(([label, count]) => (
               <div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
@@ -222,6 +295,7 @@ export default function AdminPublisherPage() {
 
         {tab === "Calendar" ? (
           <div className="mt-6">
+            <p className="mb-3 text-sm text-slate-400">Upcoming 7 days</p>
             <div className="flex flex-wrap items-center gap-2">
               {(["week", "day", "month"] as CalView[]).map((view) => (
                 <button
@@ -275,10 +349,19 @@ export default function AdminPublisherPage() {
           </div>
         ) : null}
 
-        {tab === "Queue" ? (
+        {tab === "Queue" || tab === "Published" || tab === "Partial" || tab === "Failed" ? (
           <div className="mt-6 space-y-3">
             {publications
-              .filter((row) => row.status !== "cancelled")
+              .filter((row) => {
+                if (tab === "Published") return row.status === "completed" || row.jobs.some((job) => job.status === "completed");
+                if (tab === "Failed") return row.status === "failed" || row.jobs.some((job) => job.status === "failed");
+                if (tab === "Partial") {
+                  const completed = row.jobs.some((job) => job.status === "completed");
+                  const failed = row.jobs.some((job) => job.status === "failed");
+                  return completed && failed;
+                }
+                return row.status !== "cancelled" && row.status !== "completed";
+              })
               .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
               .map((row) => {
                 const local = formatZonedDateTime(Date.parse(row.scheduled_at), row.timezone || timezone);
@@ -317,7 +400,7 @@ export default function AdminPublisherPage() {
                   className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
                 >
                   <option value="">Select Library asset</option>
-                  {assets.filter((asset) => !asset.excluded).slice(0, 200).map((asset) => (
+                  {assets.filter((asset) => !asset.excluded && asset.kind !== "long_form").slice(0, 200).map((asset) => (
                     <option key={asset.id} value={asset.id}>{asset.title}</option>
                   ))}
                 </select>
@@ -435,6 +518,7 @@ export default function AdminPublisherPage() {
                 <option value="video">{CONTENT_TYPE_LABELS.video}</option>
                 <option value="image">{CONTENT_TYPE_LABELS.image}</option>
               </select>
+              <p className="text-xs text-slate-500">Default new rules select Instagram Reel + Facebook Reel + YouTube Short. Stories, Threads, and TikTok are not posted by Autopilot.</p>
               <div className="flex flex-wrap gap-2">
                 {DESTINATIONS.map((destination) => (
                   <label key={destination} className="text-xs">
@@ -528,7 +612,7 @@ export default function AdminPublisherPage() {
               }}
             >
               <option value="">Replace with Library asset</option>
-              {assets.filter((asset) => !asset.excluded).slice(0, 200).map((asset) => (
+              {assets.filter((asset) => !asset.excluded && asset.kind !== "long_form").slice(0, 200).map((asset) => (
                 <option key={asset.id} value={asset.id}>{asset.title}</option>
               ))}
             </select>
