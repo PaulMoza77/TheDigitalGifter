@@ -6,6 +6,7 @@ import {
   callbackRedirect,
   finishMetaOAuth,
   inspectMetaToken,
+  invalidateMetaClientConfigCache,
   metaAuthorizeUrl,
   metaRedirectUri,
   resolveMetaClientConfig,
@@ -17,6 +18,7 @@ import {
   ensureYouTubeAccessToken,
   finishYouTubeOAuth,
   inspectYouTubeToken,
+  invalidateYouTubeClientConfigCache,
   safeYouTubeOauthError,
   youtubeAuthorizeUrl,
   youtubeCallbackRedirect,
@@ -865,11 +867,14 @@ Deno.serve(async (req) => {
         .eq("provider", provider)
         .maybeSingle();
       if (existing?.provider) {
-        await service.from("social_provider_configs").update(row).eq("provider", provider);
+        const updated = await service.from("social_provider_configs").update(row).eq("provider", provider);
+        if (updated.error) throw updated.error;
       } else {
         const inserted = await service.from("social_provider_configs").insert(row);
         if (inserted.error) throw inserted.error;
       }
+      if (provider === "meta") invalidateMetaClientConfigCache();
+      else invalidateYouTubeClientConfigCache();
       return jsonResponse({
         ok: true,
         provider,
