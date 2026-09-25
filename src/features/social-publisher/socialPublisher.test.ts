@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { previewBulkSchedule } from "./bulkSchedule";
 import {
   buildMetaBusinessLoginUrl,
+  buildProviderReadiness,
   diffMetaPermissions,
   isAllowedAdminReturn,
+  metaReadinessMissing,
   metaRetryPlan,
   publicPageSummary,
   sanitizeProviderError,
@@ -441,5 +443,67 @@ describe("meta account selection", () => {
         nowMs: Date.parse("2026-09-23T12:00:00.000Z"),
       }).status,
     ).toBe("scheduled");
+  });
+
+  it("does not treat granted Meta permissions as missing after OAuth", () => {
+    const url = buildMetaBusinessLoginUrl({
+      appId: "1771898293934621",
+      redirectUri: "https://www.thedigitalgifter.com/api/meta-oauth/callback",
+      state: "state-1",
+      configurationId: "1117038350677281",
+    });
+    expect(url).toContain("config_id=1117038350677281");
+    expect(url).toContain("client_id=1771898293934621");
+    expect(url).toContain("redirect_uri=https%3A%2F%2Fwww.thedigitalgifter.com%2Fapi%2Fmeta-oauth%2Fcallback");
+
+    expect(
+      metaReadinessMissing({
+        oauthConfigured: true,
+        missingEnv: ["META_APP_SECRET"],
+        live: false,
+        account: {
+          provider: "meta",
+          status: "connected",
+          metadata: {
+            granted_permissions: [
+              "pages_show_list",
+              "pages_read_engagement",
+              "pages_manage_posts",
+              "instagram_basic",
+              "instagram_content_publish",
+              "business_management",
+            ],
+            missing_permissions: [],
+          },
+        },
+      }),
+    ).toEqual(["SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS"]);
+
+    const readiness = buildProviderReadiness({
+      configured: { meta: true, tiktok: false, youtube: true },
+      live: false,
+      missingEnv: {
+        meta: ["META_APP_SECRET", "instagram_content_publish App Review", "pages_manage_posts"],
+        tiktok: ["TIKTOK_CLIENT_KEY"],
+        youtube: ["YOUTUBE_CLIENT_SECRET"],
+      },
+      accounts: [
+        {
+          provider: "meta",
+          status: "connected",
+          metadata: { missing_permissions: [] },
+        },
+        {
+          provider: "youtube",
+          status: "connected",
+          metadata: { missing_scopes: [] },
+        },
+      ],
+    });
+    expect(readiness.meta.oauth).toBe(true);
+    expect(readiness.meta.missing).toEqual(["SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS"]);
+    expect(readiness.meta.missing.join(" ")).not.toMatch(/instagram_content_publish App Review/);
+    expect(readiness.meta.missing).not.toContain("pages_manage_posts");
+    expect(readiness.youtube.missing).toEqual(["SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS"]);
   });
 });

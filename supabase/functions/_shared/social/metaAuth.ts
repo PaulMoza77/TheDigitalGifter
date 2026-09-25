@@ -25,6 +25,84 @@ function env(name: string): string {
   return asString(Deno.env.get(name));
 }
 
+type MetaClientConfig = {
+  appId: string;
+  appSecret: string;
+  configurationId: string;
+  redirectUri: string;
+};
+
+let cachedDbConfig: MetaClientConfig | null | undefined;
+
+export function invalidateMetaClientConfigCache(): void {
+  cachedDbConfig = undefined;
+}
+
+async function loadMetaConfigFromDb(service?: Service): Promise<MetaClientConfig | null> {
+  if (cachedDbConfig !== undefined) return cachedDbConfig;
+  if (!service) return null;
+  try {
+    const { data } = await service
+      .from("social_provider_configs")
+      .select("client_id,client_secret_ciphertext,redirect_uri,metadata")
+      .eq("provider", "meta")
+      .maybeSingle();
+    if (!data?.client_id || !data?.client_secret_ciphertext) {
+      cachedDbConfig = null;
+      return null;
+    }
+    const secret = await decryptSecret(asString(data.client_secret_ciphertext));
+    const metadata = (data.metadata || {}) as Record<string, unknown>;
+    const configurationId = asString(metadata.configuration_id || metadata.META_CONFIGURATION_ID);
+    if (!secret || !configurationId) {
+      cachedDbConfig = null;
+      return null;
+    }
+    cachedDbConfig = {
+      appId: asString(data.client_id),
+      appSecret: secret,
+      configurationId,
+      redirectUri: asString(data.redirect_uri),
+    };
+    return cachedDbConfig;
+  } catch {
+    cachedDbConfig = null;
+    return null;
+  }
+}
+
+export async function resolveMetaClientConfig(service?: Service): Promise<{
+  appId: string;
+  appSecret: string;
+  configurationId: string;
+  redirectUri: string;
+  missing: string[];
+}> {
+  const fromEnvId = env("META_APP_ID");
+  const fromEnvSecret = env("META_APP_SECRET");
+  const fromEnvConfigId = env("META_CONFIGURATION_ID");
+  const fromEnvRedirect = metaRedirectUri();
+  if (fromEnvId && fromEnvSecret && fromEnvConfigId) {
+    return {
+      appId: fromEnvId,
+      appSecret: fromEnvSecret,
+      configurationId: fromEnvConfigId,
+      redirectUri: fromEnvRedirect,
+      missing: [],
+    };
+  }
+  const fromDb = await loadMetaConfigFromDb(service);
+  const appId = fromEnvId || fromDb?.appId || "";
+  const appSecret = fromEnvSecret || fromDb?.appSecret || "";
+  const configurationId = fromEnvConfigId || fromDb?.configurationId || "";
+  const redirectUri = fromEnvRedirect || fromDb?.redirectUri || metaRedirectUri();
+  const missing: string[] = [];
+  if (!appId) missing.push("META_APP_ID");
+  if (!appSecret) missing.push("META_APP_SECRET");
+  if (!configurationId) missing.push("META_CONFIGURATION_ID");
+  return { appId, appSecret, configurationId, redirectUri, missing };
+}
+
 export function metaRedirectUri(): string {
   const base = (
     env("SOCIAL_PUBLISHER_PUBLIC_BASE_URL") ||
@@ -65,12 +143,12 @@ async function postForm(url: string, body: Record<string, string>) {
   return { ok: res.ok, json };
 }
 
-async function exchangeUserToken(code: string, redirectUri: string) {
-  const appId = env("META_APP_ID");
-  const secret = env("META_APP_SECRET");
+async function exchangeUserToken(code: string, redirectUri: string, service?: Service) {
+  const resolved = await resolveMetaClientConfig(service);
+  if (resolved.missing.length) throw new Error("exchange_failed");
   const short = await postForm("https://graph.facebook.com/v21.0/oauth/access_token", {
-    client_id: appId,
-    client_secret: secret,
+    client_id: resolved.appId,
+    client_secret: resolved.appSecret,
     redirect_uri: redirectUri,
     code,
   });
@@ -80,8 +158,8 @@ async function exchangeUserToken(code: string, redirectUri: string) {
   }
   const long = await postForm("https://graph.facebook.com/v21.0/oauth/access_token", {
     grant_type: "fb_exchange_token",
-    client_id: appId,
-    client_secret: secret,
+    client_id: resolved.appId,
+    client_secret: resolved.appSecret,
     fb_exchange_token: shortToken,
   });
   const access = asString(long.json.access_token) || shortToken;
@@ -169,7 +247,7 @@ async function upsertMetaAccount(service: Service, row: Record<string, unknown>)
 }
 
 export async function finishMetaOAuth(service: Service, code: string, redirectUri: string) {
-  const exchanged = await exchangeUserToken(code, redirectUri);
+  const exchanged = await exchangeUserToken(code, redirectUri, service);
   const permissions = await grantedPermissions(exchanged.access);
   const permissionDiff = diffMetaPermissions(permissions);
   const pages = await loadPages(exchanged.access);
@@ -224,20 +302,21 @@ export async function finishMetaOAuth(service: Service, code: string, redirectUr
   };
 }
 
-export function metaAuthorizeUrl(state: string): { url: string | null; missing: string[] } {
-  const missing: string[] = [];
-  if (!env("META_APP_ID")) missing.push("META_APP_ID");
-  if (!env("META_APP_SECRET")) missing.push("META_APP_SECRET");
-  if (!env("META_CONFIGURATION_ID")) missing.push("META_CONFIGURATION_ID");
-  if (missing.length) return { url: null, missing };
+export async function metaAuthorizeUrl(
+  state: string,
+  options: { service?: Service } = {},
+): Promise<{ url: string | null; missing: string[]; redirectUri: string }> {
+  const resolved = await resolveMetaClientConfig(options.service);
+  if (resolved.missing.length) return { url: null, missing: resolved.missing, redirectUri: resolved.redirectUri };
   return {
     url: buildMetaBusinessLoginUrl({
-      appId: env("META_APP_ID"),
-      redirectUri: metaRedirectUri(),
+      appId: resolved.appId,
+      redirectUri: resolved.redirectUri || metaRedirectUri(),
       state,
-      configurationId: env("META_CONFIGURATION_ID"),
+      configurationId: resolved.configurationId,
     }),
     missing: [],
+    redirectUri: resolved.redirectUri || metaRedirectUri(),
   };
 }
 
@@ -268,8 +347,9 @@ export async function inspectMetaToken(service: Service, account: Record<string,
     };
   }
 
-  const appId = env("META_APP_ID");
-  const secret = env("META_APP_SECRET");
+  const resolved = await resolveMetaClientConfig(service);
+  const appId = resolved.appId;
+  const secret = resolved.appSecret;
   const debugUrl = new URL("https://graph.facebook.com/v21.0/debug_token");
   debugUrl.searchParams.set("input_token", token);
   let debugJson: {
