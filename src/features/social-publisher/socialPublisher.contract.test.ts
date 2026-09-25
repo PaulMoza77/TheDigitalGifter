@@ -74,6 +74,8 @@ describe("social publisher wiring", () => {
     expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
     expect(edge).toContain("upsert_youtube_provider_config");
     expect(edge).toContain("upsert_meta_provider_config");
+    expect(edge).toContain("invalidateMetaClientConfigCache()");
+    expect(edge).toContain("invalidateYouTubeClientConfigCache()");
     expect(read("supabase/migrations/20260923193000_social_provider_configs.sql")).toContain(
       "social_provider_configs",
     );
