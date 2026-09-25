@@ -25,6 +25,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm install --no-save tsx@4.20.5
 COPY --from=build /app/dist ./dist
 COPY api ./api
+# YouTube Live origin handlers import shared social helpers from Supabase functions.
+COPY supabase/functions ./supabase/functions
 COPY server ./server
 # Origin /api handlers import shared TypeScript from src/ (gift tree, funnel contract).
 COPY src ./src
