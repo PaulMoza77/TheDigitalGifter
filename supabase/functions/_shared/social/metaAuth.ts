@@ -34,6 +34,10 @@ type MetaClientConfig = {
 
 let cachedDbConfig: MetaClientConfig | null | undefined;
 
+export function invalidateMetaClientConfigCache(): void {
+  cachedDbConfig = undefined;
+}
+
 async function loadMetaConfigFromDb(service?: Service): Promise<MetaClientConfig | null> {
   if (cachedDbConfig !== undefined) return cachedDbConfig;
   if (!service) return null;
