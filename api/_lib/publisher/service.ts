@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { DryRunPublisherAdapter, sanitizeAdapterLog } from "../../../src/features/publisher/adapters";
 import { futureAssignedAssetIds, publicationDuplicateKey, selectLibraryAsset } from "../../../src/features/publisher/assignment";
-import { isPublisherDestination, normalizeTimes, normalizeWeekdays } from "../../../src/features/publisher/destinations";
+import { normalizeTimes, normalizeWeekdays } from "../../../src/features/publisher/destinations";
 import { planSlotsForRule } from "../../../src/features/publisher/slotGeneration";
-import { publicationStatusFromParts, retryDelayMs, slotIsEditableFuture } from "../../../src/features/publisher/status";
+import { publicationStatusFromParts, slotIsEditableFuture } from "../../../src/features/publisher/status";
 import type {
   PublisherContentType,
   PublisherDestination,
@@ -13,14 +12,25 @@ import type {
 } from "../../../src/features/publisher/types";
 import { DEFAULT_PUBLISHER_TIMEZONE, ROLLING_HORIZON_DAYS } from "../../../src/features/publisher/types";
 import { getServiceClient } from "../christmas/supabaseClient";
+import { tickSocialPublisher } from "../social-publisher/invoke";
+import { loadAutopilotSettings, loadPlatformConnectionLabels, reflectSocialTargetStatus, syncPublisherSocialBridge } from "./bridge";
 import { loadPublisherAssets } from "./library";
+import { asDestinations } from "./map";
 
 type DbClient = ReturnType<typeof getServiceClient>;
 
-function asDestinations(values: unknown): PublisherDestination[] {
-  return (Array.isArray(values) ? values : [])
-    .map(String)
-    .filter(isPublisherDestination);
+async function bridgeAfterChange(publicationId?: string) {
+  try {
+    await syncPublisherSocialBridge(publicationId ? [publicationId] : undefined);
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        source: "publisher",
+        event: "social_bridge_failed",
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  }
 }
 
 function mapRule(row: Record<string, unknown>): PublisherScheduleRule {
@@ -239,105 +249,46 @@ export async function generatePublisherSlots() {
 
 export async function tickPublisherWorker(workerId = "publisher-origin") {
   const generated = await generatePublisherSlots();
-  const service = getServiceClient();
-  const { data: claimed, error } = await service.rpc("claim_publisher_destination_jobs", {
-    p_limit: 8,
-    p_worker_id: workerId,
-    p_now: new Date().toISOString(),
-  });
-  if (error) throw error;
-  const jobs = claimed || [];
-  const adapter = new DryRunPublisherAdapter();
-  const assets = await loadPublisherAssets();
-  let processed = 0;
-  for (const job of jobs) {
-    const { data: publication } = await service.from("publisher_publications").select("*").eq("id", job.publication_id).maybeSingle();
-    if (!publication?.approved) {
-      await service.from("publisher_destination_jobs").update({
-        status: "needs_approval",
-        last_error: "Unapproved publication blocked from adapter",
-        last_error_code: "unapproved",
-        lease_expires_at: null,
-      }).eq("id", job.id);
-      continue;
-    }
-    const asset = assets.find((item) => item.id === publication.library_asset_id) || null;
-    const result = await adapter.publish({
-      destination: job.destination,
-      libraryAssetId: publication.library_asset_id || "",
-      mediaUrl: asset?.src || "",
-      caption: publication.caption || "",
-      contentType: publication.content_type,
-      scheduledAt: publication.scheduled_at,
-      forceFail: /\[dry-run:fail\]/i.test(publication.caption || ""),
-    });
-    await service.from("publisher_attempts").insert({
-      job_id: job.id,
-      kind: "dry_run",
-      success: result.ok,
-      result_code: result.code,
-      message: String(sanitizeAdapterLog(result.message) || ""),
-      remote_post_id: result.remotePostId,
-      remote_url: result.remoteUrl,
-    });
-    if (result.ok) {
-      await service.from("publisher_destination_jobs").update({
-        status: "completed",
-        remote_post_id: result.remotePostId,
-        remote_url: result.remoteUrl,
-        last_error: null,
-        last_error_code: null,
-        lease_expires_at: null,
-      }).eq("id", job.id);
-      if (asset) {
-        const lastUsed = { ...asset.lastUsedByDestination, [job.destination]: new Date().toISOString() };
-        await service.from("publisher_asset_state").upsert({
-          library_asset_id: asset.id,
-          last_used_by_destination: lastUsed,
-          updated_at: new Date().toISOString(),
-        });
-      }
-    } else {
-      const retryable = result.retryable && job.attempts < job.max_attempts;
-      await service.from("publisher_destination_jobs").update({
-        status: "failed",
-        last_error: result.message,
-        last_error_code: result.code,
-        next_retry_at: retryable ? new Date(Date.now() + retryDelayMs(job.attempts)).toISOString() : null,
-        lease_expires_at: null,
-      }).eq("id", job.id);
-    }
-    await service.from("publisher_publications").update({ status: "processing" }).eq("id", publication.id);
-    await syncPublicationStatus(service, publication.id);
-    processed += 1;
+  let sync: { ok: boolean; synced?: number; result?: Record<string, unknown> } = { ok: true, synced: 0 };
+  try {
+    sync = await syncPublisherSocialBridge();
+  } catch (error) {
+    sync = { ok: false, result: { error: error instanceof Error ? error.message : String(error) } };
   }
-  return { ok: true, slotsCreated: generated.created, claimed: jobs.length, processed, dryRun: true, livePosts: false };
-}
-
-async function socialConnectionLabel(
-  service: DbClient,
-  provider: "meta" | "tiktok" | "youtube",
-): Promise<"connected" | "not_connected"> {
-  const { data } = await service
-    .from("social_accounts")
-    .select("status")
-    .eq("provider", provider)
-    .eq("status", "connected")
-    .limit(1)
-    .maybeSingle();
-  return data?.status === "connected" ? "connected" : "not_connected";
+  let socialTick: { ok: boolean; status: number; json: Record<string, unknown> } = { ok: true, status: 200, json: {} };
+  try {
+    socialTick = await tickSocialPublisher();
+  } catch (error) {
+    socialTick = { ok: false, status: 0, json: { error: error instanceof Error ? error.message : String(error) } };
+  }
+  const reflected = await reflectSocialTargetStatus();
+  const settings = await loadAutopilotSettings();
+  return {
+    ok: true,
+    workerId,
+    slotsCreated: generated.created,
+    claimed: 0,
+    processed: reflected.updated,
+    sync,
+    socialTick: socialTick.json,
+    reflected,
+    dryRun: false,
+    livePosts: settings.livePostsEnabled,
+  };
 }
 
 export async function publisherBootstrap() {
   const service = getServiceClient();
   await generatePublisherSlots();
-  const [{ data: settings }, rules, { data: publications }, { data: slots }, { data: jobs }, assets] = await Promise.all([
+  const [{ data: settings }, rules, { data: publications }, { data: slots }, { data: jobs }, assets, autopilot, platforms] = await Promise.all([
     service.from("publisher_settings").select("*").eq("id", 1).maybeSingle(),
     loadRules(service, false),
     service.from("publisher_publications").select("*").order("scheduled_at", { ascending: true }).limit(400),
     service.from("publisher_slots").select("*").order("scheduled_at", { ascending: true }).limit(400),
     service.from("publisher_destination_jobs").select("*").limit(2000),
     loadPublisherAssets(),
+    loadAutopilotSettings(service),
+    loadPlatformConnectionLabels(service),
   ]);
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const jobsByPub = new Map<string, typeof jobs>();
@@ -350,32 +301,44 @@ export async function publisherBootstrap() {
     needs_content: 0,
     needs_approval: 0,
     scheduled: 0,
-    dry_run_completed: 0,
+    published: 0,
+    partial: 0,
     failed: 0,
+    dry_run_completed: 0,
   };
   const hydrated = (publications || []).map((row) => {
+    const pubJobs = jobsByPub.get(row.id) || [];
+    const jobStatuses = pubJobs.map((job) => String(job.status));
+    const completed = jobStatuses.filter((status) => status === "completed").length;
+    const failedJobs = jobStatuses.filter((status) => status === "failed").length;
+    const activeJobs = jobStatuses.filter((status) => status !== "cancelled");
     if (row.status === "needs_content") overview.needs_content += 1;
     else if (row.status === "needs_approval") overview.needs_approval += 1;
     else if (row.status === "scheduled") overview.scheduled += 1;
-    else if (row.status === "completed") overview.dry_run_completed += 1;
+    else if (row.status === "completed" || (activeJobs.length > 0 && completed === activeJobs.length)) overview.published += 1;
     else if (row.status === "failed") overview.failed += 1;
+    if (completed > 0 && failedJobs > 0) overview.partial += 1;
+    else if (row.status === "completed") overview.dry_run_completed += 1;
     const asset = row.library_asset_id ? assetById.get(row.library_asset_id) : null;
     return {
       ...row,
       asset_title: asset?.title || null,
       asset_src: asset?.src || null,
       asset_poster: asset?.poster || null,
-      jobs: jobsByPub.get(row.id) || [],
+      jobs: pubJobs,
     };
   });
   return {
     timezone: settings?.timezone || DEFAULT_PUBLISHER_TIMEZONE,
-    livePostsEnabled: false,
+    livePostsEnabled: autopilot.livePostsEnabled,
+    livePostsEnabledAt: autopilot.livePostsEnabledAt,
+    autopilot,
+    platforms,
     connections: [
-      { provider: "meta", status: await socialConnectionLabel(service, "meta") },
+      { provider: "meta", status: platforms.instagram.status === "connected" || platforms.facebook.status === "connected" ? "connected" : "not_connected" },
       { provider: "threads", status: "not_connected" },
-      { provider: "youtube", status: await socialConnectionLabel(service, "youtube") },
-      { provider: "tiktok", status: await socialConnectionLabel(service, "tiktok") },
+      { provider: "youtube", status: platforms.youtube_shorts.status === "connected" ? "connected" : "not_connected" },
+      { provider: "tiktok", status: "not_connected" },
       { provider: "dry_run", status: "connected" },
     ],
     overview,
@@ -392,6 +355,9 @@ export async function publisherBootstrap() {
       contentType: asset.contentType,
       excluded: asset.excluded,
       tags: asset.tags,
+      durationSeconds: asset.durationSeconds,
+      width: asset.width,
+      height: asset.height,
     })),
   };
 }
@@ -442,6 +408,7 @@ export async function savePublisherRule(input: Record<string, unknown>, id?: str
     ruleId = inserted.data.id;
   }
   await generatePublisherSlots();
+  await bridgeAfterChange();
   return { id: ruleId };
 }
 
@@ -471,7 +438,10 @@ export async function setRuleActive(id: string, active: boolean) {
   const service = getServiceClient();
   const { error } = await service.from("publisher_schedule_rules").update({ active, updated_at: new Date().toISOString() }).eq("id", id);
   if (error) throw error;
-  if (active) await generatePublisherSlots();
+  if (active) {
+    await generatePublisherSlots();
+    await bridgeAfterChange();
+  }
   return { ok: true };
 }
 
@@ -500,12 +470,14 @@ export async function mutatePublication(action: string, body: Record<string, unk
     }).eq("id", id);
     await service.from("publisher_destination_jobs").update({ status: "scheduled" }).eq("publication_id", id).in("status", ["needs_approval", "needs_content"]);
     await syncPublicationStatus(service, id);
+    await bridgeAfterChange(id);
     return { ok: true };
   }
   if (action === "cancel") {
     await service.from("publisher_publications").update({ status: "cancelled" }).eq("id", id);
     await service.from("publisher_destination_jobs").update({ status: "cancelled" }).eq("publication_id", id).neq("status", "completed");
     if (publication.slot_id) await service.from("publisher_slots").update({ status: "cancelled" }).eq("id", publication.slot_id);
+    await bridgeAfterChange(id);
     return { ok: true };
   }
   if (action === "lock") {
@@ -531,6 +503,7 @@ export async function mutatePublication(action: string, body: Record<string, unk
         content_reason: "Content returned to the Library pool.",
       }).eq("id", publication.slot_id);
     }
+    await bridgeAfterChange(id);
     return { ok: true };
   }
   if (action === "replace_content") {
@@ -561,6 +534,7 @@ export async function mutatePublication(action: string, body: Record<string, unk
       approved: Boolean(publication.approved),
     });
     await syncPublicationStatus(service, id);
+    await bridgeAfterChange(id);
     return { ok: true };
   }
   if (action === "reschedule") {
@@ -580,6 +554,7 @@ export async function mutatePublication(action: string, body: Record<string, unk
         locked: true,
       }).eq("id", publication.slot_id);
     }
+    await bridgeAfterChange(id);
     return { ok: true };
   }
   if (action === "exclude_asset") {
@@ -636,6 +611,7 @@ export async function createManualPublisherPublication(body: Record<string, unkn
     library_asset_id: assetId,
     approved: approve,
   });
+  await bridgeAfterChange(inserted.data.id);
   return { publication: inserted.data };
 }
 

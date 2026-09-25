@@ -10,6 +10,7 @@ import {
   setRuleActive,
   tickPublisherWorker,
 } from "./_lib/publisher/service";
+import { setAutopilotLivePosts } from "./_lib/publisher/bridge";
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();
@@ -44,6 +45,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       return res.status(200).json(await mutatePublication(action, body));
     }
     if (action === "tick") return res.status(200).json(await tickPublisherWorker("admin-tick"));
+    if (action === "set_autopilot") {
+      return res.status(200).json(await setAutopilotLivePosts(Boolean(body.enabled), Boolean(body.confirmed)));
+    }
     return res.status(400).json({ error: "unknown_action", message: "Unknown Publisher action." });
   } catch (error) {
     const status = Number((error as { status?: number }).status || 500);

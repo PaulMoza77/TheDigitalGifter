@@ -191,6 +191,54 @@ function isAssetSrcAllowed(src: string): boolean {
   return src.startsWith("/assets/") && !src.includes("..") && !src.includes("://");
 }
 
+function stableMediaRef(src: string): string {
+  const raw = asString(src);
+  if (!raw) return "";
+  let path = raw;
+  try {
+    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+      const url = new URL(raw);
+      path = `${url.pathname}${url.search}`;
+    }
+  } catch {
+    /* keep */
+  }
+  if (path.includes("..")) return "";
+  if (path.startsWith("/api/clip-factory")) {
+    const url = new URL(path, "https://www.thedigitalgifter.com");
+    url.searchParams.delete("exp");
+    url.searchParams.delete("sig");
+    const search = url.searchParams.toString();
+    return search ? `${url.pathname}?${search}` : url.pathname;
+  }
+  if (path.startsWith("/assets/")) return path.split("?")[0];
+  return path;
+}
+
+async function resolveProviderReadableUrl(src: string): Promise<string> {
+  const stable = stableMediaRef(src) || asString(src);
+  if (stable.startsWith("/assets/")) return absoluteMediaUrl(stable);
+  if (stable.startsWith("/api/clip-factory")) {
+    const origin = publicBaseUrl();
+    const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+    const response = await fetch(`${origin}/api/clip-factory`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "provider_signed_url", src: stable }),
+    });
+    const json = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!response.ok || !asString(json.url)) {
+      throw new Error(asString(json.error) || "provider_media_url_failed");
+    }
+    return asString(json.url);
+  }
+  return absoluteMediaUrl(stable);
+}
+
 function absoluteMediaUrl(src: string): string {
   if (src.startsWith("https://") || src.startsWith("http://")) return src;
   return `${publicBaseUrl()}${src.startsWith("/") ? src : `/${src}`}`;
@@ -278,6 +326,7 @@ async function loadSettings(service: ReturnType<typeof getServiceClient>) {
   return {
     timezone: asString(data?.timezone) || "UTC",
     live_posts_enabled: Boolean(data?.live_posts_enabled),
+    live_posts_enabled_at: data?.live_posts_enabled_at ? asString(data.live_posts_enabled_at) : "",
   };
 }
 
@@ -574,9 +623,24 @@ async function processTarget(
   service: ReturnType<typeof getServiceClient>,
   target: Record<string, unknown>,
   allowLive: boolean,
+  mode: "worker" | "immediate" = "worker",
 ) {
   if (asString(target.remote_post_id)) {
     return { skipped: true, reason: "already_published" };
+  }
+  if (asString(target.skip_reason)) {
+    await service
+      .from("social_publication_targets")
+      .update({
+        status: "scheduled",
+        last_error: `${asString(target.skip_reason)}: excluded from the live worker.`,
+        lease_expires_at: null,
+        claimed_by: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", target.id)
+      .is("remote_post_id", null);
+    return { skipped: true, reason: asString(target.skip_reason) };
   }
   const { data: publication } = await service
     .from("social_publications")
@@ -590,9 +654,31 @@ async function processTarget(
       .eq("id", target.id);
     return { skipped: true, reason: "cancelled" };
   }
+  const settings = await loadSettings(service);
+  const scheduledAtMs = Date.parse(asString(publication.scheduled_at));
+  const enabledAtMs = Date.parse(settings.live_posts_enabled_at);
+  if (
+    mode === "worker" &&
+    Number.isFinite(enabledAtMs) &&
+    Number.isFinite(scheduledAtMs) &&
+    scheduledAtMs < enabledAtMs
+  ) {
+    await service
+      .from("social_publication_targets")
+      .update({
+        skip_reason: "pre_activation",
+        status: "scheduled",
+        last_error: "pre_activation: scheduled before Autopilot was enabled. Not published.",
+        lease_expires_at: null,
+        claimed_by: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", target.id)
+      .is("remote_post_id", null);
+    return { skipped: true, reason: "pre_activation" };
+  }
   const platform = asString(target.platform) as Platform;
   const account = await accountForPlatform(service, platform);
-  const videoUrl = absoluteMediaUrl(asString(publication.asset_src));
   const caption = asString(target.platform_caption) || asString(publication.caption);
   const hashtags = asString(publication.hashtags);
 
@@ -627,6 +713,25 @@ async function processTarget(
     return { skipped: true, reason: "live_posting_disabled" };
   }
 
+  let videoUrl = absoluteMediaUrl(stableMediaRef(asString(publication.asset_src)) || asString(publication.asset_src));
+  try {
+    videoUrl = await resolveProviderReadableUrl(asString(publication.asset_src));
+  } catch (error) {
+    await service
+      .from("social_publication_targets")
+      .update({
+        status: "scheduled",
+        last_error: sanitizeProviderError(`provider_media_url_failed: ${error instanceof Error ? error.message : String(error)}`),
+        next_retry_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        lease_expires_at: null,
+        claimed_by: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", target.id)
+      .is("remote_post_id", null);
+    return { ok: false, code: "provider_media_url_failed" };
+  }
+
   if (isYouTubePlatform(platform)) {
     await service
       .from("social_publication_targets")
@@ -654,7 +759,10 @@ async function processTarget(
       ? {
           tags: parseYouTubeTags(options.tags ?? hashtags),
           categoryId: asString(options.categoryId) || "24",
-          privacyStatus: normalizePrivacyStatus(options.privacyStatus, "private"),
+          privacyStatus: normalizePrivacyStatus(
+            options.privacyStatus,
+            publication.publisher_publication_id && platform === "youtube_shorts" ? "public" : "private",
+          ),
           madeForKids: options.madeForKids === true,
           publishAt: asString(options.publishAt) || null,
         }
@@ -759,6 +867,7 @@ async function createPublicationRow(
     scheduledAt: string;
     timezone: string;
     createdBy?: string | null;
+    publisherPublicationId?: string | null;
   },
 ) {
   const { data: publication, error } = await service
@@ -766,30 +875,35 @@ async function createPublicationRow(
     .insert({
       library_asset_id: asString(input.asset.id),
       asset_title: asString(input.asset.title),
-      asset_src: asString(input.asset.src),
+      asset_src: stableMediaRef(asString(input.asset.src)) || asString(input.asset.src),
       status: "scheduled",
       scheduled_at: input.scheduledAt,
       timezone: input.timezone,
       caption: input.caption,
       hashtags: input.hashtags,
       created_by: input.createdBy || null,
+      publisher_publication_id: input.publisherPublicationId || null,
     })
     .select("*")
     .single();
   if (error) throw error;
   const ytOptions = {
-    privacyStatus: normalizePrivacyStatus(input.youtubeOptions?.privacyStatus, "private"),
+    privacyStatus: normalizePrivacyStatus(
+      input.youtubeOptions?.privacyStatus,
+      input.publisherPublicationId ? "public" : "private",
+    ),
     madeForKids: input.youtubeOptions?.madeForKids === true,
     categoryId: asString(input.youtubeOptions?.categoryId) || "24",
     tags: parseYouTubeTags(input.youtubeOptions?.tags ?? input.hashtags),
     publishAt: asString(input.youtubeOptions?.publishAt) || null,
   };
+  const youtubeTitle = asString(input.youtubeTitle) || asString(input.asset.title);
   const targets = input.platforms.map((platform) => ({
     publication_id: publication.id,
     provider: providerFor(platform),
     platform,
     platform_caption: input.platformCaptions?.[platform] || null,
-    platform_title: isYouTubePlatform(platform) ? input.youtubeTitle || null : null,
+    platform_title: isYouTubePlatform(platform) ? youtubeTitle.slice(0, 100) || null : null,
     platform_options: isYouTubePlatform(platform) ? ytOptions : {},
     status: "scheduled",
     idempotency_key: `${publication.id}:${platform}`,
@@ -802,6 +916,177 @@ async function createPublicationRow(
     .eq("id", publication.id);
   const [row] = await attachTargets(service, [publication]);
   return row;
+}
+
+const PUBLISHER_PLATFORM_MAP: Record<string, Platform> = {
+  instagram_reel_post: "instagram_reels",
+  facebook_reel_post: "facebook_reels",
+  youtube_short: "youtube_shorts",
+  instagram_reels: "instagram_reels",
+  facebook_reels: "facebook_reels",
+  youtube_shorts: "youtube_shorts",
+};
+
+function publisherMappedPlatforms(value: unknown): Platform[] {
+  const list = Array.isArray(value) ? value : [];
+  const platforms: Platform[] = [];
+  const seen = new Set<Platform>();
+  for (const item of list) {
+    const mapped = PUBLISHER_PLATFORM_MAP[asString(item)];
+    if (!mapped || seen.has(mapped)) continue;
+    seen.add(mapped);
+    platforms.push(mapped);
+  }
+  return platforms;
+}
+
+async function syncOnePublisherPublication(
+  service: ReturnType<typeof getServiceClient>,
+  payload: Record<string, unknown>,
+) {
+  const publisherId = asString(payload.publisher_publication_id);
+  if (!publisherId) return { ok: false, error: "publisher_publication_id required" };
+  const op = asString(payload.op) || "upsert";
+  const { data: existing } = await service
+    .from("social_publications")
+    .select("id,status")
+    .eq("publisher_publication_id", publisherId)
+    .maybeSingle();
+
+  if (op === "skip") {
+    return { ok: true, skipped: true, reason: asString(payload.reason) || "skipped" };
+  }
+
+  if (op === "cancel") {
+    if (!existing?.id) return { ok: true, skipped: true, reason: "not_linked" };
+    await service
+      .from("social_publications")
+      .update({ status: "cancelled", cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    await service
+      .from("social_publication_targets")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("publication_id", existing.id)
+      .is("remote_post_id", null)
+      .neq("status", "published");
+    return { ok: true, cancelled: true, social_publication_id: existing.id };
+  }
+
+  const planned = (payload.publication || {}) as Record<string, unknown>;
+  const platforms =
+    publisherMappedPlatforms(planned.platforms) ||
+    publisherMappedPlatforms((payload.add_platforms as unknown[]) || []);
+  const wanted = publisherMappedPlatforms(
+    (planned.platforms as unknown[]) || (payload.add_platforms as unknown[]) || [],
+  );
+  if (!wanted.length) return { ok: true, skipped: true, reason: "no_mapped_platforms" };
+
+  const asset = {
+    id: asString(planned.libraryAssetId),
+    title: asString(planned.assetTitle),
+    src: stableMediaRef(asString(planned.assetSrc)),
+  };
+  const scheduledAt = asString(planned.scheduledAt);
+  const timezone = asString(planned.timezone) || "UTC";
+  const caption = asString(planned.caption);
+  const youtubeTitle = asString(planned.assetTitle).slice(0, 100);
+  const youtubeOptions = {
+    privacyStatus: "public",
+    madeForKids: false,
+    categoryId: "24",
+    tags: [],
+    publishAt: null,
+  };
+
+  let publicationId = existing?.id as string | undefined;
+  if (!publicationId) {
+    const created = await createPublicationRow(service, {
+      asset,
+      platforms: wanted,
+      caption,
+      hashtags: "",
+      youtubeTitle,
+      youtubeOptions,
+      scheduledAt,
+      timezone,
+      publisherPublicationId: publisherId,
+    });
+    return { ok: true, created: true, social_publication_id: created.id, targets: wanted.length };
+  }
+
+  await service
+    .from("social_publications")
+    .update({
+      library_asset_id: asset.id,
+      asset_title: asset.title,
+      asset_src: asset.src,
+      caption,
+      scheduled_at: scheduledAt,
+      timezone,
+      status: existing.status === "cancelled" ? "scheduled" : existing.status,
+      cancelled_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", publicationId);
+
+  const { data: currentTargets } = await service
+    .from("social_publication_targets")
+    .select("id,platform,status,remote_post_id")
+    .eq("publication_id", publicationId);
+  const have = new Set((currentTargets || []).map((row) => asString(row.platform)));
+  const add = wanted.filter((platform) => !have.has(platform));
+  if (add.length) {
+    const { error } = await service.from("social_publication_targets").insert(
+      add.map((platform) => ({
+        publication_id: publicationId,
+        provider: providerFor(platform),
+        platform,
+        platform_title: isYouTubePlatform(platform) ? youtubeTitle : null,
+        platform_options: isYouTubePlatform(platform) ? youtubeOptions : {},
+        status: "scheduled",
+        idempotency_key: `${publicationId}:${platform}`,
+      })),
+    );
+    if (error && !asString(error.message).includes("duplicate")) throw error;
+  }
+  for (const row of currentTargets || []) {
+    const platform = asString(row.platform) as Platform;
+    if (wanted.includes(platform)) {
+      if (asString(row.remote_post_id) || asString(row.status) === "published") continue;
+      await service
+        .from("social_publication_targets")
+        .update({
+          status: "scheduled",
+          skip_reason: null,
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", row.id)
+        .is("remote_post_id", null);
+      continue;
+    }
+    if (asString(row.remote_post_id) || asString(row.status) === "published") continue;
+    await service
+      .from("social_publication_targets")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("id", row.id)
+      .is("remote_post_id", null);
+  }
+  await refreshPublicationStatus(service, publicationId);
+  return { ok: true, updated: true, social_publication_id: publicationId, targets: wanted.length };
+}
+
+async function publisherSync(service: ReturnType<typeof getServiceClient>, body: Record<string, unknown>) {
+  const list = Array.isArray(body.publications) ? body.publications : body.publisher_publication_id ? [body] : [];
+  const results = [];
+  for (const item of list) {
+    results.push(await syncOnePublisherPublication(service, asRecord(item)));
+  }
+  return { ok: true, count: results.length, results };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 Deno.serve(async (req) => {
@@ -826,6 +1111,13 @@ Deno.serve(async (req) => {
       const settings = await loadSettings(service);
       const result = await tickWorker(service, livePostsEnabled(settings.live_posts_enabled));
       return jsonResponse({ ok: true, ...result, livePostsEnabled: livePostsEnabled(settings.live_posts_enabled) });
+    }
+
+    if (action === "publisher_sync") {
+      if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
+      const service = getServiceClient();
+      const result = await publisherSync(service, body);
+      return jsonResponse(result);
     }
 
     if (action === "meta_oauth_callback") {

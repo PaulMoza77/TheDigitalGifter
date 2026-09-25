@@ -141,6 +141,24 @@ describe("publication status", () => {
     expect(isDueForClaim({ ...base, status: "published" })).toBe(false);
     expect(isDueForClaim({ ...base, leaseExpiresAtMs: 3000 })).toBe(false);
     expect(isDueForClaim({ ...base, publicationStatus: "cancelled" })).toBe(false);
+    expect(isDueForClaim({ ...base, skipReason: "pre_activation" })).toBe(false);
+    expect(isDueForClaim({ ...base, livePostsEnabled: false })).toBe(false);
+    expect(
+      isDueForClaim({
+        ...base,
+        livePostsEnabled: true,
+        livePostsEnabledAtMs: 1500,
+        scheduledAtMs: 1000,
+      }),
+    ).toBe(false);
+    expect(
+      isDueForClaim({
+        ...base,
+        livePostsEnabled: true,
+        livePostsEnabledAtMs: 500,
+        scheduledAtMs: 1000,
+      }),
+    ).toBe(true);
   });
 });
 
@@ -262,6 +280,76 @@ describe("worker locking and adapters", () => {
       expect(dry.code).toBe("live_posting_disabled");
       expect(dry.waitingForApproval).toBe(true);
     }
+  });
+
+  it("does not dispatch a published IG/YT target when retrying a failed Facebook target", async () => {
+    let called: string[] = [];
+    const adapter: Parameters<typeof executeTargetPublish>[0]["adapter"] = async (input) => {
+      called.push(input.platform);
+      return { ok: true, remotePostId: `${input.platform}-new`, provider: input.account.provider };
+    };
+    const ig = await executeTargetPublish({
+      target: { id: "ig", platform: "instagram_reels", status: "published", remotePostId: "ig_1" },
+      caption: "c",
+      hashtags: "",
+      videoUrl: "https://example.com/a.mp4",
+      account: { provider: "meta", accountId: "1", status: "connected", accessToken: "tok", metadata: {} },
+      allowLivePosts: true,
+      adapter,
+    });
+    const yt = await executeTargetPublish({
+      target: { id: "yt", platform: "youtube_shorts", status: "published", remotePostId: "yt_1" },
+      caption: "c",
+      hashtags: "",
+      videoUrl: "https://example.com/a.mp4",
+      account: { provider: "youtube", accountId: "1", status: "connected", accessToken: "tok", metadata: {} },
+      allowLivePosts: true,
+      adapter,
+    });
+    const fb = await executeTargetPublish({
+      target: { id: "fb", platform: "facebook_reels", status: "failed", remotePostId: null },
+      caption: "c",
+      hashtags: "",
+      videoUrl: "https://example.com/a.mp4",
+      account: { provider: "meta", accountId: "1", status: "connected", accessToken: "tok", metadata: {} },
+      allowLivePosts: true,
+      adapter,
+    });
+    expect(ig.ok).toBe(true);
+    expect(yt.ok).toBe(true);
+    expect(fb.ok).toBe(true);
+    expect(called).toEqual(["facebook_reels"]);
+  });
+
+  it("skips pre-activation targets and Autopilot OFF without calling the adapter", async () => {
+    let called = 0;
+    const adapter = async () => {
+      called += 1;
+      return { ok: true, remotePostId: "nope", provider: "meta" as const };
+    };
+    const skipped = await executeTargetPublish({
+      target: { id: "old", platform: "instagram_reels", status: "scheduled", skipReason: "pre_activation" },
+      caption: "c",
+      hashtags: "",
+      videoUrl: "https://example.com/a.mp4",
+      account: { provider: "meta", accountId: "1", status: "connected", accessToken: "tok", metadata: {} },
+      allowLivePosts: true,
+      adapter,
+    });
+    expect(skipped.ok).toBe(false);
+    if (!skipped.ok) expect(skipped.code).toBe("pre_activation");
+    const off = await executeTargetPublish({
+      target: { id: "new", platform: "instagram_reels", status: "scheduled" },
+      caption: "c",
+      hashtags: "",
+      videoUrl: "https://example.com/a.mp4",
+      account: { provider: "meta", accountId: "1", status: "connected", accessToken: "tok", metadata: {} },
+      allowLivePosts: false,
+      adapter,
+    });
+    expect(off.ok).toBe(false);
+    if (!off.ok) expect(off.code).toBe("live_posting_disabled");
+    expect(called).toBe(0);
   });
 });
 

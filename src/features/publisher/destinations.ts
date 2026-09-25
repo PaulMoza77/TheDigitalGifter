@@ -1,13 +1,35 @@
 import type { PublisherContentType, PublisherDestination, PublisherProvider } from "./types";
+import type { SocialPlatform } from "../social-publisher/types";
 
 export const DESTINATION_LABELS: Record<PublisherDestination, string> = {
-  instagram_reel_post: "Instagram Reel/Post",
+  instagram_reel_post: "Instagram Reel",
   instagram_story: "Instagram Story",
-  facebook_reel_post: "Facebook Reel/Post",
+  facebook_reel_post: "Facebook Reel",
   facebook_story: "Facebook Story",
   threads: "Threads",
   youtube_short: "YouTube Short",
   tiktok: "TikTok",
+};
+
+/** Destinations Autopilot actually publishes through social-publisher. */
+export const AUTOPILOT_DESTINATIONS: PublisherDestination[] = [
+  "instagram_reel_post",
+  "facebook_reel_post",
+  "youtube_short",
+];
+
+export const DEFAULT_NEW_RULE_DESTINATIONS: PublisherDestination[] = [...AUTOPILOT_DESTINATIONS];
+
+export const PUBLISHER_TO_SOCIAL_PLATFORM: Partial<Record<PublisherDestination, SocialPlatform>> = {
+  instagram_reel_post: "instagram_reels",
+  facebook_reel_post: "facebook_reels",
+  youtube_short: "youtube_shorts",
+};
+
+export const SOCIAL_PLATFORM_TO_PUBLISHER: Partial<Record<SocialPlatform, PublisherDestination>> = {
+  instagram_reels: "instagram_reel_post",
+  facebook_reels: "facebook_reel_post",
+  youtube_shorts: "youtube_short",
 };
 
 export const DESTINATION_PROVIDER: Record<PublisherDestination, PublisherProvider> = {
@@ -29,6 +51,39 @@ export const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] 
 
 export function isPublisherDestination(value: string): value is PublisherDestination {
   return value in DESTINATION_LABELS;
+}
+
+export function isAutopilotDestination(value: string): value is PublisherDestination {
+  return AUTOPILOT_DESTINATIONS.includes(value as PublisherDestination);
+}
+
+export function mapPublisherDestinationToSocialPlatform(
+  destination: PublisherDestination,
+): SocialPlatform | null {
+  return PUBLISHER_TO_SOCIAL_PLATFORM[destination] || null;
+}
+
+export function socialPlatformsForDestinations(destinations: PublisherDestination[]): SocialPlatform[] {
+  const platforms: SocialPlatform[] = [];
+  const seen = new Set<SocialPlatform>();
+  for (const destination of destinations) {
+    const platform = mapPublisherDestinationToSocialPlatform(destination);
+    if (!platform || seen.has(platform)) continue;
+    seen.add(platform);
+    platforms.push(platform);
+  }
+  return platforms;
+}
+
+export function publisherDestinationForSocialPlatform(platform: SocialPlatform): PublisherDestination | null {
+  return SOCIAL_PLATFORM_TO_PUBLISHER[platform] || null;
+}
+
+export function maxAutopilotDurationSeconds(destinations: PublisherDestination[]): number | null {
+  const mapped = destinations.filter(isAutopilotDestination);
+  if (!mapped.length) return null;
+  if (mapped.includes("youtube_short")) return 60;
+  return 90;
 }
 
 export function contentTypeFromLibraryKind(kind: string, filename: string): PublisherContentType {

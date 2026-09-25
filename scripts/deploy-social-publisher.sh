@@ -17,6 +17,7 @@ MIGRATIONS=(
   "supabase/migrations/20260923190000_youtube_oauth_publishing.sql"
   "supabase/migrations/20260923193000_social_provider_configs.sql"
   "supabase/migrations/20260925160000_youtube_live_sessions.sql"
+  "supabase/migrations/20260925190000_publisher_social_bridge.sql"
 )
 PROJECT_REF="${SUPABASE_PROJECT_REF:-kjlsocejpmnzhhduyumy}"
 PUBLIC_BASE="https://www.thedigitalgifter.com"

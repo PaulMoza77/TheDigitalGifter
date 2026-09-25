@@ -43,6 +43,7 @@ export async function executeTargetPublish(input: {
     platform: SocialPlatform;
     status: TargetStatus;
     remotePostId?: string | null;
+    skipReason?: string | null;
     platformCaption?: string | null;
     platformTitle?: string | null;
   };
@@ -59,6 +60,15 @@ export async function executeTargetPublish(input: {
   allowLivePosts: boolean;
   adapter: SocialPublishAdapter;
 }): Promise<PublishAdapterResult> {
+  if (input.target.skipReason) {
+    return {
+      ok: false,
+      code: input.target.skipReason,
+      message: "Excluded from the live worker. No production post was made.",
+      retryable: false,
+    };
+  }
+
   if (shouldSkipPublish(input.target)) {
     return {
       ok: true,
@@ -97,6 +107,15 @@ export async function executeTargetPublish(input: {
       code: "media_missing",
       message: "Video URL is missing. The Reel was not posted.",
       retryable: false,
+    };
+  }
+
+  if (!input.account) {
+    return {
+      ok: false,
+      code: "account_disconnected",
+      message: "No connected account for this platform. Connect it under Social Accounts, then retry only this target.",
+      retryable: true,
     };
   }
 

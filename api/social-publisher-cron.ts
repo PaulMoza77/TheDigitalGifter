@@ -1,4 +1,5 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
+import { tickSocialPublisher } from "./_lib/social-publisher/invoke";
 
 /**
  * Minute worker shim for the social publisher.
@@ -25,33 +26,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-  if (!supabaseUrl || !serviceKey) {
-    return res.status(500).json({ error: "Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY" });
-  }
-
-  const response = await fetch(`${supabaseUrl}/functions/v1/social-publisher`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-      "Content-Type": "application/json",
-      "x-cron-secret": cronSecret,
-    },
-    body: JSON.stringify({ action: "tick" }),
-  });
-
-  const text = await response.text();
-  let json: unknown = null;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = { raw: text.slice(0, 500) };
-  }
-
+  const response = await tickSocialPublisher();
   if (!response.ok) {
-    return res.status(response.status).json({ error: "Tick failed", detail: json });
+    return res.status(response.status || 500).json({ error: "Tick failed", detail: response.json });
   }
-  return res.status(200).json({ ok: true, result: json });
+  return res.status(200).json({ ok: true, result: response.json });
 }

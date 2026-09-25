@@ -48,8 +48,14 @@ export function isDueForClaim(input: {
   nextRetryAtMs: number | null;
   leaseExpiresAtMs: number | null;
   nowMs: number;
+  skipReason?: string | null;
+  livePostsEnabledAtMs?: number | null;
+  livePostsEnabled?: boolean;
 }): boolean {
   if (input.remotePostId) return false;
+  if (input.skipReason) return false;
+  if (input.livePostsEnabled === false) return false;
+  if (input.livePostsEnabledAtMs != null && input.scheduledAtMs < input.livePostsEnabledAtMs) return false;
   if (input.publicationStatus === "cancelled" || input.publicationStatus === "draft") return false;
   if (input.status !== "scheduled") return false;
   if (input.scheduledAtMs > input.nowMs) return false;

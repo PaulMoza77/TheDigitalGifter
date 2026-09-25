@@ -1,3 +1,4 @@
+import { maxAutopilotDurationSeconds, socialPlatformsForDestinations } from "./destinations";
 import type {
   PublisherContentType,
   PublisherDestination,
@@ -13,7 +14,9 @@ export type AssignmentSkipReason =
   | "excluded"
   | "already_assigned"
   | "reuse_cooldown"
-  | "no_eligible_content";
+  | "no_eligible_content"
+  | "long_form"
+  | "not_short_form";
 
 export type AssignmentDecision =
   | { ok: true; assetId: string; reason: null }
@@ -47,6 +50,34 @@ function neverUsed(asset: PublisherLibraryAsset): boolean {
   return Object.keys(asset.lastUsedByDestination).length === 0;
 }
 
+function isLongFormAsset(asset: PublisherLibraryAsset): boolean {
+  return asset.kind === "long_form" || asset.category === "long_form";
+}
+
+function mediaExtension(asset: PublisherLibraryAsset): string {
+  const fromName = String(asset.filename || "").toLowerCase().match(/\.([a-z0-9]+)(?:\?|$)/);
+  if (fromName) return fromName[1];
+  const fromSrc = String(asset.src || "").toLowerCase().match(/\.([a-z0-9]+)(?:\?|$)/);
+  return fromSrc?.[1] || "";
+}
+
+export function assetFitsAutopilotDestinations(
+  asset: PublisherLibraryAsset,
+  destinations: PublisherDestination[],
+): boolean {
+  if (!socialPlatformsForDestinations(destinations).length) return true;
+  if (isLongFormAsset(asset)) return false;
+  if (asset.contentType !== "video") return false;
+  const ext = mediaExtension(asset);
+  if (ext && !["mp4", "mov"].includes(ext)) return false;
+  const maxDuration = maxAutopilotDurationSeconds(destinations);
+  if (maxDuration != null && asset.durationSeconds != null && asset.durationSeconds > maxDuration) return false;
+  if (asset.width && asset.height) {
+    if (Math.abs(asset.width / asset.height - 9 / 16) > 0.08) return false;
+  }
+  return true;
+}
+
 function leastRecentUsedMs(asset: PublisherLibraryAsset): number {
   const times = Object.values(asset.lastUsedByDestination)
     .map((value) => Date.parse(value))
@@ -71,6 +102,7 @@ export function eligibleAssets(input: {
     if (!typeMatches(asset, input.contentType)) return false;
     if (asset.excluded || !asset.eligible) return false;
     if (input.assignedFutureAssetIds.has(asset.id)) return false;
+    if (!assetFitsAutopilotDestinations(asset, input.destinations)) return false;
     if (inCooldown(asset, input.destinations, input.nowMs, input.cooldownDays)) return false;
     if (input.category && asset.category !== input.category) return false;
     if (input.tags?.length) {
@@ -121,6 +153,22 @@ export function selectLibraryAsset(input: {
         assetId: null,
         reason: "reuse_cooldown",
         detail: "Eligible assets are inside the reuse cooldown for these destinations.",
+      };
+    }
+    if (anyType.some((asset) => isLongFormAsset(asset))) {
+      return {
+        ok: false,
+        assetId: null,
+        reason: "long_form",
+        detail: "Long-form videos are never selected for Shorts Autopilot.",
+      };
+    }
+    if (anyType.some((asset) => !assetFitsAutopilotDestinations(asset, input.destinations))) {
+      return {
+        ok: false,
+        assetId: null,
+        reason: "not_short_form",
+        detail: "No vertical Reel ≤60s (MP4/MOV) is available for the selected destinations.",
       };
     }
     return { ok: false, assetId: null, reason: "no_eligible_content", detail: "No eligible Library asset is available." };
