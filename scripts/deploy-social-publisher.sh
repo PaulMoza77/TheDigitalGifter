@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Production deploy for the existing social-publisher Edge function.
 # 1) Apply Meta + YouTube migrations.
-# 2) Set public OAuth redirects and optional YouTube client config when provided.
+# 2) Set public OAuth redirects and optional YouTube/Meta client config when provided.
 # 3) Deploy the function.
-# Refuses another project. Does not set META_APP_SECRET.
-# Does not set SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS.
+# Refuses another project.
+# Sets META_APP_SECRET only when it is already present in this environment (VPS/GitHub).
+# Never prints secret values. Does not set SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS.
 # If a migration fails, the function is not deployed.
 set -euo pipefail
 
@@ -135,7 +136,9 @@ echo "Migrations applied to ${PROJECT_REF}."
 
 secret_names_file="$(mktemp)"
 cleanup() {
-  rm -f "$secret_names_file" /tmp/social-publisher-secrets-set.env
+  rm -f "$secret_names_file" /tmp/social-publisher-secrets-set.env \
+    /tmp/social-publisher-upsert-meta.json /tmp/social-publisher-upsert-youtube.json \
+    /tmp/social-publisher-upsert.json /tmp/social-publisher-probe.txt
 }
 trap cleanup EXIT
 
@@ -233,7 +236,15 @@ else
   echo "SET_IF_ABSENT: META_CONFIGURATION_ID"
 fi
 
-report_presence META_APP_SECRET
+if [[ -n "${META_APP_SECRET:-}" ]]; then
+  meta_secret_env="$(mktemp)"
+  printf 'META_APP_SECRET=%s\n' "$META_APP_SECRET" > "$meta_secret_env"
+  set_from_env_file "$meta_secret_env"
+  rm -f "$meta_secret_env"
+  echo "SET: META_APP_SECRET"
+else
+  report_presence META_APP_SECRET
+fi
 
 if [[ -n "${YOUTUBE_CLIENT_ID:-}" ]]; then
   yt_env="$(mktemp)"
@@ -292,5 +303,60 @@ if [[ "$CODE" == "503" ]] || grep -qi 'BOOT_ERROR' /tmp/social-publisher-probe.t
   exit 1
 fi
 rm -f /tmp/social-publisher-probe.txt
+
+upsert_provider_config() {
+  local provider="$1"
+  local payload_file="$2"
+  if [[ ! -s "$payload_file" ]]; then
+    echo "SKIP_UPSERT: ${provider} (payload absent)"
+    return 0
+  fi
+  if [[ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+    echo "SKIP_UPSERT: ${provider} (service role absent)"
+    return 0
+  fi
+  local code
+  code="$(curl -sS -m 30 -o /tmp/social-publisher-upsert.json -w '%{http_code}' \
+    -X POST "$EDGE_URL" \
+    -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+    -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+    -H "Content-Type: application/json" \
+    --data-binary @"$payload_file" || true)"
+  echo "UPSERT_${provider} HTTP ${code}"
+  rm -f /tmp/social-publisher-upsert.json
+}
+
+if [[ -n "${META_APP_SECRET:-}" ]]; then
+  umask 077
+  node -e '
+    const payload = {
+      action: "upsert_meta_provider_config",
+      client_id: process.env.META_APP_ID || process.argv[1],
+      client_secret: process.env.META_APP_SECRET || "",
+      configuration_id: process.env.META_CONFIGURATION_ID || process.argv[2],
+      redirect_uri: process.env.META_OAUTH_REDIRECT_URL || "https://www.thedigitalgifter.com/api/meta-oauth/callback",
+    };
+    if (!payload.client_id || !payload.client_secret || !payload.configuration_id) process.exit(0);
+    require("fs").writeFileSync("/tmp/social-publisher-upsert-meta.json", JSON.stringify(payload));
+  ' "$FALLBACK_APP_ID" "$FALLBACK_CONFIGURATION_ID"
+  upsert_provider_config meta /tmp/social-publisher-upsert-meta.json
+  rm -f /tmp/social-publisher-upsert-meta.json
+fi
+
+if [[ -n "${YOUTUBE_CLIENT_ID:-}" && -n "${YOUTUBE_CLIENT_SECRET:-}" ]]; then
+  umask 077
+  node -e '
+    const payload = {
+      action: "upsert_youtube_provider_config",
+      client_id: process.env.YOUTUBE_CLIENT_ID || "",
+      client_secret: process.env.YOUTUBE_CLIENT_SECRET || "",
+      redirect_uri: process.env.YOUTUBE_REDIRECT_URI || "https://www.thedigitalgifter.com/api/admin/social/youtube/callback",
+    };
+    if (!payload.client_id || !payload.client_secret) process.exit(0);
+    require("fs").writeFileSync("/tmp/social-publisher-upsert-youtube.json", JSON.stringify(payload));
+  '
+  upsert_provider_config youtube /tmp/social-publisher-upsert-youtube.json
+  rm -f /tmp/social-publisher-upsert-youtube.json
+fi
 
 echo "social-publisher deploy complete. Live posting was not enabled."

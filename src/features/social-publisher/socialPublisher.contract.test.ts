@@ -34,6 +34,7 @@ describe("social publisher wiring", () => {
     expect(edge).not.toContain("page_access_token: undefined");
     expect(edge).toContain("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
     expect(edge).toContain("IMPLEMENTED — WAITING FOR PROVIDER APPROVAL");
+    expect(edge).not.toContain("instagram_content_publish App Review");
     expect(edge).not.toContain("VITE_META_APP_SECRET");
     expect(edge).toContain("Already published; will not repost");
 
@@ -72,14 +73,18 @@ describe("social publisher wiring", () => {
     expect(deploy).toContain("20260923193000_social_provider_configs.sql");
     expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
     expect(edge).toContain("upsert_youtube_provider_config");
+    expect(edge).toContain("upsert_meta_provider_config");
     expect(read("supabase/migrations/20260923193000_social_provider_configs.sql")).toContain(
       "social_provider_configs",
     );
     expect(deploy).not.toMatch(/SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS=/);
-    expect(deploy).not.toMatch(/META_APP_SECRET=/);
+    expect(deploy).toContain("SET: META_APP_SECRET");
+    expect(deploy).toContain("upsert_meta_provider_config");
+    expect(deploy).not.toMatch(/META_APP_SECRET=EAA/);
     expect(read("supabase/functions/_shared/social/metaAuth.ts")).toContain("delete nextMeta.page_access_token");
     expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("Connect YouTube");
     expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("Prepare test upload");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("visibleMissing");
   });
 
   it("does not put generation controls back on Library and keeps generation APIs", () => {

@@ -13,6 +13,35 @@ function statusLabel(connected: boolean) {
   return connected ? "Connected" : "Not connected";
 }
 
+function visibleMissing(
+  provider: "meta" | "tiktok" | "youtube",
+  info: { missing?: string[] } | undefined,
+  account: SocialAccountPublic | undefined,
+) {
+  const listed = info?.missing || [];
+  if (provider === "meta" && account) {
+    const actual = Array.isArray(account.metadata?.missing_permissions)
+      ? (account.metadata.missing_permissions as string[])
+      : [];
+    const keep = listed.filter(
+      (item) => item === "SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS" || item.startsWith("META_"),
+    );
+    return [...new Set([...keep, ...actual])];
+  }
+  if (provider === "youtube" && account) {
+    const actual = Array.isArray(account.metadata?.missing_scopes)
+      ? (account.metadata.missing_scopes as string[])
+      : Array.isArray(account.metadata?.missing_permissions)
+        ? (account.metadata.missing_permissions as string[])
+        : [];
+    const keep = listed.filter(
+      (item) => item === "SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS" || item.startsWith("YOUTUBE_"),
+    );
+    return [...new Set([...keep, ...actual])];
+  }
+  return listed;
+}
+
 export default function AdminSocialAccountsPage() {
   const [loading, setLoading] = React.useState(true);
   const [accounts, setAccounts] = React.useState<SocialAccountPublic[]>([]);
@@ -340,7 +369,12 @@ export default function AdminSocialAccountsPage() {
                 {info ? (
                   <p className="mt-4 text-[11px] leading-4 text-slate-500">
                     Publishing: {info.publishing}
-                    {info.missing?.length ? ` · ${info.missing.join(", ")}` : ""}
+                    {(() => {
+                      const account =
+                        card.provider === "meta" ? meta : card.provider === "youtube" ? youtube : tiktok;
+                      const missing = visibleMissing(card.provider, info, account);
+                      return missing.length ? ` · ${missing.join(", ")}` : "";
+                    })()}
                   </p>
                 ) : null}
               </article>

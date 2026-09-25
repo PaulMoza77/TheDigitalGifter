@@ -41,10 +41,7 @@ let cachedDbConfig: { clientId: string; clientSecret: string; redirectUri: strin
 
 async function loadYouTubeConfigFromDb(service?: Service) {
   if (cachedDbConfig !== undefined) return cachedDbConfig;
-  if (!service) {
-    cachedDbConfig = null;
-    return null;
-  }
+  if (!service) return null;
   try {
     const { data } = await service
       .from("social_provider_configs")
