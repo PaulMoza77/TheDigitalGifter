@@ -7,6 +7,7 @@ import {
   plannedEndAtIso,
   publicLiveSession,
   redactIngestion,
+  youtubeLiveMaxConcurrent,
   youtubeWatchUrl,
   type LiveDurationHours,
   type PublicYoutubeLiveSession,
@@ -339,7 +340,7 @@ export async function youtubeLiveReadiness(runtime: YoutubeLiveRuntime = default
     probe = { ok: false, error: "live_network_disabled" };
   }
   return {
-    maxConcurrent: Number(process.env.YOUTUBE_LIVE_MAX_CONCURRENT || 1),
+    maxConcurrent: youtubeLiveMaxConcurrent(process.env.YOUTUBE_LIVE_MAX_CONCURRENT),
     activeCount: active.length,
     conflict: active.length >= 1,
     probe,

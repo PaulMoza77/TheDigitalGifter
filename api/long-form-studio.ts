@@ -55,7 +55,7 @@ async function adminOrSigned(req: NodeApiRequest, kind: string, id: string): Pro
   }
 }
 
-function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, contentType: string) {
+export function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, contentType: string) {
   const resolved = resolve(path);
   const allowedRoots = [
     resolve(process.env.LONG_FORM_DATA_DIR || "/data/long-form"),

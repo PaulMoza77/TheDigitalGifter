@@ -45,6 +45,7 @@ describe("long-form studio wiring", () => {
     expect(read("src/features/admin-library/catalog.ts")).toContain("long_form");
     expect(read("src/features/admin-library/catalog.ts")).toContain('pathname.startsWith("/api/")');
     expect(read("api/long-form-studio.ts")).toContain("HEAD");
+    expect(read("api/long-form-studio.ts")).toContain('asString(req.query.download) === "1"');
     expect(read("deploy/docker-compose.yml")).toContain("YOUTUBE_LIVE_MAX_CONCURRENT");
   });
 });

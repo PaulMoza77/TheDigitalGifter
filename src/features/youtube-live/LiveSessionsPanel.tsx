@@ -1,18 +1,8 @@
 import React from "react";
 import { toast } from "sonner";
 
-import { isActiveLiveStatus, type PublicYoutubeLiveSession } from "./policy";
+import { isActiveLiveStatus, liveElapsedLabel, type PublicYoutubeLiveSession } from "./policy";
 import { youtubeLiveApi } from "./api";
-
-function elapsedLabel(startedAt: string | null): string {
-  if (!startedAt) return "";
-  const ms = Date.now() - Date.parse(startedAt);
-  if (!Number.isFinite(ms) || ms < 0) return "";
-  const totalMin = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMin / 60);
-  const minutes = totalMin % 60;
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
 
 export default function LiveSessionsPanel() {
   const [sessions, setSessions] = React.useState<PublicYoutubeLiveSession[]>([]);
@@ -60,7 +50,7 @@ export default function LiveSessionsPanel() {
             <div className="space-y-1">
               <p className="text-sm text-red-200">LIVE · {item.title}</p>
               <p className="text-[11px] text-slate-400">
-                Elapsed {elapsedLabel(item.started_at) || "—"} · Stop {item.planned_end_at?.slice(11, 16) || "—"} UTC
+                Elapsed {liveElapsedLabel(item.started_at) || "—"} · Stop {item.planned_end_at?.slice(11, 16) || "—"} UTC
               </p>
               {item.youtube_url ? (
                 <a href={item.youtube_url} target="_blank" rel="noreferrer" className="text-[11px] text-indigo-300">

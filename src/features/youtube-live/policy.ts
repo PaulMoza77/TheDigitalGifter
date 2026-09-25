@@ -59,6 +59,16 @@ export function isActiveLiveStatus(status: string): boolean {
   return (YOUTUBE_LIVE_ACTIVE_STATUSES as readonly string[]).includes(status);
 }
 
+export function liveElapsedLabel(startedAt: string | null | undefined, nowMs = Date.now()): string {
+  if (!startedAt) return "";
+  const ms = nowMs - Date.parse(startedAt);
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const totalMin = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMin / 60);
+  const minutes = totalMin % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
 const INGEST_LEAK_KEYS = [
   "streamName",
   "stream_name",

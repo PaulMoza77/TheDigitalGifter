@@ -338,7 +338,14 @@ export default function AdminSocialAccountsPage() {
                     ) : (
                       <p>YouTube Live API: not ready</p>
                     )}
-                    <p>YouTube Upload: {youtube.metadata?.youtube_upload_ready === false ? "not ready" : "ready"}</p>
+                    <p>
+                      YouTube Upload:{" "}
+                      {youtube.metadata?.youtube_upload_ready === false
+                        ? "not ready"
+                        : youtube.metadata?.youtube_upload_ready
+                          ? "ready"
+                          : "not recorded yet"}
+                    </p>
                     <p>
                       Token health:{" "}
                       {youtube.metadata?.token_valid === false

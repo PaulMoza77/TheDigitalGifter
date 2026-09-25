@@ -37,6 +37,7 @@ describe("social publisher wiring", () => {
     expect(read("src/features/youtube-live/StartLiveModal.tsx")).toContain("START LIVE");
     expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("YouTube Live API");
     expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("YouTube Upload");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("Reconnect required");
     expect(read("supabase/functions/_shared/social/youtubeAuth.ts")).toContain("finishYouTubeOAuth");
     expect(edge).toContain("encryptSecret");
     expect(edge).not.toContain("page_access_token: undefined");

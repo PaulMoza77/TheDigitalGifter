@@ -103,6 +103,20 @@ describe("YouTube Live policy", () => {
     expect(youtubeLiveMaxConcurrent("9")).toBe(4);
   });
 
+  it("auto-stops at the planned 11h end without starting a real live", async () => {
+    const runtime = memoryRuntime();
+    runtime.now = () => Date.parse("2026-09-25T12:00:00.000Z");
+    const live = await startYoutubeLive({ libraryAssetId: "asset-1", durationHours: 11 }, runtime);
+    expect(live.status).toBe("live");
+    runtime.now = () => Date.parse("2026-09-25T23:00:00.000Z");
+    const result = await tickYoutubeLive(runtime);
+    expect(result.stopped).toBe(1);
+    const row = await runtime.get(live.id);
+    expect(row?.status).toBe("completed");
+    expect(runtime.edgeCalls).toContain("transition:complete");
+    expect(runtime.edgeCalls).toContain("kill");
+  });
+
   it("never puts the stream key on a public session", () => {
     const pub = publicLiveSession({
       id: "sess-1",

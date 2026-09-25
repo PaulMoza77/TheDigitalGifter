@@ -356,6 +356,7 @@ describe("admin video library", () => {
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Start YouTube Live");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Publish to YouTube");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("🔴 LIVE");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("appendLibraryQueryParam");
     expect(readSrc("src/features/admin-library/saveLibraryVideo.ts")).toContain("triggerDirectDownload");
     expect(readSrc("src/features/admin-library/saveLibraryVideo.ts")).toContain("openNativeVideoPlayback");

@@ -17,7 +17,7 @@ import {
 import { appendLibraryQueryParam, isLibraryPhoto, librarySrcPath, type LibraryVideo } from "./catalog";
 import StartLiveModal from "@/features/youtube-live/StartLiveModal";
 import PublishYouTubeModal from "@/features/youtube-live/PublishYouTubeModal";
-import { isActiveLiveStatus, type PublicYoutubeLiveSession } from "@/features/youtube-live/policy";
+import { isActiveLiveStatus, liveElapsedLabel, type PublicYoutubeLiveSession } from "@/features/youtube-live/policy";
 import { youtubeLiveApi } from "@/features/youtube-live/api";
 
 type Props = {
@@ -261,8 +261,15 @@ export default function LibraryVideoCard({
               className="absolute inset-0 z-10 flex items-center justify-center bg-black/15 text-white transition hover:bg-black/25"
               aria-label={playing ? `Pause ${video.title}` : `Play ${video.title}`}
             >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-                {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
+              <span className="flex flex-col items-center gap-1">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                  {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
+                </span>
+                {longForm ? (
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold tracking-wide">
+                    {playing ? "PAUSE" : "PLAY"}
+                  </span>
+                ) : null}
               </span>
             </button>
           </>
@@ -328,9 +335,9 @@ export default function LibraryVideoCard({
         ) : null}
         {longForm && liveSession && isActiveLiveStatus(liveSession.status) ? (
           <div className="rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-100">
-            <p className="font-semibold">LIVE</p>
+            <p className="font-semibold">🔴 LIVE</p>
             <p className="mt-1 text-xs text-red-100/80">
-              Started {liveSession.started_at ? liveSession.started_at.slice(11, 16) : "—"} UTC · Stop{" "}
+              Elapsed {liveElapsedLabel(liveSession.started_at) || "—"} · Stop{" "}
               {liveSession.planned_end_at ? liveSession.planned_end_at.slice(11, 16) : "—"} UTC
             </p>
             {liveSession.youtube_url ? (
