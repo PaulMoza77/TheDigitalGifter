@@ -383,6 +383,17 @@ describe("meta account selection", () => {
     const permissions = diffMetaPermissions(["pages_show_list", "instagram_content_publishing"]);
     expect(permissions.granted).toContain("instagram_content_publish");
     expect(permissions.missing).toContain("pages_manage_posts");
+
+    const publishReadyWithoutBusinessManagement = diffMetaPermissions([
+      "pages_show_list",
+      "pages_read_engagement",
+      "pages_manage_posts",
+      "instagram_basic",
+      "instagram_content_publish",
+    ]);
+    expect(publishReadyWithoutBusinessManagement.missing).toEqual([]);
+    expect(publishReadyWithoutBusinessManagement.granted).not.toContain("business_management");
+
     expect(isAllowedAdminReturn("https://evil.example/admin/social-accounts", "https://www.thedigitalgifter.com")).toBe(
       false,
     );
