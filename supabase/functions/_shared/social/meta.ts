@@ -12,8 +12,14 @@ export const REQUIRED_META_PERMISSIONS = [
   "pages_manage_posts",
   "instagram_basic",
   "instagram_content_publish",
-  "business_management",
 ] as const;
+
+/**
+ * business_management is useful for Meta Business Manager administration,
+ * but is not required for publishing to an already discovered Facebook Page
+ * and its linked professional Instagram account.
+ */
+export const OPTIONAL_META_PERMISSIONS = ["business_management"] as const;
 
 export type RequiredMetaPermission = (typeof REQUIRED_META_PERMISSIONS)[number];
 
