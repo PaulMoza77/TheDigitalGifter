@@ -302,6 +302,7 @@ describe("oauth builders", () => {
     });
     expect(yt).toContain("youtube.upload");
     expect(yt).toContain("youtube.readonly");
+    expect(yt).toContain("youtube.force-ssl");
     expect(yt).toContain("access_type=offline");
     expect(yt).toContain("prompt=consent");
     expect(yt).not.toContain("client_secret");
@@ -324,6 +325,9 @@ describe("oauth builders", () => {
     ).toBe(false);
     expect(diffYouTubeScopes(["https://www.googleapis.com/auth/youtube.upload"]).missing).toContain(
       "https://www.googleapis.com/auth/youtube.readonly",
+    );
+    expect(diffYouTubeScopes(["https://www.googleapis.com/auth/youtube.upload"]).missing).toContain(
+      "https://www.googleapis.com/auth/youtube.force-ssl",
     );
     expect(youtubeQueueState("scheduled")).toBe("queued");
     expect(youtubeQueueState("uploading")).toBe("uploading");

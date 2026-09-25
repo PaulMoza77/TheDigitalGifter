@@ -22,6 +22,7 @@ export const API_MODULES = {
   "/api/clip-factory-import-bytes": "clip-factory-import-bytes.ts",
   "/api/clip-factory-tick": "clip-factory-tick.ts",
   "/api/long-form-studio": "long-form-studio.ts",
+  "/api/youtube-live": "youtube-live.ts",
   "/api/social-publisher-cron": "social-publisher-cron.ts",
   "/api/meta-oauth/callback": "meta-oauth-callback.ts",
   "/api/admin/social/youtube/callback": "youtube-oauth-callback.ts",

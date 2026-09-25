@@ -20,6 +20,7 @@ describe("long-form studio wiring", () => {
     expect(read("api/long-form-studio.ts")).not.toContain("waitUntil");
     expect(read("api/long-form-studio.ts")).not.toMatch(/action === "file"/);
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("CREATE VIDEO");
+    expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("LiveSessionsPanel");
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("Choose from Library");
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).toContain("TDG Music Library");
     expect(read("src/pages/admin/AdminLongFormStudioPage.tsx")).not.toContain("FFmpeg");
@@ -42,5 +43,8 @@ describe("long-form studio wiring", () => {
     expect(read("api/_lib/long-form-studio/worker.ts")).toContain("reuse_existing_render");
     expect(read("api/long-form-studio.ts")).toContain("Accept-Ranges");
     expect(read("src/features/admin-library/catalog.ts")).toContain("long_form");
+    expect(read("src/features/admin-library/catalog.ts")).toContain('pathname.startsWith("/api/")');
+    expect(read("api/long-form-studio.ts")).toContain("HEAD");
+    expect(read("deploy/docker-compose.yml")).toContain("YOUTUBE_LIVE_MAX_CONCURRENT");
   });
 });

@@ -771,7 +771,8 @@ export async function listLibraryVideos() {
         poster: signedSafe("thumb", productionId),
         width: Number(row.width || 1920),
         height: Number(row.height || 1080),
-        demo: Boolean((row.provenance as { demo_soundtrack?: boolean } | null)?.demo_soundtrack),
+        productionId,
+        demo: Boolean((row.provenance as { production_id?: string; demo_soundtrack?: boolean } | null)?.demo_soundtrack),
         rightsLabel: (row.provenance as { demo_soundtrack?: boolean } | null)?.demo_soundtrack
           ? "DEMO / Rights need review"
           : undefined,
@@ -794,6 +795,7 @@ export async function listLibraryVideos() {
       poster: signedSafe("thumb", String(p.id)),
       width: Number(p.width || 1920),
       height: Number(p.height || 1080),
+      productionId: String(p.id),
     }));
 }
 

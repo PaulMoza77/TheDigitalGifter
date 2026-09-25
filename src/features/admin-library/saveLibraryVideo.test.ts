@@ -9,6 +9,7 @@ import {
   saveLibraryVideo,
   videoFileType,
 } from "./saveLibraryVideo";
+import { appendLibraryQueryParam, librarySrcPath } from "./catalog";
 
 function mockVideoResponse(bytes: number[], contentType = "video/mp4") {
   const buffer = new Uint8Array(bytes).buffer;
@@ -124,5 +125,60 @@ describe("saveLibraryVideo", () => {
       saveLibraryVideo({ url: "/assets/clip_05.mp4", filename: "clip_05.mp4" }),
     ).resolves.toBe("downloaded");
     expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  it("streams long-form downloads without buffering the file in JS and keeps the signature", async () => {
+    const signed =
+      "/api/long-form-studio?action=media&kind=video&id=abc&exp=1730000000&sig=deadbeef";
+    const fetchMock = vi.fn();
+    const click = vi.fn();
+    const created: Array<Record<string, string>> = [];
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)",
+      maxTouchPoints: 0,
+      platform: "MacIntel",
+    });
+    vi.stubGlobal("document", {
+      createElement: () => {
+        const node = { href: "", download: "", rel: "", click, remove: vi.fn() };
+        created.push(node);
+        return node;
+      },
+      body: { appendChild: vi.fn() },
+    });
+    const downloadUrl = appendLibraryQueryParam(librarySrcPath(signed), "download", "1");
+    await expect(
+      saveLibraryVideo({
+        url: signed,
+        downloadUrl,
+        filename: "long-form.mp4",
+        kind: "long_form",
+      }),
+    ).resolves.toBe("downloaded");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(created[0]?.href).toContain("action=media");
+    expect(created[0]?.href).toContain("sig=deadbeef");
+    expect(created[0]?.href).toContain("download=1");
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens signed long-form video natively on iOS instead of fetching it", async () => {
+    const signed =
+      "/api/long-form-studio?action=media&kind=video&id=abc&exp=1730000000&sig=deadbeef";
+    const fetchMock = vi.fn();
+    const open = vi.fn().mockReturnValue({});
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("navigator", {
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+      maxTouchPoints: 5,
+      platform: "iPhone",
+    });
+    vi.stubGlobal("open", open);
+    await expect(
+      saveLibraryVideo({ url: signed, filename: "long-form.mp4", kind: "long_form" }),
+    ).resolves.toBe("opened");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(open).toHaveBeenCalledWith(signed, "_blank", "noopener,noreferrer");
   });
 });

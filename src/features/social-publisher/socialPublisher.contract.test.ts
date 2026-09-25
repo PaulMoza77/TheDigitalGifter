@@ -29,6 +29,14 @@ describe("social publisher wiring", () => {
     expect(edge).toContain("prepare_test_upload");
     expect(read("supabase/functions/_shared/social/meta.ts")).toContain("config_id");
     expect(read("supabase/functions/_shared/social/youtube.ts")).toContain("youtube.readonly");
+    expect(read("supabase/functions/_shared/social/youtube.ts")).toContain("youtube.force-ssl");
+    expect(read("supabase/functions/social-publisher/index.ts")).toContain("youtube_live_internal_prepare");
+    expect(read("supabase/functions/social-publisher/index.ts")).toContain("isServiceRoleRequest(req)");
+    expect(read("api/youtube-live.ts")).toContain("requireClipFactoryAdmin");
+    expect(read("api/youtube-live.ts")).not.toContain("streamName");
+    expect(read("src/features/youtube-live/StartLiveModal.tsx")).toContain("START LIVE");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("YouTube Live API");
+    expect(read("src/pages/admin/AdminSocialAccountsPage.tsx")).toContain("YouTube Upload");
     expect(read("supabase/functions/_shared/social/youtubeAuth.ts")).toContain("finishYouTubeOAuth");
     expect(edge).toContain("encryptSecret");
     expect(edge).not.toContain("page_access_token: undefined");
@@ -70,6 +78,7 @@ describe("social publisher wiring", () => {
     expect(deploy).toContain("20260923180000_meta_login_publishing.sql");
     expect(deploy).toContain("20260923190000_youtube_oauth_publishing.sql");
     expect(deploy).toContain("20260923193000_social_provider_configs.sql");
+    expect(deploy).toContain("20260925160000_youtube_live_sessions.sql");
     expect(deploy).toContain("YOUTUBE_REDIRECT_URI");
     expect(edge).toContain("upsert_youtube_provider_config");
     expect(read("supabase/migrations/20260923193000_social_provider_configs.sql")).toContain(

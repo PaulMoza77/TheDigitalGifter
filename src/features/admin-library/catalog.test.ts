@@ -7,6 +7,7 @@ import {
   CHRISTMAS_LIBRARY_KINDS,
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
+  appendLibraryQueryParam,
   countChristmasKind,
   isLibraryPhoto,
   librarySrcPath,
@@ -84,6 +85,27 @@ describe("admin video library", () => {
     expect(searchLibraryVideos("astronaut", "pet_dog")).toHaveLength(1);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "reel-05")?.durationSeconds).toBe(1.2);
     expect(LIBRARY_VIDEOS.find((video) => video.id === "pet-dog-astronaut")?.poster).toContain("/pet/dog/scenes/");
+  });
+
+  it("preserves long-form signed media query values through Library URL normalization", () => {
+    const src =
+      "/api/long-form-studio?action=media&kind=video&id=prod-1&exp=1730000000&sig=abc123sigvalue";
+    const kept = librarySrcPath(src);
+    expect(kept).toBe(src);
+    const params = new URLSearchParams(kept.slice(kept.indexOf("?") + 1));
+    expect(params.get("action")).toBe("media");
+    expect(params.get("kind")).toBe("video");
+    expect(params.get("id")).toBe("prod-1");
+    expect(params.get("exp")).toBe("1730000000");
+    expect(params.get("sig")).toBe("abc123sigvalue");
+    const downloaded = appendLibraryQueryParam(src, "download", "1");
+    const downParams = new URLSearchParams(downloaded.slice(downloaded.indexOf("?") + 1));
+    expect(downParams.get("action")).toBe("media");
+    expect(downParams.get("sig")).toBe("abc123sigvalue");
+    expect(downParams.get("download")).toBe("1");
+    expect(librarySrcPath("/api/clip-factory?action=media&exp=1&sig=2")).toContain("sig=2");
+    expect(librarySrcPath("https://example.supabase.co/storage/v1/object/sign/x?token=abc")).toContain("token=abc");
+    expect(librarySrcPath("/assets/christmas/final.mp4?v=2")).toBe("/assets/christmas/final.mp4");
   });
 
   it("splits Christmas Reels into Reels, Shorts, and Photos badges", () => {
@@ -332,7 +354,11 @@ describe("admin video library", () => {
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");
-    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Share / Schedule");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Start YouTube Live");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Publish to YouTube");
+    expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("appendLibraryQueryParam");
+    expect(readSrc("src/features/admin-library/saveLibraryVideo.ts")).toContain("triggerDirectDownload");
+    expect(readSrc("src/features/admin-library/saveLibraryVideo.ts")).toContain("openNativeVideoPlayback");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/social-accounts");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/publishing");
     expect(readSrc("src/layouts/AdminLayout.tsx")).not.toContain("/admin/studio");

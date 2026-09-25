@@ -21,6 +21,7 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/clip-factory-import-bytes").kind).toBe("api");
     expect(classifyPath("/api/clip-factory-tick").kind).toBe("api");
     expect(classifyPath("/api/long-form-studio").kind).toBe("api");
+    expect(classifyPath("/api/youtube-live")).toEqual({ kind: "api", module: "youtube-live.ts" });
     expect(classifyPath("/api/publisher").kind).toBe("api");
     expect(classifyPath("/api/publisher-cron").kind).toBe("api");
     expect(classifyPath("/api/meta-oauth/callback").kind).toBe("api");

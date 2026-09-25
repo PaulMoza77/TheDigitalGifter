@@ -5,10 +5,14 @@ import {
   sanitizeProviderError,
 } from "./meta.ts";
 import {
+  REQUIRED_YOUTUBE_LIVE_SCOPES,
   REQUIRED_YOUTUBE_SCOPES,
+  REQUIRED_YOUTUBE_UPLOAD_SCOPES,
   buildYouTubeAuthorizeUrl,
   channelHandleFromSnippet,
+  diffYouTubeLiveScopes,
   diffYouTubeScopes,
+  diffYouTubeUploadScopes,
   isExactYouTubeRedirectUri,
   normalizeYouTubeScopes,
   publicYouTubeChannelSummary,
@@ -243,15 +247,19 @@ async function upsertYouTubeAccount(service: Service, row: Record<string, unknow
 
 export async function finishYouTubeOAuth(service: Service, code: string, redirectUri: string) {
   const exchanged = await exchangeYouTubeCode(code, redirectUri, service);
-  const scopeDiff = diffYouTubeScopes(exchanged.scope.length ? exchanged.scope : [...REQUIRED_YOUTUBE_SCOPES]);
+  const grantedRaw = exchanged.scope.length ? exchanged.scope : [...REQUIRED_YOUTUBE_UPLOAD_SCOPES];
+  const uploadDiff = diffYouTubeUploadScopes(grantedRaw);
+  const liveDiff = diffYouTubeLiveScopes(grantedRaw);
+  const allDiff = diffYouTubeScopes(grantedRaw);
   const channel = await fetchYouTubeChannel(exchanged.access);
   const summary = publicYouTubeChannelSummary(channel);
   const status = youtubeConnectionStatus({
     channelId: summary.youtube_channel_id,
-    missingScopes: scopeDiff.missing,
+    missingScopes: uploadDiff.missing,
   });
   const connectionError =
     status === "connected" ? null : !summary.youtube_channel_id ? "no_channel" : "missing_scopes";
+  const liveReady = Boolean(summary.youtube_channel_id) && liveDiff.missing.length === 0;
 
   // Keep an existing refresh token when Google omits a new one on reconnect.
   let refreshCipher: string | null = exchanged.refresh ? await encryptSecret(exchanged.refresh) : null;
@@ -275,10 +283,14 @@ export async function finishYouTubeOAuth(service: Service, code: string, redirec
     expires_at: new Date(Date.now() + Math.max(60, exchanged.expiresIn) * 1000).toISOString(),
     metadata: {
       ...summary,
-      granted_scopes: scopeDiff.granted,
-      missing_scopes: scopeDiff.missing,
-      granted_permissions: scopeDiff.granted,
-      missing_permissions: scopeDiff.missing,
+      granted_scopes: allDiff.granted,
+      missing_scopes: uploadDiff.missing,
+      missing_live_scopes: liveDiff.missing,
+      granted_permissions: allDiff.granted,
+      missing_permissions: uploadDiff.missing,
+      youtube_upload_ready: uploadDiff.missing.length === 0 && Boolean(summary.youtube_channel_id),
+      youtube_live_ready: liveReady,
+      live_reconnect_required: !liveReady,
       token_checked_at: new Date().toISOString(),
       token_valid: true,
       token_expires_at: new Date(Date.now() + Math.max(60, exchanged.expiresIn) * 1000).toISOString(),
@@ -296,8 +308,11 @@ export async function finishYouTubeOAuth(service: Service, code: string, redirec
     channelId: summary.youtube_channel_id,
     channelTitle: summary.youtube_channel_title,
     channelHandle: summary.youtube_channel_handle,
-    granted: scopeDiff.granted,
-    missing: scopeDiff.missing,
+    granted: allDiff.granted,
+    missing: uploadDiff.missing,
+    missingLive: liveDiff.missing,
+    youtube_upload_ready: uploadDiff.missing.length === 0 && Boolean(summary.youtube_channel_id),
+    youtube_live_ready: liveReady,
   };
 }
 
@@ -340,11 +355,17 @@ export async function ensureYouTubeAccessToken(
       has_refresh_token: true,
     };
     if (refreshed.scope.length) {
-      const diff = diffYouTubeScopes(refreshed.scope);
-      metadata.granted_scopes = diff.granted;
-      metadata.missing_scopes = diff.missing;
-      metadata.granted_permissions = diff.granted;
-      metadata.missing_permissions = diff.missing;
+      const uploadDiff = diffYouTubeUploadScopes(refreshed.scope);
+      const liveDiff = diffYouTubeLiveScopes(refreshed.scope);
+      const allDiff = diffYouTubeScopes(refreshed.scope);
+      metadata.granted_scopes = allDiff.granted;
+      metadata.missing_scopes = uploadDiff.missing;
+      metadata.missing_live_scopes = liveDiff.missing;
+      metadata.granted_permissions = allDiff.granted;
+      metadata.missing_permissions = uploadDiff.missing;
+      metadata.youtube_upload_ready = uploadDiff.missing.length === 0;
+      metadata.youtube_live_ready = liveDiff.missing.length === 0;
+      metadata.live_reconnect_required = liveDiff.missing.length > 0;
     }
     const patch: Record<string, unknown> = {
       status: "connected",
@@ -386,7 +407,13 @@ export async function inspectYouTubeToken(service: Service, account: Record<stri
       valid: false,
       status: ensured.status,
       scopes: Array.isArray(metadata.granted_scopes) ? metadata.granted_scopes : [],
-      missing_scopes: Array.isArray(metadata.missing_scopes) ? metadata.missing_scopes : [...REQUIRED_YOUTUBE_SCOPES],
+      missing_scopes: Array.isArray(metadata.missing_scopes) ? metadata.missing_scopes : [...REQUIRED_YOUTUBE_UPLOAD_SCOPES],
+      missing_live_scopes: Array.isArray(metadata.missing_live_scopes)
+        ? metadata.missing_live_scopes
+        : [...REQUIRED_YOUTUBE_LIVE_SCOPES],
+      youtube_upload_ready: false,
+      youtube_live_ready: false,
+      live_reconnect_required: true,
       youtube_channel_id: metadata.youtube_channel_id || null,
       youtube_channel_title: metadata.youtube_channel_title || null,
       youtube_channel_handle: metadata.youtube_channel_handle || null,
@@ -403,19 +430,26 @@ export async function inspectYouTubeToken(service: Service, account: Record<stri
       ? metadata.granted_scopes.map(String)
       : Array.isArray(metadata.granted_permissions)
         ? metadata.granted_permissions.map(String)
-        : [...REQUIRED_YOUTUBE_SCOPES];
-    const scopeDiff = diffYouTubeScopes(priorGranted);
+        : [];
+    const uploadDiff = diffYouTubeUploadScopes(priorGranted);
+    const liveDiff = diffYouTubeLiveScopes(priorGranted);
+    const allDiff = diffYouTubeScopes(priorGranted);
     const status = youtubeConnectionStatus({
       channelId: summary.youtube_channel_id,
-      missingScopes: scopeDiff.missing,
+      missingScopes: uploadDiff.missing,
     });
+    const liveReady = Boolean(summary.youtube_channel_id) && liveDiff.missing.length === 0;
     const nextMeta: Record<string, unknown> = {
       ...metadata,
       ...summary,
-      granted_scopes: scopeDiff.granted,
-      missing_scopes: scopeDiff.missing,
-      granted_permissions: scopeDiff.granted,
-      missing_permissions: scopeDiff.missing,
+      granted_scopes: allDiff.granted,
+      missing_scopes: uploadDiff.missing,
+      missing_live_scopes: liveDiff.missing,
+      granted_permissions: allDiff.granted,
+      missing_permissions: uploadDiff.missing,
+      youtube_upload_ready: uploadDiff.missing.length === 0 && Boolean(summary.youtube_channel_id),
+      youtube_live_ready: liveReady,
+      live_reconnect_required: !liveReady,
       token_checked_at: new Date().toISOString(),
       token_valid: true,
       connection_error: status === "connected" ? null : "connection_incomplete",
@@ -440,8 +474,12 @@ export async function inspectYouTubeToken(service: Service, account: Record<stri
       ok: true,
       valid: status === "connected",
       status,
-      scopes: scopeDiff.granted,
-      missing_scopes: scopeDiff.missing,
+      scopes: allDiff.granted,
+      missing_scopes: uploadDiff.missing,
+      missing_live_scopes: liveDiff.missing,
+      youtube_upload_ready: uploadDiff.missing.length === 0 && Boolean(summary.youtube_channel_id),
+      youtube_live_ready: liveReady,
+      live_reconnect_required: !liveReady,
       youtube_channel_id: summary.youtube_channel_id,
       youtube_channel_title: summary.youtube_channel_title,
       youtube_channel_handle: summary.youtube_channel_handle,
@@ -469,7 +507,11 @@ export async function inspectYouTubeToken(service: Service, account: Record<stri
       valid: false,
       status: "error",
       scopes: [],
-      missing_scopes: [...REQUIRED_YOUTUBE_SCOPES],
+      missing_scopes: [...REQUIRED_YOUTUBE_UPLOAD_SCOPES],
+      missing_live_scopes: [...REQUIRED_YOUTUBE_LIVE_SCOPES],
+      youtube_upload_ready: false,
+      youtube_live_ready: false,
+      live_reconnect_required: true,
       youtube_channel_id: metadata.youtube_channel_id || null,
       youtube_channel_title: metadata.youtube_channel_title || null,
       youtube_channel_handle: metadata.youtube_channel_handle || null,

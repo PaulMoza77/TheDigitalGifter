@@ -371,4 +371,22 @@ server.listen(port, "0.0.0.0", () => {
     setInterval(runPublisherTick, publisherTickMs);
     setTimeout(runPublisherTick, 6000);
   }
+  const youtubeLiveTickMs = Number(process.env.YOUTUBE_LIVE_TICK_MS || process.env.CLIP_FACTORY_TICK_MS || 15000);
+  if (youtubeLiveTickMs > 0) {
+    const runYoutubeLiveTick = () => {
+      import("../api/_lib/youtube-live/worker.ts")
+        .then((mod) => mod.tickYoutubeLive())
+        .catch((error) => {
+          console.error(
+            JSON.stringify({
+              source: "youtube-live",
+              event: "origin_tick_failed",
+              message: error instanceof Error ? error.message : String(error),
+            }),
+          );
+        });
+    };
+    setInterval(runYoutubeLiveTick, youtubeLiveTickMs);
+    setTimeout(runYoutubeLiveTick, 8000);
+  }
 });

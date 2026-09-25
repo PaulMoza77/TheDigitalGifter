@@ -2,9 +2,19 @@
 
 export const YOUTUBE_OAUTH_CALLBACK_PATH = "/api/admin/social/youtube/callback";
 
-export const REQUIRED_YOUTUBE_SCOPES = [
+export const REQUIRED_YOUTUBE_UPLOAD_SCOPES = [
   "https://www.googleapis.com/auth/youtube.upload",
   "https://www.googleapis.com/auth/youtube.readonly",
+] as const;
+
+/** Live Streaming API management. youtube.force-ssl (or the full youtube scope) is required. */
+export const REQUIRED_YOUTUBE_LIVE_SCOPES = [
+  "https://www.googleapis.com/auth/youtube.force-ssl",
+] as const;
+
+export const REQUIRED_YOUTUBE_SCOPES = [
+  ...REQUIRED_YOUTUBE_UPLOAD_SCOPES,
+  ...REQUIRED_YOUTUBE_LIVE_SCOPES,
 ] as const;
 
 export type RequiredYouTubeScope = (typeof REQUIRED_YOUTUBE_SCOPES)[number];
@@ -23,8 +33,12 @@ export const YOUTUBE_PUBLIC_ACCOUNT_METADATA_KEYS = [
   "youtube_channel_handle",
   "granted_scopes",
   "missing_scopes",
+  "missing_live_scopes",
   "granted_permissions",
   "missing_permissions",
+  "youtube_upload_ready",
+  "youtube_live_ready",
+  "live_reconnect_required",
   "token_checked_at",
   "token_expires_at",
   "token_valid",
@@ -99,14 +113,45 @@ export function normalizeYouTubeScopes(raw: string | string[] | null | undefined
   return [...new Set(text.split(/[,\s]+/).map((item) => item.trim()).filter(Boolean))];
 }
 
-export function diffYouTubeScopes(granted: string[]): { granted: string[]; missing: string[] } {
+function youtubeScopeSet(granted: string[]): Set<string> {
   const set = new Set(normalizeYouTubeScopes(granted));
   // Google sometimes returns scope aliases without the full URL prefix.
   if (set.has("youtube.upload")) set.add("https://www.googleapis.com/auth/youtube.upload");
   if (set.has("youtube.readonly")) set.add("https://www.googleapis.com/auth/youtube.readonly");
-  const missing = REQUIRED_YOUTUBE_SCOPES.filter((scope) => !set.has(scope));
-  const present = REQUIRED_YOUTUBE_SCOPES.filter((scope) => set.has(scope));
+  if (set.has("youtube.force-ssl")) set.add("https://www.googleapis.com/auth/youtube.force-ssl");
+  if (set.has("youtube")) set.add("https://www.googleapis.com/auth/youtube");
+  // Full YouTube scope covers Live Streaming API management.
+  if (set.has("https://www.googleapis.com/auth/youtube")) {
+    set.add("https://www.googleapis.com/auth/youtube.force-ssl");
+  }
+  return set;
+}
+
+function diffKnownScopes(granted: string[], required: readonly string[]): { granted: string[]; missing: string[] } {
+  const set = youtubeScopeSet(granted);
+  const missing = required.filter((scope) => !set.has(scope));
+  const present = required.filter((scope) => set.has(scope));
   return { granted: [...present], missing: [...missing] };
+}
+
+export function diffYouTubeUploadScopes(granted: string[]): { granted: string[]; missing: string[] } {
+  return diffKnownScopes(granted, REQUIRED_YOUTUBE_UPLOAD_SCOPES);
+}
+
+export function diffYouTubeLiveScopes(granted: string[]): { granted: string[]; missing: string[] } {
+  return diffKnownScopes(granted, REQUIRED_YOUTUBE_LIVE_SCOPES);
+}
+
+export function diffYouTubeScopes(granted: string[]): { granted: string[]; missing: string[] } {
+  return diffKnownScopes(granted, REQUIRED_YOUTUBE_SCOPES);
+}
+
+export function youtubeLiveScopeReady(granted: string[]): boolean {
+  return diffYouTubeLiveScopes(granted).missing.length === 0;
+}
+
+export function youtubeUploadScopeReady(granted: string[]): boolean {
+  return diffYouTubeUploadScopes(granted).missing.length === 0;
 }
 
 export function youtubeConnectionStatus(input: {

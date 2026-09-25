@@ -52,6 +52,7 @@ export default function AdminSocialAccountsPage() {
       instagram_not_professional: "The Instagram account is not a professional account.",
       missing_permissions: "Not every permission required to publish was granted.",
       missing_scopes: "YouTube did not grant youtube.upload and youtube.readonly.",
+      missing_live_scopes: "Reconnect YouTube to grant Live API (youtube.force-ssl).",
       no_channel: "No YouTube channel was available for this Google account.",
       reconnect_required: "YouTube refresh token is invalid. Connect YouTube again.",
       invalid_redirect_uri: "YouTube redirect URI did not match the configured callback.",
@@ -108,14 +109,23 @@ export default function AdminSocialAccountsPage() {
       title: "YOUTUBE",
       lines: [
         {
-          label: "YouTube",
-          connected: Boolean(youtube?.metadata?.youtube_channel_id) && youtube?.status === "connected",
+          label: "YouTube Upload",
+          connected: Boolean(youtube?.metadata?.youtube_channel_id) && youtube?.status === "connected" && youtube?.metadata?.youtube_upload_ready !== false,
           detail: [
             youtube?.metadata?.youtube_channel_title || youtube?.account_name || "",
             youtube?.metadata?.youtube_channel_handle || "",
           ]
             .filter(Boolean)
             .join(" · "),
+        },
+        {
+          label: "YouTube Live API",
+          connected: Boolean(youtube?.metadata?.youtube_live_ready),
+          detail: youtube?.metadata?.youtube_live_ready
+            ? "Live scope present"
+            : youtube?.metadata?.youtube_channel_id
+              ? "Reconnect required for Live"
+              : "",
         },
       ],
     },
@@ -320,10 +330,15 @@ export default function AdminSocialAccountsPage() {
                           ? (youtube.metadata.granted_permissions as string[]).join(", ") || "none recorded"
                           : "not recorded yet"}
                     </p>
-                    {Array.isArray(youtube.metadata?.missing_scopes) &&
-                    (youtube.metadata.missing_scopes as string[]).length ? (
-                      <p>Missing: {(youtube.metadata.missing_scopes as string[]).join(", ")}</p>
-                    ) : null}
+                    {Array.isArray(youtube.metadata?.missing_live_scopes) &&
+                    (youtube.metadata.missing_live_scopes as string[]).length ? (
+                      <p>YouTube Live API: not ready · Reconnect required</p>
+                    ) : youtube.metadata?.youtube_live_ready ? (
+                      <p>YouTube Live API: ready</p>
+                    ) : (
+                      <p>YouTube Live API: not ready</p>
+                    )}
+                    <p>YouTube Upload: {youtube.metadata?.youtube_upload_ready === false ? "not ready" : "ready"}</p>
                     <p>
                       Token health:{" "}
                       {youtube.metadata?.token_valid === false

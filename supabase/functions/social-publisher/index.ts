@@ -26,6 +26,14 @@ import {
   parseYouTubeTags,
   youtubeRetryPlan,
 } from "../_shared/social/youtube.ts";
+import {
+  parseStreamStatus,
+  parseYouTubeLiveError,
+  prepareYouTubeLive,
+  youtubeLiveBroadcastsListMine,
+  youtubeLiveBroadcastsTransition,
+  youtubeLiveStreamsList,
+} from "../_shared/social/youtubeLive.ts";
 
 type Platform =
   | "instagram_reels"
@@ -127,7 +135,10 @@ function providerReadiness(configured: ReturnType<typeof oauthConfigured>, live:
   missingTt.push("TikTok Content Posting API audit / video.publish");
   const missingYt: string[] = [];
   if (!configured.youtube) missingYt.push("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REDIRECT_URI");
-  missingYt.push("YouTube Data API enabled", "OAuth consent for youtube.upload + youtube.readonly");
+  missingYt.push(
+    "YouTube Data API enabled",
+    "OAuth consent for youtube.upload + youtube.readonly + youtube.force-ssl (Live)",
+  );
   missingYt.push("OAuth app currently in Testing (refresh tokens may expire after 7 days)");
   if (!live) {
     missingMeta.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
@@ -869,6 +880,128 @@ Deno.serve(async (req) => {
         if (inserted.error) throw inserted.error;
       }
       return jsonResponse({ ok: true, provider: "youtube", has_client_id: true, has_secret: true });
+    }
+
+    if (
+      action === "youtube_live_internal_prepare" ||
+      action === "youtube_live_internal_transition" ||
+      action === "youtube_live_internal_status" ||
+      action === "youtube_live_internal_probe" ||
+      action === "youtube_internal_access_token"
+    ) {
+      if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
+      const service = getServiceClient();
+      const { data } = await service
+        .from("social_accounts")
+        .select("*")
+        .eq("provider", "youtube")
+        .neq("status", "revoked")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data) return apiError("youtube_not_connected", 409);
+      const ensured = await ensureYouTubeAccessToken(service, data as Record<string, unknown>);
+      const meta = (data.metadata || {}) as Record<string, unknown>;
+      const granted = Array.isArray(meta.granted_scopes)
+        ? meta.granted_scopes.map(String)
+        : Array.isArray(meta.granted_permissions)
+          ? meta.granted_permissions.map(String)
+          : [];
+      if (!ensured.accessToken || ensured.status !== "connected") {
+        return jsonResponse(
+          {
+            ok: false,
+            error: asString(meta.connection_error) || "reconnect_required",
+            youtube_live_ready: false,
+            youtube_upload_ready: false,
+          },
+          409,
+        );
+      }
+
+      if (action === "youtube_internal_access_token") {
+        return jsonResponse({
+          ok: true,
+          accessToken: ensured.accessToken,
+          channelId: meta.youtube_channel_id || data.account_id,
+          granted_scopes: granted,
+        });
+      }
+
+      if (action === "youtube_live_internal_probe") {
+        const probe = await youtubeLiveBroadcastsListMine(ensured.accessToken);
+        if (!probe.ok) {
+          return jsonResponse({
+            ok: false,
+            error: parseYouTubeLiveError(probe.json, probe.status),
+            reason: String((probe.json as { error?: { errors?: Array<{ reason?: string }> } }).error?.errors?.[0]?.reason || ""),
+            status: probe.status,
+            youtube_live_ready: false,
+          });
+        }
+        return jsonResponse({
+          ok: true,
+          youtube_live_ready: true,
+          channelId: meta.youtube_channel_id || data.account_id,
+        });
+      }
+
+      if (action === "youtube_live_internal_status") {
+        const streamId = asString(body.stream_id);
+        if (!streamId) return apiError("stream_id required");
+        const listed = await youtubeLiveStreamsList(ensured.accessToken, streamId);
+        if (!listed.ok) {
+          return jsonResponse({
+            ok: false,
+            error: parseYouTubeLiveError(listed.json, listed.status),
+            status: listed.status,
+          });
+        }
+        const item = Array.isArray(listed.json.items) ? (listed.json.items[0] as Record<string, unknown>) : null;
+        return jsonResponse({
+          ok: true,
+          streamStatus: parseStreamStatus(item),
+        });
+      }
+
+      if (action === "youtube_live_internal_transition") {
+        const broadcastId = asString(body.broadcast_id);
+        const broadcastStatus = asString(body.broadcast_status) as "testing" | "live" | "complete";
+        if (!broadcastId || !["testing", "live", "complete"].includes(broadcastStatus)) {
+          return apiError("broadcast_id and broadcast_status required");
+        }
+        const moved = await youtubeLiveBroadcastsTransition(ensured.accessToken, broadcastId, broadcastStatus);
+        if (!moved.ok) {
+          return jsonResponse({
+            ok: false,
+            error: parseYouTubeLiveError(moved.json, moved.status),
+            status: moved.status,
+          });
+        }
+        return jsonResponse({
+          ok: true,
+          broadcastId,
+          broadcastStatus,
+          lifeCycleStatus: String(((moved.json.status || {}) as Record<string, unknown>).lifeCycleStatus || broadcastStatus),
+        });
+      }
+
+      const prepared = await prepareYouTubeLive(ensured.accessToken, {
+        title: asString(body.title) || "TDG Live",
+        description: asString(body.description),
+        privacyStatus: normalizePrivacyStatus(body.privacy_status, "private"),
+        madeForKids: body.made_for_kids === true,
+      });
+      if (!prepared.ok) {
+        return jsonResponse({ ok: false, error: prepared.error, status: prepared.status }, prepared.status >= 400 ? prepared.status : 400);
+      }
+      return jsonResponse({
+        ok: true,
+        broadcastId: prepared.broadcastId,
+        streamId: prepared.streamId,
+        videoId: prepared.videoId,
+        ingestion: prepared.ingestion,
+      });
     }
 
     const { user } = await getAuthUser(req);
