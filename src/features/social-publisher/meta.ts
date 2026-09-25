@@ -23,4 +23,10 @@ export {
   selectLinkedProfessionalPage,
 } from "../../../supabase/functions/_shared/social/meta.ts";
 
+export {
+  buildProviderReadiness,
+  metaReadinessMissing,
+  youtubeReadinessMissing,
+} from "../../../supabase/functions/_shared/social/readiness.ts";
+
 export type { MetaMediaKind, MetaPageCandidate, MetaPlatform } from "../../../supabase/functions/_shared/social/meta.ts";

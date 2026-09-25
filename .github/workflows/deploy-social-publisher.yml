@@ -50,8 +50,10 @@ jobs:
           SUPABASE_PROJECT_REF: kjlsocejpmnzhhduyumy
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           META_APP_ID: ${{ secrets.META_APP_ID }}
           META_CONFIGURATION_ID: ${{ secrets.META_CONFIGURATION_ID }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
@@ -61,16 +63,16 @@ jobs:
         run: |
           set +x
           chmod +x scripts/deploy-social-publisher.sh
-          if [ -z "${YOUTUBE_CLIENT_ID:-}" ] || [ -z "${YOUTUBE_CLIENT_SECRET:-}" ]; then
+          if [ -z "${YOUTUBE_CLIENT_ID:-}" ] || [ -z "${YOUTUBE_CLIENT_SECRET:-}" ] || [ -z "${META_APP_SECRET:-}" ]; then
             if [ -n "${MOZAS_SSH_HOST:-}" ] && [ -n "${MOZAS_SSH_PRIVATE_KEY:-}" ]; then
-              echo "Loading YouTube client config from VPS app.env (values masked, not printed)…"
+              echo "Loading social OAuth client config from VPS app.env (values masked, not printed)…"
               # shellcheck source=scripts/mozas-ssh.sh
               source scripts/mozas-ssh.sh
               mozas_prepare_ssh
               mozas_verify_remote_identity
               umask 077
               yt_env="$(mktemp)"
-              mozas_ssh 'grep -E "^YOUTUBE_(CLIENT_ID|CLIENT_SECRET|REDIRECT_URI)=" /opt/mozas/projects/thedigitalgifter/secrets/app.env' > "$yt_env"
+              mozas_ssh 'grep -E "^(YOUTUBE_(CLIENT_ID|CLIENT_SECRET|REDIRECT_URI)|META_APP_(ID|SECRET)|META_CONFIGURATION_ID|SUPABASE_SERVICE_ROLE_KEY)=" /opt/mozas/projects/thedigitalgifter/secrets/app.env' > "$yt_env"
               while IFS= read -r line; do
                 val="${line#*=}"
                 [ -n "$val" ] && echo "::add-mask::$val"
@@ -80,7 +82,7 @@ jobs:
               source "$yt_env"
               set +a
               rm -f "$yt_env"
-              echo "VPS YouTube config loaded."
+              echo "VPS social OAuth config loaded."
             fi
           fi
           bash scripts/deploy-social-publisher.sh

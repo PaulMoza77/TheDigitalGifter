@@ -43,12 +43,13 @@ export function youtubeClientSecret(): string {
 
 let cachedDbConfig: { clientId: string; clientSecret: string; redirectUri: string } | null | undefined;
 
+export function invalidateYouTubeClientConfigCache(): void {
+  cachedDbConfig = undefined;
+}
+
 async function loadYouTubeConfigFromDb(service?: Service) {
   if (cachedDbConfig !== undefined) return cachedDbConfig;
-  if (!service) {
-    cachedDbConfig = null;
-    return null;
-  }
+  if (!service) return null;
   try {
     const { data } = await service
       .from("social_provider_configs")

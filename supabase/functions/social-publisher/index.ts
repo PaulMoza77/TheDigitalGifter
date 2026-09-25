@@ -6,15 +6,19 @@ import {
   callbackRedirect,
   finishMetaOAuth,
   inspectMetaToken,
+  invalidateMetaClientConfigCache,
   metaAuthorizeUrl,
   metaRedirectUri,
+  resolveMetaClientConfig,
   safeOauthError,
 } from "../_shared/social/metaAuth.ts";
 import { isAllowedAdminReturn, isMetaPlatform, metaMediaKind, metaRetryPlan, publicAccountMetadata, sanitizeProviderError } from "../_shared/social/meta.ts";
+import { buildProviderReadiness } from "../_shared/social/readiness.ts";
 import {
   ensureYouTubeAccessToken,
   finishYouTubeOAuth,
   inspectYouTubeToken,
+  invalidateYouTubeClientConfigCache,
   safeYouTubeOauthError,
   youtubeAuthorizeUrl,
   youtubeCallbackRedirect,
@@ -124,47 +128,44 @@ async function youtubeConfigured(service: ReturnType<typeof getServiceClient>) {
   return Boolean(data?.client_id && data?.client_secret_ciphertext);
 }
 
-function providerReadiness(configured: ReturnType<typeof oauthConfigured>, live: boolean) {
+async function metaConfigured(service: ReturnType<typeof getServiceClient>) {
+  const envReady = oauthConfigured().meta;
+  if (envReady) return true;
+  const resolved = await resolveMetaClientConfig(service);
+  return resolved.missing.length === 0;
+}
+
+function envGaps() {
   const missingMeta: string[] = [];
   if (!env("META_APP_ID")) missingMeta.push("META_APP_ID");
   if (!env("META_APP_SECRET")) missingMeta.push("META_APP_SECRET");
   if (!env("META_CONFIGURATION_ID")) missingMeta.push("META_CONFIGURATION_ID");
-  missingMeta.push("instagram_content_publish App Review", "pages_manage_posts");
   const missingTt: string[] = [];
-  if (!configured.tiktok) missingTt.push("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET");
-  missingTt.push("TikTok Content Posting API audit / video.publish");
+  if (!oauthConfigured().tiktok) missingTt.push("TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET");
   const missingYt: string[] = [];
-  if (!configured.youtube) missingYt.push("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REDIRECT_URI");
+  if (!oauthConfigured().youtube) missingYt.push("YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REDIRECT_URI");
   missingYt.push(
     "YouTube Data API enabled",
     "OAuth consent for youtube.upload + youtube.readonly + youtube.force-ssl (Live)",
   );
   missingYt.push("OAuth app currently in Testing (refresh tokens may expire after 7 days)");
-  if (!live) {
-    missingMeta.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
-    missingTt.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
-    missingYt.push("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
-  }
-  return {
-    meta: {
-      ui: true,
-      oauth: configured.meta,
-      publishing: live && configured.meta ? "adapter_ready_not_live_proven" : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
-      missing: missingMeta,
-    },
-    tiktok: {
-      ui: true,
-      oauth: configured.tiktok,
-      publishing: live && configured.tiktok ? "adapter_ready_not_live_proven" : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
-      missing: missingTt,
-    },
-    youtube: {
-      ui: true,
-      oauth: configured.youtube,
-      publishing: live && configured.youtube ? "adapter_ready_not_live_proven" : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
-      missing: missingYt,
-    },
-  };
+  return { meta: missingMeta, tiktok: missingTt, youtube: missingYt };
+}
+
+function providerReadiness(
+  configured: ReturnType<typeof oauthConfigured>,
+  live: boolean,
+  accounts: Array<{ provider?: string; status?: string; metadata?: Record<string, unknown> | null }> = [],
+) {
+  const gaps = envGaps();
+  if (configured.meta) gaps.meta = [];
+  if (configured.youtube) gaps.youtube = [];
+  return buildProviderReadiness({
+    configured,
+    live,
+    missingEnv: gaps,
+    accounts,
+  });
 }
 
 function sanitizeAccount(row: Record<string, unknown>) {
@@ -849,15 +850,19 @@ Deno.serve(async (req) => {
       return jsonResponse({ redirect });
     }
 
-    if (action === "upsert_youtube_provider_config") {
+    if (action === "upsert_youtube_provider_config" || action === "upsert_meta_provider_config") {
       if (!isServiceRoleRequest(req)) return apiError("Unauthorized", 401);
       const service = getServiceClient();
+      const provider = action === "upsert_meta_provider_config" ? "meta" : "youtube";
       const clientId = asString(body.client_id);
       const clientSecret = asString(body.client_secret);
-      const redirectUri = asString(body.redirect_uri) || youtubeRedirectUri();
+      const redirectUri =
+        asString(body.redirect_uri) || (provider === "meta" ? metaRedirectUri() : youtubeRedirectUri());
+      const configurationId = asString(body.configuration_id);
       if (!clientId || !clientSecret) return apiError("client_id and client_secret required");
+      if (provider === "meta" && !configurationId) return apiError("configuration_id required");
       const row = {
-        provider: "youtube",
+        provider,
         client_id: clientId,
         client_secret_ciphertext: await encryptSecret(clientSecret),
         redirect_uri: redirectUri,
@@ -865,21 +870,31 @@ Deno.serve(async (req) => {
           oauth_app_status: "testing",
           updated_by: "service_role",
           updated_at: new Date().toISOString(),
+          ...(provider === "meta" ? { configuration_id: configurationId } : {}),
         },
         updated_at: new Date().toISOString(),
       };
       const { data: existing } = await service
         .from("social_provider_configs")
         .select("provider")
-        .eq("provider", "youtube")
+        .eq("provider", provider)
         .maybeSingle();
       if (existing?.provider) {
-        await service.from("social_provider_configs").update(row).eq("provider", "youtube");
+        const updated = await service.from("social_provider_configs").update(row).eq("provider", provider);
+        if (updated.error) throw updated.error;
       } else {
         const inserted = await service.from("social_provider_configs").insert(row);
         if (inserted.error) throw inserted.error;
       }
-      return jsonResponse({ ok: true, provider: "youtube", has_client_id: true, has_secret: true });
+      if (provider === "meta") invalidateMetaClientConfigCache();
+      else invalidateYouTubeClientConfigCache();
+      return jsonResponse({
+        ok: true,
+        provider,
+        has_client_id: true,
+        has_secret: true,
+        has_configuration_id: provider === "meta" ? true : undefined,
+      });
     }
 
     if (
@@ -1010,15 +1025,21 @@ Deno.serve(async (req) => {
     const settings = await loadSettings(service);
     const configured = oauthConfigured();
     configured.youtube = configured.youtube || (await youtubeConfigured(service));
+    configured.meta = configured.meta || (await metaConfigured(service));
 
     if (action === "bootstrap" || !action) {
       const { data: accounts } = await service.from("social_accounts").select("*").order("provider");
+      const publicAccounts = (accounts || []).map((row) => sanitizeAccount(row as Record<string, unknown>));
       return jsonResponse({
         timezone: settings.timezone,
         livePostsEnabled: livePostsEnabled(settings.live_posts_enabled),
         oauthConfigured: configured,
-        accounts: (accounts || []).map((row) => sanitizeAccount(row as Record<string, unknown>)),
-        providerReadiness: providerReadiness(configured, livePostsEnabled(settings.live_posts_enabled)),
+        accounts: publicAccounts,
+        providerReadiness: providerReadiness(
+          configured,
+          livePostsEnabled(settings.live_posts_enabled),
+          publicAccounts,
+        ),
       });
     }
 
@@ -1122,7 +1143,7 @@ Deno.serve(async (req) => {
       const state = crypto.randomUUID();
       const redirectUri = oauthRedirectUri();
       if (provider === "meta") {
-        const authorized = metaAuthorizeUrl(state);
+        const authorized = await metaAuthorizeUrl(state, { service });
         if (!authorized.url) {
           return jsonResponse({
             url: null,
@@ -1135,7 +1156,7 @@ Deno.serve(async (req) => {
           provider: "meta",
           created_by: user?.id || null,
           redirect_to: `${publicBaseUrl()}/admin/social-accounts`,
-          oauth_redirect_uri: metaRedirectUri(),
+          oauth_redirect_uri: authorized.redirectUri || metaRedirectUri(),
         });
         return jsonResponse({ url: authorized.url });
       }
