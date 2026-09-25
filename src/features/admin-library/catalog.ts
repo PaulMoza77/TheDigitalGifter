@@ -31,6 +31,7 @@ export type LibraryVideo = {
   createdAt?: string;
   fileSizeBytes?: number;
   clipsUsed?: string[];
+  productionId?: string;
 };
 
 export type LibraryCategory = {
@@ -3289,9 +3290,33 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...petClips("other", "pet_other"),
 ];
 
+/**
+ * Library playback/download URLs.
+ * API paths and absolute signed URLs keep their query string (action, kind, id, exp, sig).
+ * Static asset cache-busters may still be stripped.
+ */
 export function librarySrcPath(src: string): string {
-  if (src.includes("/api/clip-factory")) return src;
-  return src.split("?")[0];
+  const raw = String(src || "").trim();
+  if (!raw) return raw;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const pathname = raw.split("?")[0].split("#")[0];
+  if (pathname === "/api" || pathname.startsWith("/api/")) return raw;
+  return pathname;
+}
+
+export function appendLibraryQueryParam(src: string, key: string, value: string): string {
+  const preserved = librarySrcPath(src);
+  if (!preserved) return preserved;
+  const hashIndex = preserved.indexOf("#");
+  const withoutHash = hashIndex >= 0 ? preserved.slice(0, hashIndex) : preserved;
+  const hash = hashIndex >= 0 ? preserved.slice(hashIndex) : "";
+  const qIndex = withoutHash.indexOf("?");
+  const path = qIndex >= 0 ? withoutHash.slice(0, qIndex) : withoutHash;
+  const qs = qIndex >= 0 ? withoutHash.slice(qIndex + 1) : "";
+  const params = new URLSearchParams(qs);
+  params.set(key, value);
+  const next = params.toString();
+  return `${path}${next ? `?${next}` : ""}${hash}`;
 }
 
 export function isLibraryPhoto(item: LibraryVideo): boolean {

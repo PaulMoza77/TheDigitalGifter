@@ -15,6 +15,9 @@ import {
 } from "@/features/admin-library/catalog";
 import { clipFactoryApi } from "@/features/clip-factory/api";
 import { longFormApi } from "@/features/long-form-studio/api";
+import { youtubeLiveApi } from "@/features/youtube-live/api";
+import LiveSessionsPanel from "@/features/youtube-live/LiveSessionsPanel";
+import type { PublicYoutubeLiveSession } from "@/features/youtube-live/policy";
 import BulkScheduleDialog from "@/features/social-publisher/BulkScheduleDialog";
 import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
 import { socialPublisherApi } from "@/features/social-publisher/api";
@@ -31,6 +34,7 @@ export default function AdminLibraryPage() {
   const [publisher, setPublisher] = React.useState<LibraryVideo | null>(null);
   const [bulkOpen, setBulkOpen] = React.useState(false);
   const [factoryVideos, setFactoryVideos] = React.useState<LibraryVideo[]>([]);
+  const [liveByAsset, setLiveByAsset] = React.useState<Record<string, PublicYoutubeLiveSession>>({});
   const [timezone, setTimezone] = React.useState(() =>
     resolveDefaultTimezone({
       browserTimezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
@@ -83,9 +87,20 @@ export default function AdminLibraryPage() {
         poster: typeof row.poster === "string" ? row.poster : undefined,
         width: typeof row.width === "number" ? row.width : 1920,
         height: typeof row.height === "number" ? row.height : 1080,
+        productionId: typeof row.productionId === "string" ? row.productionId : undefined,
       }));
       setFactoryVideos([...longRows, ...factoryRows]);
     });
+    void youtubeLiveApi
+      .list()
+      .then((data) => {
+        const next: Record<string, PublicYoutubeLiveSession> = {};
+        for (const session of data.sessions || []) {
+          if (session.library_asset_id) next[session.library_asset_id] = session;
+        }
+        setLiveByAsset(next);
+      })
+      .catch(() => undefined);
   }, []);
 
   const catalog = React.useMemo(() => [...factoryVideos, ...LIBRARY_VIDEOS], [factoryVideos]);
@@ -211,10 +226,21 @@ export default function AdminLibraryPage() {
                     : undefined
                 }
                 onShare={video.kind === "reel" ? () => setPublisher(video) : undefined}
+                liveSession={video.kind === "long_form" ? liveByAsset[video.id] || null : null}
+                onLiveChange={() => {
+                  void youtubeLiveApi.list().then((data) => {
+                    const next: Record<string, PublicYoutubeLiveSession> = {};
+                    for (const session of data.sessions || []) {
+                      if (session.library_asset_id) next[session.library_asset_id] = session;
+                    }
+                    setLiveByAsset(next);
+                  });
+                }}
               />
             ))}
           </div>
         )}
+        <LiveSessionsPanel />
       </div>
 
       {publisher ? (

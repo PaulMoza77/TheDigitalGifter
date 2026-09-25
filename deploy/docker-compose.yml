@@ -55,6 +55,7 @@ services:
       TDG_ENV: production
       TDG_RELEASE: ${TDG_RELEASE:-latest}
       LONG_FORM_DATA_DIR: /data/long-form
+      YOUTUBE_LIVE_MAX_CONCURRENT: ${YOUTUBE_LIVE_MAX_CONCURRENT:-1}
     volumes:
       - /opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory
       - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form

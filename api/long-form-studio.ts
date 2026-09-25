@@ -55,7 +55,7 @@ async function adminOrSigned(req: NodeApiRequest, kind: string, id: string): Pro
   }
 }
 
-function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, contentType: string) {
+export function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, contentType: string) {
   const resolved = resolve(path);
   const allowedRoots = [
     resolve(process.env.LONG_FORM_DATA_DIR || "/data/long-form"),
@@ -76,7 +76,9 @@ function sendLocalFile(req: NodeApiRequest, res: NodeApiResponse, path: string, 
   res.setHeader("Cache-Control", "private, max-age=60");
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (asString(req.query.download) === "1") {
-    res.setHeader("Content-Disposition", 'attachment; filename="long-form.mp4"');
+    const filename = asString(req.query.filename) || "long-form.mp4";
+    const safe = filename.replace(/[^\w.\-]+/g, "_").slice(0, 80) || "long-form.mp4";
+    res.setHeader("Content-Disposition", `attachment; filename="${safe}"`);
   }
   const match = /^bytes=(\d*)-(\d*)$/.exec(range);
   if (match) {
@@ -126,7 +128,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
   }
 
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, HEAD, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "authorization, content-type");
     return res.status(200).send("ok");
   }

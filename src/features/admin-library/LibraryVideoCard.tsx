@@ -12,8 +12,13 @@ import {
   fetchLibraryVideoFile,
   shareLibraryVideoFile,
   triggerBlobDownload,
+  saveLibraryVideo,
 } from "./saveLibraryVideo";
-import { isLibraryPhoto, librarySrcPath, type LibraryVideo } from "./catalog";
+import { appendLibraryQueryParam, isLibraryPhoto, librarySrcPath, type LibraryVideo } from "./catalog";
+import StartLiveModal from "@/features/youtube-live/StartLiveModal";
+import PublishYouTubeModal from "@/features/youtube-live/PublishYouTubeModal";
+import { isActiveLiveStatus, liveElapsedLabel, type PublicYoutubeLiveSession } from "@/features/youtube-live/policy";
+import { youtubeLiveApi } from "@/features/youtube-live/api";
 
 type Props = {
   video: LibraryVideo;
@@ -22,6 +27,8 @@ type Props = {
   selected?: boolean;
   onToggleSelect?: () => void;
   onShare?: () => void;
+  liveSession?: PublicYoutubeLiveSession | null;
+  onLiveChange?: () => void;
 };
 
 function formatFetchProgress(loaded: number, total: number | null): string {
@@ -44,9 +51,14 @@ export default function LibraryVideoCard({
   selected = false,
   onToggleSelect,
   onShare,
+  liveSession = null,
+  onLiveChange,
 }: Props) {
   const href = librarySrcPath(video.src);
+  const downloadHref = appendLibraryQueryParam(href, "download", "1");
+  const downloadHrefNamed = appendLibraryQueryParam(downloadHref, "filename", video.filename);
   const photo = isLibraryPhoto(video);
+  const longForm = video.kind === "long_form";
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const cardRef = React.useRef<HTMLElement | null>(null);
   const [visible, setVisible] = React.useState(false);
@@ -55,6 +67,8 @@ export default function LibraryVideoCard({
   const [progressLabel, setProgressLabel] = React.useState<string | null>(null);
   const [ios, setIos] = React.useState(false);
   const [capturedPoster, setCapturedPoster] = React.useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = React.useState(false);
+  const [liveOpen, setLiveOpen] = React.useState(false);
   const saveLockRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -129,6 +143,21 @@ export default function LibraryVideoCard({
     try {
       videoRef.current?.pause();
       onPlayingChange(false);
+
+      if (longForm) {
+        const result = await saveLibraryVideo({
+          url: href,
+          downloadUrl: downloadHrefNamed,
+          filename: video.filename,
+          kind: "long_form",
+        });
+        if (result === "opened") {
+          toast.success("Opened in Safari. Use Share → Save Video to add it to Photos.");
+        } else {
+          toast.success(`Downloading ${video.filename}`);
+        }
+        return;
+      }
 
       let file = getCachedLibraryVideoFile(href);
       if (!file) {
@@ -232,8 +261,15 @@ export default function LibraryVideoCard({
               className="absolute inset-0 z-10 flex items-center justify-center bg-black/15 text-white transition hover:bg-black/25"
               aria-label={playing ? `Pause ${video.title}` : `Play ${video.title}`}
             >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
-                {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
+              <span className="flex flex-col items-center gap-1">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+                  {playing ? <Pause className="h-6 w-6" /> : <Play className="ml-0.5 h-6 w-6" />}
+                </span>
+                {longForm ? (
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold tracking-wide">
+                    {playing ? "PAUSE" : "PLAY"}
+                  </span>
+                ) : null}
               </span>
             </button>
           </>
@@ -297,6 +333,54 @@ export default function LibraryVideoCard({
             Share / Schedule
           </button>
         ) : null}
+        {longForm && liveSession && isActiveLiveStatus(liveSession.status) ? (
+          <div className="rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-100">
+            <p className="font-semibold">🔴 LIVE</p>
+            <p className="mt-1 text-xs text-red-100/80">
+              Elapsed {liveElapsedLabel(liveSession.started_at) || "—"} · Stop{" "}
+              {liveSession.planned_end_at ? liveSession.planned_end_at.slice(11, 16) : "—"} UTC
+            </p>
+            {liveSession.youtube_url ? (
+              <a href={liveSession.youtube_url} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-indigo-200">
+                Open on YouTube
+              </a>
+            ) : null}
+            <button
+              type="button"
+              className="mt-2 rounded-lg border border-red-300/40 px-3 py-1 text-xs"
+              onClick={() => {
+                if (!window.confirm("Stop this YouTube Live and complete the broadcast?")) return;
+                void youtubeLiveApi
+                  .stop(liveSession.id)
+                  .then(() => {
+                    toast.success("Live stop requested.");
+                    onLiveChange?.();
+                  })
+                  .catch((error: Error) => toast.error(error.message));
+              }}
+            >
+              STOP LIVE
+            </button>
+          </div>
+        ) : null}
+        {longForm ? (
+          <button
+            type="button"
+            onClick={() => setPublishOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+          >
+            Publish to YouTube
+          </button>
+        ) : null}
+        {longForm && !(liveSession && isActiveLiveStatus(liveSession.status)) ? (
+          <button
+            type="button"
+            onClick={() => setLiveOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-400"
+          >
+            Start YouTube Live
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => void onSave()}
@@ -307,16 +391,27 @@ export default function LibraryVideoCard({
           {saving
             ? progressLabel || (photo ? "Preparing photo…" : "Preparing video…")
             : ios
-              ? "Save to Photos"
+              ? longForm
+                ? "Save to Photos"
+                : "Save to Photos"
               : "Download"}
         </button>
         {ios ? (
           <p className="text-[11px] leading-4 text-slate-500">
-            Stays on this page. When the share sheet opens, tap {photo ? "Save Image" : "Save Video"} — that is the
-            Photos option. Ignore Save to Files.
+            {longForm
+              ? "Opens the video in Safari. Use Share → Save Video. The file is not downloaded into this page."
+              : `Stays on this page. When the share sheet opens, tap ${photo ? "Save Image" : "Save Video"} — that is the Photos option. Ignore Save to Files.`}
           </p>
         ) : null}
       </div>
+      {publishOpen ? <PublishYouTubeModal video={video} onClose={() => setPublishOpen(false)} /> : null}
+      {liveOpen ? (
+        <StartLiveModal
+          video={video}
+          onClose={() => setLiveOpen(false)}
+          onStarted={() => onLiveChange?.()}
+        />
+      ) : null}
     </article>
   );
 }

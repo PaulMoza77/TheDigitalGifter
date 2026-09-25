@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "sonner";
 
 import { socialPublisherApi, type SocialPublicationRow } from "@/features/social-publisher/api";
+import LiveSessionsPanel from "@/features/youtube-live/LiveSessionsPanel";
 import { PLATFORM_CONSTRAINTS, type SocialPlatform } from "@/features/social-publisher/platforms";
 import { queueState } from "@/features/social-publisher/meta";
 import { formatZonedDateTime } from "@/features/social-publisher/timezone";
@@ -177,6 +178,7 @@ export default function AdminPublishingPage() {
             );
           })}
         </div>
+        <LiveSessionsPanel />
       </div>
 
       {selected ? (

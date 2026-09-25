@@ -3,6 +3,7 @@ import { Film, Library, Loader2, Music2, Pause, Play, Shuffle, Sparkles, Triangl
 import { toast } from "sonner";
 
 import { longFormApi } from "@/features/long-form-studio/api";
+import LiveSessionsPanel from "@/features/youtube-live/LiveSessionsPanel";
 import { trackBadges } from "@/features/long-form-studio/musicRights";
 import { formatClock, moodForStyle } from "@/features/long-form-studio/playlist";
 import {
@@ -409,6 +410,7 @@ export default function AdminLongFormStudioPage() {
             </div>
           ) : null}
         </div>
+        <LiveSessionsPanel />
       </div>
 
       {pickerOpen ? (

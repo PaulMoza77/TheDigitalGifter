@@ -1,4 +1,4 @@
-export type SaveLibraryVideoResult = "shared" | "downloaded" | "ready";
+export type SaveLibraryVideoResult = "shared" | "downloaded" | "ready" | "opened";
 
 const FILE_CACHE_LIMIT = 3;
 const fileCache = new Map<string, File>();
@@ -61,6 +61,30 @@ export function triggerBlobDownload(blob: Blob, filename: string): void {
   link.click();
   link.remove();
   globalThis.setTimeout(() => URL.revokeObjectURL(objectUrl), 2_000);
+}
+
+/** Same-origin streamed download. Does not buffer the file in JS memory. */
+export function triggerDirectDownload(url: string, filename: string): void {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+/** iOS/iPad: open the signed MP4 in Safari so Share → Save Video stays native. */
+export function openNativeVideoPlayback(url: string): "opened" {
+  const w = globalThis as typeof globalThis & {
+    open?: (url: string, target?: string, features?: string) => unknown;
+    location?: { assign: (href: string) => void };
+  };
+  const opened = typeof w.open === "function" ? w.open(url, "_blank", "noopener,noreferrer") : null;
+  if (!opened && typeof w.location?.assign === "function") {
+    w.location.assign(url);
+  }
+  return "opened";
 }
 
 export function iosVideoSharePayload(file: File): ShareData {
@@ -158,17 +182,31 @@ export async function fetchLibraryVideoFile(
   }
 }
 
+export type SaveLibraryVideoKind = "reel" | "short" | "photo" | "long_form";
+
 export async function saveLibraryVideo(input: {
   url: string;
   filename: string;
   title?: string;
+  kind?: SaveLibraryVideoKind;
+  downloadUrl?: string;
   onProgress?: (loaded: number, total: number | null) => void;
 }): Promise<SaveLibraryVideoResult> {
+  const ios = isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform);
+
+  // Long-form files can be 1GB+. Never fetch the entire MP4 into a JS File.
+  if (input.kind === "long_form") {
+    if (ios) {
+      openNativeVideoPlayback(input.url);
+      return "opened";
+    }
+    triggerDirectDownload(input.downloadUrl || input.url, input.filename);
+    return "downloaded";
+  }
+
   const cached = getCachedLibraryVideoFile(input.url);
   const file = cached ?? (await fetchLibraryVideoFile(input.url, input.filename, input.onProgress));
   if (!cached) rememberLibraryVideoFile(input.url, file);
-
-  const ios = isIosLikeDevice(navigator.userAgent, navigator.maxTouchPoints, navigator.platform);
 
   // iPhone/iPad Safari ignores <a download> for MP4 and navigates to a dead-end file page.
   // Share the video file alone so the sheet includes Save Video → Photos.
