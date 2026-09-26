@@ -502,8 +502,26 @@ export async function getDashboardSnapshot() {
 }
 
 export async function retryConcept(conceptId: string) {
-  await updateConcept(conceptId, { pipeline_status: "selected", failure_reason: null });
-  await logEvent("manual_retry", {}, conceptId);
+  const service = getServiceClient();
+  const { data: row } = await service.from("content_concepts").select("*").eq("id", conceptId).maybeSingle();
+  if (!row) throw Object.assign(new Error("concept_not_found"), { status: 404 });
+  const clips = parseClips(row.clips);
+  let resumeStatus: PipelineStatus = "selected";
+  if (row.library_asset_id) {
+    resumeStatus = "library_pending_finish";
+  } else if (clips.length > 0 && clips.every((clip) => clip.imageQc === "PASS" && clip.imageStoragePath)) {
+    resumeStatus = clips.every((clip) => clip.videoStoragePath) ? "assembling_reel" : "qc_review";
+  } else if (clips.some((clip) => clip.imagePrompt || clip.imageStoragePath)) {
+    resumeStatus = "generating_assets";
+  }
+  await updateConcept(conceptId, {
+    pipeline_status: resumeStatus,
+    failure_reason: null,
+    claimed_by: null,
+    claimed_at: null,
+    lease_expires_at: null,
+  });
+  await logEvent("manual_retry", { resumeStatus }, conceptId);
 }
 
 export async function streamConceptMedia(conceptId: string, res: import("../nodeHandler").NodeApiResponse) {

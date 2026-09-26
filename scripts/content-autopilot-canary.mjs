@@ -58,9 +58,28 @@ async function main() {
       console.log(JSON.stringify({ step: "canary_ready", concept: ready }));
       break;
     }
-    if (failed && !concepts.some((row) => ["selected", "generating_assets", "qc_review", "assembling_reel", "library_pending_finish"].includes(row.pipeline_status))) {
-      console.log(JSON.stringify({ step: "canary_failed", concept: failed }));
-      process.exit(2);
+    if (failed) {
+      const recoverable =
+        failed.failure_reason &&
+        String(failed.failure_reason).startsWith("video_generation_failed");
+      if (recoverable) {
+        console.log(
+          JSON.stringify({
+            step: "canary_resume_failed_video",
+            conceptId: failed.id,
+            ...(await post("/api/content-autopilot?action=retry", { concept_id: failed.id })),
+          }),
+        );
+      } else if (
+        !concepts.some((row) =>
+          ["selected", "generating_assets", "qc_review", "assembling_reel", "library_pending_finish"].includes(
+            row.pipeline_status,
+          ),
+        )
+      ) {
+        console.log(JSON.stringify({ step: "canary_failed", concept: failed }));
+        process.exit(2);
+      }
     }
     const finish = await post("/api/christmas-reel-pipeline?action=tick");
     console.log(JSON.stringify({ step: "reel_finish_tick", attempt: i + 1, ...finish }));
