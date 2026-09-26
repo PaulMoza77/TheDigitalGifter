@@ -278,7 +278,7 @@ function fallbackDescription(slug: string) {
   }
 
   if (s.includes("other")) {
-    return "Rabbits, birds, reptiles and more — one photo, twelve secret lives.";
+    return "Rabbits, birds, reptiles and more. One photo, twelve secret lives.";
   }
 
   if (s.includes("pet")) {
@@ -534,7 +534,7 @@ export default function OccasionGrid() {
                 </div>
 
                 <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
-                  Cards, portraits, videos, and seasonal experiences — start with
+                  Cards, portraits, videos, and seasonal experiences. Start with
                   the moment, then make it personal.
                 </p>
               </div>

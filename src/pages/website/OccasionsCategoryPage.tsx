@@ -24,7 +24,7 @@ export default function OccasionsCategoryPage() {
 
           <p className="mt-5 text-lg leading-8 text-white/70">
             Birthdays, weddings, anniversaries, holidays, graduations and life
-            moments — choose the occasion and start with a beautiful template.
+            moments. Choose the occasion and start with a beautiful template.
           </p>
         </motion.div>
 

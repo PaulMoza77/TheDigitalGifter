@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
               Plan gifts, budget, and meals in one place.
             </h2>
             <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
-              A seasonal companion to your creations — keep wish lists, spending,
+              A seasonal companion to your creations. Keep wish lists, spending,
               and holiday meals organized without scattered notes.
             </p>
           </div>

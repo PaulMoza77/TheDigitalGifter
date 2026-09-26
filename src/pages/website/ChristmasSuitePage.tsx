@@ -9,7 +9,7 @@ import {
 } from "@/features/christmas/catalog";
 
 /**
- * Classic Christmas product suite — kept at /christmas/suite so /christmas can
+ * Classic Christmas product suite, kept at /christmas/suite so /christmas can
  * be the cinematic countdown/club landing without breaking existing funnels.
  */
 export default function ChristmasSuitePage() {
@@ -39,7 +39,7 @@ export default function ChristmasSuitePage() {
     <>
       <PageHead
         title="Christmas at The Digital Gifter"
-        description="Personalized Christmas cards, free message generator, portraits, Santa video, wishlist, and gift finder — create something worth sending."
+        description="Personalized Christmas cards, free message generator, portraits, Santa video, wishlist, and gift finder. Create something worth sending."
       />
       <MainPage
         onStartCreating={() => void navigate("/generator?occasion=christmas")}

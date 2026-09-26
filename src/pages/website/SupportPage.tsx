@@ -32,7 +32,7 @@ export function SupportPage() {
         <section className="rounded-lg border border-white/10 bg-white/5 p-8">
           <p className="leading-relaxed text-white/80">
             Need help with your account, AI generations, billing, or a refund?
-            Reach us directly — we read every message and typically reply within
+            Reach us directly. We read every message and typically reply within
             1–2 business days.
           </p>
         </section>

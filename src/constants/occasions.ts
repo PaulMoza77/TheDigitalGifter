@@ -239,7 +239,7 @@ export const occasions = [
     category: "pets",
     label: "Every pet counts",
     description:
-      "Rabbits, birds, reptiles and more — one photo, twelve secret lives.",
+      "Rabbits, birds, reptiles and more. One photo, twelve secret lives.",
     gradientFrom: "from-[#14532d]",
     gradientTo: "to-[#84cc16]",
     image:
