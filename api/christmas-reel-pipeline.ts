@@ -2,7 +2,7 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { requireClipFactoryAdmin } from "./_lib/clip-factory/admin";
-import { resolveMediaPath } from "./_lib/clip-factory/vpsMedia";
+import { resolveVpsAbsolutePath } from "./_lib/long-form-studio/storage";
 import {
   enqueueFinishJob,
   listAllMusic,
@@ -55,8 +55,8 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     const id = asString(req.query.id);
     if (!id) return res.status(400).json({ error: "missing_id" });
     try {
-      const objectPath = `reel-finish/${id}/master.mp4`;
-      const abs = resolveMediaPath(objectPath);
+      const objectPath = `productions/reel-finish-${id}/master.mp4`;
+      const abs = resolveVpsAbsolutePath(objectPath);
       if (!existsSync(abs)) return res.status(404).json({ error: "not_found" });
       const stat = statSync(abs);
       res.setHeader("Content-Type", "video/mp4");
