@@ -1,4 +1,5 @@
 import { maxAutopilotDurationSeconds, socialPlatformsForDestinations } from "./destinations";
+import { publishReadyFromStatus } from "../../../api/_lib/christmas-reel-pipeline/readinessGate";
 import type {
   PublisherContentType,
   PublisherDestination,
@@ -23,7 +24,13 @@ export type AssignmentDecision =
   | { ok: false; assetId: null; reason: AssignmentSkipReason; detail: string };
 
 function assetReady(asset: PublisherLibraryAsset): boolean {
-  return asset.exists && asset.ready && !asset.processing && !asset.failed;
+  return (
+    asset.exists &&
+    asset.ready &&
+    !asset.processing &&
+    !asset.failed &&
+    publishReadyFromStatus(String(asset.publishStatus || "legacy"))
+  );
 }
 
 function typeMatches(asset: PublisherLibraryAsset, contentType: PublisherContentType): boolean {

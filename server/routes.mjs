@@ -28,6 +28,7 @@ export const API_MODULES = {
   "/api/admin/social/youtube/callback": "youtube-oauth-callback.ts",
   "/api/publisher": "publisher.ts",
   "/api/publisher-cron": "publisher-cron.ts",
+  "/api/christmas-reel-pipeline": "christmas-reel-pipeline.ts",
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",
   "/api/christmas-funnel-event": "christmas-funnel-event.ts",
   "/api/christmas/gift-tree": "christmas-gift-tree.ts",

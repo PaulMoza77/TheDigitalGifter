@@ -171,7 +171,12 @@ export async function syncPublisherSocialBridge(publicationIds?: string[]) {
         destinations: asDestinations(row.destinations),
       },
       asset: asset
-        ? { id: asset.id, title: asset.title, src: stableMediaRef(asset.src) }
+        ? {
+            id: asset.id,
+            title: asset.title,
+            src: stableMediaRef(asset.src),
+            platformMetadata: (asset.platformMetadata as import("./_lib/christmas-reel-pipeline/types").PlatformMetadata | undefined) || null,
+          }
         : null,
       existingSocial: socialByPublisher.get(String(row.id)) || null,
     });
