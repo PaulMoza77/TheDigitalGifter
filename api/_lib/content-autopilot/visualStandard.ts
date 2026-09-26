@@ -1,5 +1,5 @@
 const VISUAL_STANDARD_SUFFIX =
-  " Vertical 9:16 photorealistic frame. Clear focal subject, strong first-frame composition, natural lighting, realistic materials and geometry, emotionally readable Christmas or winter mood when relevant. Suitable for subtle image-to-video animation. No logos, no watermarks, no readable text overlays, no malformed architecture, no impossible anatomy or hands, no plastic CGI look, no excessive HDR.";
+  " Vertical 9:16 photorealistic photograph, not illustration or cartoon. No animated or stylized characters. Clear focal subject, strong first-frame composition, natural lighting, realistic materials and geometry, emotionally readable Christmas or winter mood when relevant. Suitable for subtle image-to-video animation. No logos, no watermarks, no readable text overlays, no malformed architecture, no impossible anatomy or hands, no plastic CGI look, no excessive HDR.";
 
 const MOTION_STANDARD_SUFFIX =
   " Slow cinematic camera movement only. Natural environmental motion such as snowfall, fireplace flicker, or gentle light shimmer. Stable architecture and subject identity. No morphing, no object transformation, no hyperlapse, no wild camera spins.";

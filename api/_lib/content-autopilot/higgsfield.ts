@@ -7,9 +7,9 @@ import {
 export const KLING_I2V_PATH = "/kling-video/v3.0/pro/image-to-video";
 export const KLING_I2V_ESTIMATE_PATH = "/estimate/kling-video/v3.0/pro/image-to-video";
 export const KLING_DURATION_SECONDS = 5;
-/** Live Higgsfield catalog text2image slug (nano_banana_2 is not available for T2I as of 2026-09). */
+/** Live Higgsfield catalog text2image slug (photoreal; Soul skews stylized). */
 export const CONTENT_AUTOPILOT_IMAGE_MODEL =
-  String(process.env.CONTENT_AUTOPILOT_HIGGSFIELD_IMAGE_MODEL || "higgsfield-ai/soul/v2/standard").trim();
+  String(process.env.CONTENT_AUTOPILOT_HIGGSFIELD_IMAGE_MODEL || "recraft/v4.1/pro/text-to-image").trim();
 
 function readHiggsfieldAuthorizationFromProcessEnv(): string | null {
   const combined = String(process.env.HF_CREDENTIALS || process.env.HF_KEY || "").trim();
