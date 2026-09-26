@@ -76,7 +76,10 @@ async function resolveSourceVideo(asset: LibraryAssetRow, dir: string): Promise<
 
 function resolveMusicFile(track: AutopilotMusicTrack): string {
   const candidates: string[] = [];
-  if (track.filename) candidates.push(resolve(process.cwd(), "public/assets/music/christmas", track.filename));
+  if (track.filename) {
+    candidates.push(resolve(process.cwd(), "dist/assets/music/christmas", track.filename));
+    candidates.push(resolve(process.cwd(), "public/assets/music/christmas", track.filename));
+  }
   if (track.publicSrc?.startsWith("/")) candidates.push(resolve(process.cwd(), "public", track.publicSrc.replace(/^\//, "")));
   if (track.storagePath) {
     try {
