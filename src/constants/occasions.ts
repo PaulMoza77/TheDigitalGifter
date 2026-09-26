@@ -24,6 +24,16 @@ export const occasions = [
       "https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=400&h=300&fit=crop",
   },
   {
+    id: "thank-you",
+    title: "Thank You",
+    category: "occasions",
+    label: "Heartfelt gratitude",
+    description: "Turn a photo into a warm, personal thank-you they will remember.",
+    gradientFrom: "from-[#0f172a]",
+    gradientTo: "to-[#a855f7]",
+    image: "/images/occasions/thank-you.png",
+  },
+  {
     id: "thanksgiving",
     title: "Thanksgiving",
     category: "occasions",

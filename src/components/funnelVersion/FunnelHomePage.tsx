@@ -1,6 +1,6 @@
 // src/components/funnelVersion/FunnelHomePage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ import { Star } from "lucide-react";
 
 import {
   FUNNEL_OCCASIONS,
+  funnelUploadSlugForKey,
   toFunnelOccasionKey,
-  toFunnelUploadSlug,
   type FunnelOccasionConfig,
+  type FunnelOccasionKey,
 } from "@/components/funnelVersion/occasions";
 
 /**
@@ -38,8 +39,8 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-function buildUploadHref(occasion: string) {
-  const occ = toFunnelUploadSlug(occasion);
+function buildUploadHref(uploadSlug: string) {
+  const occ = String(uploadSlug ?? "").trim();
   return `/funnel/uploadPhoto?occasion=${encodeURIComponent(occ)}&slug=${encodeURIComponent(occ)}`;
 }
 
@@ -1106,21 +1107,25 @@ function runSmokeChecks() {
   }
 }
 
-function useOccasionConfig() {
+function useFunnelOccasionRoute(): {
+  key: FunnelOccasionKey | null;
+  cfg: FunnelOccasionConfig | null;
+  uploadSlug: string;
+} {
   const params = useParams();
-  const key = toFunnelOccasionKey(String(params.occasion ?? "christmas"));
+  const raw = String(params.occasion ?? "").trim();
 
   return useMemo(() => {
-    return FUNNEL_OCCASIONS[key] ?? FUNNEL_OCCASIONS.christmas;
-  }, [key]);
-}
-
-function useOccasionSlug() {
-  const params = useParams();
-  return useMemo(
-    () => toFunnelUploadSlug(String(params.occasion ?? "christmas")),
-    [params]
-  );
+    const key = toFunnelOccasionKey(raw);
+    if (!key) {
+      return { key: null, cfg: null, uploadSlug: "" };
+    }
+    return {
+      key,
+      cfg: FUNNEL_OCCASIONS[key],
+      uploadSlug: funnelUploadSlugForKey(key),
+    };
+  }, [raw]);
 }
 
 export default function FunnelHomePage() {
@@ -1128,10 +1133,13 @@ export default function FunnelHomePage() {
     runSmokeChecks();
   }, []);
 
-  const cfg = useOccasionConfig();
-  const occasionSlug = useOccasionSlug();
-  const uploadTo = useMemo(() => buildUploadHref(occasionSlug), [occasionSlug]);
-  const ctaLabel = cfg.ctaLabel || DEFAULT_CTA_LABEL;
+  const { key, cfg, uploadSlug } = useFunnelOccasionRoute();
+  const uploadTo = useMemo(() => buildUploadHref(uploadSlug), [uploadSlug]);
+  const ctaLabel = cfg?.ctaLabel || DEFAULT_CTA_LABEL;
+
+  if (!key || !cfg) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F2EA] text-emerald-950">

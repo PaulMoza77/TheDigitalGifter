@@ -14,7 +14,12 @@ export type FunnelOccasionKey =
   | "easter"
   | "mothers-day"
   | "fathers-day"
-  | "graduation";
+  | "graduation"
+  | "thank-you"
+  | "kids"
+  | "name-cards"
+  | "bible-verses"
+  | "prayer";
 
 export type FunnelExampleItem = {
   name: string;
@@ -823,50 +828,339 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
       }
     ],
   },
+
+  "thank-you": {
+    key: "thank-you",
+    heroTitle: "Say thank you with a moving memory",
+    heroSubtitle:
+      "Turn a meaningful photo into a warm, shareable thank-you gift in minutes · soft motion, heartfelt and personal.",
+    heroCaption: "From a still photo to a gratitude card that feels alive.",
+    ctaLabel: "Try now · Create a thank-you gift",
+    heroBeforeVariant: asset("wedding-before"),
+    heroAfterVariant: asset("wedding-after"),
+    ctaTo: "/funnel/uploadPhoto",
+    examples: [
+      {
+        name: "Hannah L.",
+        location: "Portland, OR",
+        quote:
+          "Sent this after our wedding weekend · guests said it was the most thoughtful thank-you they’d received.",
+        beforeVariant: "wedding-before",
+        afterVariant: "wedding-after",
+      },
+      {
+        name: "Marcus & Jen",
+        location: "Austin, TX",
+        quote:
+          "Used a team photo for client thanks · professional, warm, not a stock card.",
+        beforeVariant: "wedding-ex2-before",
+        afterVariant: "wedding-ex2-after",
+      },
+      {
+        name: "Elena R.",
+        location: "Toronto, ON",
+        quote:
+          "Grandma printed it. Best compliment for a digital thank-you.",
+        beforeVariant: "wedding-ex3-before",
+        afterVariant: "wedding-ex3-after",
+      },
+    ],
+    valueTrio: [
+      {
+        title: "Gratitude that moves",
+        desc: "Soft cinematic motion that makes your thank-you feel personal.",
+        variant: "wedding-after",
+      },
+      {
+        title: "Share in one tap",
+        desc: "A gift-ready memory for hosts, mentors, and people who showed up.",
+        variant: "wedding-ex2-after",
+      },
+      {
+        title: "Keep the moment",
+        desc: "One photo becomes a thank-you they’ll reopen.",
+        variant: "wedding-ex3-after",
+      },
+    ],
+  },
+
+  kids: {
+    key: "kids",
+    heroTitle: "Kids’ memories, brought to life",
+    heroSubtitle:
+      "Turn a favorite kids photo into a playful moving gift · bright, sweet, and made to share with family.",
+    heroCaption: "From a snapshot to a joyful keepsake kids love.",
+    ctaLabel: "Try now · Create a kids gift",
+    heroBeforeVariant: asset("birthday-before"),
+    heroAfterVariant: asset("birthday-after"),
+    ctaTo: "/funnel/uploadPhoto",
+    examples: [
+      {
+        name: "Sarah M.",
+        location: "Denver, CO",
+        quote:
+          "My daughter watched her birthday photo on loop · pure joy.",
+        beforeVariant: "birthday-before",
+        afterVariant: "birthday-after",
+      },
+      {
+        name: "Chris P.",
+        location: "Nashville, TN",
+        quote:
+          "Grandparents abroad felt like they were in the room.",
+        beforeVariant: "birthday-ex2-before",
+        afterVariant: "birthday-ex2-after",
+      },
+      {
+        name: "Amy K.",
+        location: "Seattle, WA",
+        quote:
+          "Playful motion without looking silly · perfect for cousins.",
+        beforeVariant: "birthday-ex3-before",
+        afterVariant: "birthday-ex3-after",
+      },
+    ],
+    valueTrio: [
+      {
+        title: "Celebrate childhood",
+        desc: "Gentle motion that keeps the fun and innocence front and center.",
+        variant: "birthday-after",
+      },
+      {
+        title: "Share with family",
+        desc: "A moving memory aunts, uncles, and grandparents love.",
+        variant: "birthday-ex2-after",
+      },
+      {
+        title: "A gift they replay",
+        desc: "Turn one kids moment into a keepsake for years.",
+        variant: "birthday-ex3-after",
+      },
+    ],
+  },
+
+  "name-cards": {
+    key: "name-cards",
+    heroTitle: "A gift made for one special name",
+    heroSubtitle:
+      "Create a personal moving card built around someone’s name and photo · thoughtful, unique, and share-ready.",
+    heroCaption: "From a portrait to a name-forward keepsake.",
+    ctaLabel: "Try now · Create a name card",
+    heroBeforeVariant: asset("anniversary-before"),
+    heroAfterVariant: asset("anniversary-after"),
+    ctaTo: "/funnel/uploadPhoto",
+    examples: [
+      {
+        name: "Daniel W.",
+        location: "Chicago, IL",
+        quote:
+          "Put my partner’s name front and center · felt bespoke, not templated.",
+        beforeVariant: "anniversary-before",
+        afterVariant: "anniversary-after",
+      },
+      {
+        name: "Priya S.",
+        location: "London, UK",
+        quote:
+          "Used it for a milestone name-day surprise · elegant motion.",
+        beforeVariant: "anniversary-ex2-before",
+        afterVariant: "anniversary-ex2-after",
+      },
+      {
+        name: "Olivia T.",
+        location: "Sydney, AU",
+        quote:
+          "Simple, personal, and ready to text in minutes.",
+        beforeVariant: "anniversary-ex3-before",
+        afterVariant: "anniversary-ex3-after",
+      },
+    ],
+    valueTrio: [
+      {
+        title: "Built around them",
+        desc: "Their name and face, gently alive · made for one person.",
+        variant: "anniversary-after",
+      },
+      {
+        title: "More than a text",
+        desc: "A moving card that feels intentional and gift-worthy.",
+        variant: "anniversary-ex2-after",
+      },
+      {
+        title: "Keep it forever",
+        desc: "A personal keepsake they’ll save and replay.",
+        variant: "anniversary-ex3-after",
+      },
+    ],
+  },
+
+  "bible-verses": {
+    key: "bible-verses",
+    heroTitle: "Faith-filled memories in motion",
+    heroSubtitle:
+      "Turn a photo into a gentle spiritual keepsake · warm light, hopeful tone, ready to encourage someone you love.",
+    heroCaption: "From a still moment to a faith-forward gift.",
+    ctaLabel: "Try now · Create a Bible verse gift",
+    heroBeforeVariant: asset("easter-before"),
+    heroAfterVariant: asset("easter-after"),
+    ctaTo: "/funnel/uploadPhoto",
+    examples: [
+      {
+        name: "Grace H.",
+        location: "Atlanta, GA",
+        quote:
+          "Sent encouragement to my sister · soft motion, peaceful feeling.",
+        beforeVariant: "easter-before",
+        afterVariant: "easter-after",
+      },
+      {
+        name: "James F.",
+        location: "Dallas, TX",
+        quote:
+          "Our small-group leaders loved it · reverent without being heavy.",
+        beforeVariant: "easter-ex2-before",
+        afterVariant: "easter-ex2-after",
+      },
+      {
+        name: "Maria C.",
+        location: "Phoenix, AZ",
+        quote:
+          "Perfect for Easter morning and year-round hope.",
+        beforeVariant: "easter-ex3-before",
+        afterVariant: "easter-ex3-after",
+      },
+    ],
+    valueTrio: [
+      {
+        title: "Hope in motion",
+        desc: "Calm, uplifting movement for scripture-inspired gifts.",
+        variant: "easter-after",
+      },
+      {
+        title: "Encourage someone",
+        desc: "A spiritual keepsake that feels personal, not generic.",
+        variant: "easter-ex2-after",
+      },
+      {
+        title: "Share the light",
+        desc: "One photo, a gift of faith they can revisit.",
+        variant: "easter-ex3-after",
+      },
+    ],
+  },
+
+  prayer: {
+    key: "prayer",
+    heroTitle: "Prayer cards that feel personal",
+    heroSubtitle:
+      "Create a moving prayer keepsake from your photo · comfort, gratitude, and peace in a shareable gift.",
+    heroCaption: "From a quiet photo to a prayerful moving memory.",
+    ctaLabel: "Try now · Create a prayer gift",
+    heroBeforeVariant: asset("pregnancy-before"),
+    heroAfterVariant: asset("pregnancy-after"),
+    ctaTo: "/funnel/uploadPhoto",
+    examples: [
+      {
+        name: "Ruth M.",
+        location: "Minneapolis, MN",
+        quote:
+          "Sent to a friend in a hard season · she said it felt like a hug.",
+        beforeVariant: "pregnancy-before",
+        afterVariant: "pregnancy-after",
+      },
+      {
+        name: "Tom & Lisa",
+        location: "Columbus, OH",
+        quote:
+          "Gentle motion, zero clutter · perfect prayer-card vibe.",
+        beforeVariant: "pregnancy-ex2-before",
+        afterVariant: "pregnancy-ex2-after",
+      },
+      {
+        name: "Aisha B.",
+        location: "Boston, MA",
+        quote:
+          "Family group chat went quiet in the best way.",
+        beforeVariant: "pregnancy-ex3-before",
+        afterVariant: "pregnancy-ex3-after",
+      },
+    ],
+    valueTrio: [
+      {
+        title: "Comfort in motion",
+        desc: "Soft, calm movement for prayer and encouragement.",
+        variant: "pregnancy-after",
+      },
+      {
+        title: "Hold them in prayer",
+        desc: "A keepsake that carries warmth and intention.",
+        variant: "pregnancy-ex2-after",
+      },
+      {
+        title: "Peace to share",
+        desc: "One photo becomes a gift of quiet hope.",
+        variant: "pregnancy-ex3-after",
+      },
+    ],
+  },
 };
 
-/** Map any URL / query slug to a FUNNEL_OCCASIONS key. */
-export function toFunnelOccasionKey(raw: string): FunnelOccasionKey {
+const FUNNEL_OCCASION_ALIAS: Record<string, FunnelOccasionKey> = {
+  christmas: "christmas",
+  birthday: "birthday",
+  pregnancy: "pregnancy",
+  wedding: "wedding",
+  anniversary: "anniversary",
+  "valentines-day": "valentines-day",
+  valentine: "valentines-day",
+  valentines: "valentines-day",
+  "new-years-eve": "new-years-eve",
+  "new-year": "new-years-eve",
+  newyear: "new-years-eve",
+  thanksgiving: "thanksgiving",
+  "thanks-giving": "thanksgiving",
+  "baby-reveal": "baby-reveal",
+  "gender-reveal": "baby-reveal",
+  "new-born": "new-born",
+  newborn: "new-born",
+  easter: "easter",
+  "mothers-day": "mothers-day",
+  mothersday: "mothers-day",
+  "fathers-day": "fathers-day",
+  fathersday: "fathers-day",
+  graduation: "graduation",
+  "thank-you": "thank-you",
+  thankyou: "thank-you",
+  thank_you: "thank-you",
+  kids: "kids",
+  "name-cards": "name-cards",
+  namecards: "name-cards",
+  name_cards: "name-cards",
+  "bible-verses": "bible-verses",
+  bibleverses: "bible-verses",
+  bible_verses: "bible-verses",
+  prayer: "prayer",
+};
+
+/** Map any URL / query slug to a FUNNEL_OCCASIONS key, or null if unknown. */
+export function toFunnelOccasionKey(raw: string): FunnelOccasionKey | null {
   const x = String(raw ?? "")
     .trim()
     .toLowerCase()
     .replace(/_/g, "-");
 
-  const aliases: Record<string, FunnelOccasionKey> = {
-    christmas: "christmas",
-    birthday: "birthday",
-    pregnancy: "pregnancy",
-    wedding: "wedding",
-    anniversary: "anniversary",
-    "valentines-day": "valentines-day",
-    valentine: "valentines-day",
-    valentines: "valentines-day",
-    "new-years-eve": "new-years-eve",
-    "new-year": "new-years-eve",
-    newyear: "new-years-eve",
-    thanksgiving: "thanksgiving",
-    "thanks-giving": "thanksgiving",
-    "baby-reveal": "baby-reveal",
-    "gender-reveal": "baby-reveal",
-    "new-born": "new-born",
-    newborn: "new-born",
-    easter: "easter",
-    "mothers-day": "mothers-day",
-    mothersday: "mothers-day",
-    "fathers-day": "fathers-day",
-    fathersday: "fathers-day",
-    graduation: "graduation",
-  };
+  return FUNNEL_OCCASION_ALIAS[x] ?? null;
+}
 
-  return aliases[x] ?? "christmas";
+export function isFunnelOccasionKey(raw: string): boolean {
+  return toFunnelOccasionKey(raw) !== null;
 }
 
 /**
  * Slug used by upload / style-select query params.
  * Keeps existing downstream normalizers (newborn, valentines_day, …).
  */
-export function toFunnelUploadSlug(raw: string): string {
-  const key = toFunnelOccasionKey(raw);
+export function funnelUploadSlugForKey(key: FunnelOccasionKey): string {
   const map: Record<FunnelOccasionKey, string> = {
     christmas: "christmas",
     birthday: "birthday",
@@ -882,6 +1176,20 @@ export function toFunnelUploadSlug(raw: string): string {
     "mothers-day": "mothers_day",
     "fathers-day": "fathers_day",
     graduation: "graduation",
+    "thank-you": "thank_you",
+    kids: "kids",
+    "name-cards": "name_cards",
+    "bible-verses": "bible_verses",
+    prayer: "prayer",
   };
   return map[key];
+}
+
+export function toFunnelUploadSlug(raw: string): string {
+  const key = toFunnelOccasionKey(raw);
+  if (key) return funnelUploadSlugForKey(key);
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
 }
