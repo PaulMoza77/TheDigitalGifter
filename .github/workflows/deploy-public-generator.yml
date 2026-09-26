@@ -1,0 +1,52 @@
+name: deploy-public-generator
+
+# Backend only: private source bucket, credit guard, Higgsfield edge function.
+# Frontend still ships through deploy-vps-mozas. Run this before merging UI.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: Production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require production credentials
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY; do
+            eval "val=\${$name:-}"
+            if [ -z "$val" ]; then
+              echo "::error::$name is missing in the Production environment."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Refusing to deploy the generator backend without credentials."
+            exit 2
+          fi
+          echo "Production credentials are present (values not printed)."
+
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Deploy generator backend
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.TDG_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: kjlsocejpmnzhhduyumy
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          MOZAS_SSH_HOST: ${{ secrets.MOZAS_SSH_HOST }}
+          MOZAS_SSH_PRIVATE_KEY: ${{ secrets.MOZAS_SSH_PRIVATE_KEY }}
+          MOZAS_SSH_USER: mozas
+          HF_CREDENTIALS: ${{ secrets.HF_CREDENTIALS }}
+        run: bash scripts/deploy-public-generator.sh
