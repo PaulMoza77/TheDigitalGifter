@@ -250,10 +250,6 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       return;
     }
     if (!(await dailyLimitOk(settings, "videos"))) throw new Error("daily_video_limit");
-    if (!(await dailyLimitOk(settings, "video_retries"))) {
-      await logEvent("video_retry_limit", { clip: clip.index }, conceptId);
-      return;
-    }
     if (!(await budgetAllows(settings))) {
       await logEvent("budget_stop", { stage: "video" }, conceptId);
       return;
