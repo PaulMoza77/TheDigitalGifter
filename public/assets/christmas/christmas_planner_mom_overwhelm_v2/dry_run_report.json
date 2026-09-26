@@ -1,0 +1,87 @@
+{
+  "mode": "dry-run",
+  "project": "christmas_planner_mom_overwhelm_v2",
+  "status": "BLOCKED",
+  "approval_required": true,
+  "execute_would_run": false,
+  "credentials_present": false,
+  "paid_submit_called": false,
+  "live_generation_verified": false,
+  "jobs": [
+    {
+      "id": "shot_01_chaos",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_02_pressure",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_02_pressure_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_03_husband",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_03_husband_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_04_breaking_point",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 10,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_04_breaking_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_05_friend_message",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_05_phone_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_06_discovery",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    },
+    {
+      "id": "shot_07_payoff",
+      "provider": "higgsfield",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_s": 5,
+      "reference": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_06_cookies_1080x1920.png",
+      "would_submit": true,
+      "resume": null,
+      "submit_path": "/kling-video/v3.0/pro/image-to-video"
+    }
+  ],
+  "would_submit_count": 7,
+  "resume_count": 0,
+  "approved_cost_cap_usd": 4.5,
+  "audio_first": true,
+  "note": "Dry-run only. --estimate-only hits /estimate. --execute is the only paid submit path."
+}
