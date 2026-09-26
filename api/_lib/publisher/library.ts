@@ -39,6 +39,8 @@ export async function loadPublisherAssets(): Promise<PublisherLibraryAsset[]> {
       eligible: state?.eligible !== false,
       contentType: isLibraryPhoto(video) ? "image" : contentType,
       lastUsedByDestination: (state?.last_used_by_destination as Record<string, string>) || {},
+      publishStatus: "legacy",
+      platformMetadata: {},
     };
   });
 
@@ -71,6 +73,8 @@ export async function loadPublisherAssets(): Promise<PublisherLibraryAsset[]> {
           (state?.content_type as PublisherContentType | undefined) ||
           catalogContentType(kind, filename),
         lastUsedByDestination: (state?.last_used_by_destination as Record<string, string>) || {},
+        publishStatus: String(row.publish_status || "legacy"),
+        platformMetadata: (row.platform_metadata as Record<string, unknown>) || {},
       };
     });
 

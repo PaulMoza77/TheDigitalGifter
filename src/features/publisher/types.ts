@@ -131,6 +131,8 @@ export type PublisherLibraryAsset = {
   eligible: boolean;
   contentType: PublisherContentType;
   lastUsedByDestination: Record<string, string>;
+  publishStatus?: string;
+  platformMetadata?: Record<string, unknown>;
 };
 
 export type PublisherAdapterResult = {

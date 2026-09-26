@@ -15,7 +15,8 @@ import { getServiceClient } from "../christmas/supabaseClient";
 import { tickSocialPublisher } from "../social-publisher/invoke";
 import { loadAutopilotSettings, loadPlatformConnectionLabels, reflectSocialTargetStatus, syncPublisherSocialBridge } from "./bridge";
 import { loadPublisherAssets } from "./library";
-import { asDestinations } from "./map";
+import type { PlatformMetadata } from "./_lib/christmas-reel-pipeline/types";
+import { autopilotCaption } from "./_lib/christmas-reel-pipeline/metadata";
 
 type DbClient = ReturnType<typeof getServiceClient>;
 
@@ -174,10 +175,15 @@ async function assignEmptySlot(
     return;
   }
   const duplicateKey = publicationDuplicateKey(decision.assetId, publication.scheduled_at, rule.destinations);
+  const pickedAsset = assets.find((asset) => asset.id === decision.assetId);
+  const caption =
+    pickedAsset?.platformMetadata && typeof pickedAsset.platformMetadata === "object"
+      ? autopilotCaption(pickedAsset.platformMetadata as PlatformMetadata, pickedAsset.title)
+      : pickedAsset?.title || "";
   await service.from("publisher_publications").update({
     library_asset_id: decision.assetId,
     assignment_source: "auto",
-    caption: assets.find((asset) => asset.id === decision.assetId)?.title || "",
+    caption,
     approved: !rule.approvalRequired,
     approved_at: rule.approvalRequired ? null : new Date().toISOString(),
     duplicate_key: duplicateKey,

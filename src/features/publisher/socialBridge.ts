@@ -1,3 +1,4 @@
+import type { PlatformMetadata } from "../../../api/_lib/christmas-reel-pipeline/types";
 import type { SocialPlatform } from "../social-publisher/types";
 import {
   isAutopilotDestination,
@@ -91,15 +92,27 @@ export function youtubeShortsAutopilotOptions(existingCategory?: string | null):
 export function planTargetsForPlatforms(input: {
   publisherPublicationId: string;
   assetTitle: string;
+  caption: string;
   platforms: SocialPlatform[];
+  platformMetadata?: PlatformMetadata | null;
 }): PlannedSocialTarget[] {
   return input.platforms.map((platform) => ({
     platform,
     provider: providerForPlatform(platform),
     status: "scheduled" as const,
     idempotencyKeySuffix: platform,
-    platformTitle: platform === "youtube_shorts" ? youtubeShortsTitle(input.assetTitle) : null,
-    platformOptions: platform === "youtube_shorts" ? youtubeShortsAutopilotOptions() : {},
+    platformTitle:
+      platform === "youtube_shorts"
+        ? (input.platformMetadata?.youtube?.title || youtubeShortsTitle(input.assetTitle))
+        : null,
+    platformOptions:
+      platform === "youtube_shorts"
+        ? {
+            ...youtubeShortsAutopilotOptions(),
+            description: input.platformMetadata?.youtube?.description || youtubeShortsDescription(input.caption || input.assetTitle),
+            tags: input.platformMetadata?.youtube?.tags || [],
+          }
+        : {},
   }));
 }
 
@@ -114,7 +127,7 @@ export function planSocialSync(input: {
     timezone: string;
     destinations: PublisherDestination[];
   };
-  asset: { id: string; title: string; src: string } | null;
+  asset: { id: string; title: string; src: string; platformMetadata?: PlatformMetadata | null } | null;
   existingSocial: ExistingSocialPublication | null;
 }): SocialSyncPlan {
   const publisherPublicationId = input.publication.id;
@@ -151,7 +164,9 @@ export function planSocialSync(input: {
     targets: planTargetsForPlatforms({
       publisherPublicationId,
       assetTitle: input.asset.title,
+      caption: input.publication.caption || input.asset.title,
       platforms,
+      platformMetadata: input.asset.platformMetadata || null,
     }),
   };
 

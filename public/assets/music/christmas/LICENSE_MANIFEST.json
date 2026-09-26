@@ -1,0 +1,89 @@
+{
+  "schema": "tdg-christmas-cc0-v1",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "HoliznaCC0",
+  "importedNote": "Verify album page states CC0 before import. Individual track pages must also state CC0 1.0 Universal.",
+  "tracks": [
+    {
+      "slug": "silent-night-lofi",
+      "title": "Silent Night (Lo-Fi)",
+      "filename": "silent-night-lofi.mp3",
+      "mood": "peaceful_instrumental",
+      "tags": ["christmas", "peaceful", "night", "snow", "cozy"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/silent-night-lo-fi/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/9Yh88Nag95UZbOYDbq9iicFjK8OjPLqXfRMaDNGX.mp3"
+    },
+    {
+      "slug": "o-holy-night-lofi",
+      "title": "Oh Holy Night (Lo-Fi)",
+      "filename": "o-holy-night-lofi.mp3",
+      "mood": "emotional_instrumental",
+      "tags": ["christmas", "emotional", "night", "peaceful"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/oh-holy-night-lo-fi/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/3lD7yhbHYuYMoraKq7etTlkeCNJzl17OT1nVbLAG.mp3"
+    },
+    {
+      "slug": "angels-we-have-heard-lofi",
+      "title": "Angels We Have Heard on High (Lo-Fi)",
+      "filename": "angels-we-have-heard-lofi.mp3",
+      "mood": "traditional_instrumental",
+      "tags": ["christmas", "traditional", "celebration"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/angels-we-have-heard-on-high-lo-fi/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/Wzc1tRprsSHlVi6GvvDgK0MNk2dqqV5mv0jjKq6e.mp3"
+    },
+    {
+      "slug": "auld-lang-syne-lofi",
+      "title": "Auld Lang Syne (Lo-Fi)",
+      "filename": "auld-lang-syne-lofi.mp3",
+      "mood": "nostalgic_instrumental",
+      "tags": ["christmas", "nostalgic", "celebration"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-lo-fi-christmas-special/auld-lang-syne-lo-fi/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/ZuNhP7gYa1ipbopoB7e7JZu7nRO8mUgbKDNpAmti.mp3"
+    },
+    {
+      "slug": "joy-to-the-world-synthwave",
+      "title": "Joy to the World (Synth Wave)",
+      "filename": "joy-to-the-world-synthwave.mp3",
+      "mood": "energetic_instrumental",
+      "tags": ["christmas", "celebration", "energetic", "fun"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/joy-to-the-world-synth-wave/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/2xBquRjM0KqrQjySstv6aqVaj2K1Qj3gO25VMT7W.mp3"
+    },
+    {
+      "slug": "the-first-noel-synthwave",
+      "title": "The First Noel (Synth Wave)",
+      "filename": "the-first-noel-synthwave.mp3",
+      "mood": "magical_instrumental",
+      "tags": ["christmas", "magical", "cinematic"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/the-first-noel-synth-wave/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/e9Pux3ZQ8LQWKMbcxTDT9AGa4HTbabCaToOu0tBX.mp3"
+    },
+    {
+      "slug": "god-rest-ye-synthwave",
+      "title": "God Rest Ye Merry Gentlemen (Synth Wave)",
+      "filename": "god-rest-ye-merry-gentlemen-synthwave.mp3",
+      "mood": "traditional_instrumental",
+      "tags": ["christmas", "traditional", "cozy", "home"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/god-rest-ye-merry-gentlemen-synth-wave/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/MTpQpvDjy9siVyuTB0xBNo3O4Xoaxv1CJSBVEaK4.mp3"
+    },
+    {
+      "slug": "we-three-kings-synthwave",
+      "title": "We Three Kings (Synth Wave)",
+      "filename": "we-three-kings-synthwave.mp3",
+      "mood": "cinematic_instrumental",
+      "tags": ["christmas", "magical", "journey", "train"],
+      "albumUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/",
+      "trackUrl": "https://freemusicarchive.org/music/holiznacc0/a-synth-wave-christmas-special/we-three-kings-synth-wave/",
+      "fileUrl": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/6U7MjFyfDiFumve1F8DNYpmWjUmdiGk4xByjAnob.mp3"
+    }
+  ]
+}
