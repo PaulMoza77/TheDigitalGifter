@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
@@ -49,16 +50,30 @@ async function fetchTrackLicenseText(trackUrl: string): Promise<string> {
   return html;
 }
 
+function resolveChristmasMusicDir(): string {
+  const dist = resolve(process.cwd(), "dist/assets/music/christmas");
+  if (existsSync(join(dist, "LICENSE_MANIFEST.json"))) return dist;
+  const pub = resolve(process.cwd(), "public/assets/music/christmas");
+  if (existsSync(join(pub, "LICENSE_MANIFEST.json"))) return pub;
+  return pub;
+}
+
 export async function importCc0ChristmasTracks(input: { dryRun?: boolean } = {}): Promise<{
   imported: number;
   skipped: number;
   tracks: Array<{ slug: string; id?: string; status: string }>;
 }> {
-  const manifestPath = resolve(process.cwd(), "public/assets/music/christmas/LICENSE_MANIFEST.json");
+  const outDir = resolveChristmasMusicDir();
+  const manifestPath = join(outDir, "LICENSE_MANIFEST.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Manifest;
   const service = getServiceClient();
-  const outDir = resolve(process.cwd(), "public/assets/music/christmas");
-  await mkdir(join(outDir, "proofs"), { recursive: true });
+  if (!input.dryRun) {
+    try {
+      await mkdir(join(outDir, "proofs"), { recursive: true });
+    } catch {
+      /* dist may be read-only in production; proofs may already ship in the image */
+    }
+  }
 
   let imported = 0;
   let skipped = 0;
@@ -74,7 +89,9 @@ export async function importCc0ChristmasTracks(input: { dryRun?: boolean } = {})
 
     const localPath = join(outDir, track.filename);
     if (!input.dryRun) {
-      await download(track.fileUrl, localPath);
+      if (!existsSync(localPath)) {
+        await download(track.fileUrl, localPath);
+      }
       await ffprobeFile(localPath);
     }
 
@@ -100,7 +117,11 @@ export async function importCc0ChristmasTracks(input: { dryRun?: boolean } = {})
 
     const proofPublic = `/assets/music/christmas/proofs/${track.slug}.txt`;
     if (!input.dryRun) {
-      await writeFile(join(outDir, "proofs", `${track.slug}.txt`), proofBody, "utf8");
+      try {
+        await writeFile(join(outDir, "proofs", `${track.slug}.txt`), proofBody, "utf8");
+      } catch {
+        /* keep bundled proof files when the asset dir is read-only */
+      }
     }
 
     if (input.dryRun) {
