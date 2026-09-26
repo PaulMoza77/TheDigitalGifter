@@ -1,179 +1,145 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { occasionHref, occasions } from "@/constants/occasions";
-import { toast } from "sonner";
-import { TrendingNowRow } from "@/components/website/TrendingNowRow";
+import {
+  landingBodyClass,
+  landingEyebrowClass,
+  landingDisplayHeadingClass,
+  landingPrimaryCtaClass,
+  landingSecondaryCtaClass,
+  landingTrustChipClass,
+} from "@/domains/Landing/landingStyles";
+
+const trustPoints = [
+  "No design skills required",
+  "Made for sharing",
+  "High-resolution results",
+  "Create in minutes",
+];
 
 export const HeroSection = () => {
   const [currentMockup, setCurrentMockup] = useState(0);
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!occasions.length) return;
+    if (!occasions.length || reduceMotion) return;
 
     const interval = window.setInterval(() => {
       setCurrentMockup((prev) => (prev + 1) % occasions.length);
-    }, 3500);
+    }, 4500);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [reduceMotion]);
 
   const currentOccasion = occasions[currentMockup];
 
   const handleOccasionClick = useCallback(() => {
     if (!currentOccasion) return;
-
     void navigate(occasionHref(currentOccasion.id));
   }, [currentOccasion, navigate]);
 
   if (!currentOccasion) return null;
 
   return (
-    <>
-      <section className="relative w-full overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          />
-          <motion.div
-            className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-orange-500/20 blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
-            transition={{ duration: 4, repeat: Infinity, delay: 1.5 }}
-          />
-        </div>
+    <section className="relative w-full overflow-hidden bg-[var(--tdg-home-bg)]">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(232,198,117,0.12),transparent_55%)]"
+        aria-hidden="true"
+      />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <motion.div
-              className="space-y-8 text-center lg:text-left"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <motion.div
-                className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs uppercase tracking-wide text-blue-300"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                THE DIGITAL GIFTER
-              </motion.div>
+      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-12 lg:py-16">
+        <motion.div
+          className="order-2 space-y-5 text-center lg:order-1 lg:text-left"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <p className={landingEyebrowClass}>The Digital Gifter</p>
 
-              <motion.h1
-                className="text-5xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                Create something they will{" "}
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                  feel forever
-                </span>
-              </motion.h1>
+          <h1 className={landingDisplayHeadingClass}>
+            Make something personal for someone who matters.
+          </h1>
 
-              <motion.p
-                className="mx-auto max-w-2xl text-lg leading-relaxed text-white/85 sm:text-xl lg:mx-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                Turn one meaningful photo into a beautiful card or video made
-                for birthdays, love, family moments, faith, pets, and every
-                message that deserves to be remembered.
-              </motion.p>
+          <p className={`mx-auto max-w-xl lg:mx-0 ${landingBodyClass}`}>
+            Create personalized gifts, photos, videos and holiday experiences in
+            minutes.
+          </p>
 
-              <motion.div
-                className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Link
-                  to="/generator"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-500/50 transition-all hover:scale-105 hover:from-blue-700 hover:to-cyan-700"
-                >
-                  Start Creating
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-
-                <Link
-                  to="/templates"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-700 px-8 py-4 text-lg font-semibold text-white transition-all hover:border-blue-500/50 hover:bg-slate-900/50"
-                >
-                  Browse Templates
-                </Link>
-              </motion.div>
-
-              <motion.div
-                className="flex flex-wrap items-center justify-center gap-6 pt-4 text-sm text-white/85 lg:justify-start"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((item) => (
-                      <div
-                        key={item}
-                        className="h-8 w-8 rounded-full border-2 border-slate-950 bg-gradient-to-br from-blue-500 to-cyan-500"
-                      />
-                    ))}
-                  </div>
-                  <span>50,000+ heartfelt creations</span>
-                </div>
-
-                <div>⭐ 4.9/5 average rating</div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              className="relative"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-            >
-              <div className="relative">
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-blue-500/30 to-orange-500/30 blur-3xl" />
-
-                <div className="relative overflow-hidden rounded-3xl shadow-2xl shadow-blue-500/20">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentOccasion.id}
-                      className="relative cursor-pointer"
-                      onClick={handleOccasionClick}
-                      initial={{ opacity: 0, scale: 1.05 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <img
-                        src={currentOccasion.image}
-                        alt={currentOccasion.title}
-                        className="h-[360px] w-full object-cover sm:h-[430px]"
-                      />
-
-                      <div className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
-                        {currentOccasion.title}
-                      </div>
-
-                      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 backdrop-blur-sm transition-all hover:bg-white">
-                        Use this template
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-            </motion.div>
+          <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center lg:justify-start">
+            <Link to="/generator" className={landingPrimaryCtaClass}>
+              Create Something
+              <ArrowRight className="h-5 w-5" aria-hidden="true" />
+            </Link>
+            <Link to="/#categories" className={landingSecondaryCtaClass}>
+              See What I Can Make
+            </Link>
           </div>
-        </div>
-      </section>
 
-      <TrendingNowRow />
-    </>
+          <ul
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-1 lg:justify-start"
+            aria-label="Product benefits"
+          >
+            {trustPoints.map((point) => (
+              <li key={point} className={landingTrustChipClass}>
+                {point}
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+
+        <motion.div
+          className="order-1 lg:order-2"
+          initial={reduceMotion ? false : { opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.15, duration: 0.55 }}
+        >
+          <div className="relative mx-auto max-w-md lg:max-w-none">
+            <div
+              className="absolute -inset-3 rounded-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(232,198,117,0.18),transparent_70%)]"
+              aria-hidden="true"
+            />
+
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--tdg-home-border)] shadow-2xl shadow-black/50 sm:rounded-3xl">
+              <AnimatePresence mode="wait">
+                <motion.button
+                  type="button"
+                  key={currentOccasion.id}
+                  className="relative block w-full cursor-pointer border-0 bg-transparent p-0 text-left"
+                  onClick={handleOccasionClick}
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={reduceMotion ? undefined : { opacity: 0 }}
+                  transition={{ duration: 0.35 }}
+                  aria-label={`View ${currentOccasion.title} templates`}
+                >
+                  <img
+                    src={currentOccasion.image}
+                    alt={`Example ${currentOccasion.title} creation`}
+                    className="h-[220px] w-full object-cover sm:h-[300px] lg:h-[360px]"
+                    width={640}
+                    height={360}
+                  />
+
+                  <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-xs font-medium text-[var(--tdg-home-text)] backdrop-blur-sm">
+                    {currentOccasion.title}
+                  </div>
+
+                  <div className="absolute bottom-3 right-3 rounded-xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] px-3 py-2 text-xs font-semibold text-[var(--tdg-home-text)] sm:text-sm">
+                    Real TDG style
+                  </div>
+                </motion.button>
+              </AnimatePresence>
+            </div>
+
+            <p className="mt-3 text-center text-xs text-[var(--tdg-home-text-muted)] lg:text-left">
+              Tap to explore this occasion — examples rotate automatically.
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 };

@@ -4,7 +4,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  landingBodyClass,
+  landingSectionClass,
+  landingSectionHeadingClass,
+  landingTertiaryLinkClass,
+} from "@/domains/Landing/landingStyles";
 
 const faqs = [
   {
@@ -50,46 +56,46 @@ const faqs = [
 ];
 
 export const FAQ = () => {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <section className="w-full py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-950/50 to-transparent">
-      <div className="max-w-4xl mx-auto">
-        {/* Section header */}
+    <section
+      className={`${landingSectionClass} border-t border-[var(--tdg-home-border)] py-12 sm:py-16`}
+      aria-labelledby="faq-heading"
+    >
+      <div className="mx-auto max-w-3xl">
         <motion.div
-          className="text-center mb-16 space-y-4"
-          initial={{ opacity: 0, y: 20 }}
+          className="mb-10 space-y-3 text-center"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.45 }}
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-white">
-            Frequently Asked{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              Questions
-            </span>
+          <h2 id="faq-heading" className={landingSectionHeadingClass}>
+            Questions
           </h2>
-          <p className="text-xl text-slate-400">
-            Everything you need to know about TheDigitalGifter
+          <p className={landingBodyClass}>
+            Credits, privacy, quality, and how creation works.
           </p>
         </motion.div>
 
-        {/* FAQ Accordion */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.45 }}
         >
-          <Accordion type="single" collapsible className="space-y-4">
+          <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
-                className="bg-slate-900/50 border border-slate-800 rounded-xl px-6 hover:border-blue-500/50 transition-colors"
+                className="rounded-xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] px-5 transition-colors data-[state=open]:border-[var(--tdg-home-accent)]/40"
               >
-                <AccordionTrigger className="text-left text-white hover:text-blue-400 py-6">
+                <AccordionTrigger className="py-5 text-left text-base font-medium text-[var(--tdg-home-text)] hover:text-[var(--tdg-home-accent)] hover:no-underline">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-slate-400 pb-6 leading-relaxed">
+                <AccordionContent className="pb-5 text-sm leading-relaxed text-[var(--tdg-home-text-muted)]">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -97,17 +103,15 @@ export const FAQ = () => {
           </Accordion>
         </motion.div>
 
-        {/* Still have questions CTA */}
-        <div
-          className="text-center mt-16 animate-fade-in"
-          style={{ animationDelay: "0.3s" }}
-        >
-          <p className="text-slate-400 mb-4">Still have questions?</p>
+        <div className="mt-10 text-center">
+          <p className="mb-3 text-sm text-[var(--tdg-home-text-muted)]">
+            Still have questions?
+          </p>
           <a
             href="mailto:support@thedigitalgifter.com"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
+            className={landingTertiaryLinkClass}
           >
-            Contact Support
+            Contact support
           </a>
         </div>
       </div>

@@ -13,6 +13,13 @@ import {
 import { occasionById, occasionHref, occasions } from "@/constants/occasions";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import {
+  landingBodyClass,
+  landingEyebrowClass,
+  landingPrimaryCtaClass,
+  landingSecondaryCtaClass,
+  landingSectionHeadingClass,
+} from "@/domains/Landing/landingStyles";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -496,7 +503,11 @@ export default function OccasionGrid() {
   );
 
   return (
-    <section id="categories" className="w-full px-4 py-14 sm:px-6 lg:px-8">
+    <section
+      id="categories"
+      className="w-full border-t border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] px-4 py-14 sm:px-6 lg:px-8"
+      aria-labelledby="occasions-heading"
+    >
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="mb-10"
@@ -505,18 +516,26 @@ export default function OccasionGrid() {
           viewport={{ once: true }}
           transition={{ duration: 0.45 }}
         >
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+          <div className="rounded-3xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] p-6 sm:p-8">
             <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="mb-3 flex items-center gap-3">
-                  <Sparkles className="h-7 w-7 text-yellow-200" />
-                  <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                <p className={landingEyebrowClass}>What can I create?</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <Sparkles
+                    className="h-6 w-6 text-[var(--tdg-home-accent)]"
+                    aria-hidden="true"
+                  />
+                  <h2
+                    id="occasions-heading"
+                    className={landingSectionHeadingClass}
+                  >
                     Choose a category and occasion
                   </h2>
                 </div>
 
-                <p className="text-lg font-medium text-white/55">
-                  Start with the moment, then personalize it.
+                <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
+                  Cards, portraits, videos, and seasonal experiences — start with
+                  the moment, then make it personal.
                 </p>
               </div>
 
@@ -524,10 +543,10 @@ export default function OccasionGrid() {
                 type="button"
                 onClick={() => navigate("/templates")}
                 variant="ghost"
-                className="rounded-2xl border border-white/10 bg-black/20 px-6 py-6 text-base font-bold text-white hover:bg-white/10"
+                className={`${landingSecondaryCtaClass} h-auto`}
               >
                 View all
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
 
@@ -544,8 +563,8 @@ export default function OccasionGrid() {
                     className={cn(
                       "flex items-center gap-4 rounded-3xl border p-5 text-left transition",
                       isActive
-                        ? "border-yellow-300 bg-yellow-300 text-black shadow-2xl shadow-yellow-500/10"
-                        : "border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.07]"
+                        ? "border-[var(--tdg-home-accent)] bg-[var(--tdg-home-accent)] text-[#1a1208] shadow-lg shadow-black/20"
+                        : "border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] text-[var(--tdg-home-text)] hover:bg-white/[0.04]"
                     )}
                   >
                     <Icon
@@ -604,7 +623,7 @@ export default function OccasionGrid() {
                 transition={{ delay: index * 0.05, duration: 0.35 }}
                 whileHover={{ y: -4 }}
               >
-                <Card className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] transition duration-300 hover:border-yellow-300/35 hover:shadow-2xl hover:shadow-yellow-500/10">
+                <Card className="group overflow-hidden rounded-3xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] transition duration-300 hover:border-[var(--tdg-home-accent)]/35">
                   <CardContent className="p-0">
                     <button
                       type="button"
@@ -652,9 +671,11 @@ export default function OccasionGrid() {
                           </p>
                         </div>
 
-                        <div className="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-4 font-black text-black transition hover:opacity-95">
+                        <div
+                          className={`${landingPrimaryCtaClass} w-full py-3.5 text-sm sm:text-base`}
+                        >
                           Create
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                         </div>
                       </div>
                     </button>

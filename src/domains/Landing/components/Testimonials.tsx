@@ -101,22 +101,27 @@ export const Testimonials = () => {
   const bottomTestimonials = randomizedTestimonials.slice(3, 5);
 
   return (
-    <section className="w-full bg-gradient-to-b from-black via-slate-950/70 to-black px-4 py-24 sm:px-6 lg:px-8">
+    <section
+      className="w-full border-t border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] px-4 py-14 sm:px-6 sm:py-20 lg:px-8"
+      aria-labelledby="testimonials-heading"
+    >
       <div className="mx-auto max-w-7xl">
-        <div className="mx-auto mb-20 max-w-3xl text-center">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-pink-400/25 bg-pink-400/10 px-4 py-2 text-sm font-bold text-pink-200">
-            <Heart className="h-4 w-4" />
-            Real moments, real reactions
+        <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] px-4 py-2 text-sm font-semibold text-[var(--tdg-home-accent)]">
+            <Heart className="h-4 w-4" aria-hidden="true" />
+            Real moments
           </div>
 
-          <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+          <h2
+            id="testimonials-heading"
+            className="font-serif text-3xl font-semibold tracking-tight text-[var(--tdg-home-text)] sm:text-4xl"
+          >
             Made for gifts that feel personal.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/60">
-            People use TheDigitalGifter to create birthday surprises, love
-            notes, apology cards, wedding memories, family keepsakes and
-            thoughtful little gifts.
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--tdg-home-text-muted)] sm:text-lg sm:leading-8">
+            Birthday surprises, love notes, apology cards, wedding memories, and
+            family keepsakes — created in minutes, meant to be felt.
           </p>
         </div>
 
@@ -152,34 +157,38 @@ function TestimonialCard({
 }) {
   return (
     <div
-      className={`rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-xl transition duration-300 hover:-translate-y-1 hover:border-yellow-300/35 hover:shadow-yellow-500/10 ${
-        wide ? "min-h-[230px]" : "min-h-[280px]"
+      className={`rounded-2xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] p-6 sm:p-8 ${
+        wide ? "min-h-[220px]" : "min-h-[260px]"
       }`}
     >
-      <div className="mb-5 flex gap-1">
+      <div className="mb-4 flex gap-1" aria-hidden="true">
         {Array.from({ length: testimonial.rating }).map((_, index) => (
           <Star
             key={index}
-            className="h-5 w-5 fill-yellow-300 text-yellow-300"
+            className="h-4 w-4 fill-[var(--tdg-home-accent)] text-[var(--tdg-home-accent)]"
           />
         ))}
       </div>
 
-      <p className="mb-7 text-base leading-7 text-white/75">
+      <p className="mb-6 text-base leading-7 text-[var(--tdg-home-text)]/90">
         “{testimonial.content}”
       </p>
 
       <div className="flex items-center gap-3">
         <img
           src={testimonial.image}
-          alt={testimonial.name}
-          className="h-12 w-12 rounded-full border border-white/15 object-cover"
+          alt=""
+          className="h-11 w-11 rounded-full border border-[var(--tdg-home-border)] object-cover"
           loading="lazy"
         />
 
         <div>
-          <div className="font-bold text-white">{testimonial.name}</div>
-          <div className="text-sm text-white/45">{testimonial.role}</div>
+          <div className="font-semibold text-[var(--tdg-home-text)]">
+            {testimonial.name}
+          </div>
+          <div className="text-sm text-[var(--tdg-home-text-muted)]">
+            {testimonial.role}
+          </div>
         </div>
       </div>
     </div>
