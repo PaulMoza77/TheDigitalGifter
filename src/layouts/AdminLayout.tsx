@@ -184,6 +184,11 @@ const SidebarNavigation: React.FC<{
             icon: WandSparkles,
           },
           {
+            label: "Content Autopilot",
+            path: "/admin/content-autopilot",
+            icon: Sparkles,
+          },
+          {
             label: "Publisher",
             path: "/admin/publisher",
             icon: CalendarClock,

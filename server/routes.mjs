@@ -29,6 +29,7 @@ export const API_MODULES = {
   "/api/publisher": "publisher.ts",
   "/api/publisher-cron": "publisher-cron.ts",
   "/api/christmas-reel-pipeline": "christmas-reel-pipeline.ts",
+  "/api/content-autopilot": "content-autopilot.ts",
   "/api/christmas/funnel-event": "christmas-funnel-event.ts",
   "/api/christmas-funnel-event": "christmas-funnel-event.ts",
   "/api/christmas/gift-tree": "christmas-gift-tree.ts",
