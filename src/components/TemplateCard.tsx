@@ -112,14 +112,14 @@ export default function TemplateCard({
           </>
         ) : null}
 
-        <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-[linear-gradient(120deg,#ff4d4d,#ff9866,#ffd976)] px-2 py-1 text-xs font-extrabold text-[#1a1a1a] shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
-          <Coins size={14} className="text-[#1a1a1a]" />
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[var(--tdg-home-accent)] px-2 py-1 text-xs font-extrabold text-[#1a1208]">
+          <Coins size={14} />
           {template.creditCost ?? 1}
         </div>
 
         {isSelected ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-[rgba(255,217,118,0.2)]">
-            <span className="text-4xl">✓</span>
+          <div className="absolute bottom-3 left-3 rounded-full bg-[var(--tdg-home-accent)] px-2 py-1 text-xs font-bold text-[#1a1208]">
+            Selected
           </div>
         ) : null}
       </div>

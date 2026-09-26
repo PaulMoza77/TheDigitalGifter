@@ -1,105 +1,83 @@
-import { cn } from "@/lib/utils";
-import type { AnyTemplate, JobRow } from "./generatorTypes";
+import { downloadNameForResult } from "../../../../supabase/functions/_shared/higgsfieldImage";
+import type { AnyTemplate } from "./generatorTypes";
 
 type Props = {
-  previewUrls: string[];
   previewAfter: string | null;
+  resultContentType: string | null;
   isGenerating: boolean;
-  currentJob: JobRow | null;
+  hasPhoto: boolean;
+  hasStyle: boolean;
   selectedTemplateObj: AnyTemplate | null;
+  creditCost: number | null;
   onDownload: (url: string, filename: string) => void;
+  onTryAnotherStyle: () => void;
+  onCreateAnother: () => void;
+  onRegenerate: () => void;
 };
 
 export default function BeforeAfterPreview({
-  previewUrls,
   previewAfter,
+  resultContentType,
   isGenerating,
-  currentJob,
+  hasPhoto,
+  hasStyle,
   selectedTemplateObj,
+  creditCost,
   onDownload,
+  onTryAnotherStyle,
+  onCreateAnother,
+  onRegenerate,
 }: Props) {
+  if (!isGenerating && !previewAfter) return null;
+
+  const cost = Number(creditCost || selectedTemplateObj?.creditCost || 0);
+
   return (
-    <>
-      <div
-        id="preview-section"
-        className="mx-auto mt-4 grid w-[92%] max-w-5xl grid-cols-2 gap-6 text-center font-bold text-[#c1c8d8]"
-      >
-        <span>Before</span>
-        <span>After</span>
-      </div>
-
-      <div
-        className={cn(
-          "mx-auto mt-2 grid w-[92%] max-w-5xl grid-cols-1 gap-6 px-4 pb-32 sm:grid-cols-2",
-          selectedTemplateObj && selectedTemplateObj.type === "video"
-            ? "pb-72"
-            : selectedTemplateObj?.type === "image"
-              ? "pb-64"
-              : ""
-        )}
-      >
-        <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
-          {previewUrls.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {previewUrls.map((url, index) => (
-                <img
-                  key={url}
-                  src={url}
-                  alt={`Input ${index + 1}`}
-                  className="max-h-[240px] max-w-full rounded-lg object-contain"
-                />
-              ))}
-            </div>
-          ) : (
-            <span>No images uploaded</span>
-          )}
+    <section id="preview-section" className="mx-auto w-full max-w-3xl px-4 py-8">
+      {isGenerating ? (
+        <div className="rounded-3xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] p-6">
+          <h2 className="font-serif text-3xl text-[var(--tdg-home-text)]">Creating your gift…</h2>
+          <ul className="mt-4 space-y-2 text-sm text-[var(--tdg-home-text)]">
+            <li>{hasPhoto ? "✓ Photo ready" : "Add a photo"}</li>
+            <li>{hasStyle ? "✓ Style selected" : "Choose a style"}</li>
+            <li>● Creating your personalized image</li>
+          </ul>
         </div>
+      ) : null}
 
-        <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 text-[#c1c8d8] shadow-[0_8px_26px_rgba(0,0,0,.45)]">
-          {isGenerating ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ffd976] border-t-transparent" />
-              <span className="text-sm">Generating magic...</span>
-            </div>
-          ) : previewAfter ? (
-            <>
-              {currentJob?.type === "video" ? (
-                <video
-                  src={previewAfter}
-                  controls
-                  className="max-h-full max-w-full rounded-lg object-contain"
-                  autoPlay
-                  loop
-                />
-              ) : (
-                <img
-                  src={previewAfter}
-                  alt="After"
-                  className="max-h-full max-w-full rounded-lg object-contain"
-                />
-              )}
-
-              <button
-                onClick={() => {
-                  const ext = currentJob?.type === "video" ? "mp4" : "png";
-                  const filename =
-                    currentJob?.type === "video"
-                      ? `video-${Date.now()}.${ext}`
-                      : `generated-card-${Date.now()}.${ext}`;
-
-                  onDownload(previewAfter, filename);
-                }}
-                className="absolute bottom-4 right-4 rounded-lg bg-[#ffd976] px-4 py-2 font-semibold text-[#1e1e1e] transition hover:brightness-110 active:scale-95"
-                type="button"
-              >
-                Download
-              </button>
-            </>
-          ) : (
-            <span>No image generated yet</span>
-          )}
+      {previewAfter && !isGenerating ? (
+        <div>
+          <h2 className="font-serif text-3xl text-[var(--tdg-home-text)]">Your creation is ready</h2>
+          <img
+            src={previewAfter}
+            alt="Your creation"
+            className="mt-4 max-h-[70vh] w-full rounded-3xl object-contain"
+          />
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="min-h-12 rounded-2xl bg-[var(--tdg-home-accent)] px-5 font-bold text-[#1a1208]"
+              onClick={() =>
+                onDownload(
+                  previewAfter,
+                  downloadNameForResult({ contentType: resultContentType, url: previewAfter }),
+                )
+              }
+            >
+              Download
+            </button>
+            <button type="button" className="min-h-12 rounded-2xl border border-[var(--tdg-home-border)] px-4" onClick={onTryAnotherStyle}>
+              Try another style
+            </button>
+            <button type="button" className="min-h-12 rounded-2xl border border-[var(--tdg-home-border)] px-4" onClick={onCreateAnother}>
+              Create another
+            </button>
+            <button type="button" className="min-h-12 rounded-2xl px-4 text-[var(--tdg-home-text-muted)]" onClick={onRegenerate}>
+              {cost > 0 ? `Regenerate · ${cost} credit${cost === 1 ? "" : "s"}` : "Regenerate"}
+            </button>
+          </div>
         </div>
-      </div>
-    </>
+      ) : null}
+    </section>
   );
 }

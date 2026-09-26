@@ -2,59 +2,46 @@ import React from "react";
 
 type Props = {
   uploadedFilesLength: number;
-  hasSelectedTemplate: boolean;
   onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
-  onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
 };
 
 export default function UploadSection({
   uploadedFilesLength,
-  hasSelectedTemplate,
   onDrop,
-  onFileSelect,
+  inputRef,
 }: Props) {
+  if (uploadedFilesLength > 0) return null;
+
   return (
-    <section
-      onDrop={onDrop}
-      onDragOver={(event) => event.preventDefault()}
-      onClick={() => document.getElementById("file-input")?.click()}
-      role="button"
-      tabIndex={0}
-      aria-label="Upload photos. Drag and drop or click to select images."
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          document.getElementById("file-input")?.click();
-        }
-      }}
-      className="mx-auto my-8 max-w-4xl cursor-pointer rounded-[28px] border border-white/15 bg-white/[0.055] p-8 text-center shadow-[0_18px_60px_rgba(0,0,0,.35)] transition hover:border-white/25 hover:bg-white/[0.085]"
-    >
-      <input
-        id="file-input"
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={onFileSelect}
-        aria-label="Select image files"
-        className="hidden"
-      />
-
-      <h2 className="mb-2 text-xl font-semibold">
-        {uploadedFilesLength > 0
-          ? `✅ ${uploadedFilesLength} photo${uploadedFilesLength > 1 ? "s" : ""} uploaded`
-          : "Drag & drop"}
-      </h2>
-
-      <p className="text-[#c1c8d8]">
-        {uploadedFilesLength > 0
-          ? "Click to add more photos"
-          : "or click to upload your reference photos"}
+    <section className="mx-auto w-full max-w-3xl px-4 pt-8 sm:pt-12">
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--tdg-home-accent)]">
+        The Digital Gifter
+      </p>
+      <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight text-[var(--tdg-home-text)] sm:text-5xl">
+        Create something personal
+      </h1>
+      <p className="mt-3 max-w-xl text-base leading-7 text-[var(--tdg-home-text-muted)] sm:text-lg">
+        Upload a photo and turn it into something worth keeping.
       </p>
 
-      <p className="mt-4 text-sm text-[#c1c8d8]">
-        {uploadedFilesLength > 0 && !hasSelectedTemplate
-          ? "Now select your desired template below ⬇️"
-          : ""}
-      </p>
+      <div
+        onDrop={onDrop}
+        onDragOver={(event) => event.preventDefault()}
+        onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload a photo"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") inputRef.current?.click();
+        }}
+        className="mt-8 cursor-pointer rounded-[28px] border border-dashed border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] px-6 py-14 text-center transition hover:border-[var(--tdg-home-accent)]"
+      >
+        <p className="text-xl font-semibold text-[var(--tdg-home-text)]">Upload a photo</p>
+        <p className="mt-2 text-sm text-[var(--tdg-home-text-muted)]">
+          JPG, PNG or WEBP · Max 10 MB · Up to 4 photos
+        </p>
+      </div>
     </section>
   );
 }

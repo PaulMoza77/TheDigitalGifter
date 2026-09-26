@@ -152,6 +152,46 @@ export function dispatchCreditsRefresh() {
   window.dispatchEvent(new Event("credits:refresh"));
 }
 
+export const GENERATOR_LOOKS = [
+  { id: "for_you", label: "For You" },
+  { id: "christmas", label: "Christmas" },
+  { id: "birthday", label: "Birthday" },
+  { id: "love", label: "Love" },
+  { id: "family", label: "Family" },
+  { id: "pets", label: "Pets" },
+  { id: "more", label: "More" },
+] as const;
+
+export type GeneratorLookId = (typeof GENERATOR_LOOKS)[number]["id"];
+
+const LOOK_OCCASIONS: Record<Exclude<GeneratorLookId, "for_you" | "more">, string[]> = {
+  christmas: ["christmas"],
+  birthday: ["birthday"],
+  love: ["valentines_day", "anniversary", "wedding"],
+  family: ["mothers_day", "fathers_day", "baby_reveal", "new_born", "pregnancy", "kids"],
+  pets: ["dogs", "cats", "other_pets", "pet_loss"],
+};
+
+export function isImageTemplate(template: AnyTemplate) {
+  return String(template.type || "image").toLowerCase() !== "video";
+}
+
+export function templateMatchesLook(template: AnyTemplate, lookId: GeneratorLookId) {
+  if (!isImageTemplate(template)) return false;
+  if (lookId === "for_you") return true;
+  const occasion = normalizeKey(template.occasion || "");
+  const category = normalizeKey(template.main_category || template.mainCategory || "");
+  if (lookId === "pets") {
+    return category === "pets" || LOOK_OCCASIONS.pets.includes(occasion);
+  }
+  if (lookId === "more") {
+    const claimed = new Set(Object.values(LOOK_OCCASIONS).flat());
+    if (category === "pets" || claimed.has(occasion)) return false;
+    return true;
+  }
+  return LOOK_OCCASIONS[lookId].includes(occasion);
+}
+
 export function buildPrompt(input: {
   template: AnyTemplate;
   customInstructions: string;

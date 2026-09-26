@@ -51,11 +51,25 @@ PY
   export HF_CREDENTIALS
 }
 
+load_hf_from_db() {
+  local host="aws-0-eu-west-1.pooler.supabase.com"
+  HF_CREDENTIALS="$(
+    PGPASSWORD="$SUPABASE_DB_PASSWORD" psql -tA -v ON_ERROR_STOP=1 \
+      "host=${host} port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require" \
+      -c "select credential from private.generator_higgsfield_handoff where id = 1"
+  )"
+  export HF_CREDENTIALS
+}
+
 if [[ -z "${HF_CREDENTIALS:-}" ]]; then
   if [[ -n "${MOZAS_SSH_HOST:-}" && -n "${MOZAS_SSH_PRIVATE_KEY:-}" ]]; then
     echo "Loading Higgsfield credentials from VPS app.env (value not printed)."
     load_hf_from_vps
   fi
+fi
+if [[ -z "${HF_CREDENTIALS:-}" ]]; then
+  echo "Loading Higgsfield credentials from the private database handoff (value not printed)."
+  load_hf_from_db || true
 fi
 if [[ -z "${HF_CREDENTIALS:-}" || "${HF_CREDENTIALS}" != *:* ]]; then
   echo "BLOCKED: HF_CREDENTIALS missing or not KEY_ID:KEY_SECRET. Refusing to deploy a fail-closed generator."
@@ -111,6 +125,11 @@ if [[ "$APPLIED" != "1" ]]; then
   exit 1
 fi
 echo "Migration applied."
+if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql -v ON_ERROR_STOP=1 \
+  "host=aws-0-eu-west-1.pooler.supabase.com port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require" \
+  -c "delete from private.generator_higgsfield_handoff where id = 1" >/dev/null 2>&1; then
+  echo "Handoff row removed."
+fi
 
 echo "Deploying generate-nano-banana"
 npx --yes supabase functions deploy generate-nano-banana \

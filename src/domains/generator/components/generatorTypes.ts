@@ -57,6 +57,8 @@ export type EdgeResponse = {
   message?: string;
   imageUrl?: string;
   generation_id?: string;
+  status?: string;
+  contentType?: string;
 };
 
 export type CategoryOption = {

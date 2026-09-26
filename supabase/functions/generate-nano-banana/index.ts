@@ -16,6 +16,8 @@ import {
   isProhibitedIdentity,
   isTemplateAllowed,
 } from "../_shared/contentPolicy.ts";
+import { isPublicGenerator } from "../_shared/higgsfieldImage.ts";
+import { handlePublicGenerator } from "./publicGenerator.ts";
 
 async function generateWithReplicate(prompt: string, imageUrl: string | null) {
   const token = Deno.env.get("REPLICATE_API_TOKEN");
@@ -190,6 +192,17 @@ Deno.serve(async (req) => {
         { error: "Authentication required. Generation must belong to a signed-in owner or a verified paid order." },
         401,
       );
+    }
+
+    if (isPublicGenerator(generation.metadata)) {
+      return await handlePublicGenerator({
+        service,
+        generation,
+        userEmail: userEmail || ownerEmail,
+        admin,
+        serviceRole,
+        paid,
+      });
     }
 
     if (!serviceRole && !admin && isOwner && !paid) {
