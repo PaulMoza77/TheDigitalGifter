@@ -3,8 +3,9 @@
 #   migration 20260926120000_public_generator_higgsfield.sql
 #   edge function generate-nano-banana
 # Does not deploy the frontend. Does not print secret values.
-# Requires SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD.
-# HF_CREDENTIALS may be passed in, or read from the Mozas VPS app.env over SSH.
+# Requires SUPABASE_ACCESS_TOKEN.
+# HF_CREDENTIALS may be passed in, read from the Mozas VPS, or left for the function
+# to read from private.generator_higgsfield_handoff.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,8 +21,7 @@ if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   exit 2
 fi
 if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
-  echo "BLOCKED: SUPABASE_DB_PASSWORD is not set."
-  exit 2
+  echo "SUPABASE_DB_PASSWORD is not set. Migration must already be applied on the TDG database."
 fi
 
 load_hf_from_vps() {
@@ -67,15 +67,18 @@ if [[ -z "${HF_CREDENTIALS:-}" ]]; then
     load_hf_from_vps
   fi
 fi
-if [[ -z "${HF_CREDENTIALS:-}" ]]; then
+if [[ -z "${HF_CREDENTIALS:-}" && -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
   echo "Loading Higgsfield credentials from the private database handoff (value not printed)."
   load_hf_from_db || true
 fi
 if [[ -z "${HF_CREDENTIALS:-}" || "${HF_CREDENTIALS}" != *:* ]]; then
-  echo "BLOCKED: HF_CREDENTIALS missing or not KEY_ID:KEY_SECRET. Refusing to deploy a fail-closed generator."
-  exit 2
+  echo "HF_CREDENTIALS is not available to this job. The function will read the private handoff at runtime."
+  HF_CREDENTIALS=""
 fi
 
+if [[ -z "${HF_CREDENTIALS}" ]]; then
+  echo "Skipping edge secret update."
+else
 echo "Setting Higgsfield secret on ${PROJECT_REF} (value not printed)."
 set +e
 npx --yes supabase secrets set "HF_CREDENTIALS=${HF_CREDENTIALS}" --project-ref "$PROJECT_REF" >/tmp/hf-secret-set.txt 2>&1
@@ -95,8 +98,13 @@ if [[ "$secret_status" -ne 0 ]]; then
 fi
 rm -f /tmp/hf-secret-set.txt
 echo "Higgsfield secret set."
+fi
 
 MIGRATION="supabase/migrations/20260926120000_public_generator_higgsfield.sql"
+if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
+  echo "Skipping migration apply."
+  APPLIED=1
+else
 echo "Applying public generator migration."
 APPLIED=0
 for HOST in \
@@ -125,10 +133,13 @@ if [[ "$APPLIED" != "1" ]]; then
   exit 1
 fi
 echo "Migration applied."
-if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql -v ON_ERROR_STOP=1 \
-  "host=aws-0-eu-west-1.pooler.supabase.com port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require" \
-  -c "delete from private.generator_higgsfield_handoff where id = 1" >/dev/null 2>&1; then
-  echo "Handoff row removed."
+fi
+if [[ -n "${HF_CREDENTIALS}" && -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
+  if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql -v ON_ERROR_STOP=1 \
+    "host=aws-0-eu-west-1.pooler.supabase.com port=5432 dbname=postgres user=postgres.${PROJECT_REF} sslmode=require" \
+    -c "delete from private.generator_higgsfield_handoff where id = 1" >/dev/null 2>&1; then
+    echo "Handoff row removed."
+  fi
 fi
 
 echo "Deploying generate-nano-banana"

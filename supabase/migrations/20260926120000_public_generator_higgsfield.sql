@@ -148,3 +148,28 @@ create table if not exists private.generator_higgsfield_handoff (
 );
 revoke all on table private.generator_higgsfield_handoff from public, anon, authenticated;
 alter table private.generator_higgsfield_handoff enable row level security;
+
+create or replace function public.generator_higgsfield_authorization()
+returns text
+language plpgsql
+security definer
+set search_path = private, public
+as $$
+declare
+  val text;
+  jwt_role text;
+begin
+  jwt_role := coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    nullif(auth.role(), '')
+  );
+  if jwt_role is distinct from 'service_role' then
+    return null;
+  end if;
+  select credential into val from private.generator_higgsfield_handoff where id = 1;
+  return val;
+end;
+$$;
+
+revoke all on function public.generator_higgsfield_authorization() from public, anon, authenticated;
+grant execute on function public.generator_higgsfield_authorization() to service_role;
