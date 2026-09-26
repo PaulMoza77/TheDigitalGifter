@@ -137,11 +137,12 @@ async function budgetAllowsFallback(settings: ContentAutopilotSettings, addition
 }
 
 export async function budgetAllows(settings: ContentAutopilotSettings, additionalUsd = 0): Promise<boolean> {
+  const usage = await ensureDailyUsage();
+  const spent = Number(usage.estimated_spend_usd || 0);
   if (additionalUsd <= 0) {
-    const usage = await ensureDailyUsage();
-    return Number(usage.estimated_spend_usd || 0) <= settings.maxDailySpendUsd;
+    return spent <= settings.maxDailySpendUsd;
   }
-  return tryReserveSpend(settings, additionalUsd);
+  return spent + additionalUsd <= settings.maxDailySpendUsd;
 }
 
 export async function beginResearchLock(date = utcToday()): Promise<boolean> {

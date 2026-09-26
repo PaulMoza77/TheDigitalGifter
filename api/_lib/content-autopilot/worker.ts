@@ -263,8 +263,7 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
     let requestId = clip.higgsfieldVideoRequestId || "";
     if (!requestId) {
       const estimate = await estimateKlingVideoUsd(auth, imageUrl, clip.motionPrompt);
-      const reserved = await budgetAllows(settings, estimate);
-      if (!reserved) {
+      if (!(await budgetAllows(settings, estimate))) {
         await logEvent("budget_stop", { stage: "video_estimate", estimate }, conceptId);
         return;
       }
@@ -302,7 +301,7 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       await persistObjectToVps(videoPath, objectPath);
       clip.videoStoragePath = objectPath;
       clip.higgsfieldVideoRequestId = requestId;
-      await bumpUsage({ videos_generated: 1 });
+      await bumpUsage({ videos_generated: 1, estimated_spend_usd: clip.videoCostUsd ?? estimate });
     await updateConcept(conceptId, {
       clips,
       generation_cost_usd: spend,
