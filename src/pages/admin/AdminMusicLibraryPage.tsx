@@ -3,14 +3,19 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import type { AutopilotMusicTrack } from "../../../api/_lib/christmas-reel-pipeline/types";
+import { supabase } from "@/lib/supabase";
 
 async function api(action: string, body?: Record<string, unknown>) {
-  const token = localStorage.getItem("sb-access-token") || "";
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Sign in to Admin to manage the music library.");
   const response = await fetch(`/api/christmas-reel-pipeline?action=${encodeURIComponent(action)}`, {
     method: body ? "POST" : "GET",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
