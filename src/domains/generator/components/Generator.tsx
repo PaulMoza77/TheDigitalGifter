@@ -3,9 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import VideoModal from "@/components/VideoModal";
 import { useTemplatesQuery, useUserCreditsQuery, useJobsQuery } from "@/data";
-import { useCreateVideoJobMutation } from "@/data";
 import { useCreditsFunnel } from "@/contexts/CreditsFunnelContext";
 import { useBootstrapUser } from "@/hooks/useBootstrapUser";
 import { uploadFileToStorage } from "@/lib/uploadFileToStorage";
@@ -30,7 +28,7 @@ import {
 } from "@/domains/generator/components/generatorTypes";
 
 import {
-  buildPrompt,
+  GENERATOR_LOOKS,
   dispatchCreditsRefresh,
   formatLabel,
   getPublicSupabaseConfig,
@@ -44,7 +42,10 @@ import {
   normalizeTemplate,
   safeReadJson,
   safeString,
+  templateMatchesLook,
+  type GeneratorLookId,
 } from "@/domains/generator/components/generatorUtils";
+import { GENERATOR_SOURCE_BUCKET, aspectLabel } from "../../../../supabase/functions/_shared/higgsfieldImage";
 
 async function getEdgeFunctionHeaders(anonKey: string): Promise<Record<string, string>> {
   const {
@@ -85,26 +86,23 @@ export default function GeneratorPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [previewAfter, setPreviewAfter] = useState<string | null>(null);
+  const [resultContentType, setResultContentType] = useState<string | null>(null);
   const [customInstructions, setCustomInstructions] = useState("");
   const [personalizedName, setPersonalizedName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState("match_input_image");
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState("9:16");
+  const [showMoreSizes, setShowMoreSizes] = useState(false);
+  const [lookId, setLookId] = useState<GeneratorLookId>("for_you");
+  const [showFilters, setShowFilters] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const replacePhotosRef = useRef(false);
+  const generatingLockRef = useRef(false);
 
   const pollingRef = useRef<number | null>(null);
   const isPollingRef = useRef(false);
 
-  const [modal, setModal] = useState({
-    open: false,
-    src: "",
-    title: "",
-  });
-
-  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("all");
-  const [generateAudio, setGenerateAudio] = useState(false);
-  const [negativePrompt, setNegativePrompt] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [typeFilter, setTypeFilter] = useState<"all" | "image" | "video">("image");
 
   const { data: templates = [] } = useTemplatesQuery();
 
@@ -122,7 +120,6 @@ export default function GeneratorPage() {
   const { data: jobsRaw = [] } = useJobsQuery();
   const jobs = (jobsRaw as JobRow[]) || [];
 
-  const { mutateAsync: triggerCreateVideoJob } = useCreateVideoJobMutation();
   const { openFunnel } = useCreditsFunnel();
 
   const categoryFilteredTemplates = useMemo(() => {
@@ -191,23 +188,6 @@ export default function GeneratorPage() {
 
     return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [categoryFilteredTemplates, selectedOccasion]);
-
-  const aspectRatioOptions = [
-    { label: "Match input", value: "match_input_image" },
-    { label: "1:1", value: "1:1" },
-    { label: "16:9", value: "16:9" },
-    { label: "9:16", value: "9:16" },
-    { label: "4:3", value: "4:3" },
-    { label: "3:4", value: "3:4" },
-    { label: "3:2", value: "3:2" },
-    { label: "2:3", value: "2:3" },
-    { label: "4:5", value: "4:5" },
-    { label: "5:4", value: "5:4" },
-    { label: "21:9", value: "21:9" },
-    { label: "9:21", value: "9:21" },
-    { label: "2:1", value: "2:1" },
-    { label: "1:2", value: "1:2" },
-  ];
 
   const selectedCategoryLabel =
     selectedCategory === "all" ? "All" : formatLabel(selectedCategory);
@@ -303,12 +283,10 @@ export default function GeneratorPage() {
       });
     }
 
-    if (typeFilter !== "all") {
-      list = list.filter((template) => String(template.type || "").toLowerCase() === typeFilter);
-    }
+    list = list.filter((template) => templateMatchesLook(template, lookId));
 
     return list;
-  }, [categoryFilteredTemplates, typeFilter, selectedOccasion, selectedStyle]);
+  }, [categoryFilteredTemplates, lookId, selectedOccasion, selectedStyle]);
 
   const templateMap = useMemo(() => {
     const lookup = new Map<string, AnyTemplate>();
@@ -324,11 +302,6 @@ export default function GeneratorPage() {
   const selectedTemplateObj = selectedTemplateId
     ? templateMap.get(selectedTemplateId) ?? null
     : null;
-
-  const currentJob = useMemo(() => {
-    if (!currentJobId) return null;
-    return jobs.find((job) => job.id === currentJobId) ?? null;
-  }, [jobs, currentJobId]);
 
   const stopGenerationPolling = useCallback(() => {
     if (pollingRef.current) {
@@ -348,7 +321,7 @@ export default function GeneratorPage() {
       try {
         const { data, error } = await supabase
           .from("generations")
-          .select("id, status, final_image_url, result_image_url, preview_image_url, error")
+          .select("id, status, final_image_url, result_image_url, preview_image_url, error, metadata")
           .eq("id", generationId)
           .maybeSingle();
 
@@ -371,20 +344,24 @@ export default function GeneratorPage() {
 
         if (generation.status === "completed" && imageUrl) {
           stopGenerationPolling();
+          const meta = (generation as GenerationRow & { metadata?: { result_content_type?: string } }).metadata;
+          setResultContentType(meta?.result_content_type || null);
           setPreviewAfter(imageUrl);
           setIsGenerating(false);
+          generatingLockRef.current = false;
           setCurrentGenerationId(null);
           refreshCredits();
-          toast.success("Your card is ready!");
+          toast.success("Your creation is ready");
           return;
         }
 
         if (generation.status === "failed" || generation.status === "error") {
           stopGenerationPolling();
           setIsGenerating(false);
+          generatingLockRef.current = false;
           setCurrentGenerationId(null);
           refreshCredits();
-          toast.error(generation.error || "Failed to generate. Please try again.");
+          toast.error(generation.error || "Generation is temporarily unavailable. Please try again shortly.");
         }
       } finally {
         isPollingRef.current = false;
@@ -418,22 +395,6 @@ export default function GeneratorPage() {
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [uploadedFiles]);
-
-  useEffect(() => {
-    if (!currentJob) return;
-    if (currentJob.type !== "video") return;
-
-    if (currentJob.status === "done" && currentJob.result_url) {
-      setPreviewAfter(currentJob.result_url);
-      setIsGenerating(false);
-      refreshCredits();
-      toast.success("Your video is ready!");
-    } else if (currentJob.status === "error") {
-      setIsGenerating(false);
-      refreshCredits();
-      toast.error(currentJob.error_message || "Failed to generate. Please try again.");
-    }
-  }, [currentJob, refreshCredits]);
 
   const handleTemplateSelect = useCallback(
     (template: AnyTemplate) => {
@@ -473,53 +434,39 @@ export default function GeneratorPage() {
     [setSearchParams]
   );
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
+  const addPhotos = useCallback((files: File[], replace: boolean) => {
+    const accepted = new Set(["image/jpeg", "image/png", "image/webp"]);
     const valid = files.filter((file) => {
+      if (!accepted.has(file.type)) {
+        toast.error("Use a JPG, PNG, or WEBP photo.");
+        return false;
+      }
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`${file.name} is too large. Maximum 10MB.`);
         return false;
       }
-
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image.`);
-        return false;
-      }
-
       return true;
     });
-
-    if (valid.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...valid]);
-      toast.success(`${valid.length} photo(s) uploaded!`);
-    }
-
-    event.target.value = "";
+    if (valid.length === 0) return;
+    setUploadedFiles((prev) => {
+      const next = replace ? valid : [...prev, ...valid];
+      if (next.length > 4) toast.error("You can add up to 4 photos. Extra photos were not added.");
+      return next.slice(0, 4);
+    });
   }, []);
+
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const replace = replacePhotosRef.current;
+    replacePhotosRef.current = false;
+    if (files.length > 0) addPhotos(files, replace);
+    event.target.value = "";
+  }, [addPhotos]);
 
   const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-
-    const files = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith("image/")
-    );
-
-    const valid = files.filter((file) => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} is too large. Maximum 10MB.`);
-        return false;
-      }
-
-      return true;
-    });
-
-    if (valid.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...valid]);
-      toast.success(`${valid.length} photo(s) uploaded!`);
-    }
-  }, []);
+    addPhotos(Array.from(event.dataTransfer.files), false);
+  }, [addPhotos]);
 
   const handleRemoveFile = useCallback((index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
@@ -558,9 +505,7 @@ export default function GeneratorPage() {
 
   async function createGenerationAndRun(input: {
     template: AnyTemplate;
-    sourceImageUrl: string;
-    styleImageUrl: string;
-    prompt: string;
+    sourcePaths: string[];
     aspectRatio: string;
   }) {
     const {
@@ -578,10 +523,11 @@ export default function GeneratorPage() {
       template_id: templateId,
       style_id: styleId,
       template_title: safeString(input.template.title),
-      template_prompt: safeString((input.template as any).prompt),
-      style_image_url: input.styleImageUrl,
-      source_image_url: input.sourceImageUrl,
       aspect_ratio: input.aspectRatio,
+      user_instructions: customInstructions.trim() || null,
+      personalized_name: personalizedName.trim() || null,
+      source_storage_bucket: GENERATOR_SOURCE_BUCKET,
+      source_storage_paths: input.sourcePaths,
       user_id: effectiveUserId,
       email: effectiveEmail,
       category: getTemplateMainCategory(input.template),
@@ -597,9 +543,9 @@ export default function GeneratorPage() {
         style_id: styleId || null,
         template_id: templateId || null,
         title: safeString(input.template.title) || "tdg_generation",
-        source_image_url: input.sourceImageUrl,
-        preview_image_url: input.sourceImageUrl,
-        prompt: input.prompt,
+        source_image_url: null,
+        preview_image_url: null,
+        prompt: "Personalized image",
         status: "pending",
         metadata,
       })
@@ -626,19 +572,25 @@ export default function GeneratorPage() {
 
     const edgeData = await safeReadJson(res);
 
+    if (res.status === 202 || edgeData.status === "processing") {
+      return generationId;
+    }
+
     if (!res.ok) {
       throw new Error(
         safeString(edgeData.error || edgeData.message) ||
-          `Edge Function returned a non-2xx status code (${res.status})`
+          "Generation is temporarily unavailable. Please try again shortly."
       );
     }
 
     if (edgeData.imageUrl && isHttpUrl(edgeData.imageUrl)) {
+      setResultContentType(safeString(edgeData.contentType) || null);
       setPreviewAfter(edgeData.imageUrl);
       setCurrentGenerationId(null);
       setIsGenerating(false);
+      generatingLockRef.current = false;
       refreshCredits();
-      toast.success("Your card is ready!");
+      toast.success("Your creation is ready");
     }
 
     return generationId;
@@ -700,104 +652,66 @@ export default function GeneratorPage() {
       block: "start",
     });
 
+    if (generatingLockRef.current) return;
+    generatingLockRef.current = true;
     setIsGenerating(true);
-    setCurrentJobId(null);
     setCurrentGenerationId(null);
     setPreviewAfter(null);
+    setResultContentType(null);
     stopGenerationPolling();
 
     try {
-      const isVideo = String(template.type || "image").toLowerCase() === "video";
-
-      if (isVideo && uploadedFiles.length > 3) {
-        toast.error("You can upload up to 3 photos for video generation.");
-        setIsGenerating(false);
-        return;
+      if (String(template.type || "image").toLowerCase() === "video") {
+        throw new Error("Choose an image style.");
       }
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      const ownerId = safeString(authUser?.id || (user as { id?: string }).id);
+      if (!ownerId) throw new Error("No authenticated user found.");
 
-      const inputUrls = await Promise.all(
-        uploadedFiles.map(async (file) => {
-          const { publicUrl } = await uploadFileToStorage(file, {
-            bucket: "uploads",
-            folder: "inputs",
+      const sourcePaths = await Promise.all(
+        uploadedFiles.slice(0, 4).map(async (file, index) => {
+          const uploaded = await uploadFileToStorage(file, {
+            bucket: GENERATOR_SOURCE_BUCKET,
+            folder: ownerId,
             upsert: false,
-            makePublicUrl: true,
+            makePublicUrl: false,
           });
-
-          return publicUrl;
-        })
+          if (!uploaded.path.startsWith(`${ownerId}/`)) {
+            throw new Error("Could not save your photo.");
+          }
+          return uploaded.path || `${ownerId}/photo-${index}`;
+        }),
       );
 
-      if (isVideo) {
-        if (customInstructions && customInstructions.length > 2000) {
-          throw new Error("User instructions must be <= 2000 characters");
-        }
-
-        if (negativePrompt && negativePrompt.length > 500) {
-          throw new Error("Negative prompt must be <= 500 characters");
-        }
-
-        let finalUserInstructions = customInstructions.trim();
-
-        if (selectedLanguage && selectedLanguage !== "English") {
-          const languageInstruction = `The dialogue and any spoken words should be in ${selectedLanguage}.`;
-          finalUserInstructions = finalUserInstructions
-            ? `${finalUserInstructions} ${languageInstruction}`
-            : languageInstruction;
-        }
-
-        const res: any = await triggerCreateVideoJob({
-          templateId: getTemplateId(template),
-          inputUrls,
-          userInstructions: finalUserInstructions || undefined,
-          duration: 8,
-          resolution: "1080p",
-          aspectRatio: "16:9",
-          generateAudio,
-          negativePrompt: negativePrompt.trim() || undefined,
-        });
-
-        const jobId = String(res?.jobId ?? res?.id ?? res);
-        setCurrentJobId(jobId);
-        refreshCredits();
-        toast.success("Video generation started!");
-        return;
-      }
-
-      const sourceImageUrl = inputUrls[0];
       const styleImageUrl = getTemplateImageUrl(template);
-
-      if (!sourceImageUrl || !isHttpUrl(sourceImageUrl)) {
-        throw new Error("Uploaded image URL is invalid.");
-      }
-
       if (!styleImageUrl || !isHttpUrl(styleImageUrl)) {
-        throw new Error("Selected template has no valid public image URL.");
+        throw new Error("Selected template has no valid preview image.");
       }
 
-      const prompt = buildPrompt({
+      await createGenerationAndRun({
         template,
-        customInstructions,
-        personalizedName,
-      });
-
-      const generationId = await createGenerationAndRun({
-        template,
-        sourceImageUrl,
-        styleImageUrl,
-        prompt,
+        sourcePaths,
         aspectRatio: selectedAspectRatio,
       });
-
-      setCurrentGenerationId(generationId);
-      refreshCredits();
-      toast.success("Generation started!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[handleGenerate] error", error);
       setIsGenerating(false);
+      generatingLockRef.current = false;
       refreshCredits();
-      toast.error(error?.message ?? "Failed to generate.");
+      const message = error instanceof Error ? error.message : "Failed to generate.";
+      toast.error(message);
+      if (/not enough credits/i.test(message)) {
+        openFunnel({
+          mode: "insufficient_credits",
+          required: Number(template.creditCost ?? 1),
+          available: userCredits ?? 0,
+        });
+      }
     }
+    // createGenerationAndRun is recreated each render and already closed over here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     user,
     selectedTemplateId,
@@ -809,87 +723,185 @@ export default function GeneratorPage() {
     openFunnel,
     stopGenerationPolling,
     customInstructions,
-    negativePrompt,
-    selectedLanguage,
-    triggerCreateVideoJob,
-    generateAudio,
     refreshCredits,
     selectedAspectRatio,
   ]);
 
+  useEffect(() => {
+    if (!currentGenerationId || !isGenerating) return;
+    const timer = window.setInterval(() => {
+      void (async () => {
+        try {
+          const { url: supabaseUrl, anon } = getPublicSupabaseConfig();
+          const headers = await getEdgeFunctionHeaders(anon);
+          const res = await fetch(`${supabaseUrl}/functions/v1/generate-nano-banana`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ generation_id: currentGenerationId }),
+          });
+          const edgeData = await safeReadJson(res);
+          if (edgeData.imageUrl && isHttpUrl(edgeData.imageUrl)) {
+            setResultContentType(safeString(edgeData.contentType) || null);
+            setPreviewAfter(edgeData.imageUrl);
+            setIsGenerating(false);
+            generatingLockRef.current = false;
+            setCurrentGenerationId(null);
+            refreshCredits();
+            toast.success("Your creation is ready");
+            return;
+          }
+          if (!res.ok && res.status !== 202) {
+            setIsGenerating(false);
+            generatingLockRef.current = false;
+            refreshCredits();
+            toast.error(
+              safeString(edgeData.error || edgeData.message) ||
+                "Generation is temporarily unavailable. Please try again shortly.",
+            );
+          }
+        } catch {
+          setIsGenerating(false);
+          generatingLockRef.current = false;
+          toast.error("Generation is temporarily unavailable. Please try again shortly.");
+        }
+      })();
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [currentGenerationId, isGenerating, refreshCredits]);
+
+  const photoCountLabel = uploadedFiles.length === 1 ? "1 photo" : `${uploadedFiles.length} photos`;
+  const styleLabel = safeString(selectedTemplateObj?.title) || "Style";
+  const summary = selectedTemplateObj
+    ? `${photoCountLabel} · ${styleLabel} · ${aspectLabel(selectedAspectRatio)}`
+    : "";
+  const creditCost = selectedTemplateObj ? Number(selectedTemplateObj.creditCost ?? 1) : null;
+
   return (
-    <div className="relative min-h-screen overflow-x-hidden text-[#f6f8ff]">
-      <SnowBackground />
+    <div className="relative min-h-screen overflow-x-hidden bg-[var(--tdg-home-bg)] pb-4 text-[var(--tdg-home-text)]">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        onChange={handleFileSelect}
+        aria-label="Select a photo"
+        className="hidden"
+      />
+      {lookId === "christmas" ? <SnowBackground /> : null}
 
       <UploadSection
         uploadedFilesLength={uploadedFiles.length}
-        hasSelectedTemplate={!!selectedTemplateId}
         onDrop={handleDrop}
-        onFileSelect={handleFileSelect}
+        inputRef={fileInputRef}
       />
-
-      {modal.open && (
-        <VideoModal
-          src={modal.src}
-          title={modal.title}
-          onClose={() => setModal({ open: false, src: "", title: "" })}
-        />
-      )}
 
       <UploadedPreviewStrip
         previewUrls={previewUrls}
         onRemoveFile={handleRemoveFile}
+        onReplace={() => {
+          replacePhotosRef.current = true;
+          fileInputRef.current?.click();
+        }}
+        onRemoveAll={() => setUploadedFiles([])}
       />
 
-      <GeneratorFilters
-        selectedCategory={selectedCategory}
-        selectedOccasion={selectedOccasion}
-        selectedStyle={selectedStyle}
-        selectedCategoryLabel={selectedCategoryLabel}
-        selectedOccasionLabel={selectedOccasionLabel}
-        selectedStyleLabel={selectedStyleLabel}
-        filteredTemplatesLength={filteredTemplates.length}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        occasionOptions={occasionOptions}
-        styleOptions={styleOptions}
-        updateFilterParams={updateFilterParams}
-      />
+      <section className="mx-auto mt-8 w-full max-w-5xl px-4">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-2xl text-[var(--tdg-home-text)]">Choose a look</h2>
+            <p className="text-sm text-[var(--tdg-home-text-muted)]">Pick a style, then create.</p>
+          </div>
+          <button
+            type="button"
+            className="min-h-11 text-sm font-semibold text-[var(--tdg-home-accent)]"
+            onClick={() => setShowFilters((open) => !open)}
+          >
+            Filters
+          </button>
+        </div>
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+          {GENERATOR_LOOKS.map((look) => (
+            <button
+              key={look.id}
+              type="button"
+              onClick={() => setLookId(look.id)}
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${
+                lookId === look.id
+                  ? "bg-[var(--tdg-home-accent)] text-[#1a1208]"
+                  : "border border-[var(--tdg-home-border)]"
+              }`}
+            >
+              {look.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {showFilters ? (
+        <GeneratorFilters
+          selectedCategory={selectedCategory}
+          selectedOccasion={selectedOccasion}
+          selectedStyle={selectedStyle}
+          selectedCategoryLabel={selectedCategoryLabel}
+          selectedOccasionLabel={selectedOccasionLabel}
+          selectedStyleLabel={selectedStyleLabel}
+          filteredTemplatesLength={filteredTemplates.length}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          occasionOptions={occasionOptions}
+          styleOptions={styleOptions}
+          updateFilterParams={updateFilterParams}
+        />
+      ) : null}
 
       <TemplatesGrid
         filteredTemplates={filteredTemplates}
         selectedTemplateId={selectedTemplateId}
         onTemplateSelect={handleTemplateSelect}
-        onOpenModal={(src, title) => setModal({ open: true, src, title: title || "" })}
+        onOpenModal={() => undefined}
       />
 
       <BeforeAfterPreview
-        previewUrls={previewUrls}
         previewAfter={previewAfter}
+        resultContentType={resultContentType}
         isGenerating={isGenerating}
-        currentJob={currentJob}
+        hasPhoto={uploadedFiles.length > 0}
+        hasStyle={Boolean(selectedTemplateId)}
         selectedTemplateObj={selectedTemplateObj}
-        onDownload={handleDownload}
+        creditCost={creditCost}
+        onDownload={(url, filename) => {
+          void handleDownload(url, filename);
+        }}
+        onTryAnotherStyle={() => {
+          setPreviewAfter(null);
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete("template");
+            return next;
+          });
+        }}
+        onCreateAnother={() => {
+          setPreviewAfter(null);
+          setUploadedFiles([]);
+          setResultContentType(null);
+        }}
+        onRegenerate={() => void handleGenerate()}
       />
 
       <GenerationBar
-        selectedTemplateObj={selectedTemplateObj}
-        selectedTemplateId={selectedTemplateId}
-        uploadedFilesLength={uploadedFiles.length}
+        canGenerate={Boolean(selectedTemplateId && uploadedFiles.length > 0)}
         isGenerating={isGenerating}
+        creditCost={creditCost}
+        summary={summary}
         customInstructions={customInstructions}
         setCustomInstructions={setCustomInstructions}
         personalizedName={personalizedName}
         setPersonalizedName={setPersonalizedName}
-        negativePrompt={negativePrompt}
-        setNegativePrompt={setNegativePrompt}
-        selectedLanguage={selectedLanguage}
-        setSelectedLanguage={setSelectedLanguage}
-        generateAudio={generateAudio}
-        setGenerateAudio={setGenerateAudio}
+        showName={normalizeKey(selectedTemplateObj?.occasion) === "name_cards"}
         selectedAspectRatio={selectedAspectRatio}
         setSelectedAspectRatio={setSelectedAspectRatio}
-        aspectRatioOptions={aspectRatioOptions}
+        showMoreSizes={showMoreSizes}
+        setShowMoreSizes={setShowMoreSizes}
         onGenerate={() => void handleGenerate()}
       />
     </div>

@@ -156,13 +156,15 @@ describe("Christmas Planner account, auth, and bonus credits", () => {
     expect(generator).toContain("useUserCreditsQuery");
     expect(credits).toContain('.from("credits_ledger")');
     expect(credits).toContain('.eq("user_convex_id", normalizedEmail)');
-    expect(bar).toContain("Video generation costs");
+    expect(bar).toContain("Create my image");
+    expect(bar).not.toContain("With Audio");
     expect(generator).toContain("generate-nano-banana");
+    expect(generator).not.toContain("Video generation is temporarily disabled");
   });
 
   it("keeps existing generator debit and failed-generation refund rules", () => {
     const spend = readSrc("supabase/migrations/20260913120000_christmas_commercial_offers.sql");
-    const banana = readSrc("supabase/functions/generate-nano-banana/index.ts");
+    const banana = readSrc("supabase/functions/generate-nano-banana/publicGenerator.ts");
     const jobs = readSrc("supabase/functions/app-christmas-job/index.ts");
     expect(spend).toContain("spend_credits_idempotent");
     expect(spend).toContain("configured_credits");

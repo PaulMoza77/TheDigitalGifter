@@ -8,21 +8,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 
 import type { CategoryKey, FilterOption } from "./generatorTypes";
-import {
-  ALL_CATEGORIES,
-  ALL_OCCASIONS,
-  ALL_STYLES,
-} from "./generatorTypes";
+import { ALL_OCCASIONS, ALL_STYLES } from "./generatorTypes";
 
 const CATEGORY_OPTIONS: Array<{
   value: CategoryKey;
@@ -85,8 +74,6 @@ export default function GeneratorFilters({
   selectedOccasionLabel,
   selectedStyleLabel,
   filteredTemplatesLength,
-  typeFilter,
-  setTypeFilter,
   occasionOptions,
   styleOptions,
   updateFilterParams,
@@ -112,24 +99,7 @@ export default function GeneratorFilters({
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Select
-              value={typeFilter}
-              onValueChange={(value) =>
-                setTypeFilter(value as "all" | "image" | "video")
-              }
-            >
-              <SelectTrigger className="h-11 w-full min-w-[160px] rounded-2xl border-white/10 bg-black/25 text-white">
-                <SelectValue placeholder="Media type" />
-              </SelectTrigger>
-
-              <SelectContent className="border-white/15 bg-[#0b1220] text-white">
-                <SelectItem value="all">All Media</SelectItem>
-                <SelectItem value="image">Images</SelectItem>
-                <SelectItem value="video">Videos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="text-sm text-[var(--tdg-home-text-muted)]">Image styles only</div>
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
