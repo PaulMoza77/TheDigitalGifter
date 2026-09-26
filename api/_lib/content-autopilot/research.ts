@@ -76,6 +76,12 @@ export async function runDailyResearch(input: {
     return { inserted: 0, duplicates: 0 };
   }
 
+  const { beginResearchLock } = await import("./settings");
+  const allowed = await beginResearchLock(today);
+  if (!allowed) {
+    return { inserted: 0, duplicates: 0 };
+  }
+
   await refreshConceptPerformance();
 
   const { data: priorRows } = await service
@@ -146,7 +152,7 @@ export async function runDailyResearch(input: {
     priorConcepts.push(candidate.concept);
     inserted += 1;
   }
-  await bumpUsage({ research_candidates: inserted, research_completed: true });
+  await bumpUsage({ research_candidates: inserted });
   await logEvent("research_completed", { inserted, duplicates, requested: input.candidateLimit });
   return { inserted, duplicates };
 }

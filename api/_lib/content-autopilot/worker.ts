@@ -140,56 +140,79 @@ async function processPromptsReady(row: Record<string, unknown>, settings: Await
       return;
     }
     const clip = pending;
-      if ((clip.imageAttempts || 0) >= settings.maxImageAttemptsPerClip) {
-        await failConcept(conceptId, `image_attempts_exceeded_clip_${clip.index}`);
+    if ((clip.imageAttempts || 0) >= settings.maxImageAttemptsPerClip) {
+      await failConcept(conceptId, `image_attempts_exceeded_clip_${clip.index}`);
+      return;
+    }
+    if (!(await budgetAllows(settings))) {
+      await logEvent("budget_stop", { stage: "image" }, conceptId);
+      return;
+    }
+    let requestId = clip.higgsfieldImageRequestId || "";
+    if (requestId) {
+      const polledExisting = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 40, sleepMs: 2500 });
+      if (!polledExisting.done) {
+        await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
         return;
       }
-      if (!(await budgetAllows(settings))) {
-        await logEvent("budget_stop", { stage: "image" }, conceptId);
-        return;
+      if (polledExisting.failed || !polledExisting.body) {
+        clip.higgsfieldImageRequestId = null;
+        requestId = "";
+      } else {
+        const imageUrlExisting = extractHiggsfieldImageUrl(polledExisting.body);
+        if (imageUrlExisting) clip.imageUrl = imageUrlExisting;
       }
-      const requestId = await submitContentImage(auth, clip.imagePrompt);
-      const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 40, sleepMs: 2500 });
-      if (!polled.done || polled.failed || !polled.body) {
+    }
+    if (!requestId) {
+      requestId = await submitContentImage(auth, clip.imagePrompt);
+      clip.higgsfieldImageRequestId = requestId;
+      await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
+    }
+    const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 40, sleepMs: 2500 });
+    if (!polled.done || polled.failed || !polled.body) {
+      if (polled.done) {
         clip.imageAttempts = (clip.imageAttempts || 0) + 1;
         await bumpUsage({ image_retries: 1 });
-        await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
-        if ((clip.imageAttempts || 0) >= settings.maxImageAttemptsPerClip) {
-          await failConcept(conceptId, `image_generation_failed_clip_${clip.index}`);
-        }
-        return;
+        clip.higgsfieldImageRequestId = null;
       }
-      const imageUrl = extractHiggsfieldImageUrl(polled.body);
-      if (!imageUrl) {
-        await failConcept(conceptId, `image_url_missing_clip_${clip.index}`);
-        return;
+      await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
+      if ((clip.imageAttempts || 0) >= settings.maxImageAttemptsPerClip) {
+        await failConcept(conceptId, `image_generation_failed_clip_${clip.index}`);
       }
-      const imagePath = join(workDir, `clip_${clip.index}.jpg`);
-      await downloadUrl(imageUrl, imagePath);
-      await bumpUsage({ images_generated: 1 });
-      clip.imageUrl = imageUrl;
-      clip.higgsfieldImageRequestId = requestId;
-      clip.imageAttempts = (clip.imageAttempts || 0) + 1;
+      return;
+    }
+    const imageUrl = extractHiggsfieldImageUrl(polled.body);
+    if (!imageUrl) {
+      await failConcept(conceptId, `image_url_missing_clip_${clip.index}`);
+      return;
+    }
+    const imagePath = join(workDir, `clip_${clip.index}.jpg`);
+    await downloadUrl(imageUrl, imagePath);
+    await bumpUsage({ images_generated: 1 });
+    clip.imageUrl = imageUrl;
+    clip.imageAttempts = (clip.imageAttempts || 0) + 1;
 
-      if (!imageQcConfigured()) {
-        await failConcept(conceptId, "image_qc_not_configured");
-        return;
-      }
-      const qc = await runImageQualityGate({ imagePath, imagePrompt: clip.imagePrompt });
-      clip.imageQc = qc.verdict;
-      clip.imageQcReason = qc.reason;
-      if (qc.verdict === "REJECT") {
-        await failConcept(conceptId, `image_qc_reject:${qc.reason}`);
-        return;
-      }
-      if (qc.verdict === "REGENERATE") {
-        await bumpUsage({ image_retries: 1 });
-        await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
-        return;
-      }
-      const objectPath = `productions/content-autopilot/${conceptId}/clip-${clip.index}.jpg`;
-      await persistObjectToVps(imagePath, objectPath);
-      clip.imageStoragePath = objectPath;
+    if (!imageQcConfigured()) {
+      await failConcept(conceptId, "image_qc_not_configured");
+      return;
+    }
+    const qc = await runImageQualityGate({ imagePath, imagePrompt: clip.imagePrompt });
+    clip.imageQc = qc.verdict;
+    clip.imageQcReason = qc.reason;
+    await logEvent("image_qc", { clip: clip.index, verdict: qc.verdict, reason: qc.reason }, conceptId);
+    if (qc.verdict === "REJECT") {
+      await failConcept(conceptId, `image_qc_reject:${qc.reason}`);
+      return;
+    }
+    if (qc.verdict === "REGENERATE") {
+      await bumpUsage({ image_retries: 1 });
+      clip.higgsfieldImageRequestId = null;
+      await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
+      return;
+    }
+    const objectPath = `productions/content-autopilot/${conceptId}/clip-${clip.index}.jpg`;
+    await persistObjectToVps(imagePath, objectPath);
+    clip.imageStoragePath = objectPath;
 
     await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
     const allPassed = clips.every((c) => c.imageQc === "PASS" && c.imageStoragePath);
@@ -218,20 +241,32 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       });
       return;
     }
-      if (!(await dailyLimitOk(settings, "videos"))) throw new Error("daily_video_limit");
-      if (!(await budgetAllows(settings))) {
-        await logEvent("budget_stop", { stage: "video" }, conceptId);
-        return;
-      }
-      const imageUrl = clip.imageUrl;
-      if (!imageUrl) throw new Error("missing_image_url_for_video");
+    if (clip.imageQc !== "PASS" || !clip.imageStoragePath) {
+      await failConcept(conceptId, "video_blocked_until_image_qc_pass");
+      return;
+    }
+    if (!(await dailyLimitOk(settings, "videos"))) throw new Error("daily_video_limit");
+    if (!(await budgetAllows(settings))) {
+      await logEvent("budget_stop", { stage: "video" }, conceptId);
+      return;
+    }
+    const imageUrl = clip.imageUrl;
+    if (!imageUrl) throw new Error("missing_image_url_for_video");
+    let requestId = clip.higgsfieldVideoRequestId || "";
+    if (!requestId) {
       const estimate = await estimateKlingVideoUsd(auth, imageUrl, clip.motionPrompt);
-      if (!(await budgetAllows(settings, estimate))) {
+      const reserved = await budgetAllows(settings, estimate);
+      if (!reserved) {
         await logEvent("budget_stop", { stage: "video_estimate", estimate }, conceptId);
         return;
       }
-      const requestId = await submitKlingVideo(auth, imageUrl, clip.motionPrompt);
-      const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 80, sleepMs: 4000 });
+      requestId = await submitKlingVideo(auth, imageUrl, clip.motionPrompt);
+      clip.higgsfieldVideoRequestId = requestId;
+      clip.videoCostUsd = estimate;
+      spend += estimate;
+      await updateConcept(conceptId, { clips, generation_cost_usd: spend });
+    }
+    const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 80, sleepMs: 4000 });
       if (!polled.done || polled.failed || !polled.body) {
         await bumpUsage({ video_retries: 1 });
         await failConcept(conceptId, `video_generation_failed_clip_${clip.index}`);
@@ -248,9 +283,7 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       await persistObjectToVps(videoPath, objectPath);
       clip.videoStoragePath = objectPath;
       clip.higgsfieldVideoRequestId = requestId;
-      clip.videoCostUsd = estimate;
-      spend += estimate;
-      await bumpUsage({ videos_generated: 1, estimated_spend_usd: estimate });
+      await bumpUsage({ videos_generated: 1 });
     await updateConcept(conceptId, {
       clips,
       generation_cost_usd: spend,
@@ -267,6 +300,10 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
 
 async function processAssemble(row: Record<string, unknown>) {
   const conceptId = String(row.id);
+  if (row.library_asset_id) {
+    await updateConcept(conceptId, { pipeline_status: "library_pending_finish" });
+    return;
+  }
   const clips = parseClips(row.clips);
   const workDir = await mkdtemp(join(tmpdir(), "tdg-ca-a-"));
   try {
@@ -383,7 +420,8 @@ export async function tickContentAutopilot(workerId: string): Promise<Record<str
     result.research = research;
   }
 
-  if (Boolean(usage.research_completed) || Number(result.research ? (result.research as { inserted?: number }).inserted || 0 : 0) > 0) {
+  const usageAfter = await ensureDailyUsage();
+  if (Boolean(usageAfter.research_completed) || Number((result.research as { inserted?: number } | undefined)?.inserted || 0) > 0) {
     result.selection = await selectDailyConcepts(settings.productionConceptsPerDay);
   }
 
@@ -394,14 +432,33 @@ export async function tickContentAutopilot(workerId: string): Promise<Record<str
 
   const service = getServiceClient();
   const activeStatuses = ["selected", "prompts_ready", "generating_assets", "qc_review", "assembling_reel", "library_pending_finish"];
-  const { data: nextConcept } = await service
-    .from("content_concepts")
-    .select("*")
-    .eq("usage_date", utcToday())
-    .in("pipeline_status", activeStatuses)
-    .order("updated_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const { data: claimedRows, error: claimError } = await service.rpc("claim_content_autopilot_concept", {
+    p_worker_id: workerId,
+    p_usage_date: utcToday(),
+  });
+  if (claimError) {
+    const { data: nextConcept } = await service
+      .from("content_concepts")
+      .select("*")
+      .eq("usage_date", utcToday())
+      .in("pipeline_status", activeStatuses)
+      .order("updated_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (nextConcept) {
+      try {
+        await processConceptRow(nextConcept as Record<string, unknown>, settings);
+        result.processedConceptId = nextConcept.id;
+        result.processedStatus = nextConcept.pipeline_status;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await failConcept(String(nextConcept.id), message);
+        result.processError = message.slice(0, 200);
+      }
+    }
+    return result;
+  }
+  const nextConcept = (claimedRows || [])[0];
   if (nextConcept) {
     try {
       await processConceptRow(nextConcept as Record<string, unknown>, settings);

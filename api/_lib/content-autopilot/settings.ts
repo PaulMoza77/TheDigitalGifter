@@ -73,41 +73,87 @@ export async function logEvent(kind: string, detail: Record<string, unknown>, co
   });
 }
 
-export async function bumpUsage(
-  patch: Partial<{
-    research_candidates: number;
-    production_concepts: number;
-    images_generated: number;
-    image_retries: number;
-    videos_generated: number;
-    video_retries: number;
-    estimated_spend_usd: number;
-    research_completed: boolean;
-  }>,
-  date = utcToday(),
-) {
-  const usage = await ensureDailyUsage(date);
+type UsagePatch = Partial<{
+  research_candidates: number;
+  production_concepts: number;
+  images_generated: number;
+  image_retries: number;
+  videos_generated: number;
+  video_retries: number;
+  estimated_spend_usd: number;
+  research_completed: boolean;
+}>;
+
+export async function bumpUsage(patch: UsagePatch, date = utcToday()) {
   const service = getServiceClient();
-  const next = {
-    research_candidates: Number(usage.research_candidates || 0) + Number(patch.research_candidates || 0),
-    production_concepts: Number(usage.production_concepts || 0) + Number(patch.production_concepts || 0),
-    images_generated: Number(usage.images_generated || 0) + Number(patch.images_generated || 0),
-    image_retries: Number(usage.image_retries || 0) + Number(patch.image_retries || 0),
-    videos_generated: Number(usage.videos_generated || 0) + Number(patch.videos_generated || 0),
-    video_retries: Number(usage.video_retries || 0) + Number(patch.video_retries || 0),
-    estimated_spend_usd: Number(usage.estimated_spend_usd || 0) + Number(patch.estimated_spend_usd || 0),
-    research_completed: patch.research_completed ?? Boolean(usage.research_completed),
-    updated_at: new Date().toISOString(),
-  };
-  const { error } = await service.from("content_autopilot_daily_usage").update(next).eq("usage_date", date);
-  if (error) throw error;
-  return next;
+  const { data, error } = await service.rpc("content_autopilot_bump_usage", {
+    p_usage_date: date,
+    p_research_candidates: patch.research_candidates ?? 0,
+    p_production_concepts: patch.production_concepts ?? 0,
+    p_images_generated: patch.images_generated ?? 0,
+    p_image_retries: patch.image_retries ?? 0,
+    p_videos_generated: patch.videos_generated ?? 0,
+    p_video_retries: patch.video_retries ?? 0,
+    p_estimated_spend_usd: patch.estimated_spend_usd ?? 0,
+    p_research_completed: patch.research_completed ?? null,
+  });
+  if (error) {
+    const usage = await ensureDailyUsage(date);
+    const next = {
+      research_candidates: Number(usage.research_candidates || 0) + Number(patch.research_candidates || 0),
+      production_concepts: Number(usage.production_concepts || 0) + Number(patch.production_concepts || 0),
+      images_generated: Number(usage.images_generated || 0) + Number(patch.images_generated || 0),
+      image_retries: Number(usage.image_retries || 0) + Number(patch.image_retries || 0),
+      videos_generated: Number(usage.videos_generated || 0) + Number(patch.videos_generated || 0),
+      video_retries: Number(usage.video_retries || 0) + Number(patch.video_retries || 0),
+      estimated_spend_usd: Number(usage.estimated_spend_usd || 0) + Number(patch.estimated_spend_usd || 0),
+      research_completed: patch.research_completed ?? Boolean(usage.research_completed),
+      updated_at: new Date().toISOString(),
+    };
+    const { error: updateError } = await service.from("content_autopilot_daily_usage").update(next).eq("usage_date", date);
+    if (updateError) throw updateError;
+    return next;
+  }
+  return (data || {}) as Record<string, unknown>;
+}
+
+export async function tryReserveSpend(settings: ContentAutopilotSettings, additionalUsd: number, date = utcToday()): Promise<boolean> {
+  const service = getServiceClient();
+  const { data, error } = await service.rpc("content_autopilot_try_reserve_spend", {
+    p_usage_date: date,
+    p_additional_usd: additionalUsd,
+    p_max_daily_usd: settings.maxDailySpendUsd,
+  });
+  if (error) {
+    return budgetAllowsFallback(settings, additionalUsd, date);
+  }
+  return Boolean(data);
+}
+
+async function budgetAllowsFallback(settings: ContentAutopilotSettings, additionalUsd: number, date: string): Promise<boolean> {
+  const usage = await ensureDailyUsage(date);
+  const spent = Number(usage.estimated_spend_usd || 0) + additionalUsd;
+  return spent <= settings.maxDailySpendUsd;
 }
 
 export async function budgetAllows(settings: ContentAutopilotSettings, additionalUsd = 0): Promise<boolean> {
-  const usage = await ensureDailyUsage();
-  const spent = Number(usage.estimated_spend_usd || 0) + additionalUsd;
-  return spent <= settings.maxDailySpendUsd;
+  if (additionalUsd <= 0) {
+    const usage = await ensureDailyUsage();
+    return Number(usage.estimated_spend_usd || 0) <= settings.maxDailySpendUsd;
+  }
+  return tryReserveSpend(settings, additionalUsd);
+}
+
+export async function beginResearchLock(date = utcToday()): Promise<boolean> {
+  const service = getServiceClient();
+  const { data, error } = await service.rpc("content_autopilot_begin_research", { p_usage_date: date });
+  if (error) {
+    const usage = await ensureDailyUsage(date);
+    if (Boolean(usage.research_completed)) return false;
+    await bumpUsage({ research_completed: true }, date);
+    return true;
+  }
+  return Boolean(data);
 }
 
 export async function dailyLimitOk(
