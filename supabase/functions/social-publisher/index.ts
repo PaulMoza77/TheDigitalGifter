@@ -188,6 +188,7 @@ function publicMetadata(meta: Record<string, unknown> | null) {
 
 function isAssetSrcAllowed(src: string): boolean {
   if (src.startsWith("/api/clip-factory") && !src.includes("..")) return true;
+  if (src.startsWith("/api/christmas-reel-pipeline") && !src.includes("..")) return true;
   return src.startsWith("/assets/") && !src.includes("..") && !src.includes("://");
 }
 
@@ -204,7 +205,7 @@ function stableMediaRef(src: string): string {
     /* keep */
   }
   if (path.includes("..")) return "";
-  if (path.startsWith("/api/clip-factory")) {
+  if (path.startsWith("/api/clip-factory") || path.startsWith("/api/christmas-reel-pipeline")) {
     const url = new URL(path, "https://www.thedigitalgifter.com");
     url.searchParams.delete("exp");
     url.searchParams.delete("sig");
@@ -218,6 +219,7 @@ function stableMediaRef(src: string): string {
 async function resolveProviderReadableUrl(src: string): Promise<string> {
   const stable = stableMediaRef(src) || asString(src);
   if (stable.startsWith("/assets/")) return absoluteMediaUrl(stable);
+  if (stable.startsWith("/api/christmas-reel-pipeline")) return absoluteMediaUrl(stable);
   if (stable.startsWith("/api/clip-factory")) {
     const origin = publicBaseUrl();
     const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");

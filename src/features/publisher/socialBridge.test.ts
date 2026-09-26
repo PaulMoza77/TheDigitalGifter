@@ -259,5 +259,8 @@ describe("clip factory media refs", () => {
     expect(parseClipFactoryMediaRef(signed)).toEqual({ kind: "render", id: "abc" });
     expect(needsProviderSignature("/assets/christmas/reel.mp4")).toBe(false);
     expect(stableMediaRef("/assets/christmas/reel.mp4?cache=1")).toBe("/assets/christmas/reel.mp4");
+    expect(stableMediaRef("/api/christmas-reel-pipeline?action=media&id=97112bbb-f5a6-450a-a84e-06b93e175f2d")).toBe(
+      "/api/christmas-reel-pipeline?action=media&id=97112bbb-f5a6-450a-a84e-06b93e175f2d",
+    );
   });
 });

@@ -1,6 +1,7 @@
 export const PROVIDER_MEDIA_TTL_SEC = 90 * 60;
 
 const CLIP_FACTORY_PREFIX = "/api/clip-factory";
+const CHRISTMAS_REEL_MEDIA_PREFIX = "/api/christmas-reel-pipeline";
 
 function asPath(src: string): string {
   const raw = String(src || "").trim();
@@ -16,19 +17,27 @@ function asPath(src: string): string {
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
+function normalizeApiMediaRef(path: string, prefix: string): string {
+  if (!path.startsWith(prefix)) return path;
+  try {
+    const url = new URL(path, "https://www.thedigitalgifter.com");
+    url.searchParams.delete("exp");
+    url.searchParams.delete("sig");
+    const search = url.searchParams.toString();
+    return search ? `${url.pathname}?${search}` : url.pathname;
+  } catch {
+    return path.split("&exp=")[0].split("&sig=")[0];
+  }
+}
+
 export function stableMediaRef(src: string): string {
   const path = asPath(src);
   if (!path || path.includes("..")) return "";
   if (path.startsWith(CLIP_FACTORY_PREFIX)) {
-    try {
-      const url = new URL(path, "https://www.thedigitalgifter.com");
-      url.searchParams.delete("exp");
-      url.searchParams.delete("sig");
-      const search = url.searchParams.toString();
-      return search ? `${url.pathname}?${search}` : url.pathname;
-    } catch {
-      return path.split("&exp=")[0].split("&sig=")[0];
-    }
+    return normalizeApiMediaRef(path, CLIP_FACTORY_PREFIX);
+  }
+  if (path.startsWith(CHRISTMAS_REEL_MEDIA_PREFIX)) {
+    return normalizeApiMediaRef(path, CHRISTMAS_REEL_MEDIA_PREFIX);
   }
   if (path.startsWith("/assets/")) return path.split("?")[0];
   return path.split("?")[0] || path;
