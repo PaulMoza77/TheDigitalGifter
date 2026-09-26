@@ -264,7 +264,7 @@ export async function processFinishJob(jobId: string, workerId: string): Promise
     });
     if (!readiness.ok) throw new Error(readiness.errors.join(","));
 
-    const objectPath = `reel-finish/${assetId}/master.mp4`;
+    const objectPath = `productions/reel-finish-${assetId}/master.mp4`;
     await persistObjectToVps(outputPath, objectPath);
     const stableSrc = `/api/christmas-reel-pipeline?action=media&id=${assetId}`;
     const now = new Date().toISOString();
