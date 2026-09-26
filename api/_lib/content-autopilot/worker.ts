@@ -35,6 +35,10 @@ import {
 import type { ContentClip, PipelineStatus } from "./types";
 import { buildImagePrompt, buildMotionPrompt, reelTitleFromConcept } from "./visualStandard";
 
+function contentAutopilotObjectDir(conceptId: string): string {
+  return `ca-${String(conceptId || "").replace(/-/g, "").slice(0, 24)}`;
+}
+
 async function downloadUrl(url: string, dest: string): Promise<void> {
   await new Promise<void>((resolvePromise, reject) => {
     const lib = url.startsWith("https:") ? httpsGet : httpGet;
@@ -210,7 +214,7 @@ async function processPromptsReady(row: Record<string, unknown>, settings: Await
       await updateConcept(conceptId, { clips, pipeline_status: "generating_assets" });
       return;
     }
-    const objectPath = `productions/content-autopilot/${conceptId}/clip-${clip.index}.jpg`;
+      const objectPath = `productions/${contentAutopilotObjectDir(conceptId)}/clip-${clip.index}.jpg`;
     await persistObjectToVps(imagePath, objectPath);
     clip.imageStoragePath = objectPath;
 
@@ -279,7 +283,7 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       }
       const videoPath = join(workDir, `clip_${clip.index}.mp4`);
       await downloadUrl(videoUrl, videoPath);
-      const objectPath = `productions/content-autopilot/${conceptId}/clip-${clip.index}.mp4`;
+      const objectPath = `productions/${contentAutopilotObjectDir(conceptId)}/clip-${clip.index}.mp4`;
       await persistObjectToVps(videoPath, objectPath);
       clip.videoStoragePath = objectPath;
       clip.higgsfieldVideoRequestId = requestId;
@@ -319,7 +323,7 @@ async function processAssemble(row: Record<string, unknown>) {
     const outputPath = join(workDir, "reel.mp4");
     await assembleSilentReel({ workDir, clipPaths: localClips, outputPath });
     const probe = await ffprobeFile(outputPath);
-    const objectPath = `productions/content-autopilot/${conceptId}/source-reel.mp4`;
+    const objectPath = `productions/${contentAutopilotObjectDir(conceptId)}/source-reel.mp4`;
     await persistObjectToVps(outputPath, objectPath);
     const service = getServiceClient();
     const title = reelTitleFromConcept({ concept: String(row.concept || ""), hook: String(row.hook || "") });
@@ -505,7 +509,7 @@ export async function streamConceptMedia(conceptId: string, res: import("../node
   const service = getServiceClient();
   const { data: concept } = await service.from("content_concepts").select("id").eq("id", conceptId).maybeSingle();
   if (!concept) throw Object.assign(new Error("not_found"), { status: 404 });
-  const objectPath = `productions/content-autopilot/${conceptId}/source-reel.mp4`;
+  const objectPath = `productions/${contentAutopilotObjectDir(conceptId)}/source-reel.mp4`;
   const abs = resolveVpsAbsolutePath(objectPath);
   if (!existsSync(abs)) throw Object.assign(new Error("not_found"), { status: 404 });
   res.setHeader("Content-Type", "video/mp4");
