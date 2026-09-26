@@ -250,6 +250,10 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       return;
     }
     if (!(await dailyLimitOk(settings, "videos"))) throw new Error("daily_video_limit");
+    if (!(await dailyLimitOk(settings, "video_retries"))) {
+      await logEvent("video_retry_limit", { clip: clip.index }, conceptId);
+      return;
+    }
     if (!(await budgetAllows(settings))) {
       await logEvent("budget_stop", { stage: "video" }, conceptId);
       return;
@@ -270,8 +274,18 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       spend += estimate;
       await updateConcept(conceptId, { clips, generation_cost_usd: spend });
     }
-      const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 80, sleepMs: 4000 });
-      if (!polled.done || polled.failed || !polled.body) {
+      const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 12, sleepMs: 4000 });
+      if (!polled.done && !polled.failed) {
+        clip.higgsfieldVideoRequestId = requestId;
+        await updateConcept(conceptId, { clips, generation_cost_usd: spend, pipeline_status: "qc_review" });
+        await logEvent("video_poll_pending", { clip: clip.index, requestId }, conceptId);
+        return;
+      }
+      if (polled.failed || !polled.body) {
+        if (!(await dailyLimitOk(settings, "video_retries"))) {
+          await logEvent("video_retry_limit", { clip: clip.index }, conceptId);
+          return;
+        }
         await bumpUsage({ video_retries: 1 });
         clip.higgsfieldVideoRequestId = null;
         await updateConcept(conceptId, { clips, pipeline_status: "qc_review" });
