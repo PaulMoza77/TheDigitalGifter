@@ -229,7 +229,17 @@ export async function handlePublicGenerator(input: {
     })
     .eq("id", generationId);
 
-  const authorization = readHiggsfieldAuthorization({ get: (name) => Deno.env.get(name) });
+  let authorization = readHiggsfieldAuthorization({ get: (name) => Deno.env.get(name) });
+  if (!authorization) {
+    const { data: storedCredential, error: credentialError } = await service.rpc(
+      "generator_higgsfield_authorization",
+    );
+    if (!credentialError && typeof storedCredential === "string") {
+      authorization = readHiggsfieldAuthorization({
+        get: (name) => (name === "HF_CREDENTIALS" ? storedCredential : undefined),
+      });
+    }
+  }
   if (!authorization) {
     await markFailed(service, generationId, GENERATION_UNAVAILABLE_MESSAGE);
     return jsonResponse({ error: GENERATION_UNAVAILABLE_MESSAGE }, 503);
