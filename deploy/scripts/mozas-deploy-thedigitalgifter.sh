@@ -118,3 +118,12 @@ fi
 printf '%s\n' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"
 printf '%s\n' "${COMMIT}" >"${TDG_RELEASES}/verified.sha"
 log "TDG deploy ok release=${RELEASE} commit=${COMMIT}"
+
+PRUNE_SCRIPT="${SCRIPT_DIR}/mozas-prune-tdg-docker.sh"
+if [[ -x "${PRUNE_SCRIPT}" ]]; then
+  if ! "${PRUNE_SCRIPT}" "${RELEASE}"; then
+    log "TDG docker prune failed (deploy succeeded; disk may need manual cleanup)"
+  fi
+else
+  log "TDG docker prune script missing at ${PRUNE_SCRIPT}"
+fi

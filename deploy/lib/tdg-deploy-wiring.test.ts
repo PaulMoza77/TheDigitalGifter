@@ -6,6 +6,7 @@ const deployVps = readFileSync(resolve("scripts/deploy-vps.sh"), "utf8");
 const applyHttp = readFileSync(resolve("deploy/scripts/apply-tdg-caddy.sh"), "utf8");
 const ensure = readFileSync(resolve("deploy/scripts/mozas-ensure-tdg-caddy.sh"), "utf8");
 const deployRemote = readFileSync(resolve("deploy/scripts/mozas-deploy-thedigitalgifter.sh"), "utf8");
+const pruneDocker = readFileSync(resolve("deploy/scripts/mozas-prune-tdg-docker.sh"), "utf8");
 const rollback = readFileSync(resolve("deploy/scripts/mozas-rollback-thedigitalgifter.sh"), "utf8");
 const workflow = readFileSync(resolve(".github/workflows/deploy-vps-static.yml"), "utf8");
 
@@ -37,6 +38,17 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(ensure).toMatch(/Caddyfile\.https\.ready/);
     expect(ensure).toMatch(/mozas-apply-tdg-caddy-https/);
     expect(ensure).toMatch(/tdg-caddy\.mode/);
+  });
+
+  it("successful deploy prunes stale TDG docker tags after verified pin advances", () => {
+    const verifiedAdvance = deployRemote.indexOf('printf \'%s\\n\' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"');
+    const pruneCall = deployRemote.indexOf("mozas-prune-tdg-docker.sh");
+    expect(verifiedAdvance).toBeGreaterThan(0);
+    expect(pruneCall).toBeGreaterThan(verifiedAdvance);
+    expect(pruneDocker).toMatch(/KEEP\["latest"\]/);
+    expect(pruneDocker).toMatch(/KEEP\["previous"\]/);
+    expect(pruneDocker).toMatch(/verified\.tag/);
+    expect(deployVps).toMatch(/mozas-prune-tdg-docker\.sh/);
   });
 
   it("failed deploy rolls back and does not advance verified pins", () => {

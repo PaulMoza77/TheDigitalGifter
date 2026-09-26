@@ -47,6 +47,7 @@ mozas_ssh "set -euo pipefail
   cp /opt/mozas/projects/thedigitalgifter/repo/deploy/docker-compose.yml /opt/mozas/projects/thedigitalgifter/docker-compose.yml
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-deploy-thedigitalgifter.sh /opt/mozas/bin/mozas-deploy-thedigitalgifter
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-rollback-thedigitalgifter.sh /opt/mozas/bin/mozas-rollback-thedigitalgifter
+  install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-prune-tdg-docker.sh /opt/mozas/bin/mozas-prune-tdg-docker
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/assert-shared-edge-caddy.sh /opt/mozas/bin/assert-shared-edge-caddy.sh
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/apply-tdg-caddy.sh /opt/mozas/bin/mozas-apply-tdg-caddy
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
