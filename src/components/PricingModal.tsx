@@ -93,7 +93,7 @@ const PACKS: Pack[] = [
 const SOCIAL_PROOF_MESSAGES = [
   "✨ People are creating birthdays, apologies, love notes and name portraits right now.",
   "💛 Small details make gifts feel personal, emotional and unforgettable.",
-  "⚡ Instant delivery — create, download and share in minutes.",
+  "⚡ Instant delivery. Create, download and share in minutes.",
   "🎁 One-time payment. Credits stay available for future creations.",
 ];
 

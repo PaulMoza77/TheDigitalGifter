@@ -46,7 +46,7 @@ const styles = [
   {
     title: "Remembrance portrait",
     description:
-      "A quiet, beautiful portrait of the pet you miss — their face, their name, soft light.",
+      "A quiet, beautiful portrait of the pet you miss: their face, their name, soft light.",
     image: petLossPhotos.heroDog,
     galleryIndex: 0,
   },
@@ -106,7 +106,7 @@ const faqs = [
   {
     question: "Can I include a message?",
     answer:
-      "Yes. Add their name and a short line if you want — or leave the words out and let the portrait speak.",
+      "Yes. Add their name and a short line if you want, or leave the words out and let the portrait speak.",
   },
 ] as const;
 
@@ -155,7 +155,7 @@ export default function PetLossPage() {
 
               <p className="mt-5 max-w-xl text-base leading-8 text-white/70 sm:text-lg">
                 Create a quiet remembrance portrait or a sympathy card from one
-                photo. Made for the ones who were family — not a joke, not a
+                photo. Made for the ones who were family, not a joke, not a
                 costume, just a lasting goodbye.
               </p>
 

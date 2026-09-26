@@ -135,7 +135,7 @@ export const HeroSection = () => {
             </div>
 
             <p className="mt-3 text-center text-xs text-[var(--tdg-home-text-muted)] lg:text-left">
-              Tap to explore this occasion — examples rotate automatically.
+              Tap to explore this occasion. Examples rotate automatically.
             </p>
           </div>
         </motion.div>

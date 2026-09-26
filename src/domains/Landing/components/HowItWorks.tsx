@@ -14,7 +14,7 @@ const steps = [
     icon: Gift,
     title: "Choose the moment",
     description:
-      "Birthdays, love, apologies, pets, faith, family — start with the occasion that fits them.",
+      "Birthdays, love, apologies, pets, faith, family. Start with the occasion that fits them.",
   },
   {
     icon: Sparkles,
@@ -53,7 +53,7 @@ export const HowItWorks = () => {
           </h2>
 
           <p className={`mt-4 ${landingBodyClass}`}>
-            No design apps or blank canvases — just a clear path from idea to
+            No design apps or blank canvases. Just a clear path from idea to
             finished gift.
           </p>
         </motion.div>

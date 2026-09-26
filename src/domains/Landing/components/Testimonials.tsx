@@ -121,7 +121,7 @@ export const Testimonials = () => {
 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--tdg-home-text-muted)] sm:text-lg sm:leading-8">
             Birthday surprises, love notes, apology cards, wedding memories, and
-            family keepsakes — created in minutes, meant to be felt.
+            family keepsakes, created in minutes and meant to be felt.
           </p>
         </div>
 

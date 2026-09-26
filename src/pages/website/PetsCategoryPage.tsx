@@ -20,7 +20,7 @@ const petTemplates = [
   {
     id: "other-pets",
     title: "Other Pets",
-    description: "Rabbits, birds, reptiles and more — one photo, twelve secret lives.",
+    description: "Rabbits, birds, reptiles and more. One photo, twelve secret lives.",
     icon: Smile,
     path: "/pet/other",
   },
