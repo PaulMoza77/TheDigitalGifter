@@ -376,7 +376,7 @@ export default function AdminClipFactoryPage() {
                       </p>
                       <p className="mt-3 text-sm leading-6 text-slate-200">
                         {urlPreview.ingestionCapability === "FULL_IMPORT"
-                          ? "Ready. Generate Clips will ingest this URL automatically — no file upload."
+                          ? "Ready. Generate Clips will ingest this URL automatically · no file upload."
                           : urlPreview.message || "YouTube source detected. Provide the original media to continue."}
                       </p>
                     </div>
@@ -885,7 +885,7 @@ export default function AdminClipFactoryPage() {
                     )}
                     <div>
                       <p className="font-medium">{item.source_label}</p>
-                      <p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString()} · {item.media?.duration_seconds ? `${Math.round(item.media.duration_seconds)}s` : "—"}</p>
+                      <p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString()} · {item.media?.duration_seconds ? `${Math.round(item.media.duration_seconds)}s` : "-"}</p>
                     </div>
                   </div>
                   <div className="text-sm text-slate-400">

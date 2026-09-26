@@ -5,7 +5,7 @@ import {
   PET_V2_TEST_PRICE_CENTS,
 } from "./types";
 
-/** Verified from src/features/pet/aiCost.ts — do not invent a different tariff. */
+/** Verified from src/features/pet/aiCost.ts · do not invent a different tariff. */
 export const V2_PREVIEW_PROVIDER = "replicate" as const;
 export const V2_PREVIEW_MODEL = KONTEXT_PRO_MODEL;
 export const V2_PREVIEW_UNIT_COST_USD = KONTEXT_PRO_UNIT_COST_USD;

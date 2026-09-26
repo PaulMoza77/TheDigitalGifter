@@ -19,7 +19,7 @@ interface PageHeadProps {
  */
 export function PageHead({ title, description, image, url, exactTitle = false, noindex = false, nofollow = false }: PageHeadProps) {
   const location = useLocation();
-  const fullTitle = exactTitle ? title : `${title} — TheDigitalGifter`;
+  const fullTitle = exactTitle ? title : `${title} · TheDigitalGifter`;
   const pageUrl = url || `https://www.thedigitalgifter.com${location.pathname}`;
   const ogImage = image || "https://www.thedigitalgifter.com/og-preview.png";
 

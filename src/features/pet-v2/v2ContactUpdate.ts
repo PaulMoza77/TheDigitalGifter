@@ -30,7 +30,7 @@ export async function validateAndUpdateV2OrderContact(input: {
   const hasPetName = Boolean(input.petName?.trim());
   const hasEmail = Boolean(input.email?.trim());
 
-  // Both optional — empty form keeps bootstrap placeholders and skips the network call.
+  // Both optional · empty form keeps bootstrap placeholders and skips the network call.
   if (!hasPetName && !hasEmail) {
     return { ok: true, petName, email };
   }

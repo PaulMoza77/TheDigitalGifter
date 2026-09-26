@@ -74,7 +74,7 @@ if [[ "$APPLIED" != "1" && -n "${SUPABASE_DB_PASSWORD:-}" ]] && command -v psql 
     CAND="postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@${HOST}:5432/postgres"
     echo "Trying pooler host $HOST…"
     if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
-      echo "Connected via $HOST — applying migration…"
+      echo "Connected via $HOST · applying migration…"
       PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$MIGRATION"
       APPLIED=1
       break
@@ -119,7 +119,7 @@ if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
   fi
   echo "SCHEMA_VERIFY_OK"
 else
-  echo "WARN: SUPABASE_URL/SERVICE_ROLE_KEY unset — skipped REST schema verify"
+  echo "WARN: SUPABASE_URL/SERVICE_ROLE_KEY unset · skipped REST schema verify"
 fi
 
 echo "WISHLIST_V2_SUPABASE_OK project=$PROJECT_REF"

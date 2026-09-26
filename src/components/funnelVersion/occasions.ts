@@ -58,9 +58,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "christmas",
     heroTitle: "Turn a Christmas photo into a moving memory",
     heroSubtitle:
-      "Upload a holiday photo and create a warm, shareable Christmas gift in minutes — soft motion, festive feeling.",
+      "Upload a holiday photo and create a warm, shareable Christmas gift in minutes · soft motion, festive feeling.",
     heroCaption: "From a still Christmas photo to a living holiday card.",
-    ctaLabel: "Try now — Create a Christmas gift",
+    ctaLabel: "Try now · Create a Christmas gift",
     heroBeforeVariant: asset("christmas-before"),
     heroAfterVariant: asset("christmas-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -69,7 +69,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Emily R.",
         location: "Portland, OR",
         quote:
-          "Our family Christmas photo finally felt alive again — everyone cried when they saw the motion.",
+          "Our family Christmas photo finally felt alive again · everyone cried when they saw the motion.",
         beforeVariant: "christmas-before",
         afterVariant: "christmas-after",
       },
@@ -93,7 +93,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     valueTrio: [
 {
         title: "Bring holiday photos to life",
-        desc: "Watch Christmas smiles gently move — cozy lights, warm emotion, gift-ready.",
+        desc: "Watch Christmas smiles gently move · cozy lights, warm emotion, gift-ready.",
         variant: "christmas-after",
       },
 {
@@ -113,9 +113,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "birthday",
     heroTitle: "Make birthdays feel unforgettable",
     heroSubtitle:
-      "Turn a favorite birthday photo into a moving surprise — candles, joy, and emotion ready to share.",
+      "Turn a favorite birthday photo into a moving surprise · candles, joy, and emotion ready to share.",
     heroCaption: "From a still birthday snap to a celebration that moves.",
-    ctaLabel: "Try now — Create a birthday gift",
+    ctaLabel: "Try now · Create a birthday gift",
     heroBeforeVariant: asset("birthday-before"),
     heroAfterVariant: asset("birthday-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -140,7 +140,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Jordan K.",
         location: "Seattle, WA",
         quote:
-          "Perfect surprise for my sister — personal, fun, and ready in minutes.",
+          "Perfect surprise for my sister · personal, fun, and ready in minutes.",
         beforeVariant: "birthday-ex3-before",
         afterVariant: "birthday-ex3-after",
       }
@@ -158,7 +158,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
       },
 {
         title: "Keep the party forever",
-        desc: "A moving keepsake from the day — warm, joyful, and gift-ready.",
+        desc: "A moving keepsake from the day · warm, joyful, and gift-ready.",
         variant: "birthday-ex3-after",
       }
     ],
@@ -168,9 +168,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "pregnancy",
     heroTitle: "Celebrate pregnancy with a gentle moving memory",
     heroSubtitle:
-      "Create a soft, emotional keepake from your maternity photo — perfect for announcing and sharing with family.",
+      "Create a soft, emotional keepake from your maternity photo · perfect for announcing and sharing with family.",
     heroCaption: "From a maternity photo to a tender moving memory.",
-    ctaLabel: "Try now — Create a pregnancy gift",
+    ctaLabel: "Try now · Create a pregnancy gift",
     heroBeforeVariant: asset("pregnancy-before"),
     heroAfterVariant: asset("pregnancy-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -179,7 +179,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Maya S.",
         location: "San Diego, CA",
         quote:
-          "Our bump photo became the sweetest announcement — soft motion, zero gimmicks.",
+          "Our bump photo became the sweetest announcement · soft motion, zero gimmicks.",
         beforeVariant: "pregnancy-before",
         afterVariant: "pregnancy-after",
       },
@@ -203,7 +203,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     valueTrio: [
 {
         title: "Honor this chapter",
-        desc: "Gentle motion that celebrates the wait — calm, glowing, emotional.",
+        desc: "Gentle motion that celebrates the wait · calm, glowing, emotional.",
         variant: "pregnancy-after",
       },
 {
@@ -223,9 +223,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "wedding",
     heroTitle: "Turn your wedding photo into a living memory",
     heroSubtitle:
-      "A timeless moving gift from your best wedding moment — elegant, subtle, and made to be shared.",
+      "A timeless moving gift from your best wedding moment · elegant, subtle, and made to be shared.",
     heroCaption: "From a wedding still to a timeless moving keepsake.",
-    ctaLabel: "Try now — Create a wedding gift",
+    ctaLabel: "Try now · Create a wedding gift",
     heroBeforeVariant: asset("wedding-before"),
     heroAfterVariant: asset("wedding-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -250,7 +250,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Olivia M.",
         location: "London, UK",
         quote:
-          "Elegant motion — perfect anniversary follow-up from our wedding day.",
+          "Elegant motion · perfect anniversary follow-up from our wedding day.",
         beforeVariant: "wedding-ex3-before",
         afterVariant: "wedding-ex3-after",
       }
@@ -278,9 +278,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "anniversary",
     heroTitle: "Celebrate your love story in motion",
     heroSubtitle:
-      "Create a romantic moving memory from your couple photo — perfect for anniversaries and love notes.",
+      "Create a romantic moving memory from your couple photo · perfect for anniversaries and love notes.",
     heroCaption: "From a couple photo to a romantic anniversary gift.",
-    ctaLabel: "Try now — Create an anniversary gift",
+    ctaLabel: "Try now · Create an anniversary gift",
     heroBeforeVariant: asset("anniversary-before"),
     heroAfterVariant: asset("anniversary-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -289,7 +289,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Daniel R.",
         location: "Miami, FL",
         quote:
-          "Sent this on our 10th anniversary — she watched it three times.",
+          "Sent this on our 10th anniversary · she watched it three times.",
         beforeVariant: "anniversary-before",
         afterVariant: "anniversary-after",
       },
@@ -318,7 +318,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
       },
 {
         title: "A love note that moves",
-        desc: "More personal than flowers — and ready to share instantly.",
+        desc: "More personal than flowers · and ready to share instantly.",
         variant: "anniversary-ex2-after",
       },
 {
@@ -333,9 +333,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "valentines-day",
     heroTitle: "Valentine’s gifts that feel real",
     heroSubtitle:
-      "Turn a photo into a moving love message in minutes — subtle motion, big emotion.",
+      "Turn a photo into a moving love message in minutes · subtle motion, big emotion.",
     heroCaption: "From a couple snap to a Valentine that feels personal.",
-    ctaLabel: "Try now — Create a Valentine gift",
+    ctaLabel: "Try now · Create a Valentine gift",
     heroBeforeVariant: asset("valentines-before"),
     heroAfterVariant: asset("valentines-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -344,7 +344,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Sam W.",
         location: "Brooklyn, NY",
         quote:
-          "Best Valentine I ever sent — romantic motion, no clutter.",
+          "Best Valentine I ever sent · romantic motion, no clutter.",
         beforeVariant: "valentines-before",
         afterVariant: "valentines-after",
       },
@@ -373,7 +373,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
       },
 {
         title: "Skip the generic card",
-        desc: "Your photo becomes the gift — romantic and personal.",
+        desc: "Your photo becomes the gift · romantic and personal.",
         variant: "valentines-ex2-after",
       },
 {
@@ -388,9 +388,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "new-years-eve",
     heroTitle: "Start the year with a moving memory",
     heroSubtitle:
-      "Turn a New Year’s photo into a sparkling, shareable moment — champagne energy, soft celebration motion.",
+      "Turn a New Year’s photo into a sparkling, shareable moment · champagne energy, soft celebration motion.",
     heroCaption: "From a midnight photo to a New Year keepsake.",
-    ctaLabel: "Try now — Create a New Year gift",
+    ctaLabel: "Try now · Create a New Year gift",
     heroBeforeVariant: asset("newyears-before"),
     heroAfterVariant: asset("newyears-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -399,7 +399,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Alex J.",
         location: "Las Vegas, NV",
         quote:
-          "Our countdown photo got the perfect sparkle — festive, not overdone.",
+          "Our countdown photo got the perfect sparkle · festive, not overdone.",
         beforeVariant: "newyears-before",
         afterVariant: "newyears-after",
       },
@@ -415,7 +415,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Tom H.",
         location: "Berlin, DE",
         quote:
-          "Celebratory and clean — exactly the vibe we wanted.",
+          "Celebratory and clean · exactly the vibe we wanted.",
         beforeVariant: "newyears-ex3-before",
         afterVariant: "newyears-ex3-after",
       }
@@ -443,9 +443,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "thanksgiving",
     heroTitle: "Say thanks with something personal",
     heroSubtitle:
-      "Turn a family Thanksgiving photo into a warm moving memory — cozy, heartfelt, and made to share.",
+      "Turn a family Thanksgiving photo into a warm moving memory · cozy, heartfelt, and made to share.",
     heroCaption: "From a dinner-table still to a thankful moving gift.",
-    ctaLabel: "Try now — Create a Thanksgiving gift",
+    ctaLabel: "Try now · Create a Thanksgiving gift",
     heroBeforeVariant: asset("thanksgiving-before"),
     heroAfterVariant: asset("thanksgiving-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -462,7 +462,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Ben C.",
         location: "Columbus, OH",
         quote:
-          "Warm autumn tones and gentle motion — felt homemade.",
+          "Warm autumn tones and gentle motion · felt homemade.",
         beforeVariant: "thanksgiving-ex2-before",
         afterVariant: "thanksgiving-ex2-after",
       },
@@ -498,9 +498,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "baby-reveal",
     heroTitle: "Make your baby reveal unforgettable",
     heroSubtitle:
-      "Create a moving reveal from your photo — pink or blue energy, perfect for sharing the big news.",
+      "Create a moving reveal from your photo · pink or blue energy, perfect for sharing the big news.",
     heroCaption: "From a reveal photo to a share-worthy announcement.",
-    ctaLabel: "Try now — Create a baby reveal",
+    ctaLabel: "Try now · Create a baby reveal",
     heroBeforeVariant: asset("babyreveal-before"),
     heroAfterVariant: asset("babyreveal-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -525,7 +525,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Omar H.",
         location: "Detroit, MI",
         quote:
-          "Clear, joyful, and not gimmicky — perfect big-news vibe.",
+          "Clear, joyful, and not gimmicky · perfect big-news vibe.",
         beforeVariant: "babyreveal-ex3-before",
         afterVariant: "babyreveal-ex3-after",
       }
@@ -553,9 +553,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "new-born",
     heroTitle: "Newborn moments, brought to life",
     heroSubtitle:
-      "Turn a newborn photo into a gentle moving keepsake — soft, tender, and made for family and friends.",
+      "Turn a newborn photo into a gentle moving keepsake · soft, tender, and made for family and friends.",
     heroCaption: "From a quiet newborn still to a living first memory.",
-    ctaLabel: "Try now — Create a newborn gift",
+    ctaLabel: "Try now · Create a newborn gift",
     heroBeforeVariant: asset("newborn-before"),
     heroAfterVariant: asset("newborn-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -564,7 +564,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Claire M.",
         location: "Vancouver, BC",
         quote:
-          "Our sleeping newborn photo felt like a lullaby in motion — everyone melted.",
+          "Our sleeping newborn photo felt like a lullaby in motion · everyone melted.",
         beforeVariant: "newborn-before",
         afterVariant: "newborn-after",
       },
@@ -580,7 +580,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Amelia W.",
         location: "Sydney, AU",
         quote:
-          "Soft, private, perfect — no winter stock photos, just our baby.",
+          "Soft, private, perfect · no winter stock photos, just our baby.",
         beforeVariant: "newborn-ex3-before",
         afterVariant: "newborn-ex3-after",
       }
@@ -608,9 +608,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "easter",
     heroTitle: "Easter memories that move",
     heroSubtitle:
-      "Create a joyful spring keepsake from your Easter photo — soft pastels, warm smiles, ready to share.",
+      "Create a joyful spring keepsake from your Easter photo · soft pastels, warm smiles, ready to share.",
     heroCaption: "From an Easter morning still to a spring celebration.",
-    ctaLabel: "Try now — Create an Easter gift",
+    ctaLabel: "Try now · Create an Easter gift",
     heroBeforeVariant: asset("easter-before"),
     heroAfterVariant: asset("easter-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -663,9 +663,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "mothers-day",
     heroTitle: "A Mother’s Day gift that hits the heart",
     heroSubtitle:
-      "Turn a mom photo into a moving memory — thoughtful, personal, and ready to share.",
+      "Turn a mom photo into a moving memory · thoughtful, personal, and ready to share.",
     heroCaption: "From a still of Mom to a gift she’ll replay.",
-    ctaLabel: "Try now — Create a Mother’s Day gift",
+    ctaLabel: "Try now · Create a Mother’s Day gift",
     heroBeforeVariant: asset("mothersday-before"),
     heroAfterVariant: asset("mothersday-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -682,7 +682,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Kevin O.",
         location: "Dublin, IE",
         quote:
-          "Used an old photo with my sister — felt intimate and modern.",
+          "Used an old photo with my sister · felt intimate and modern.",
         beforeVariant: "mothersday-ex2-before",
         afterVariant: "mothersday-ex2-after",
       },
@@ -703,7 +703,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
       },
 {
         title: "Made from your photo",
-        desc: "Her smile, gently alive — thoughtful and share-ready.",
+        desc: "Her smile, gently alive · thoughtful and share-ready.",
         variant: "mothersday-ex2-after",
       },
 {
@@ -718,9 +718,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "fathers-day",
     heroTitle: "A Father’s Day gift that feels real",
     heroSubtitle:
-      "Create a moving memory from a dad photo — simple, strong emotion, ready to surprise him.",
+      "Create a moving memory from a dad photo · simple, strong emotion, ready to surprise him.",
     heroCaption: "From a dad snapshot to a Father’s Day keepake.",
-    ctaLabel: "Try now — Create a Father’s Day gift",
+    ctaLabel: "Try now · Create a Father’s Day gift",
     heroBeforeVariant: asset("fathersday-before"),
     heroAfterVariant: asset("fathersday-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -729,7 +729,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Ryan P.",
         location: "Houston, TX",
         quote:
-          "Dad doesn’t do gifts — he loved this. Quiet pride, soft motion.",
+          "Dad doesn’t do gifts · he loved this. Quiet pride, soft motion.",
         beforeVariant: "fathersday-before",
         afterVariant: "fathersday-after",
       },
@@ -773,9 +773,9 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
     key: "graduation",
     heroTitle: "Graduation memories, brought to life",
     heroSubtitle:
-      "Turn a proud graduation photo into a moving keepsake — caps, smiles, and celebration ready to share.",
+      "Turn a proud graduation photo into a moving keepsake · caps, smiles, and celebration ready to share.",
     heroCaption: "From a diploma still to a proud moving celebration.",
-    ctaLabel: "Try now — Create a graduation gift",
+    ctaLabel: "Try now · Create a graduation gift",
     heroBeforeVariant: asset("graduation-before"),
     heroAfterVariant: asset("graduation-after"),
     ctaTo: "/funnel/uploadPhoto",
@@ -784,7 +784,7 @@ export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> =
         name: "Priya K.",
         location: "Ann Arbor, MI",
         quote:
-          "Cap-and-gown photo felt epic — proud without being loud.",
+          "Cap-and-gown photo felt epic · proud without being loud.",
         beforeVariant: "graduation-before",
         afterVariant: "graduation-after",
       },

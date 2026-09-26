@@ -59,7 +59,7 @@ alter table public.christmas_wishlists
   );
 
 comment on column public.christmas_wishlist_items.reservation_status is
-  'Viewer coordination: none|reserved|purchased. Identity never stored — only opaque reservation_token_hash.';
+  'Viewer coordination: none|reserved|purchased. Identity never stored · only opaque reservation_token_hash.';
 comment on column public.christmas_wishlists.audience is
   'Who the wishlist is for. Soft metadata for UX; not required for sharing.';
 

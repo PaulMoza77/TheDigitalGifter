@@ -91,7 +91,7 @@ export const TREE_SEO_DEPTH: SeoBlock = {
   geo: {
     h2: "What is a digital Christmas tree?",
     body:
-      "A digital Christmas tree is an interactive online Christmas tree you can customize and share. Choose a tree look, add decorations, place gift boxes with personal messages underneath, and share a private link so someone special can open the gifts — without indexing the share page for search engines.",
+      "A digital Christmas tree is an interactive online Christmas tree you can customize and share. Choose a tree look, add decorations, place gift boxes with personal messages underneath, and share a private link so someone special can open the gifts · without indexing the share page for search engines.",
   },
   sections: [
     {
@@ -116,7 +116,7 @@ export const TREE_SEO_DEPTH: SeoBlock = {
     {
       h2: "A Christmas Gift Made to Be Opened",
       body:
-        "Recipients can tap gifts under the tree to reveal the messages you left — a digital moment meant to feel like opening something placed there for them.",
+        "Recipients can tap gifts under the tree to reveal the messages you left · a digital moment meant to feel like opening something placed there for them.",
     },
     {
       h2: "How It Works",
@@ -167,7 +167,7 @@ export const ADVENT_SEO_DEPTH: SeoBlock = {
     {
       h2: "A Little Christmas Magic Every Day",
       body:
-        "The Advent calendar is a countdown experience with twenty-four doors — a small ritual of opening something new as Christmas approaches.",
+        "The Advent calendar is a countdown experience with twenty-four doors · a small ritual of opening something new as Christmas approaches.",
     },
     {
       h2: "Open a New Door Every Day",
@@ -177,7 +177,7 @@ export const ADVENT_SEO_DEPTH: SeoBlock = {
     {
       h2: "What Can Be Behind the Doors?",
       body:
-        "Door rewards are Christmas moments configured for the season — such as a surprise claim when production claims are enabled. Availability can depend on season settings and whether you are signed in.",
+        "Door rewards are Christmas moments configured for the season · such as a surprise claim when production claims are enabled. Availability can depend on season settings and whether you are signed in.",
     },
     {
       h2: "Before December 1",
@@ -206,7 +206,7 @@ export const ADVENT_SEO_DEPTH: SeoBlock = {
     },
     {
       q: "Can I open earlier doors?",
-      a: "No. Missed days stay closed — only today’s door is available.",
+      a: "No. Missed days stay closed · only today’s door is available.",
     },
     {
       q: "Is the calendar free?",
@@ -214,7 +214,7 @@ export const ADVENT_SEO_DEPTH: SeoBlock = {
     },
     {
       q: "What can I find behind a door?",
-      a: "Seasonal Christmas surprises configured for that day when claims are enabled — not a guarantee of cash prizes or shop credits every day.",
+      a: "Seasonal Christmas surprises configured for that day when claims are enabled · not a guarantee of cash prizes or shop credits every day.",
     },
     {
       q: "Do I need an account?",
@@ -231,7 +231,7 @@ export const MESSAGES_SEO_DEPTH: SeoBlock = {
   geo: {
     h2: "What is a Christmas message generator?",
     body:
-      "A Christmas message generator helps you write Christmas wishes by choosing who the message is for and the tone you want — then generating editable message options in English or Romanian that you can copy or continue into a Christmas card.",
+      "A Christmas message generator helps you write Christmas wishes by choosing who the message is for and the tone you want · then generating editable message options in English or Romanian that you can copy or continue into a Christmas card.",
   },
   sections: [
     {
@@ -242,7 +242,7 @@ export const MESSAGES_SEO_DEPTH: SeoBlock = {
     {
       h2: "Christmas Messages by Recipient",
       body:
-        "The generator supports common Christmas relationships. Dedicated recipient landing pages are not live yet — choose the recipient in the tool.",
+        "The generator supports common Christmas relationships. Dedicated recipient landing pages are not live yet · choose the recipient in the tool.",
       list: ["Mom", "Dad", "Wife", "Husband", "Girlfriend", "Boyfriend", "Family", "Friend", "Coworker"],
     },
     {
@@ -252,7 +252,7 @@ export const MESSAGES_SEO_DEPTH: SeoBlock = {
     },
     {
       h2: "Christmas Message Examples",
-      body: "Demonstration directions for the kinds of wishes the tool can help you draft — edit anything to sound like you.",
+      body: "Demonstration directions for the kinds of wishes the tool can help you draft · edit anything to sound like you.",
       list: [
         "Heartfelt note to Mom thanking her for another year of quiet kindness",
         "Short warm wish for a friend you don’t see enough",
@@ -263,7 +263,7 @@ export const MESSAGES_SEO_DEPTH: SeoBlock = {
     {
       h2: "How to Write a Meaningful Christmas Message",
       body:
-        "Address the person by name or relationship, mention one shared memory or quality when it fits, express one clear feeling, keep the wording natural, and close personally. The generator is a starting point — your edit makes it real.",
+        "Address the person by name or relationship, mention one shared memory or quality when it fits, express one clear feeling, keep the wording natural, and close personally. The generator is a starting point · your edit makes it real.",
     },
     {
       h2: "Use Your Message in a Christmas Card",
@@ -283,7 +283,7 @@ export const MESSAGES_SEO_DEPTH: SeoBlock = {
     },
     {
       q: "Can it create funny Christmas messages?",
-      a: "Yes. Select the funny tone — keep workplace messages professional when writing to coworkers.",
+      a: "Yes. Select the funny tone · keep workplace messages professional when writing to coworkers.",
     },
     {
       q: "Can I edit generated messages?",

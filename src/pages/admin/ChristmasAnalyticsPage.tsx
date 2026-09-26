@@ -209,7 +209,7 @@ export default function ChristmasAnalyticsPage() {
                       </td>
                       <td className="p-3">{step.sessions}</td>
                       <td className="p-3">{step.fromPreviousPct}</td>
-                      <td className="p-3">{step.dropped == null ? "—" : step.dropped}</td>
+                      <td className="p-3">{step.dropped == null ? "-" : step.dropped}</td>
                     </tr>
                   ))}
                 </tbody>

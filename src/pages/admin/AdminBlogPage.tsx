@@ -823,7 +823,7 @@ export default function AdminBlogPage() {
 
               <div className="mt-5">
                 <label className={labelClass()}>
-                  Meta description — max 150-160 chars
+                  Meta description · max 150-160 chars
                 </label>
                 <textarea
                   className={inputClass()}
@@ -953,7 +953,7 @@ Paragraph text.`}
 
               <div className="mt-5">
                 <label className={labelClass()}>
-                  AI image prompt — emotional, premium, with people
+                  AI image prompt · emotional, premium, with people
                 </label>
                 <textarea
                   className={inputClass()}

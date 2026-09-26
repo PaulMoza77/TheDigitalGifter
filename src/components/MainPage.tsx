@@ -117,7 +117,7 @@ export default function TheDigitalGifterMainPage({
           </h1>
           <p className="mt-4 text-[#dfe6f1] max-w-2xl mx-auto">
             Transform your holiday memories into stunning, personalized
-            Christmas cards in seconds. No design skills needed — just upload,
+            Christmas cards in seconds. No design skills needed · just upload,
             customize, and let our AI work its magic.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">

@@ -1,6 +1,6 @@
 /**
  * Dog V2 fulfillment capacity probe on the VPS origin.
- * Same semantics as supabase/functions/pet-provider-status — used because Edge deploy
+ * Same semantics as supabase/functions/pet-provider-status · used because Edge deploy
  * requires SUPABASE_ACCESS_TOKEN which may be unavailable.
  *
  * Fail-closed only when we have positive evidence that Replicate cannot fulfill
@@ -12,7 +12,7 @@ import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import { createClient } from "@supabase/supabase-js";
 
 const UNAVAILABLE =
-  "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.";
+  "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.";
 
 function json(res: NodeApiResponse, body: Record<string, unknown>, status = 200) {
   res.status(status);

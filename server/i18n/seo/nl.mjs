@@ -1,6 +1,6 @@
 /**
  * Dutch (nl) SEO content for the Christmas routes.
- * Native vocabulary — Kerstman, verlanglijstje, adventskalender,
+ * Native vocabulary · Kerstman, verlanglijstje, adventskalender,
  * kerstfoto's, kerstkaarten.
  * Santa video and message generation remain EN/RO only; this content never
  * claims a Dutch-spoken Kerstman or Dutch message generation.
@@ -13,10 +13,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas": {
     title: "Kerst bij TheDigitalGifter | Cadeaus, Foto's, Kerstman en Meer",
     description:
-      "Maak kerstcadeaus, AI-portretten, Kerstman-video's, verlanglijstjes, kerstkaarten en adventsverrassingen — gepersonaliseerde digitale kerstervaringen van TheDigitalGifter.",
+      "Maak kerstcadeaus, AI-portretten, Kerstman-video's, verlanglijstjes, kerstkaarten en adventsverrassingen · gepersonaliseerde digitale kerstervaringen van TheDigitalGifter.",
     h1: "Maak Dit Jaar Iets Om Nooit Te Vergeten",
     lede:
-      "Ontdek kerstcadeaus, fotoportretten, Kerstman-video's, digitale kerstbomen, adventskalenders, kerstkaarten en boodschappen — allemaal op één plek bij TheDigitalGifter.",
+      "Ontdek kerstcadeaus, fotoportretten, Kerstman-video's, digitale kerstbomen, adventskalenders, kerstkaarten en boodschappen · allemaal op één plek bij TheDigitalGifter.",
     h2: "Kerstervaringen",
     h2Body: "Kies hieronder een kerstproduct en maak in enkele minuten iets persoonlijks.",
     breadcrumbs: [{ href: "/nl/christmas", label: "Kerst" }],
@@ -39,14 +39,14 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Vind het Perfecte Kerstcadeau",
         body:
-          "Weet je niet wat je moet kopen? De Kerst Gift Finder vraagt voor wie je iets zoekt, wat die persoon leuk vindt, hoe hij of zij in het leven staat en wat je wilt uitgeven. Je krijgt doordachte cadeau-ideeën met een korte reden waarom elk idee past — ook voor iemand die alles al lijkt te hebben. Sla favorieten op in een verlanglijstje wanneer je er klaar voor bent.",
+          "Weet je niet wat je moet kopen? De Kerst Gift Finder vraagt voor wie je iets zoekt, wat die persoon leuk vindt, hoe hij of zij in het leven staat en wat je wilt uitgeven. Je krijgt doordachte cadeau-ideeën met een korte reden waarom elk idee past · ook voor iemand die alles al lijkt te hebben. Sla favorieten op in een verlanglijstje wanneer je er klaar voor bent.",
         linkHref: "/nl/christmas/gift-finder",
         linkLabel: "Vind een kerstcadeau dat écht in de smaak valt",
       },
       {
         h2: "Maak Magische Kerstfoto's",
         body:
-          "Upload een duidelijke foto en verander deze in een feestelijk kerstportret. Maak looks voor gezinnen, koppels en huisdieren — met speciale routes voor honden en katten — en download privé of neem een portret mee naar een kerstkaart.",
+          "Upload een duidelijke foto en verander deze in een feestelijk kerstportret. Maak looks voor gezinnen, koppels en huisdieren · met speciale routes voor honden en katten · en download privé of neem een portret mee naar een kerstkaart.",
         linkHref: "/nl/christmas/photo-generator",
         linkLabel: "Verander je foto in kerstmagie",
       },
@@ -60,7 +60,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Maak en Deel een Kerst Verlanglijstje",
         body:
-          "Bouw een kerst verlanglijstje met productlinks of vrij geschreven wensen. Deel één simpele link met familie en vrienden. Bezoekers kunnen een cadeau reserveren zodat anderen niet hetzelfde kopen — zonder te verklappen wie het voor de eigenaar van het lijstje heeft gekocht.",
+          "Bouw een kerst verlanglijstje met productlinks of vrij geschreven wensen. Deel één simpele link met familie en vrienden. Bezoekers kunnen een cadeau reserveren zodat anderen niet hetzelfde kopen · zonder te verklappen wie het voor de eigenaar van het lijstje heeft gekocht.",
         linkHref: "/nl/christmas/wishlist",
         linkLabel: "Maak een kerst verlanglijstje",
       },
@@ -88,11 +88,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kan de kerstman de naam van mijn kind zeggen?",
-        a: "Je kunt starten met de voornaam op de kerstpagina of in de kerstman-ervaring en optionele details toevoegen. Gesproken video’s zijn vandaag beschikbaar in het Engels en Roemeens — andere talen volgen.",
+        a: "Je kunt starten met de voornaam op de kerstpagina of in de kerstman-ervaring en optionele details toevoegen. Gesproken video’s zijn vandaag beschikbaar in het Engels en Roemeens · andere talen volgen.",
       },
       {
         q: "Heb ik ontwerpvaardigheden nodig?",
-        a: "Nee. Elke kerstervaring begeleidt je stap voor stap — upload een foto, beantwoord een paar vragen of begin met een naam — en de pagina doet de rest.",
+        a: "Nee. Elke kerstervaring begeleidt je stap voor stap · upload een foto, beantwoord een paar vragen of begin met een naam · en de pagina doet de rest.",
       },
       {
         q: "Is dit voor digitale cadeaus, fysieke cadeaus, of beide?",
@@ -100,11 +100,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Werkt dit op mijn telefoon?",
-        a: "Ja — de kersthub en productervaringen zijn eerst voor telefoons gemaakt en werken ook op desktop.",
+        a: "Ja · de kersthub en productervaringen zijn eerst voor telefoons gemaakt en werken ook op desktop.",
       },
       {
         q: "Is de foto van mijn gezin privé?",
-        a: "Uploads worden gebruikt om je portret of kaart te maken. Kindervaringen zijn privacy-first en verwachten een ouder of voogd. Als het resultaat klaar is, download je het privé — we plaatsen je foto’s niet openbaar.",
+        a: "Uploads worden gebruikt om je portret of kaart te maken. Kindervaringen zijn privacy-first en verwachten een ouder of voogd. Als het resultaat klaar is, download je het privé · we plaatsen je foto’s niet openbaar.",
       },
       {
         q: "Hoe lang duurt het om iets te maken?",
@@ -137,7 +137,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een Kerst Gift Finder?",
       body:
-        "Een Kerst Gift Finder is een begeleide tool die kerstcadeau-ideeën aanbeveelt op basis van voor wie je winkelt, hun interesses en persoonlijkheid, en je budget. Bij TheDigitalGifter beantwoord je een korte reeks vragen en krijg je uitgekozen ideeën met duidelijke redenen waarom ze kunnen passen — daarna kun je antwoorden aanpassen of ideeën opslaan in een verlanglijstje.",
+        "Een Kerst Gift Finder is een begeleide tool die kerstcadeau-ideeën aanbeveelt op basis van voor wie je winkelt, hun interesses en persoonlijkheid, en je budget. Bij TheDigitalGifter beantwoord je een korte reeks vragen en krijg je uitgekozen ideeën met duidelijke redenen waarom ze kunnen passen · daarna kun je antwoorden aanpassen of ideeën opslaan in een verlanglijstje.",
     },
     sections: [
       {
@@ -149,13 +149,13 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Vind Cadeaus per Ontvanger",
         body:
-          "De Gift Finder ondersteunt veelvoorkomende kerstrelaties zodat aanbevelingen passend blijven. Gebruik de tool voor mama, papa, vrouw, man, vriendin, vriend, kinderen, tieners, opa's en oma's, vrienden, collega's en meer. Specifieke landingspagina's per ontvanger zijn nog niet live — start de finder en kies de ontvanger daar.",
+          "De Gift Finder ondersteunt veelvoorkomende kerstrelaties zodat aanbevelingen passend blijven. Gebruik de tool voor mama, papa, vrouw, man, vriendin, vriend, kinderen, tieners, opa's en oma's, vrienden, collega's en meer. Specifieke landingspagina's per ontvanger zijn nog niet live · start de finder en kies de ontvanger daar.",
         list: ["Mama", "Papa", "Vrouw", "Man", "Vriendin", "Vriend", "Kinderen", "Tieners", "Opa's en oma's", "Vrienden", "Collega's"],
       },
       {
         h2: "Vind Kerstcadeaus per Budget",
         body:
-          "Kies een uitgavenrange zoals onder de €25, €25–€50, €50–€100, €100–€200, €200+, of zonder strikt budget. Aanbevelingen zijn cadeau-ideeën met typische prijsklassen — geen live voorraad van winkels of gegarandeerde beschikbaarheid.",
+          "Kies een uitgavenrange zoals onder de €25, €25–€50, €50–€100, €100–€200, €200+, of zonder strikt budget. Aanbevelingen zijn cadeau-ideeën met typische prijsklassen · geen live voorraad van winkels of gegarandeerde beschikbaarheid.",
       },
       {
         h2: "Cadeaus voor Iemand Die Alles Al Heeft",
@@ -196,7 +196,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Toont het echte producten?",
-        a: "Vandaag toont de finder uitgekozen cadeau-ideeën met typische prijsklassen. Live winkelprijzen, beschikbaarheid en shopfeeds zijn nog niet aangesloten — we verzinnen geen exacte voorraad of verkoopprijzen.",
+        a: "Vandaag toont de finder uitgekozen cadeau-ideeën met typische prijsklassen. Live winkelprijzen, beschikbaarheid en shopfeeds zijn nog niet aangesloten · we verzinnen geen exacte voorraad of verkoopprijzen.",
       },
     ],
   },
@@ -264,7 +264,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kan ik wensen toevoegen zonder link?",
-        a: "Ja. Schrijf elke wens — ervaringen, zelfgemaakte ideeën, of een simpel 'Verras me'.",
+        a: "Ja. Schrijf elke wens · ervaringen, zelfgemaakte ideeën, of een simpel 'Verras me'.",
       },
       {
         q: "Kan ik één verlanglijstje-link delen?",
@@ -312,7 +312,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een AI kerstfoto generator?",
       body:
-        "Een AI kerstfoto generator verandert een echte foto die je uploadt in een feestelijk kerstportret. Bij TheDigitalGifter kies je wie op de foto staat, kies je een kerststijl, en maak je een downloadbaar portret voor gezin, koppels, mensen of huisdieren — standaard privé.",
+        "Een AI kerstfoto generator verandert een echte foto die je uploadt in een feestelijk kerstportret. Bij TheDigitalGifter kies je wie op de foto staat, kies je een kerststijl, en maak je een downloadbaar portret voor gezin, koppels, mensen of huisdieren · standaard privé.",
     },
     sections: [
       {
@@ -324,11 +324,11 @@ export const CHRISTMAS_SEO_CONTENT = {
         h2: "Kerstfoto Voorbeelden",
         body: "Demo-voorbeelden tonen veelvoorkomende kerstportretrichtingen. Het zijn inspiratievoorbeelden, geen klantfoto's.",
         list: [
-          "Gezins Kerstfoto — een groepsportret in een gezellige kerstscène",
-          "Koppel Kerstportret — een romantisch feestelijk portret van twee mensen",
-          "Hond Kerstportret — een feestelijk portret gericht op een hond",
-          "Kat Kerstportret — een feestelijk portret gericht op een kat",
-          "Gezin + Huisdier — mensen en een huisdier samen in één kerstbeeld",
+          "Gezins Kerstfoto · een groepsportret in een gezellige kerstscène",
+          "Koppel Kerstportret · een romantisch feestelijk portret van twee mensen",
+          "Hond Kerstportret · een feestelijk portret gericht op een hond",
+          "Kat Kerstportret · een feestelijk portret gericht op een kat",
+          "Gezin + Huisdier · mensen en een huisdier samen in één kerstbeeld",
         ],
       },
       {
@@ -344,7 +344,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Kerstfoto's voor Gezinnen, Koppels en Huisdieren",
         body:
-          "Heb je een specifiekere start nodig? Gebruik de speciale kerstportretroutes voor gezin, koppels, huisdieren, honden en katten — of ga hier verder met de volledige fotogenerator.",
+          "Heb je een specifiekere start nodig? Gebruik de speciale kerstportretroutes voor gezin, koppels, huisdieren, honden en katten · of ga hier verder met de volledige fotogenerator.",
         list: [
           "Gezins Kerstportretten → /nl/christmas/family",
           "Koppel Kerstportretten → /nl/christmas/couples",
@@ -414,13 +414,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een gezins kerstfoto generator?",
       body:
-        "Een gezins kerstfoto generator verandert één geüploade gezinsfoto in een feestelijk groepsportret voor Kerst. Bij TheDigitalGifter upload je een duidelijke foto van je gezin, kies je een kerststijl gemaakt voor meerdere mensen, en maak je een downloadbaar portret — standaard privé, met de optie om verder te gaan naar een kerstkaart.",
+        "Een gezins kerstfoto generator verandert één geüploade gezinsfoto in een feestelijk groepsportret voor Kerst. Bij TheDigitalGifter upload je een duidelijke foto van je gezin, kies je een kerststijl gemaakt voor meerdere mensen, en maak je een downloadbaar portret · standaard privé, met de optie om verder te gaan naar een kerstkaart.",
     },
     sections: [
       {
         h2: "Maak een Gezins Kerstportret",
         body:
-          "Deze ervaring is specifiek gebouwd voor gezinnen — geen algemene look voor één persoon. Upload een groepsfoto, kies een kerstsfeer, en maak een portret dat streeft naar iedereen in beeld.",
+          "Deze ervaring is specifiek gebouwd voor gezinnen · geen algemene look voor één persoon. Upload een groepsfoto, kies een kerstsfeer, en maak een portret dat streeft naar iedereen in beeld.",
       },
       {
         h2: "Gezins Kerstfoto Voorbeelden",
@@ -470,7 +470,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kunnen opa's en oma's erbij?",
-        a: "Ja. Multi-generatie foto's — inclusief opa's, oma's en baby's — zijn welkom als gezichten zichtbaar zijn.",
+        a: "Ja. Multi-generatie foto's · inclusief opa's, oma's en baby's · zijn welkom als gezichten zichtbaar zijn.",
       },
       {
         q: "Kan ik een huisdier van het gezin toevoegen?",
@@ -500,7 +500,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     description:
       "Maak een romantisch kerst koppelportret van je foto. Perfect voor een eerste Kerst samen of een gepersonaliseerd cadeau voor een koppel.",
     h1: "Maak Samen een Magisch Kerstportret",
-    lede: "Upload één foto met jullie beiden en maak een romantisch kerst koppelportret — standaard privé.",
+    lede: "Upload één foto met jullie beiden en maak een romantisch kerst koppelportret · standaard privé.",
     h2: "Meer kerstportretten",
     breadcrumbs: [
       { href: "/nl/christmas", label: "Kerst" },
@@ -522,11 +522,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Maak Samen een Kerstportret",
         body:
-          "Deze ervaring is voor twee mensen — partners, verloofde koppels, man en vrouw, of vriend en vriendin. Upload één foto waarop jullie beiden duidelijk zichtbaar zijn, kies een kerstlook, en maak een portret gemaakt voor jullie samen.",
+          "Deze ervaring is voor twee mensen · partners, verloofde koppels, man en vrouw, of vriend en vriendin. Upload één foto waarop jullie beiden duidelijk zichtbaar zijn, kies een kerstlook, en maak een portret gemaakt voor jullie samen.",
       },
       {
         h2: "Kerst Koppelfoto Ideeën",
-        body: "Toepassingen die dit portret vaak past — als inspiratie, geen afzonderlijke productmodi:",
+        body: "Toepassingen die dit portret vaak past · als inspiratie, geen afzonderlijke productmodi:",
         list: [
           "Eerste Kerst samen",
           "Kerstportret van een verloofd koppel",
@@ -569,7 +569,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Blijven beide mensen herkenbaar?",
-        a: "Dat is het doel. Begin met een duidelijke foto van beide gezichten — vermijd extreme vaagheid of iemand grotendeels buiten beeld.",
+        a: "Dat is het doel. Begin met een duidelijke foto van beide gezichten · vermijd extreme vaagheid of iemand grotendeels buiten beeld.",
       },
       {
         q: "Kan ik een romantisch kerstportret maken?",
@@ -596,7 +596,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/pets": {
     title: "Kerst Huisdier Foto Generator | Feestelijke Huisdierportretten",
-    description: "Verander de foto van je huisdier in een feestelijk kerstportret. Honden en katten welkom — standaard privé.",
+    description: "Verander de foto van je huisdier in een feestelijk kerstportret. Honden en katten welkom · standaard privé.",
     h1: "Verander Je Huisdier in Kerstmagie",
     lede: "Upload een duidelijke huisdierfoto en maak een feestelijk kerst huisdierportret voor honden of katten.",
     h2: "Diersoort-specifieke kerstportretten",
@@ -620,12 +620,12 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Verander Je Huisdier in Kerstmagie",
         body:
-          "Upload een duidelijke huisdierfoto, kies een kerst huisdierstijl, en maak een feestelijk portret van het dier dat je liefhebt. Dit is de algemene huisdierenhub — geen apart pakket.",
+          "Upload een duidelijke huisdierfoto, kies een kerst huisdierstijl, en maak een feestelijk portret van het dier dat je liefhebt. Dit is de algemene huisdierenhub · geen apart pakket.",
       },
       {
         h2: "Kerstportretten voor Honden en Katten",
         body:
-          "Wil je een duidelijkere start voor één diersoort? Gebruik de speciale hond- of katroutes — ze helpen de foto te valideren en houden de ervaring gericht op honden of katten.",
+          "Wil je een duidelijkere start voor één diersoort? Gebruik de speciale hond- of katroutes · ze helpen de foto te valideren en houden de ervaring gericht op honden of katten.",
         list: ["Kerst Foto Generator voor Honden → /nl/christmas/dogs", "Kerst Foto Generator voor Katten → /nl/christmas/cats"],
       },
       {
@@ -707,7 +707,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een kerst foto generator voor honden?",
       body:
-        "Een kerst foto generator voor honden maakt een feestelijk kerstportret van een foto van je hond. Bij TheDigitalGifter upload je een duidelijke hondenfoto, kies je een kerst huisdierstijl, en download je een op de hond gericht feestportret — met een optionele route naar een kerstkaart.",
+        "Een kerst foto generator voor honden maakt een feestelijk kerstportret van een foto van je hond. Bij TheDigitalGifter upload je een duidelijke hondenfoto, kies je een kerst huisdierstijl, en download je een op de hond gericht feestportret · met een optionele route naar een kerstkaart.",
     },
     sections: [
       {
@@ -717,7 +717,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Kerst Hondenportret Voorbeelden",
-        body: "Demonstratierichtingen voor kerstportretten van honden — inspiratievoorbeelden, geen klantfoto's.",
+        body: "Demonstratierichtingen voor kerstportretten van honden · inspiratievoorbeelden, geen klantfoto's.",
         list: [
           "Hond naast een versierde kerstboom-look",
           "Gezellig open haard hondenkerstportret",
@@ -814,7 +814,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Kerst Kattenportret Voorbeelden",
-        body: "Demonstratierichtingen met katten — inspiratievoorbeelden, geen klantfoto's.",
+        body: "Demonstratierichtingen met katten · inspiratievoorbeelden, geen klantfoto's.",
         list: [
           "Kat bij een kerstboom-look",
           "Gezellig open haard kattenkerstportret",
@@ -899,13 +899,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een gepersonaliseerde Kerstman-video?",
       body:
-        "Een gepersonaliseerde Kerstman-video is een kerstboodschap-video van de Kerstman die de naam van de ontvanger en andere details die je aanlevert kan bevatten. Bij TheDigitalGifter beantwoord je een kort begeleid formulier, bekijk je de boodschap, en maak je vervolgens een video die je kunt downloaden en delen. Boodschappen worden gemaakt in het Engels of Roemeens — de Kerstman spreekt in deze tool nog geen Nederlands.",
+        "Een gepersonaliseerde Kerstman-video is een kerstboodschap-video van de Kerstman die de naam van de ontvanger en andere details die je aanlevert kan bevatten. Bij TheDigitalGifter beantwoord je een kort begeleid formulier, bekijk je de boodschap, en maak je vervolgens een video die je kunt downloaden en delen. Boodschappen worden gemaakt in het Engels of Roemeens · de Kerstman spreekt in deze tool nog geen Nederlands.",
     },
     sections: [
       {
         h2: "Een Persoonlijke Boodschap van de Kerstman",
         body:
-          "Maak een kerstvideo van de Kerstman voor een kind, broers en zussen, familie, of iemand speciaal. De Kerstman kan de naam noemen en optionele details verwerken die je deelt — daarna download of deel je de afgeronde video. De video wordt gesproken in het Engels of Roemeens.",
+          "Maak een kerstvideo van de Kerstman voor een kind, broers en zussen, familie, of iemand speciaal. De Kerstman kan de naam noemen en optionele details verwerken die je deelt · daarna download of deel je de afgeronde video. De video wordt gesproken in het Engels of Roemeens.",
       },
       {
         h2: "Wat Kan de Kerstman Noemen?",
@@ -940,7 +940,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kan de Kerstman een kerstcadeau noemen?",
-        a: "Ja — je kunt een kerstwens toevoegen, en de Kerstman kan deze noemen wanneer je er een opgeeft.",
+        a: "Ja · je kunt een kerstwens toevoegen, en de Kerstman kan deze noemen wanneer je er een opgeeft.",
       },
       {
         q: "Kan ik een video maken voor broers en zussen?",
@@ -980,7 +980,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een digitale kerstboom?",
       body:
-        "Een digitale kerstboom is een interactieve online kerstboom die je kunt personaliseren en delen. Bij TheDigitalGifter kies je een boomlook, voeg je versieringen toe, plaats je cadeaudozen met persoonlijke boodschappen erondergelegd, en deel je een privélink zodat iemand speciaal de cadeaus op zijn of haar scherm kan openen — zonder de deelpagina om te zetten in een openbaar zoekresultaat.",
+        "Een digitale kerstboom is een interactieve online kerstboom die je kunt personaliseren en delen. Bij TheDigitalGifter kies je een boomlook, voeg je versieringen toe, plaats je cadeaudozen met persoonlijke boodschappen erondergelegd, en deel je een privélink zodat iemand speciaal de cadeaus op zijn of haar scherm kan openen · zonder de deelpagina om te zetten in een openbaar zoekresultaat.",
     },
     sections: [
       {
@@ -991,7 +991,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Wat Kun Je Onder Je Boom Leggen?",
         body:
-          "Vandaag kun je cadeaudozen toevoegen die persoonlijke kerstboodschappen bevatten. Elk cadeau kan een feestelijke doosstijl gebruiken, zoals rood, goud, groen, blauw, of sneeuw. Extra cadeautypes kunnen later worden toegevoegd — de huidige maker richt zich op boodschap-cadeaus.",
+          "Vandaag kun je cadeaudozen toevoegen die persoonlijke kerstboodschappen bevatten. Elk cadeau kan een feestelijke doosstijl gebruiken, zoals rood, goud, groen, blauw, of sneeuw. Extra cadeautypes kunnen later worden toegevoegd · de huidige maker richt zich op boodschap-cadeaus.",
         list: ["Persoonlijke kerstboodschappen in cadeaudozen", "Feestelijke doosstijlen (rood, goud, groen, blauw, sneeuw)"],
       },
       {
@@ -1002,7 +1002,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Een Cadeau Gemaakt om Geopend te Worden",
         body:
-          "Ontvangers kunnen tikken op cadeaus onder de boom om de boodschappen die je hebt achtergelaten te onthullen — een digitaal moment dat moet aanvoelen als iets dat speciaal voor hen is neergelegd.",
+          "Ontvangers kunnen tikken op cadeaus onder de boom om de boodschappen die je hebt achtergelaten te onthullen · een digitaal moment dat moet aanvoelen als iets dat speciaal voor hen is neergelegd.",
       },
       {
         h2: "Hoe Het Werkt",
@@ -1043,7 +1043,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Heb ik een account nodig?",
-        a: "Je kunt beginnen met het maken van een boom zonder complexe instellingen — het eigendom wordt beheerd via de aanmaaksessie zodat je kunt blijven bewerken.",
+        a: "Je kunt beginnen met het maken van een boom zonder complexe instellingen · het eigendom wordt beheerd via de aanmaaksessie zodat je kunt blijven bewerken.",
       },
       {
         q: "Is de gedeelde boom openbaar?",
@@ -1077,7 +1077,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Elke Dag een Beetje Kerstmagie",
         body:
-          "De adventskalender is een aftel-ervaring met vierentwintig deurtjes. Elke dag in december heeft zijn eigen deurtje — een klein ritueel van iets nieuws openen naarmate Kerst dichterbij komt.",
+          "De adventskalender is een aftel-ervaring met vierentwintig deurtjes. Elke dag in december heeft zijn eigen deurtje · een klein ritueel van iets nieuws openen naarmate Kerst dichterbij komt.",
       },
       {
         h2: "Open Elke Dag een Nieuw Deurtje",
@@ -1087,7 +1087,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Wat Kan Er Achter de Deurtjes Zitten?",
         body:
-          "Deurtjebeloningen zijn kerstmomenten die voor het seizoen zijn ingesteld — zoals een verrassingsclaim wanneer productieclaims actief zijn. Beschikbaarheid kan afhangen van de seizoensinstellingen en of je bent ingelogd.",
+          "Deurtjebeloningen zijn kerstmomenten die voor het seizoen zijn ingesteld · zoals een verrassingsclaim wanneer productieclaims actief zijn. Beschikbaarheid kan afhangen van de seizoensinstellingen en of je bent ingelogd.",
       },
       {
         h2: "Voor 1 December",
@@ -1120,7 +1120,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kan ik eerdere deurtjes openen?",
-        a: "Nee. Gemiste dagen blijven gesloten — alleen het deurtje van vandaag is beschikbaar.",
+        a: "Nee. Gemiste dagen blijven gesloten · alleen het deurtje van vandaag is beschikbaar.",
       },
       {
         q: "Is de kalender gratis?",
@@ -1128,7 +1128,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Wat kan ik vinden achter een deurtje?",
-        a: "Seizoensgebonden kerstverrassingen die voor die dag zijn ingesteld wanneer claims actief zijn — geen garantie op geldprijzen of winkeltegoeden elke dag.",
+        a: "Seizoensgebonden kerstverrassingen die voor die dag zijn ingesteld wanneer claims actief zijn · geen garantie op geldprijzen of winkeltegoeden elke dag.",
       },
       {
         q: "Heb ik een account nodig?",
@@ -1147,7 +1147,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/cards": {
     title: "Kerstkaart Maker | Gepersonaliseerde Kerstkaarten",
-    description: "Maak een gepersonaliseerde kerstkaart die ze willen bewaren — kies een ontwerp, voeg je boodschap toe, en deel of download.",
+    description: "Maak een gepersonaliseerde kerstkaart die ze willen bewaren · kies een ontwerp, voeg je boodschap toe, en deel of download.",
     h1: "Maak een Kerstkaart Die Ze Willen Bewaren",
     lede: "Ontwerp een gepersonaliseerde kerstkaart met feestelijke lay-outs en je eigen boodschap. Sommige boodschappen verdienen meer dan alleen een tekstje.",
     h2: "Combineer met Kerstboodschappen",
@@ -1170,7 +1170,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Maak een Gepersonaliseerde Kerstkaart",
         body:
-          "Kies een kerstkaartstijl, voeg je foto toe, schrijf een boodschap, en maak een digitale kaart die je kunt downloaden of delen. Sommige boodschappen verdienen meer dan alleen een tekstje — hiervoor is dit bedoeld.",
+          "Kies een kerstkaartstijl, voeg je foto toe, schrijf een boodschap, en maak een digitale kaart die je kunt downloaden of delen. Sommige boodschappen verdienen meer dan alleen een tekstje · hiervoor is dit bedoeld.",
       },
       {
         h2: "Kerstkaart Voorbeelden",
@@ -1240,7 +1240,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/messages": {
     title: "Kerst Boodschappengenerator | Wensen voor Familie en Vrienden",
-    description: "Vind de perfecte kerstboodschap voor familie, vrienden, en collega's — gebruik deze dan in een gepersonaliseerde kerstkaart.",
+    description: "Vind de perfecte kerstboodschap voor familie, vrienden, en collega's · gebruik deze dan in een gepersonaliseerde kerstkaart.",
     h1: "Vind de Perfecte Kerstboodschap",
     lede: "Genereer warme, humoristische, romantische, of professionele kerstwensen, en zet je favoriet dan in een kerstkaart.",
     h2: "Zet Woorden Om in een Kaart",
@@ -1257,7 +1257,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Wat is een kerst boodschappengenerator?",
       body:
-        "Een kerst boodschappengenerator helpt je kerstwensen schrijven door te kiezen voor wie de boodschap is en welke toon je wilt — en genereert dan bewerkbare boodschapopties. Bij TheDigitalGifter kun je warme, humoristische, romantische, hartelijke, korte, professionele, of religieuze kerstboodschappen maken in het Engels of Roemeens, en ze dan kopiëren of verder gebruiken in een kerstkaart.",
+        "Een kerst boodschappengenerator helpt je kerstwensen schrijven door te kiezen voor wie de boodschap is en welke toon je wilt · en genereert dan bewerkbare boodschapopties. Bij TheDigitalGifter kun je warme, humoristische, romantische, hartelijke, korte, professionele, of religieuze kerstboodschappen maken in het Engels of Roemeens, en ze dan kopiëren of verder gebruiken in een kerstkaart.",
     },
     sections: [
       {
@@ -1268,7 +1268,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Kerstboodschappen per Ontvanger",
         body:
-          "De generator ondersteunt veelvoorkomende kerstrelaties. Start de tool en kies voor wie je schrijft — speciale landingspagina's per ontvanger zijn nog niet live.",
+          "De generator ondersteunt veelvoorkomende kerstrelaties. Start de tool en kies voor wie je schrijft · speciale landingspagina's per ontvanger zijn nog niet live.",
         list: ["Mama", "Papa", "Vrouw", "Man", "Vriendin", "Vriend", "Familie", "Vriend(in)", "Collega"],
       },
       {
@@ -1277,7 +1277,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Kerstboodschap Voorbeelden",
-        body: "Demonstratierichtingen voor het soort wensen die de tool kan helpen schrijven — bewerk alles zodat het klinkt als jij.",
+        body: "Demonstratierichtingen voor het soort wensen die de tool kan helpen schrijven · bewerk alles zodat het klinkt als jij.",
         list: [
           "Hartelijk berichtje aan mama om haar te bedanken voor weer een jaar stille vriendelijkheid",
           "Korte warme wens voor een vriend(in) die je te weinig ziet",
@@ -1288,7 +1288,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Hoe Schrijf Je een Betekenisvolle Kerstboodschap",
         body:
-          "Spreek de persoon aan met naam of relatie, noem één gedeelde herinnering of eigenschap als het past, uit één duidelijk gevoel, houd de formulering natuurlijk, en sluit persoonlijk af. De generator is een startpunt — jouw bewerking maakt het echt.",
+          "Spreek de persoon aan met naam of relatie, noem één gedeelde herinnering of eigenschap als het past, uit één duidelijk gevoel, houd de formulering natuurlijk, en sluit persoonlijk af. De generator is een startpunt · jouw bewerking maakt het echt.",
       },
       {
         h2: "Gebruik Je Boodschap in een Kerstkaart",
@@ -1308,7 +1308,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kan het humoristische kerstboodschappen maken?",
-        a: "Ja. Selecteer de humoristische toon — houd berichten voor collega's professioneel op de werkvloer.",
+        a: "Ja. Selecteer de humoristische toon · houd berichten voor collega's professioneel op de werkvloer.",
       },
       {
         q: "Kan ik gegenereerde boodschappen bewerken?",

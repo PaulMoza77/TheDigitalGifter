@@ -69,7 +69,7 @@ export const SANTA_COPY = {
     detail: {
       title: "Anything else Santa should know?",
       placeholder: "Her dog is called Milo.",
-      helper: "Pet’s name, sibling, hobby, funny detail — optional.",
+      helper: "Pet’s name, sibling, hobby, funny detail · optional.",
       skip: "Skip",
       cta: "Continue",
     },
@@ -126,7 +126,7 @@ export const SANTA_COPY = {
   sections: {
     message: {
       h2: "A Personalized Message From Santa",
-      body: "Create a Christmas video from Santa for a child, siblings, family, or someone special. Santa can say their name and weave in optional details you share — then you download or share the finished video.",
+      body: "Create a Christmas video from Santa for a child, siblings, family, or someone special. Santa can say their name and weave in optional details you share · then you download or share the finished video.",
     },
     mention: {
       h2: "What Can Santa Mention?",
@@ -143,7 +143,7 @@ export const SANTA_COPY = {
     examples: {
       h2: "Personalized Santa Video Examples",
       intro:
-        "Demo messages that show how Santa can personalize a greeting. These are product demonstrations — not customer reviews.",
+        "Demo messages that show how Santa can personalize a greeting. These are product demonstrations · not customer reviews.",
     },
     how: {
       h2: "How It Works",
@@ -183,7 +183,7 @@ export const SANTA_COPY = {
         },
         {
           title: "A magical way to surprise children before Christmas",
-          body: "Personal details make the moment feel real — not generic.",
+          body: "Personal details make the moment feel real · not generic.",
         },
       ],
     },
@@ -192,7 +192,7 @@ export const SANTA_COPY = {
       items: [
         "Entered details are used to create the personalized Santa experience.",
         "We do not publish child names in public galleries.",
-        "Share links should be treated as private gifts — only send to people you trust.",
+        "Share links should be treated as private gifts · only send to people you trust.",
         "Uploads and results stay private by default; they are not shown in a public gallery.",
       ],
     },
@@ -215,7 +215,7 @@ export const SANTA_COPY = {
         },
         {
           q: "Can Santa mention a Christmas gift?",
-          a: "Yes — you can include a Christmas wish, and Santa can mention it when you provide one.",
+          a: "Yes · you can include a Christmas wish, and Santa can mention it when you provide one.",
         },
         {
           q: "Can I make a video for siblings?",

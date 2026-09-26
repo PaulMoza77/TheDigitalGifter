@@ -20,7 +20,7 @@ export const GIFT_FINDER_FAQS = [
   },
   {
     q: "Can I find a gift for someone who has everything?",
-    a: "Yes. Choosing “Has everything” biases recommendations toward experiences, personalization, hobby upgrades and meaningful keepsakes — not generic clutter.",
+    a: "Yes. Choosing “Has everything” biases recommendations toward experiences, personalization, hobby upgrades and meaningful keepsakes · not generic clutter.",
   },
   {
     q: "Can I find gifts for teenagers?",
@@ -36,7 +36,7 @@ export const GIFT_FINDER_FAQS = [
   },
   {
     q: "Does the Gift Finder recommend personalized gifts?",
-    a: "When it fits the person — especially sentimental or “loves personalized gifts” profiles — we include personalized and meaningful options, including occasional TDG keepsakes.",
+    a: "When it fits the person · especially sentimental or “loves personalized gifts” profiles · we include personalized and meaningful options, including occasional TDG keepsakes.",
   },
   {
     q: "Can I change my answers?",
@@ -44,7 +44,7 @@ export const GIFT_FINDER_FAQS = [
   },
   {
     q: "Does it show real products?",
-    a: "Today the finder shows curated gift ideas with typical price ranges. Live retailer prices, availability, and shop feeds are not connected yet — we do not invent exact stock or merchant prices.",
+    a: "Today the finder shows curated gift ideas with typical price ranges. Live retailer prices, availability, and shop feeds are not connected yet · we do not invent exact stock or merchant prices.",
   },
 ] as const;
 
@@ -55,7 +55,7 @@ export const GIFT_FINDER_GEO = [
   },
   {
     q: "Can I search by budget?",
-    a: "Yes — budget is one of the core filters in the Gift Finder.",
+    a: "Yes · budget is one of the core filters in the Gift Finder.",
   },
   {
     q: "Can I find gifts for someone who has everything?",

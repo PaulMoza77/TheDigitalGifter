@@ -68,7 +68,7 @@ export function AiCostsReplicateSection({ loading, report }: Props) {
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-slate-50">AI Costs — Replicate</h2>
+            <h2 className="text-base font-semibold text-slate-50">AI Costs · Replicate</h2>
             <TooltipProvider delayDuration={150}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -103,17 +103,17 @@ export function AiCostsReplicateSection({ loading, report }: Props) {
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Replicate cost — selected period"
+          label="Replicate cost · selected period"
           value={loading || !cards ? "..." : formatUsd(cards.replicateCostPeriodUsd)}
           helper="USD · tracked pet-funnel usage"
         />
         <StatCard
-          label="Replicate cost — today"
+          label="Replicate cost · today"
           value={loading || !cards ? "..." : formatUsd(cards.replicateCostTodayUsd)}
           helper="USD · UTC today"
         />
         <StatCard
-          label="Pet revenue — selected period"
+          label="Pet revenue · selected period"
           value={loading || !cards ? "..." : formatUsd(cards.petRevenuePeriodUsd)}
           helper="USD · paid pet orders"
         />

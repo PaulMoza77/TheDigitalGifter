@@ -289,7 +289,7 @@ export function PetV4FunnelPage({ species }: { species: PetV2Species }) {
       showBack={step !== "landing"}
       footer={
         step === "landing"
-          ? "Free personalized teaser — unlock the full collection for $2.99."
+          ? "Free personalized teaser · unlock the full collection for $2.99."
           : undefined
       }
       padForSticky={step === "landing"}

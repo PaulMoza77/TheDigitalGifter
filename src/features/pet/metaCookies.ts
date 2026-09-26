@@ -92,7 +92,7 @@ function ensureFirstPartyFbcCookie(fbc: string) {
   if (typeof document === "undefined") return;
   if (readMetaFbc()) return;
   try {
-    // 90 days — mirrors Meta's typical click cookie lifetime.
+    // 90 days · mirrors Meta's typical click cookie lifetime.
     document.cookie = `_fbc=${encodeURIComponent(fbc)}; path=/; max-age=${90 * 24 * 3600}; SameSite=Lax`;
   } catch {
     /* ignore */

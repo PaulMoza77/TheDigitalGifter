@@ -15,16 +15,16 @@ Main-app `orders` + `pricing_items` are EUR credit-pack oriented and lack guest-
 
 | Option | Description | Verdict |
 | --- | --- | --- |
-| A — Generalize existing `orders` | Extend credit orders for Christmas SKUs | Rejected for guest funnel + separate payment/fulfillment needs |
-| B — Dedicated `christmas_*` tables | Catalog + packages + orders + events | **Selected** |
-| C — Widen `pet_orders` | Drop SKU check; add product_family | Rejected — Pet regression and schema pollution |
+| A · Generalize existing `orders` | Extend credit orders for Christmas SKUs | Rejected for guest funnel + separate payment/fulfillment needs |
+| B · Dedicated `christmas_*` tables | Catalog + packages + orders + events | **Selected** |
+| C · Widen `pet_orders` | Drop SKU check; add product_family | Rejected · Pet regression and schema pollution |
 
 ## Selected design (B)
 
-- `christmas_products` / `christmas_packages` — multi-product catalog; server-authoritative price
-- `christmas_orders` — guest-capable orders with **separate** `payment_status` and `fulfillment_status`
-- `christmas_order_assets` — future result linkage (image/video/card) without JSON blobs on the order
-- `christmas_funnel_events` — allowlisted analytics; attribution columns
+- `christmas_products` / `christmas_packages` · multi-product catalog; server-authoritative price
+- `christmas_orders` · guest-capable orders with **separate** `payment_status` and `fulfillment_status`
+- `christmas_order_assets` · future result linkage (image/video/card) without JSON blobs on the order
+- `christmas_funnel_events` · allowlisted analytics; attribution columns
 - Stripe metadata `product_family=christmas` + `christmas_order_id`; Pet webhook path unchanged
 - Checkout seam prefers V3 Custom Checkout Elements pattern
 

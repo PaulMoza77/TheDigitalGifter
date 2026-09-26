@@ -166,7 +166,7 @@ export default function ChristmasDashboardPage() {
           <Metric label="Paid orders" value={paid.length} hint={pct(paid.length, checkout) + " of checkout sessions"} />
           <Metric
             label="Refreshed"
-            value={data.loadedAt ? data.loadedAt.toLocaleTimeString() : "—"}
+            value={data.loadedAt ? data.loadedAt.toLocaleTimeString() : "-"}
             hint={data.loading ? "Loading…" : undefined}
           />
         </section>
@@ -234,7 +234,7 @@ export default function ChristmasDashboardPage() {
             </div>
           </div>
           <div className="mt-3 text-sm text-slate-400">
-            Drop-off: {plannerKpis.dropoff.map((d) => `${d.from}→${d.to} lost ${d.lost}`).join(" · ") || "—"}
+            Drop-off: {plannerKpis.dropoff.map((d) => `${d.from}→${d.to} lost ${d.lost}`).join(" · ") || "-"}
           </div>
         </SectionCard>
 

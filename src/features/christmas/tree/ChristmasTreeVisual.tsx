@@ -18,7 +18,7 @@ type Props = {
   className?: string;
 };
 
-/** CSS/SVG Christmas tree — semantic styles, no WebGL. */
+/** CSS/SVG Christmas tree · semantic styles, no WebGL. */
 export function ChristmasTreeVisual({ style, decorations, className }: Props) {
   const p = STYLE_PALETTE[style] || STYLE_PALETTE.classic;
   const reduceMotion =

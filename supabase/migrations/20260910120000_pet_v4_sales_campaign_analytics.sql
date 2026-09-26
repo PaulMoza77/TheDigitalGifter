@@ -391,7 +391,7 @@ grant execute on function public.record_pet_v4_funnel_event(
 ) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
--- admin_pet_v4_analytics — rich dashboard JSON for New Sales Campaign
+-- admin_pet_v4_analytics · rich dashboard JSON for New Sales Campaign
 -- ---------------------------------------------------------------------------
 create or replace function public.admin_pet_v4_analytics(
   p_from timestamptz,

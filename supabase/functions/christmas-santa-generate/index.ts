@@ -10,7 +10,7 @@ import {
 
 /**
  * Post-payment Santa Video pipeline (async stages).
- * Never held open by the browser — invoke and return; job state is durable.
+ * Never held open by the browser · invoke and return; job state is durable.
  */
 
 type Body = { order_id?: string; resume?: boolean };
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
         if (!existing.error && existing.data && !mock) {
           stillBytes = new Uint8Array(await existing.data.arrayBuffer());
         } else if (mock) {
-          // Minimal JPEG SOI/EOI — mock path only
+          // Minimal JPEG SOI/EOI · mock path only
           stillBytes = Uint8Array.from([0xff, 0xd8, 0xff, 0xd9]);
         } else {
           const still = await generateSantaStill({
@@ -271,7 +271,7 @@ Deno.serve(async (req) => {
           mode: "mock" as string,
         };
         if (mock) {
-          // Minimal ISO BMFF-ish placeholder — not a real playable deliverable for PASS proofs
+          // Minimal ISO BMFF-ish placeholder · not a real playable deliverable for PASS proofs
           videoBytes = new TextEncoder().encode("tdg-santa-mock-mp4");
         } else {
           const imageSigned = await service.storage
@@ -410,7 +410,7 @@ Deno.serve(async (req) => {
                 from,
                 to: [email],
                 subject: "Your Santa video is ready",
-                html: `<p>Your personalized Santa video is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
+                html: `<p>Your personalized Santa video is ready.</p><p><a href="${link}">Open your result</a></p><p>- The Digital Gifter</p>`,
               }),
             });
           }

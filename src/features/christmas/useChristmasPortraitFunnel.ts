@@ -383,9 +383,9 @@ export function useChristmasPortraitFunnel({
           uploadErr instanceof Error ? uploadErr.message : "Upload failed";
         const friendly =
           /fetch|network|failed to fetch|json|503|502|unexpected end/i.test(msg)
-            ? "Connection hiccup. Your photo is saved on this device — you can continue choosing a style, then retry upload at checkout."
+            ? "Connection hiccup. Your photo is saved on this device · you can continue choosing a style, then retry upload at checkout."
             : msg.length > 160
-              ? "We couldn’t upload this photo just now. Your selection is saved — please try again."
+              ? "We couldn’t upload this photo just now. Your selection is saved · please try again."
               : msg;
         setStep(mode === "hub" ? "subject" : "upload", {
           localPreviewUrl: localUrl,
@@ -466,7 +466,7 @@ export function useChristmasPortraitFunnel({
   async function startCheckout() {
     if (!purchasable) {
       setStep("offer", {
-        lastError: "Checkout is not enabled yet — production price is not configured.",
+        lastError: "Checkout is not enabled yet · production price is not configured.",
       });
       return;
     }

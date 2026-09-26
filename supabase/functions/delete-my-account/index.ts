@@ -2,7 +2,7 @@ import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getAuthUser, getServiceClient } from "../_shared/supabase.ts";
 
 /**
- * Apple App Store Guideline 5.1.1(v) — account deletion from the app.
+ * Apple App Store Guideline 5.1.1(v) · account deletion from the app.
  *
  * Delete account-owned profile/content data, remove uploaded media we control,
  * de-identify transaction records that must remain for fraud/refund/accounting,

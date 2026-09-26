@@ -585,7 +585,7 @@
   }
 }
 
-/* Mobile only — after base + desktop rules so cascade wins. Desktop 960px+ untouched. */
+/* Mobile only · after base + desktop rules so cascade wins. Desktop 960px+ untouched. */
 @media (max-width: 959px) {
   .cc-scene__poster img,
   .cc-scene__video {

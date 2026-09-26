@@ -26,23 +26,23 @@ export const PET_V3_FUNNEL_CONFIG: PreviewFunnelDefinition = {
     landingEyebrow: "Try it free",
     landingHeadline: "One photo. 12 secret lives. 2 cinematic clips.",
     landingSubhead:
-      "Upload one clear photo of your cat and get a free cinematic preview as a royal ruler — no card required.",
+      "Upload one clear photo of your cat and get a free cinematic preview as a royal ruler · no card required.",
     landingCta: "Create my free preview",
-    landingFooter: "Free preview first — card only if you unlock the collection.",
+    landingFooter: "Free preview first · card only if you unlock the collection.",
     closingHeadline: "One photo. 12 secret lives. 2 cinematic clips.",
     closingSubhead: (price) =>
       `Upload one cat photo for a free royal preview. Unlock all 12 secret lives and 2 mini clips for ${price}.`,
     photoHeadline: "One clear cat photo.",
     photoSubhead:
-      "Face toward the camera, both eyes visible, even light. One cat only — no group shots, dogs, or heavy filters.",
+      "Face toward the camera, both eyes visible, even light. One cat only · no group shots, dogs, or heavy filters.",
     generateCta: "Create my free preview",
     generatingHeadline: "Creating your cat’s royal preview",
     generatingSubhead:
-      "We’re turning your cat into a cinematic royal ruler. This is one free preview — not the full collection yet.",
+      "We’re turning your cat into a cinematic royal ruler. This is one free preview · not the full collection yet.",
     generatingStatus: [
       "Reading your cat photo",
       "Starting your royal ruler preview",
-      "Still working — usually under 30 seconds",
+      "Still working · usually under 30 seconds",
     ],
     previewEyebrow: "Free cinematic preview",
     previewHeadline: (petName) =>

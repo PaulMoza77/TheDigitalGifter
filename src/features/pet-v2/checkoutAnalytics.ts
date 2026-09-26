@@ -13,7 +13,7 @@ export type V2CheckoutResult = {
   amountCents?: number;
 };
 
-/** First-party V2 initiate checkout — only after Stripe session is created/opened. */
+/** First-party V2 initiate checkout · only after Stripe session is created/opened. */
 export function trackV2BeginCheckout(input: {
   species: PetV2Species;
   result: V2CheckoutResult;

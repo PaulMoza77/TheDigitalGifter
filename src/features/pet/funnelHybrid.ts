@@ -1,5 +1,5 @@
 /**
- * Pure hybrid funnel merge / spend math — browser-safe, no secrets.
+ * Pure hybrid funnel merge / spend math · browser-safe, no secrets.
  */
 
 import {
@@ -374,7 +374,7 @@ export function mergeMetaAdRows(
       campaignId: String(row.campaign_id || ""),
       campaignName: String(row.campaign_name || row.campaign_id || "Campaign"),
       adsetId: String(row.adset_id || ""),
-      adsetName: String(row.adset_name || row.adset_id || "—"),
+      adsetName: String(row.adset_name || row.adset_id || "-"),
       adId,
       adName: String(row.ad_name || row.ad_id || "Ad"),
       spendCents,
@@ -444,7 +444,7 @@ export function emptyHybridCounts(): FunnelStepCounts {
 }
 
 export function formatMetricOrDash(value: number | null | undefined, format: (n: number) => string = String): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return format(value);
 }
 

@@ -32,8 +32,8 @@ Same invariants as Christmas Tree:
 
 Activated in V2:
 
-- `reserveWishlistItem` — race-safe `WHERE reservation_status = 'none'`
-- `markWishlistItemPurchased` / `releaseWishlistItemReservation` — require opaque `reservation_token`
+- `reserveWishlistItem` · race-safe `WHERE reservation_status = 'none'`
+- `markWishlistItemPurchased` / `releaseWishlistItemReservation` · require opaque `reservation_token`
 - Shared DTO exposes `reservation_status` only (never token / identity)
 - Owner DTO strips reservation status (anti-spoiler)
 
@@ -55,8 +55,8 @@ No owner names, gift notes, or pasted URLs in Meta/GA4 payloads.
 
 ## Migrations
 
-1. `20260903200000_christmas_wishlist_gift_finder.sql` — foundation
-2. `20260909140000_christmas_wishlist_v2_reservations.sql` — priorities, media, audience, reservation timestamps
+1. `20260903200000_christmas_wishlist_gift_finder.sql` · foundation
+2. `20260909140000_christmas_wishlist_v2_reservations.sql` · priorities, media, audience, reservation timestamps
 
 ## Docs
 

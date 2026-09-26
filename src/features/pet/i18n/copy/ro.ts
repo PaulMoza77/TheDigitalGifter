@@ -28,10 +28,10 @@ export const PET_COPY_RO: PetCopyMap = {
   // V2 landing
   "v2.landing.eyebrow": "Încearcă gratuit",
   "v2.landing.h1": "Vezi-ți animalul ca pilot de Formula 1.",
-  "v2.landing.lede": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a {pet} — fără card.",
-  "v2.landing.lede.dog": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a câinelui tău — fără card.",
-  "v2.landing.lede.cat": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a pisicii tale — fără card.",
-  "v2.landing.lede.other": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a animalului tău — fără card.",
+  "v2.landing.lede": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a {pet} · fără card.",
+  "v2.landing.lede.dog": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a câinelui tău · fără card.",
+  "v2.landing.lede.cat": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a pisicii tale · fără card.",
+  "v2.landing.lede.other": "Încarcă o fotografie și primești gratuit o previzualizare neclară a vieții secrete a animalului tău · fără card.",
   "v2.landing.cta": "Încarcă fotografia animalului tău",
   "v2.landing.chooseFile": "Alege un JPEG, PNG sau WebP",
   "v2.landing.bullet.lives": "12 vieți secrete",
@@ -43,7 +43,7 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.landing.proofAria": "Exemple de portrete și clipuri",
   "v2.landing.livesH2": "Toate cele 12 vieți secrete",
   "v2.landing.livesLede.dog":
-    "Douăsprezece portrete cu același {pet} — fiecare lume inclusă. 2 mini clipuri incluse.",
+    "Douăsprezece portrete cu același {pet} · fiecare lume inclusă. 2 mini clipuri incluse.",
   "v2.landing.livesLede.other": "Douăsprezece portrete. O fotografie. Multe tipuri de animale.",
   "v2.landing.closingH2": "Descoperă viața secretă a animalului tău.",
   "v2.landing.closingLede":
@@ -62,12 +62,12 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.pack.headline": "Primești 12 vieți secrete și 2 mini clipuri pentru doar {price}",
   "v2.pack.headlineRich": "Primești 12 vieți secrete și 2 mini clipuri pentru doar",
   "v2.pack.fine": "O singură plată · fără abonament · același animal în fiecare portret și clip",
-  "v2.shell.footer": "{headline}. Previzualizare personalizată gratuită — plătești doar ca să deblochezi.",
+  "v2.shell.footer": "{headline}. Previzualizare personalizată gratuită · plătești doar ca să deblochezi.",
 
   // V2 photo
   "v2.photo.h1": "O fotografie clară.",
   "v2.photo.lede":
-    "Fața spre cameră, ambii ochi vizibili, lumină uniformă. Un singur {pet} — fără poze de grup sau filtre puternice.",
+    "Fața spre cameră, ambii ochi vizibili, lumină uniformă. Un singur {pet} · fără poze de grup sau filtre puternice.",
   "v2.photo.selectedAlt": "Fotografia selectată a animalului",
   "v2.photo.selectedNamed": "Selectat: {fileName}",
   "v2.photo.replace": "Înlocuiește",
@@ -93,7 +93,7 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.teaser.alt": "Previzualizare neclară a vieții secrete a animalului tău",
   "v2.teaser.bullet.lives": "12 vieți secrete ale aceluiași {pet}",
   "v2.teaser.bullet.clips": "2 mini clipuri cinematice",
-  "v2.teaser.bullet.price": "Plată unică de {price} — fără abonament",
+  "v2.teaser.bullet.price": "Plată unică de {price} · fără abonament",
   "v2.teaser.petName": "Numele animalului",
   "v2.teaser.email": "Email pentru galerie",
   "v2.teaser.payAria": "Plată securizată",
@@ -101,8 +101,8 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.teaser.hostedHint": "Continuă pe pagina securizată Stripe ca să finalizezi plata unică.",
   "v2.teaser.hostedOpening": "Se deschide checkout-ul securizat Stripe…",
   "v2.teaser.hostedBusy": "Se deschide checkout-ul securizat Stripe…",
-  "v2.teaser.hostedCta": "Continuă către checkout-ul securizat Stripe — {price}",
-  "v2.teaser.retry": "Deschide checkout-ul securizat Stripe — {price}",
+  "v2.teaser.hostedCta": "Continuă către checkout-ul securizat Stripe · {price}",
+  "v2.teaser.retry": "Deschide checkout-ul securizat Stripe · {price}",
   "v2.teaser.retrying": "Se reîncearcă…",
   "v2.teaser.busyPay": "Se procesează plata securizată…",
   "v2.teaser.loadingPay": "Se încarcă plata securizată…",
@@ -110,9 +110,9 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.teaser.paused":
     "Plata securizată este în pauză până când capacitatea de generare revine. Nu ai fost taxat.",
   "v2.teaser.secureLine": "Plată unică securizată Stripe de {price}. Fără abonament.",
-  "v2.teaser.payDog": "Dezvăluie viața secretă a câinelui meu — {price}",
-  "v2.teaser.payCat": "Dezvăluie viața secretă a pisicii mele — {price}",
-  "v2.teaser.payPet": "Dezvăluie viața secretă a animalului meu — {price}",
+  "v2.teaser.payDog": "Dezvăluie viața secretă a câinelui meu · {price}",
+  "v2.teaser.payCat": "Dezvăluie viața secretă a pisicii mele · {price}",
+  "v2.teaser.payPet": "Dezvăluie viața secretă a animalului meu · {price}",
   "v2.teaser.sessionExpiredContact": "Sesiunea de plată a expirat. Reîncearcă plata securizată.",
 
   // V2 offer (legacy step)
@@ -130,7 +130,7 @@ export const PET_COPY_RO: PetCopyMap = {
   // V2 generating / preview (legacy)
   "v2.gen.h1": "Creăm previzualizarea F1 a animalului tău",
   "v2.gen.lede":
-    "Transformăm animalul tău într-un pilot cinematografic de Formula 1. Aceasta este o previzualizare gratuită — nu colecția completă încă.",
+    "Transformăm animalul tău într-un pilot cinematografic de Formula 1. Aceasta este o previzualizare gratuită · nu colecția completă încă.",
   "v2.gen.retry": "Încearcă din nou",
   "v2.gen.change": "Schimbă fotografia",
   "v2.gen.thumbAlt": "Animalul tău încărcat",
@@ -145,7 +145,7 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.preview.f1Alt": "{pet} ca pilot de Formula 1",
   "v2.preview.mock":
     "Previzualizare prototip: generarea AI live este dezactivată în acest mediu, deci vezi fotografia ta cu un cadru în stil F1.",
-  "v2.preview.unlock": "Deblochează colecția completă — {price}",
+  "v2.preview.unlock": "Deblochează colecția completă · {price}",
   "v2.preview.regen": "Încearcă altă previzualizare gratuită",
 
   // Checkout loading phases
@@ -158,7 +158,7 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.checkout.failed":
     "Nu am putut deschide formularul de plată securizată. Te rugăm să încerci din nou. Nu ai fost taxat.",
   "v2.provider.unavailable":
-    "Momentan nu putem crea transformări noi. Te rugăm să încerci din nou în curând — nu ai fost taxat.",
+    "Momentan nu putem crea transformări noi. Te rugăm să încerci din nou în curând · nu ai fost taxat.",
 
   // Preview errors
   "v2.err.invalid_funnel":
@@ -166,9 +166,9 @@ export const PET_COPY_RO: PetCopyMap = {
   "v2.err.rate_limited":
     "Această sesiune a folosit deja previzualizările gratuite. Deblochează colecția sau încearcă mâine.",
   "v2.err.timeout":
-    "Previzualizarea încă se generează. Așteaptă un moment, apoi apasă Încearcă din nou — continuăm de unde am rămas.",
+    "Previzualizarea încă se generează. Așteaptă un moment, apoi apasă Încearcă din nou · continuăm de unde am rămas.",
   "v2.err.rate_limit":
-    "Serviciul de previzualizare este ocupat. Apasă Încearcă din nou peste un moment — de obicei se rezolvă rapid.",
+    "Serviciul de previzualizare este ocupat. Apasă Încearcă din nou peste un moment · de obicei se rezolvă rapid.",
   "v2.err.wrong_species":
     "Fotografia nu se potrivește cu această experiență. Te rugăm să încarci o fotografie clară cu animalul potrivit.",
   "v2.err.invalid_image": "Fotografia nu a putut fi folosită. Încearcă un JPEG, PNG sau WebP mai mic.",
@@ -184,13 +184,13 @@ export const PET_COPY_RO: PetCopyMap = {
   "v1.product.name": "My Pet’s Secret Life",
   "v1.product.promise": "O fotografie. 12 vieți secrete. 2 clipuri cinematice.",
   "v1.hero.subtitle":
-    "Vezi-ți animalul ca regalitate, astronaut, CEO și multe altele — aceeași față în fiecare lume.",
+    "Vezi-ți animalul ca regalitate, astronaut, CEO și multe altele · aceeași față în fiecare lume.",
   "v1.hero.promise": "O fotografie. 12 vieți secrete. 2 clipuri cinematice.",
   "v1.offer.noSub": "Fără abonament",
   "v1.offer.include.portraits": "12 portrete ale aceluiași animal",
   "v1.offer.include.clips": "2 clipuri cinematice de 5 secunde",
   "v1.offer.include.review": "Verificare umană înainte de descărcare",
-  "v1.offer.include.price": "Preț unic — fără abonament",
+  "v1.offer.include.price": "Preț unic · fără abonament",
   "v1.landing.dog.heading": "Douăsprezece vieți secrete",
   "v1.landing.dog.description":
     "Treci cu mouse-ul sau apasă pe un portret ca să-l vezi mișcându-se. Același Golden Retriever. O lume diferită în fiecare cadru.",
@@ -286,7 +286,7 @@ export const PET_COPY_RO: PetCopyMap = {
   "faq.sub.a": "Nu. Plată unică. Nimic nu se reînnoiește.",
   "faq.look.q": "Va semăna cu animalul meu?",
   "faq.look.a":
-    "Da — asta e produsul. O fotografie, douăsprezece scene, două clipuri cinematice, aceeași față. O persoană verifică înainte să descarci.",
+    "Da · asta e produsul. O fotografie, douăsprezece scene, două clipuri cinematice, aceeași față. O persoană verifică înainte să descarci.",
   "faq.time.q": "Cât durează?",
   "faq.time.a":
     "De obicei câteva minute după plată. Replicate pornește cele douăsprezece portrete imediat.",
@@ -312,5 +312,5 @@ export const PET_COPY_RO: PetCopyMap = {
     "Primești fișierele de portret generate și două clipuri MP4 cinematice din galeria comenzii. Decupaje suplimentare precum wallpaper-uri nu sunt încă incluse.",
 
   // Validation
-  "validate.name": "Dă-i un nume animalului — chiar și o poreclă e în regulă.",
+  "validate.name": "Dă-i un nume animalului · chiar și o poreclă e în regulă.",
 };

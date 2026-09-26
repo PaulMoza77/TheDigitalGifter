@@ -3,9 +3,9 @@
 export type IdentityConfirmKind = "dog" | "cat" | "pet";
 
 export function identityConfirmLabel(kind: IdentityConfirmKind): string {
-  if (kind === "cat") return "Yes — this looks like my cat (same face, fur, and markings).";
-  if (kind === "pet") return "Yes — this looks like my pet (same face, fur, and markings).";
-  return "Yes — this looks like my dog (same face, fur, and markings).";
+  if (kind === "cat") return "Yes · this looks like my cat (same face, fur, and markings).";
+  if (kind === "pet") return "Yes · this looks like my pet (same face, fur, and markings).";
+  return "Yes · this looks like my dog (same face, fur, and markings).";
 }
 
 export function identityConfirmRequiredError(kind: IdentityConfirmKind): string {

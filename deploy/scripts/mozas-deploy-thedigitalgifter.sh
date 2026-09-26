@@ -106,12 +106,12 @@ if ! docker compose \
   --env-file "${TDG_SECRETS}" \
   --profile with-app \
   up -d --remove-orphans --force-recreate --wait; then
-  log "new TDG release failed health wait — attempting rollback to previous verified image"
+  log "new TDG release failed health wait · attempting rollback to previous verified image"
   # Do not advance verified.*; rollback restores the prior verified pin.
   if [[ -x /opt/mozas/bin/mozas-rollback-thedigitalgifter ]]; then
     /opt/mozas/bin/mozas-rollback-thedigitalgifter || true
   fi
-  die "TDG deploy failed — previous verified release retained when rollback succeeded"
+  die "TDG deploy failed · previous verified release retained when rollback succeeded"
 fi
 
 # Only mark verified after health wait succeeds.

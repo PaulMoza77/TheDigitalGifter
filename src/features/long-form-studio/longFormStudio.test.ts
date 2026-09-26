@@ -152,14 +152,14 @@ describe("youtube copy", () => {
     const withAttr: MusicTrack = {
       ...ORIGINAL_MUSIC_SEED[0]!,
       attributionRequired: true,
-      attributionText: "Hearth Glow — The Digital Gifter",
+      attributionText: "Hearth Glow · The Digital Gifter",
     };
     const missingAttr: MusicTrack = {
       ...ORIGINAL_MUSIC_SEED[1]!,
       attributionRequired: true,
       attributionText: "",
     };
-    expect(requiredAttributions([withAttr, missingAttr])).toEqual(["Hearth Glow — The Digital Gifter"]);
+    expect(requiredAttributions([withAttr, missingAttr])).toEqual(["Hearth Glow · The Digital Gifter"]);
     const description = generateDescription({
       sceneTitle: "Cozy cottage",
       style: "cozy",
@@ -167,7 +167,7 @@ describe("youtube copy", () => {
       durationSeconds: 3600,
       tracks: [withAttr],
     });
-    expect(description).toContain("Hearth Glow — The Digital Gifter");
+    expect(description).toContain("Hearth Glow · The Digital Gifter");
     expect(description).toContain("The Digital Gifter");
     expect(description).not.toContain("unknown artist");
     const draft = prepareYouTubeDraft({

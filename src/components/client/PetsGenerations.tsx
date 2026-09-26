@@ -171,7 +171,7 @@ export default function PetsGenerations({
                           onClick={async () => {
                             const result = await sharePortrait({
                               url: portrait.previewUrl,
-                              title: `${gallery.petName} — ${portrait.title}`,
+                              title: `${gallery.petName} · ${portrait.title}`,
                               text: `${gallery.petName}’s ${portrait.title} portrait`,
                               fileName: portrait.fileName,
                               pageUrl: gallery.orderUrl,

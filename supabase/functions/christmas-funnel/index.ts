@@ -26,7 +26,7 @@ import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts"
 type Body = Record<string, unknown>;
 
 const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
-/** Elements Checkout (`ui_mode: elements`) — match pet V2 Dahlia quickstart. */
+/** Elements Checkout (`ui_mode: elements`) · match pet V2 Dahlia quickstart. */
 const STRIPE_API_VERSION_ELEMENTS = "2026-07-29.dahlia";
 
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);

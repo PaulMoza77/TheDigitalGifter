@@ -151,7 +151,7 @@
       "product_ready": "YES"
     }
   },
-  "providerSelectionChanges": "none — production auto already prefers MiniMax for non-en; QA used that path. Explicit preferredSantaTtsProvider map documents the contract.",
+  "providerSelectionChanges": "none · production auto already prefers MiniMax for non-en; QA used that path. Explicit preferredSantaTtsProvider map documents the contract.",
   "fullVideoSmoke": {
     "performed": false,
     "reason": "Video pipeline is language-agnostic once valid MP3 exists; existing Santa pipeline tests cover wiring. No per-locale video spend.",

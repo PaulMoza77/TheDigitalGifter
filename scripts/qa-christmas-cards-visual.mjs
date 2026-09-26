@@ -72,7 +72,7 @@ const cases = [
     layout: "square",
     style: "classic_christmas",
     message:
-      "Merry Christmas! As the year winds down I keep thinking about how grateful I am for you and for every quiet kindness you shared. May your holidays be filled with rest, laughter, soft lights, and the people who make ordinary days feel like home — today and all season long.",
+      "Merry Christmas! As the year winds down I keep thinking about how grateful I am for you and for every quiet kindness you shared. May your holidays be filled with rest, laughter, soft lights, and the people who make ordinary days feel like home · today and all season long.",
     photo: false,
     diacritics: false,
   },
@@ -88,7 +88,7 @@ const cases = [
     id: "landscape",
     layout: "landscape",
     style: "classic_christmas",
-    message: "Season's greetings — wishing you a peaceful holiday.",
+    message: "Season's greetings · wishing you a peaceful holiday.",
     photo: false,
     diacritics: false,
   },

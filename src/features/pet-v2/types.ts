@@ -14,7 +14,7 @@ export const PET_V2_PATHS = ["/pet/dog-v2", "/pet/cat-v2", "/pet/other-v2"] as c
 export const PET_V2_DRAFT_STORAGE_KEY = "tdg.petFunnelV2.draft.v1" as const;
 export const PET_V2_SESSION_KEY = "tdg.petFunnelV2.session.v1" as const;
 export const PET_V2_EVENT_PATH = "/api/pet-v2/funnel-event" as const;
-/** Legacy same-origin path — kept for rewrites/tests. Live traffic uses the edge function. */
+/** Legacy same-origin path · kept for rewrites/tests. Live traffic uses the edge function. */
 export const PET_V2_PREVIEW_PATH = "/api/pet-v2/preview" as const;
 export const PET_V2_PREVIEW_EDGE_PATH = "/functions/v1/pet-v2-preview" as const;
 export const PET_V2_PROVIDER_STATUS_PATH = "/functions/v1/pet-provider-status" as const;
@@ -24,7 +24,7 @@ export const PET_V2_PRICE_CENTS = 299 as const;
 export const PET_V2_PRICE_DISPLAY = "$2.99" as const;
 export const PET_V2_COMPARE_PRICE_CENTS = 2700 as const;
 export const PET_V2_COMPARE_PRICE_DISPLAY = "$27" as const;
-/** @deprecated Use PET_V2_PRICE_* — kept for older imports/tests. */
+/** @deprecated Use PET_V2_PRICE_* · kept for older imports/tests. */
 export const PET_V2_TEST_PRICE_CENTS = PET_V2_PRICE_CENTS;
 export const PET_V2_TEST_PRICE_DISPLAY = PET_V2_PRICE_DISPLAY;
 export const PET_V2_PRODUCTION_PRICE_CENTS = PET_V2_COMPARE_PRICE_CENTS;
@@ -42,7 +42,7 @@ export const PET_V2_STEPS = [
   "photo",
   "teaser",
   "offer",
-  /** @deprecated Legacy AI-preview steps — kept for draft restore mapping. */
+  /** @deprecated Legacy AI-preview steps · kept for draft restore mapping. */
   "generating",
   "preview",
 ] as const;
@@ -82,7 +82,7 @@ export const PET_V2_EVENTS = [
   "v2_paid_generation_failed",
   "v2_collection_viewed",
   "v2_provider_unavailable",
-  // Legacy (historical reporting only — do not silently redefine)
+  // Legacy (historical reporting only · do not silently redefine)
   "v2_preview_generation_started",
   "v2_preview_generation_completed",
   "v2_preview_generation_failed",
@@ -176,7 +176,7 @@ export type PetV2PreviewResponse = {
 };
 
 export const V2_PROVIDER_UNAVAILABLE_COPY =
-  "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.";
+  "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.";
 
 export const V2_CHECKOUT_FAILED_COPY =
   "We couldn’t open the secure payment form. Please try again. You haven’t been charged.";
@@ -184,4 +184,4 @@ export const V2_CHECKOUT_FAILED_COPY =
 export const V2_TEASER_HEADLINE = "Your dog’s secret life is ready to be revealed.";
 export const V2_TEASER_SUPPORT =
   "Unlock the complete personalized 12+2 image collection for $2.99.";
-export const V2_TEASER_CTA = "Reveal My Dog’s Secret Life — $2.99";
+export const V2_TEASER_CTA = "Reveal My Dog’s Secret Life · $2.99";

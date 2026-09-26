@@ -50,7 +50,7 @@ export default function LiveSessionsPanel() {
             <div className="space-y-1">
               <p className="text-sm text-red-200">LIVE · {item.title}</p>
               <p className="text-[11px] text-slate-400">
-                Elapsed {liveElapsedLabel(item.started_at) || "—"} · Stop {item.planned_end_at?.slice(11, 16) || "—"} UTC
+                Elapsed {liveElapsedLabel(item.started_at) || "-"} · Stop {item.planned_end_at?.slice(11, 16) || "-"} UTC
               </p>
               {item.youtube_url ? (
                 <a href={item.youtube_url} target="_blank" rel="noreferrer" className="text-[11px] text-indigo-300">

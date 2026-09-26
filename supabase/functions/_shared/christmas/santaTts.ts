@@ -1,6 +1,6 @@
 /**
  * OpenAI TTS with Replicate MiniMax fallback (Wave 1 language_boost map).
- * Synthetic character voices — not real-person clones.
+ * Synthetic character voices · not real-person clones.
  */
 
 import { replicateOutputUrl } from "../pet/replicate.ts";

@@ -6,9 +6,9 @@ import {
 } from "../pet/funnelGuards";
 
 export const V3_CHECKOUT_HOLD_STORAGE_KEY = "tdg.petFunnelV3.checkoutHold.v1";
-/** Versioned Elements cache — never reuse Custom Checkout (v1) secrets. */
+/** Versioned Elements cache · never reuse Custom Checkout (v1) secrets. */
 export const V3_CHECKOUT_SESSION_CACHE_KEY = "tdg.petFunnelV3.checkoutSession.v2";
-/** Legacy Custom Checkout cache key — read only for order recovery, never for Elements secrets. */
+/** Legacy Custom Checkout cache key · read only for order recovery, never for Elements secrets. */
 export const V3_CHECKOUT_SESSION_CACHE_KEY_LEGACY = "tdg.petFunnelV3.checkoutSession.v1";
 export const V3_CHECKOUT_HOLD_MS = 30 * 60 * 1000;
 export const V3_CHECKOUT_CACHE_VERSION = 2;

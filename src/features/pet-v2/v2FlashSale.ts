@@ -13,7 +13,7 @@ import {
   PET_V2_PRICE_DISPLAY,
 } from "./types";
 
-/** Rolling 24-hour urgency window — resets every cycle; checkout uses presentment currency. */
+/** Rolling 24-hour urgency window · resets every cycle; checkout uses presentment currency. */
 export const PET_V2_SALE_CYCLE_MS = 24 * 60 * 60 * 1000;
 
 /** First cycle anchor (V2 dog funnel rolling offer). */
@@ -39,7 +39,7 @@ export function v2SaleRemainingMs(nowMs = Date.now()): number {
   return PET_V2_SALE_CYCLE_MS - positionInCycle;
 }
 
-/** Sale + compare amounts in presentment currency — timer rolls every 24h. */
+/** Sale + compare amounts in presentment currency · timer rolls every 24h. */
 export function v2FlashSale(nowMs = Date.now(), currency: PetCurrency | string = "usd"): V2FlashSale {
   const code = normalizePetCurrency(currency);
   const remainingMs = v2SaleRemainingMs(nowMs);

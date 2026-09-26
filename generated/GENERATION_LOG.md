@@ -1,14 +1,14 @@
-# Premium Christmas Reel — Kling v3 Pro 1080p
+# Premium Christmas Reel · Kling v3 Pro 1080p
 
 ## Model selection
 
 Inspected Replicate `image-to-video` collection (55 models). Compared:
 
-- `wan-video/wan-2.2-i2v-fast` — cheap, not 1080p (previous test)
-- `alibaba/wan-3` — native 1080p, $0.20/s
-- `bytedance/seedance-1-pro` — strong I2V lock, 1080p
-- `minimax/hailuo-02` — 1080p but 6s minimum
-- `kwaivgi/kling-v3-video` mode=pro — native 1080p, 5s, no audio, cinematic motion
+- `wan-video/wan-2.2-i2v-fast` · cheap, not 1080p (previous test)
+- `alibaba/wan-3` · native 1080p, $0.20/s
+- `bytedance/seedance-1-pro` · strong I2V lock, 1080p
+- `minimax/hailuo-02` · 1080p but 6s minimum
+- `kwaivgi/kling-v3-video` mode=pro · native 1080p, 5s, no audio, cinematic motion
 
 **Selected:** `kwaivgi/kling-v3-video` (`mode=pro`, `generate_audio=false`)
 

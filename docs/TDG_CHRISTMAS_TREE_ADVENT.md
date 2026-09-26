@@ -13,17 +13,17 @@ Interactive Christmas engagement system: **Tree + Gifts + Secure Share + Advent 
 
 Feature flags (Edge / Deno env):
 
-- `CHRISTMAS_ADVENT_ENABLED` — must be `true` for production claims
-- `CHRISTMAS_ADVENT_CREDITS_ENABLED` — monetary ledger grants (default off)
-- `CHRISTMAS_FREE_GIFT_ENABLED` — free gift claims (default off)
-- `CHRISTMAS_TEST_BYPASS` — server-only lab switch; client `__test_force` is ignored without it
+- `CHRISTMAS_ADVENT_ENABLED` · must be `true` for production claims
+- `CHRISTMAS_ADVENT_CREDITS_ENABLED` · monetary ledger grants (default off)
+- `CHRISTMAS_FREE_GIFT_ENABLED` · free gift claims (default off)
+- `CHRISTMAS_TEST_BYPASS` · server-only lab switch; client `__test_force` is ignored without it
 
 Defaults do **not** enable Advent monetary promotions or free-gift claims.
 
 ### Free-gift claim path
 
 - Catalog: `christmas_free_gifts` (seed rows `active=false`; credits row stays inactive)
-- Claims: `christmas_free_gift_claims` — unique `(user_id, season_year)` / `(guest_token_hash, season_year)` + `idempotency_key`
+- Claims: `christmas_free_gift_claims` · unique `(user_id, season_year)` / `(guest_token_hash, season_year)` + `idempotency_key`
 - Outcome is server-owned (weighted pick). Client cannot choose the gift.
 - Guests: non-monetary only (`cosmetic` / `surprise_message` / `content_unlock`). Credits never granted to anonymous traffic.
 - Authenticated identity is preferred when a session bearer is present.
@@ -35,8 +35,8 @@ Defaults do **not** enable Advent monetary promotions or free-gift claims.
 
 Table `christmas_trees`:
 
-- `share_id` — high-entropy public **read** capability
-- `owner_token_hash` (SHA-256) or `user_id` — **write** capability
+- `share_id` · high-entropy public **read** capability
+- `owner_token_hash` (SHA-256) or `user_id` · **write** capability
 - `share_enabled` default **false** (private until Share)
 - `decoration_config` JSONB (semantic; not screenshots)
 - moderation: `moderation_status` (`active` / `disabled` / `removed`)
@@ -62,10 +62,10 @@ Opening tracked via `opened_at` + tree `open_count`.
 
 ### REWARD / ADVENT
 
-- `christmas_advent_rewards` — catalog per `season_year` + `day` + `locale`
-- `christmas_advent_claims` — unique `(user, season, day)` + `idempotency_key`
-- `christmas_reward_entitlements` — **non-cash** cosmetics (not EUR purchase credits)
-- `christmas_free_gifts` / `christmas_free_gift_claims` — one claim per identity per season
+- `christmas_advent_rewards` · catalog per `season_year` + `day` + `locale`
+- `christmas_advent_claims` · unique `(user, season, day)` + `idempotency_key`
+- `christmas_reward_entitlements` · **non-cash** cosmetics (not EUR purchase credits)
+- `christmas_free_gifts` / `christmas_free_gift_claims` · one claim per identity per season
 
 Timezone policy: **Europe/Bucharest** canonical day (documented; injectable `__test_date` for tests only).
 
@@ -88,7 +88,7 @@ Events include: `christmas_tree_view`, `tree_creation_started`, `tree_created`, 
 
 Never send tree/gift messages, names, or owner tokens.
 
-Virality foundation: trees_created, share_rate, shared views, opens — via funnel events + tree counters (`view_count`, `share_count`, `open_count`).
+Virality foundation: trees_created, share_rate, shared views, opens · via funnel events + tree counters (`view_count`, `share_count`, `open_count`).
 
 ## Admin
 
@@ -98,7 +98,7 @@ Christmas admin can inspect tree aggregates via service role / future RPC. Messa
 
 - Personal share pages: `noindex`
 - No `/trees` directory
-- OG copy for shares is generic (“A Christmas Tree is waiting for you”) — SPA limitation: no server-rendered per-tree OG image yet
+- OG copy for shares is generic (“A Christmas Tree is waiting for you”) · SPA limitation: no server-rendered per-tree OG image yet
 
 ## Edge function
 

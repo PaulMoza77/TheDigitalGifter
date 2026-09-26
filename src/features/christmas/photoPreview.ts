@@ -88,7 +88,7 @@ export async function validateChristmasPhotoFile(file: File): Promise<ChristmasP
 }
 
 /**
- * Aggressive local blur of the original image — zero AI provider calls.
+ * Aggressive local blur of the original image · zero AI provider calls.
  * Returns a data URL suitable for private in-memory preview only.
  */
 export async function createBlurredOriginalPreview(

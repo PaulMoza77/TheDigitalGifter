@@ -409,17 +409,17 @@ export type CompareRow = {
 };
 
 function money(cents: number | null | undefined): string {
-  if (cents == null || !Number.isFinite(cents)) return "—";
+  if (cents == null || !Number.isFinite(cents)) return "-";
   return `$${(cents / 100).toFixed(2)}`;
 }
 
 function num(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return String(value);
 }
 
 function pct(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return `${value.toFixed(1)}%`;
 }
 
@@ -457,7 +457,7 @@ export function buildCompareRows(campaigns: CampaignScopedCounts[]): CompareRow[
         group: "intent",
         values: campaigns.map((c) => ({
           campaignId: c.campaignId,
-          display: c.campaignId === campaign.campaignId ? num(c.orderReview ?? 0) : "—",
+          display: c.campaignId === campaign.campaignId ? num(c.orderReview ?? 0) : "-",
           raw: c.campaignId === campaign.campaignId ? c.orderReview ?? 0 : null,
         })),
         incompatible: true,
@@ -470,7 +470,7 @@ export function buildCompareRows(campaigns: CampaignScopedCounts[]): CompareRow[
         group: "intent",
         values: campaigns.map((c) => ({
           campaignId: c.campaignId,
-          display: c.campaignId === campaign.campaignId ? num(c.previewViewed ?? 0) : "—",
+          display: c.campaignId === campaign.campaignId ? num(c.previewViewed ?? 0) : "-",
           raw: c.campaignId === campaign.campaignId ? c.previewViewed ?? 0 : null,
         })),
         incompatible: true,
@@ -481,7 +481,7 @@ export function buildCompareRows(campaigns: CampaignScopedCounts[]): CompareRow[
         group: "intent",
         values: campaigns.map((c) => ({
           campaignId: c.campaignId,
-          display: c.campaignId === campaign.campaignId ? num(c.unlockClicked ?? 0) : "—",
+          display: c.campaignId === campaign.campaignId ? num(c.unlockClicked ?? 0) : "-",
           raw: c.campaignId === campaign.campaignId ? c.unlockClicked ?? 0 : null,
         })),
         incompatible: true,
@@ -504,7 +504,7 @@ export function buildCompareRows(campaigns: CampaignScopedCounts[]): CompareRow[
       label: "ROAS",
       group: "commercial",
       values: values((c) => (c.spendCents == null ? null : safeRoas(c.revenueCents, c.spendCents)), (n) =>
-        n == null ? "—" : `${n.toFixed(2)}x`,
+        n == null ? "-" : `${n.toFixed(2)}x`,
       ),
     },
     {
@@ -593,7 +593,7 @@ export function unattributedShare(unattributedLandings: number, totalLandings: n
 }
 
 export function stageConversionLabel(fromLabel: string, toLabel: string, pctValue: number | null): string {
-  return `${fromLabel} → ${toLabel}: ${pctValue == null ? "—" : `${pctValue.toFixed(0)}%`}`;
+  return `${fromLabel} → ${toLabel}: ${pctValue == null ? "-" : `${pctValue.toFixed(0)}%`}`;
 }
 
 export function funnelVariantNotice(variant: FunnelVariant | null): string | null {

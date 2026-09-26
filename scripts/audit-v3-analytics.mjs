@@ -16,7 +16,7 @@ if (!url || !key) {
 const supabase = createClient(url, key, { auth: { persistSession: false } });
 
 function maskSession(id) {
-  return id ? `${String(id).slice(0, 8)}…` : "—";
+  return id ? `${String(id).slice(0, 8)}…` : "-";
 }
 
 async function main() {
@@ -86,7 +86,7 @@ async function main() {
 
     let stripeSession = null;
     if (orderMatch?.stripe_checkout_session_id) {
-      // Do not call Stripe API from audit script — report stored fields only.
+      // Do not call Stripe API from audit script · report stored fields only.
       stripeSession = {
         id: `${String(orderMatch.stripe_checkout_session_id).slice(0, 12)}…`,
         payment_status: orderMatch.stripe_payment_status,
@@ -106,7 +106,7 @@ async function main() {
       session_short: short,
       is_test: row.is_test,
       traffic_class: row.traffic_class,
-      source_medium: `${row.utm_source || "—"} / ${row.utm_medium || "—"}`,
+      source_medium: `${row.utm_source || "-"} / ${row.utm_medium || "-"}`,
       campaign_id: row.campaign_id || null,
       ad_id: row.ad_id || null,
       creative_id: row.creative_id || null,

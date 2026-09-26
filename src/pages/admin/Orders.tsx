@@ -502,14 +502,14 @@ export default function OrdersPage() {
                                 {o.user_name || "Unknown"}
                               </span>
                               <span className="text-xs text-slate-500">
-                                {o.user_email || "—"}
+                                {o.user_email || "-"}
                               </span>
                               <span className="text-[10px] text-slate-600">{o.id}</span>
                             </div>
                           </div>
                         </TableCell>
 
-                        <TableCell className="text-slate-300">{o.pack || "—"}</TableCell>
+                        <TableCell className="text-slate-300">{o.pack || "-"}</TableCell>
 
                         <TableCell className="text-slate-400">
                           {o.categories.length ? (
@@ -529,7 +529,7 @@ export default function OrdersPage() {
                               ) : null}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-600">—</span>
+                            <span className="text-xs text-slate-600">-</span>
                           )}
                         </TableCell>
 
@@ -542,7 +542,7 @@ export default function OrdersPage() {
                         </TableCell>
 
                         <TableCell className="text-xs text-slate-400">
-                          {created ? created.toLocaleString() : "—"}
+                          {created ? created.toLocaleString() : "-"}
                         </TableCell>
 
                         <TableCell className="text-right">
@@ -593,14 +593,14 @@ export default function OrdersPage() {
                         {selected.user_name || "Unknown"}
                       </div>
                       <div className="text-xs text-slate-400">
-                        {selected.user_email || "—"}
+                        {selected.user_email || "-"}
                       </div>
                       <div className="mt-1 text-[11px] text-slate-600">{selected.id}</div>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-sm text-slate-300">{selected.pack || "—"}</div>
+                    <div className="text-sm text-slate-300">{selected.pack || "-"}</div>
                     <div className="text-lg font-semibold text-slate-50">
                       {moneyEUR(selected.amount_eur)}
                     </div>
@@ -674,7 +674,7 @@ export default function OrdersPage() {
                                   {it.category}
                                 </span>
                               ) : (
-                                <span className="text-xs text-slate-600">—</span>
+                                <span className="text-xs text-slate-600">-</span>
                               )}
                             </TableCell>
 
@@ -685,7 +685,7 @@ export default function OrdersPage() {
                             <TableCell className="text-right text-slate-300">
                               {it.amount !== null && it.amount !== undefined
                                 ? moneyEUR(Number(it.amount || 0))
-                                : "—"}
+                                : "-"}
                             </TableCell>
                           </TableRow>
                         ))}

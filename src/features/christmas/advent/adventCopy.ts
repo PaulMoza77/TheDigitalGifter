@@ -1,7 +1,7 @@
 /**
- * Advent calendar UI copy — Wave 1 locale packs.
- * Unlock day math stays in treeLogic (Europe/Bucharest) — this file is display only.
- * Locale-aware dates use Intl — never concatenate English month sentences.
+ * Advent calendar UI copy · Wave 1 locale packs.
+ * Unlock day math stays in treeLogic (Europe/Bucharest) · this file is display only.
+ * Locale-aware dates use Intl · never concatenate English month sentences.
  */
 
 export type AdventLocale = "en" | "ro" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl";
@@ -48,7 +48,7 @@ const EN: Dict = {
   "countdown.hours": "Hours",
   "countdown.minutes": "Minutes",
   "countdown.seconds": "Seconds",
-  "countdown.arrived": "Merry Christmas — the magic is here.",
+  "countdown.arrived": "Merry Christmas · the magic is here.",
 
   "cta.openToday": "Open Today’s Door",
   "cta.comeBackTomorrow": "Come back tomorrow",
@@ -72,9 +72,9 @@ const EN: Dict = {
   "status.notLive": "not live yet",
 
   "free.heading": "Get Your Christmas Gift",
-  "free.lede": "A free seasonal surprise — no cash credits for anonymous visitors.",
+  "free.lede": "A free seasonal surprise · no cash credits for anonymous visitors.",
   "free.aria": "Free Christmas Gift",
-  "free.already": "Same gift on refresh — no reroll.",
+  "free.already": "Same gift on refresh · no reroll.",
   "free.disabled": "Free Christmas Gift opens closer to the season.",
   "free.error": "Free gift unavailable",
 
@@ -105,7 +105,7 @@ const RO: Dict = {
   "countdown.hours": "Ore",
   "countdown.minutes": "Minute",
   "countdown.seconds": "Secunde",
-  "countdown.arrived": "Crăciun fericit — magia e aici.",
+  "countdown.arrived": "Crăciun fericit · magia e aici.",
   "cta.openToday": "Deschide ușa de azi",
   "cta.comeBackTomorrow": "Revino mâine",
   "cta.availableToday": "Disponibil azi",
@@ -125,9 +125,9 @@ const RO: Dict = {
   "status.live": "live",
   "status.notLive": "încă nu e live",
   "free.heading": "Primește cadoul de Crăciun",
-  "free.lede": "O surpriză de sezon gratuită — fără credite în numerar pentru vizitatori anonimi.",
+  "free.lede": "O surpriză de sezon gratuită · fără credite în numerar pentru vizitatori anonimi.",
   "free.aria": "Cadou gratuit de Crăciun",
-  "free.already": "Același cadou la reîmprospătare — fără re-roll.",
+  "free.already": "Același cadou la reîmprospătare · fără re-roll.",
   "free.disabled": "Cadoul gratuit de Crăciun se deschide mai aproape de sezon.",
   "free.error": "Cadoul gratuit nu este disponibil",
   "reward.aria": "Recompensă revendicat",
@@ -154,7 +154,7 @@ const DE: Dict = {
   "countdown.hours": "Stunden",
   "countdown.minutes": "Minuten",
   "countdown.seconds": "Sekunden",
-  "countdown.arrived": "Frohe Weihnachten — die Magie ist da.",
+  "countdown.arrived": "Frohe Weihnachten · die Magie ist da.",
   "cta.openToday": "Heutige Tür öffnen",
   "cta.comeBackTomorrow": "Komm morgen wieder",
   "cta.availableToday": "Heute verfügbar",
@@ -174,9 +174,9 @@ const DE: Dict = {
   "status.live": "live",
   "status.notLive": "noch nicht live",
   "free.heading": "Hol dir dein Weihnachtsgeschenk",
-  "free.lede": "Eine kostenlose Saisonüberraschung — keine Bargeld-Credits für anonyme Besucher.",
+  "free.lede": "Eine kostenlose Saisonüberraschung · keine Bargeld-Credits für anonyme Besucher.",
   "free.aria": "Kostenloses Weihnachtsgeschenk",
-  "free.already": "Gleiches Geschenk beim Aktualisieren — kein Reroll.",
+  "free.already": "Gleiches Geschenk beim Aktualisieren · kein Reroll.",
   "free.disabled": "Das kostenlose Weihnachtsgeschenk öffnet näher an der Saison.",
   "free.error": "Kostenloses Geschenk nicht verfügbar",
   "reward.aria": "Belohnung beansprucht",
@@ -203,7 +203,7 @@ const FR: Dict = {
   "countdown.hours": "Heures",
   "countdown.minutes": "Minutes",
   "countdown.seconds": "Secondes",
-  "countdown.arrived": "Joyeux Noël — la magie est là.",
+  "countdown.arrived": "Joyeux Noël · la magie est là.",
   "cta.openToday": "Ouvrir la case d’aujourd’hui",
   "cta.comeBackTomorrow": "Revenez demain",
   "cta.availableToday": "Disponible aujourd’hui",
@@ -223,9 +223,9 @@ const FR: Dict = {
   "status.live": "en ligne",
   "status.notLive": "pas encore en ligne",
   "free.heading": "Recevez votre cadeau de Noël",
-  "free.lede": "Une surprise de saison gratuite — pas de crédits monétaires pour les visiteurs anonymes.",
+  "free.lede": "Une surprise de saison gratuite · pas de crédits monétaires pour les visiteurs anonymes.",
   "free.aria": "Cadeau de Noël gratuit",
-  "free.already": "Même cadeau au rafraîchissement — pas de nouveau tirage.",
+  "free.already": "Même cadeau au rafraîchissement · pas de nouveau tirage.",
   "free.disabled": "Le cadeau de Noël gratuit s’ouvre plus près de la saison.",
   "free.error": "Cadeau gratuit indisponible",
   "reward.aria": "Récompense réclamée",
@@ -252,7 +252,7 @@ const ES: Dict = {
   "countdown.hours": "Horas",
   "countdown.minutes": "Minutos",
   "countdown.seconds": "Segundos",
-  "countdown.arrived": "Feliz Navidad — la magia está aquí.",
+  "countdown.arrived": "Feliz Navidad · la magia está aquí.",
   "cta.openToday": "Abrir la puerta de hoy",
   "cta.comeBackTomorrow": "Vuelve mañana",
   "cta.availableToday": "Disponible hoy",
@@ -272,9 +272,9 @@ const ES: Dict = {
   "status.live": "en vivo",
   "status.notLive": "aún no en vivo",
   "free.heading": "Consigue tu regalo de Navidad",
-  "free.lede": "Una sorpresa de temporada gratis — sin créditos en efectivo para visitantes anónimos.",
+  "free.lede": "Una sorpresa de temporada gratis · sin créditos en efectivo para visitantes anónimos.",
   "free.aria": "Regalo de Navidad gratis",
-  "free.already": "El mismo regalo al actualizar — sin nuevo sorteo.",
+  "free.already": "El mismo regalo al actualizar · sin nuevo sorteo.",
   "free.disabled": "El regalo de Navidad gratis se abre más cerca de la temporada.",
   "free.error": "Regalo gratis no disponible",
   "reward.aria": "Recompensa reclamada",
@@ -301,7 +301,7 @@ const IT: Dict = {
   "countdown.hours": "Ore",
   "countdown.minutes": "Minuti",
   "countdown.seconds": "Secondi",
-  "countdown.arrived": "Buon Natale — la magia è qui.",
+  "countdown.arrived": "Buon Natale · la magia è qui.",
   "cta.openToday": "Apri la porta di oggi",
   "cta.comeBackTomorrow": "Torna domani",
   "cta.availableToday": "Disponibile oggi",
@@ -321,9 +321,9 @@ const IT: Dict = {
   "status.live": "attivo",
   "status.notLive": "non ancora attivo",
   "free.heading": "Prendi il tuo regalo di Natale",
-  "free.lede": "Una sorpresa stagionale gratuita — niente crediti in denaro per i visitatori anonimi.",
+  "free.lede": "Una sorpresa stagionale gratuita · niente crediti in denaro per i visitatori anonimi.",
   "free.aria": "Regalo di Natale gratis",
-  "free.already": "Stesso regalo al refresh — nessun nuovo estratto.",
+  "free.already": "Stesso regalo al refresh · nessun nuovo estratto.",
   "free.disabled": "Il regalo di Natale gratis si apre più vicino alla stagione.",
   "free.error": "Regalo gratis non disponibile",
   "reward.aria": "Ricompensa richiesta",
@@ -350,7 +350,7 @@ const PT: Dict = {
   "countdown.hours": "Horas",
   "countdown.minutes": "Minutos",
   "countdown.seconds": "Segundos",
-  "countdown.arrived": "Feliz Natal — a magia está aqui.",
+  "countdown.arrived": "Feliz Natal · a magia está aqui.",
   "cta.openToday": "Abrir a porta de hoje",
   "cta.comeBackTomorrow": "Volte amanhã",
   "cta.availableToday": "Disponível hoje",
@@ -370,9 +370,9 @@ const PT: Dict = {
   "status.live": "ativo",
   "status.notLive": "ainda não ativo",
   "free.heading": "Receba o seu presente de Natal",
-  "free.lede": "Uma surpresa sazonal gratuita — sem créditos em dinheiro para visitantes anónimos.",
+  "free.lede": "Uma surpresa sazonal gratuita · sem créditos em dinheiro para visitantes anónimos.",
   "free.aria": "Presente de Natal gratuito",
-  "free.already": "O mesmo presente ao atualizar — sem novo sorteio.",
+  "free.already": "O mesmo presente ao atualizar · sem novo sorteio.",
   "free.disabled": "O presente de Natal gratuito abre mais perto da época.",
   "free.error": "Presente gratuito indisponível",
   "reward.aria": "Recompensa reclamada",
@@ -399,7 +399,7 @@ const NL: Dict = {
   "countdown.hours": "Uren",
   "countdown.minutes": "Minuten",
   "countdown.seconds": "Seconden",
-  "countdown.arrived": "Vrolijk kerstfeest — de magie is er.",
+  "countdown.arrived": "Vrolijk kerstfeest · de magie is er.",
   "cta.openToday": "Open de deur van vandaag",
   "cta.comeBackTomorrow": "Kom morgen terug",
   "cta.availableToday": "Vandaag beschikbaar",
@@ -419,9 +419,9 @@ const NL: Dict = {
   "status.live": "live",
   "status.notLive": "nog niet live",
   "free.heading": "Haal je kerstcadeau",
-  "free.lede": "Een gratis seizoensverrassing — geen contante credits voor anonieme bezoekers.",
+  "free.lede": "Een gratis seizoensverrassing · geen contante credits voor anonieme bezoekers.",
   "free.aria": "Gratis kerstcadeau",
-  "free.already": "Zelfde cadeau bij vernieuwen — geen herrol.",
+  "free.already": "Zelfde cadeau bij vernieuwen · geen herrol.",
   "free.disabled": "Het gratis kerstcadeau opent dichter bij het seizoen.",
   "free.error": "Gratis cadeau niet beschikbaar",
   "reward.aria": "Reward geclaimd",
@@ -448,7 +448,7 @@ const PL: Dict = {
   "countdown.hours": "Godziny",
   "countdown.minutes": "Minuty",
   "countdown.seconds": "Sekundy",
-  "countdown.arrived": "Wesołych Świąt — magia jest tutaj.",
+  "countdown.arrived": "Wesołych Świąt · magia jest tutaj.",
   "cta.openToday": "Otwórz dzisiejsze okienko",
   "cta.comeBackTomorrow": "Wróć jutro",
   "cta.availableToday": "Dostępne dziś",
@@ -468,9 +468,9 @@ const PL: Dict = {
   "status.live": "aktywne",
   "status.notLive": "jeszcze nieaktywne",
   "free.heading": "Odbierz swój świąteczny prezent",
-  "free.lede": "Darmowa sezonowa niespodzianka — bez kredytów pieniężnych dla anonimowych gości.",
+  "free.lede": "Darmowa sezonowa niespodzianka · bez kredytów pieniężnych dla anonimowych gości.",
   "free.aria": "Darmowy prezent świąteczny",
-  "free.already": "Ten sam prezent po odświeżeniu — bez ponownego losowania.",
+  "free.already": "Ten sam prezent po odświeżeniu · bez ponownego losowania.",
   "free.disabled": "Darmowy prezent świąteczny otwiera się bliżej sezonu.",
   "free.error": "Darmowy prezent niedostępny",
   "reward.aria": "Nagroda odebrana",
@@ -531,7 +531,7 @@ export function adventT(
   return text;
 }
 
-/** Format Advent season start (Dec 1) with Intl — no English concatenation. */
+/** Format Advent season start (Dec 1) with Intl · no English concatenation. */
 export function formatAdventStartDate(locale: AdventLocale, seasonYear: number): string {
   const d = new Date(Date.UTC(seasonYear, 11, 1, 12, 0, 0));
   return new Intl.DateTimeFormat(ADVENT_INTL_LOCALE[locale], {

@@ -43,7 +43,7 @@ describe("pet funnel dashboard math", () => {
   });
 
   it("keeps a defensive 100% safety cap only when fed independent (non-cohort) totals", () => {
-    // Safety guard for mismatched independent counts — production V1 rates use landing-cohort chaining instead.
+    // Safety guard for mismatched independent counts · production V1 rates use landing-cohort chaining instead.
     const steps = buildFunnelSteps({
       landing_view: 19,
       pet_name_submitted: 7,
@@ -63,7 +63,7 @@ describe("pet funnel dashboard math", () => {
     expect(percent(4, 0)).toBeNull();
     expect(ratio(100, 0)).toBeNull();
     expect(percentChange(4, 0)).toBeNull();
-    expect(formatPct(null)).toBe("—");
+    expect(formatPct(null)).toBe("-");
     const kpis = buildKpis(emptyStepCounts(), 0, 0);
     expect(kpis.landingToPurchase).toBeNull();
     expect(kpis.checkoutToPurchase).toBeNull();

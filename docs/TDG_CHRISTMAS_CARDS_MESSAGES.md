@@ -1,7 +1,7 @@
 # Christmas Cards + Message Generator
 
 **Task:** `tdg-christmas-cards-messages-011`  
-**Status:** Free acquisition/creation pair — Christmas checkout unchanged (`checkout_live=false`, paid packages `purchasable=false`)
+**Status:** Free acquisition/creation pair · Christmas checkout unchanged (`checkout_live=false`, paid packages `purchasable=false`)
 
 ## Product loop
 
@@ -44,7 +44,7 @@ Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` f
 
 - Custom detail length capped (~180–200 chars)
 - Injection / harassment / CSAM / self-harm / weapons patterns rejected server-side
-- Custom detail treated as data appended carefully — never as system instructions
+- Custom detail treated as data appended carefully · never as system instructions
 - No manipulative “Santa is watching” threats to children in templates
 
 ## Cards
@@ -52,7 +52,7 @@ Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` f
 - Photo optional; text-only supported
 - Styles (8): `classic_christmas`, `elegant_gold`, `cozy_christmas`, `winter_wonderland`, `minimal_christmas`, `vintage_christmas`, `playful_christmas`, `romantic_christmas`
 - Layouts: `square` 1080×1080 · `story` 1080×1920 · `landscape` 1600×900
-- Renderer: client Canvas 2D → PNG (`cardRenderer.ts`) — **$0 AI**
+- Renderer: client Canvas 2D → PNG (`cardRenderer.ts`) · **$0 AI**
 - See ADR: `docs/architecture/TDG_CHRISTMAS_CARD_RENDERING_ADR.md`
 - Persistence: `christmas_card_projects` (+ optional `christmas_card_assets` metadata rows)
 - Guest owner token (opaque, hashed); logged-in users associate via `user_id`
@@ -70,10 +70,10 @@ Stable recipient / tone / length keys + `seoSlug` / `SEO_MESSAGE_INTENT_SLUGS` f
 ## Analytics (privacy)
 
 **Messages:** `christmas_message_page_view`, `message_generator_started|completed|failed`, `message_copied`, `message_to_card`, `message_regenerated`  
-Dimensions: recipient/tone/length/language/provider/fallback — never free text.
+Dimensions: recipient/tone/length/language/provider/fallback · never free text.
 
 **Cards:** `christmas_card_page_view`, `card_creation_started`, style/layout/photo/message/preview/generated/download/share/create_another  
-Dimensions: style_key, layout, photo_present, message_source, guest/auth — never message/name/photo URL.
+Dimensions: style_key, layout, photo_present, message_source, guest/auth · never message/name/photo URL.
 
 ## Admin
 
@@ -91,7 +91,7 @@ Christmas admin loads aggregate `adminMessageStats` / `adminCardStats` (sessions
 
 | Object | Default |
 |--------|---------|
-| Message sessions/results | Keep for product analytics; no indefinite PII — custom detail length only, not full free text on session |
+| Message sessions/results | Keep for product analytics; no indefinite PII · custom detail length only, not full free text on session |
 | Card projects | Guest recovery via hashed token; configurable purge later |
 | Client PNG / photo | Device-local for V1 download; server asset rows may store dimensions only |
 | No destructive cleanup cron shipped | Documented; add cron when policy finalized |

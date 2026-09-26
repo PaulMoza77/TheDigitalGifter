@@ -1,6 +1,6 @@
 /**
  * V3 certified measurement and price cohort boundaries.
- * Neither timestamp is client-defined — both are set via admin RPC after deploy verification.
+ * Neither timestamp is client-defined · both are set via admin RPC after deploy verification.
  */
 export const PET_V3_PRICE_COHORT_CENTS = 299 as const;
 

@@ -2,7 +2,7 @@
  * Wave 1 Christmas UI translation coverage helpers (P3D).
  *
  * Used by missing-key / English-leak tests for client copy packs.
- * Keep whitelists small — prefer fixing packs over expanding exceptions.
+ * Keep whitelists small · prefer fixing packs over expanding exceptions.
  */
 
 import { WAVE1_GENERATION_LOCALES, type Wave1GenerationLocale } from "./wave1Locale";
@@ -51,7 +51,7 @@ export const WAVE1_UI_TOKEN_WHITELIST = [
 ] as const;
 
 /**
- * High-risk English UI phrases — whole-string matches indicate an unintended leak
+ * High-risk English UI phrases · whole-string matches indicate an unintended leak
  * on localized product controls (generate / download / share / upload / recipient, etc.).
  */
 export const HIGH_RISK_ENGLISH_UI_PHRASES = [
@@ -85,7 +85,7 @@ export function isAllowedIdenticalFallback(value: string): boolean {
   const trimmed = value.trim();
   if (WAVE1_UI_EXACT_WHITELIST.has(trimmed)) return true;
 
-  // URLs / URL placeholders are not product copy — do not flag as EN leak.
+  // URLs / URL placeholders are not product copy · do not flag as EN leak.
   if (/^https?:\/\//i.test(trimmed)) return true;
 
   // Placeholders-only / emoji templates (e.g. "{name} 🎄")
@@ -162,7 +162,7 @@ export type EnglishLeakFailure = {
 
 /**
  * Detect high-risk unintended English on known UI keys.
- * Skips URLs, brand tokens, and exact whitelist labels — does not naive-flag CSS ids or names.
+ * Skips URLs, brand tokens, and exact whitelist labels · does not naive-flag CSS ids or names.
  */
 export function findEnglishLeaks(
   packName: string,

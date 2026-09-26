@@ -123,7 +123,7 @@ async function callChristmasFunnel<T>(action: string, body: Record<string, unkno
     if (name === "AbortError" || name === "TimeoutError") {
       throw new ChristmasApiError("TIMEOUT", "Request timed out. Please try again.", 408);
     }
-    // Network-level failure — fall through to the same-origin VPS route below.
+    // Network-level failure · fall through to the same-origin VPS route below.
   }
 
   // Fallback: same-origin Node route on the VPS (and local Vite).
@@ -210,7 +210,7 @@ export const christmasFunnelApi = {
 
   /** Best-effort client-side fulfillment nudge: verifies the Stripe session and runs the same
    * RPC the webhook uses, so paid orders unlock immediately even if stripe-webhook (Edge) is
-   * unavailable or lags. Idempotent — safe to call even if the webhook already fulfilled it. */
+   * unavailable or lags. Idempotent · safe to call even if the webhook already fulfilled it. */
   confirmStripePayment: (input: { publicToken: string; sessionId: string }) =>
     callChristmasFunnel<{ ok: boolean; status: string; alreadyPaid: boolean; orderId: string; publicToken: string }>(
       "confirmStripePayment",

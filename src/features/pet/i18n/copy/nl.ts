@@ -28,10 +28,10 @@ export const PET_COPY_NL: PetCopyMap = {
   // V2 landing
   "v2.landing.eyebrow": "Probeer gratis",
   "v2.landing.h1": "Zie je huisdier als Formule 1-coureur.",
-  "v2.landing.lede": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven {pet} — geen kaart nodig.",
-  "v2.landing.lede.dog": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je hond — geen kaart nodig.",
-  "v2.landing.lede.cat": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je kat — geen kaart nodig.",
-  "v2.landing.lede.other": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je huisdier — geen kaart nodig.",
+  "v2.landing.lede": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven {pet} · geen kaart nodig.",
+  "v2.landing.lede.dog": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je hond · geen kaart nodig.",
+  "v2.landing.lede.cat": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je kat · geen kaart nodig.",
+  "v2.landing.lede.other": "Upload één foto en krijg gratis een vervaagde teaser van het geheime leven van je huisdier · geen kaart nodig.",
   "v2.landing.cta": "Upload de foto van je huisdier",
   "v2.landing.chooseFile": "Kies een JPEG, PNG of WebP",
   "v2.landing.bullet.lives": "12 geheime levens",
@@ -43,7 +43,7 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.landing.proofAria": "Voorbeeldportretten en clips",
   "v2.landing.livesH2": "Alle 12 geheime levens",
   "v2.landing.livesLede.dog":
-    "Twaalf portretten van dezelfde {pet} — elke wereld inbegrepen. 2 miniclips inbegrepen.",
+    "Twaalf portretten van dezelfde {pet} · elke wereld inbegrepen. 2 miniclips inbegrepen.",
   "v2.landing.livesLede.other": "Twaalf portretten. Eén foto. Veel soorten huisdieren.",
   "v2.landing.closingH2": "Onthul het geheime leven van je huisdier.",
   "v2.landing.closingLede":
@@ -62,12 +62,12 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.pack.headline": "Krijg 12 geheime levens en 2 miniclips voor slechts {price}",
   "v2.pack.headlineRich": "Krijg 12 geheime levens en 2 miniclips voor slechts",
   "v2.pack.fine": "Eenmalig · geen abonnement · hetzelfde huisdier in elk portret en elke clip",
-  "v2.shell.footer": "{headline}. Gratis persoonlijke teaser — betaal alleen om te ontgrendelen.",
+  "v2.shell.footer": "{headline}. Gratis persoonlijke teaser · betaal alleen om te ontgrendelen.",
 
   // V2 photo
   "v2.photo.h1": "Eén scherpe foto.",
   "v2.photo.lede":
-    "Gezicht naar de camera, beide ogen zichtbaar, gelijkmatig licht. Alleen één {pet} — geen groepsfoto’s of zware filters.",
+    "Gezicht naar de camera, beide ogen zichtbaar, gelijkmatig licht. Alleen één {pet} · geen groepsfoto’s of zware filters.",
   "v2.photo.selectedAlt": "Geselecteerde huisdierfoto",
   "v2.photo.selectedNamed": "Geselecteerd {fileName}",
   "v2.photo.replace": "Vervangen",
@@ -93,7 +93,7 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.teaser.alt": "Vervaagde preview van het geheime leven van je huisdier",
   "v2.teaser.bullet.lives": "12 geheime levens van dezelfde {pet}",
   "v2.teaser.bullet.clips": "2 cinematische miniclips",
-  "v2.teaser.bullet.price": "Eenmalige betaling van {price} — geen abonnement",
+  "v2.teaser.bullet.price": "Eenmalige betaling van {price} · geen abonnement",
   "v2.teaser.petName": "Naam van je huisdier",
   "v2.teaser.email": "E-mail voor de galerij",
   "v2.teaser.payAria": "Veilige betaling",
@@ -101,8 +101,8 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.teaser.hostedHint": "Ga verder op de beveiligde checkoutpagina van Stripe om je eenmalige betaling af te ronden.",
   "v2.teaser.hostedOpening": "Beveiligde Stripe-checkout openen…",
   "v2.teaser.hostedBusy": "Beveiligde Stripe-checkout openen…",
-  "v2.teaser.hostedCta": "Doorgaan naar beveiligde Stripe-checkout — {price}",
-  "v2.teaser.retry": "Open beveiligde Stripe-checkout — {price}",
+  "v2.teaser.hostedCta": "Doorgaan naar beveiligde Stripe-checkout · {price}",
+  "v2.teaser.retry": "Open beveiligde Stripe-checkout · {price}",
   "v2.teaser.retrying": "Opnieuw proberen…",
   "v2.teaser.busyPay": "Veilige betaling verwerken…",
   "v2.teaser.loadingPay": "Veilige betaling laden…",
@@ -110,9 +110,9 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.teaser.paused":
     "Veilige betaling is gepauzeerd tot de generatiecapaciteit is hersteld. Je bent niet belast.",
   "v2.teaser.secureLine": "Veilige eenmalige Stripe-betaling van {price}. Geen abonnement.",
-  "v2.teaser.payDog": "Onthul het geheime leven van mijn hond — {price}",
-  "v2.teaser.payCat": "Onthul het geheime leven van mijn kat — {price}",
-  "v2.teaser.payPet": "Onthul het geheime leven van mijn huisdier — {price}",
+  "v2.teaser.payDog": "Onthul het geheime leven van mijn hond · {price}",
+  "v2.teaser.payCat": "Onthul het geheime leven van mijn kat · {price}",
+  "v2.teaser.payPet": "Onthul het geheime leven van mijn huisdier · {price}",
   "v2.teaser.sessionExpiredContact": "Betaalsessie verlopen. Probeer de veilige betaling opnieuw.",
 
   // V2 offer (legacy step)
@@ -130,7 +130,7 @@ export const PET_COPY_NL: PetCopyMap = {
   // V2 generating / preview (legacy)
   "v2.gen.h1": "De F1-coureurpreview van je huisdier maken",
   "v2.gen.lede":
-    "We maken van je huisdier een cinematische Formule 1-coureur. Dit is één gratis preview — nog niet de volledige collectie.",
+    "We maken van je huisdier een cinematische Formule 1-coureur. Dit is één gratis preview · nog niet de volledige collectie.",
   "v2.gen.retry": "Opnieuw proberen",
   "v2.gen.change": "Foto wijzigen",
   "v2.gen.thumbAlt": "Je geüploade huisdier",
@@ -145,7 +145,7 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.preview.f1Alt": "Je {pet} als Formule 1-coureur",
   "v2.preview.mock":
     "Prototypepreview: live AI-generatie staat uit in deze omgeving, dus dit is je foto met F1-achtige framing.",
-  "v2.preview.unlock": "Volledige collectie ontgrendelen — {price}",
+  "v2.preview.unlock": "Volledige collectie ontgrendelen · {price}",
   "v2.preview.regen": "Nog een gratis preview proberen",
 
   // Checkout loading phases
@@ -158,7 +158,7 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.checkout.failed":
     "We konden het beveiligde betaalformulier niet openen. Probeer het opnieuw. Je bent niet belast.",
   "v2.provider.unavailable":
-    "We kunnen tijdelijk geen nieuwe transformaties maken. Probeer het zo opnieuw — je bent niet belast.",
+    "We kunnen tijdelijk geen nieuwe transformaties maken. Probeer het zo opnieuw · je bent niet belast.",
 
   // Preview errors
   "v2.err.invalid_funnel":
@@ -166,9 +166,9 @@ export const PET_COPY_NL: PetCopyMap = {
   "v2.err.rate_limited":
     "Deze sessie heeft de gratis previews al gebruikt. Ontgrendel de collectie of probeer morgen opnieuw.",
   "v2.err.timeout":
-    "Je preview wordt nog gerenderd. Wacht even en tik op Opnieuw proberen — we gaan verder waar we gebleven waren.",
+    "Je preview wordt nog gerenderd. Wacht even en tik op Opnieuw proberen · we gaan verder waar we gebleven waren.",
   "v2.err.rate_limit":
-    "De previewservice is druk. Tik zo op Opnieuw proberen — dit lost meestal snel op.",
+    "De previewservice is druk. Tik zo op Opnieuw proberen · dit lost meestal snel op.",
   "v2.err.wrong_species":
     "Die foto past niet bij deze ervaring. Upload een duidelijke foto van het juiste huisdier.",
   "v2.err.invalid_image": "Die foto kon niet worden gebruikt. Probeer een kleinere JPEG, PNG of WebP.",
@@ -184,13 +184,13 @@ export const PET_COPY_NL: PetCopyMap = {
   "v1.product.name": "Het Geheime Leven van Mijn Huisdier",
   "v1.product.promise": "Eén foto. 12 geheime levens. 2 cinematische clips.",
   "v1.hero.subtitle":
-    "Zie je huisdier als royalty, astronaut, CEO en meer — hetzelfde gezicht in elke wereld.",
+    "Zie je huisdier als royalty, astronaut, CEO en meer · hetzelfde gezicht in elke wereld.",
   "v1.hero.promise": "Eén foto. 12 geheime levens. 2 cinematische clips.",
   "v1.offer.noSub": "Geen abonnement",
   "v1.offer.include.portraits": "12 portretten van hetzelfde huisdier",
   "v1.offer.include.clips": "2 cinematische clips van 5 seconden",
   "v1.offer.include.review": "Menselijke controle vóór download",
-  "v1.offer.include.price": "Eenmalige prijs — geen abonnement",
+  "v1.offer.include.price": "Eenmalige prijs · geen abonnement",
   "v1.landing.dog.heading": "Twaalf geheime levens",
   "v1.landing.dog.description":
     "Hover of tik op een portret om het te laten bewegen. Dezelfde Golden Retriever. Een andere wereld in elk frame.",
@@ -286,7 +286,7 @@ export const PET_COPY_NL: PetCopyMap = {
   "faq.sub.a": "Nee. Eenmalige betaling. Niets vernieuwt.",
   "faq.look.q": "Zal het op mijn huisdier lijken?",
   "faq.look.a":
-    "Ja — dat is het product. Eén foto, twaalf scènes, twee cinematische clips, hetzelfde gezicht. Een persoon controleert vóór je download.",
+    "Ja · dat is het product. Eén foto, twaalf scènes, twee cinematische clips, hetzelfde gezicht. Een persoon controleert vóór je download.",
   "faq.time.q": "Hoe lang duurt het?",
   "faq.time.a":
     "Meestal een paar minuten na betaling. Replicate start de twaalf portretten meteen.",
@@ -312,5 +312,5 @@ export const PET_COPY_NL: PetCopyMap = {
     "Je ontvangt de gegenereerde portretbestanden en twee cinematische MP4-clips uit de bestelgalerij. Extra uitsnedes zoals wallpapers zijn nog niet inbegrepen.",
 
   // Validation
-  "validate.name": "Geef je huisdier een naam — zelfs een bijnaam is prima.",
+  "validate.name": "Geef je huisdier een naam · zelfs een bijnaam is prima.",
 };

@@ -7,7 +7,7 @@
 
 ## Context
 
-TDG needs a personalized 30–60s Santa video (EN + RO) where Santa speaks the child’s first name and selected details. Existing video infrastructure is **Pet Seedance** (~5s motion clips from a still) and Christmas V2 Seedance — **insufficient** for coherent speech-length video.
+TDG needs a personalized 30–60s Santa video (EN + RO) where Santa speaks the child’s first name and selected details. Existing video infrastructure is **Pet Seedance** (~5s motion clips from a still) and Christmas V2 Seedance · **insufficient** for coherent speech-length video.
 
 ## Existing infrastructure
 
@@ -40,7 +40,7 @@ Reject for V1: credentials and adapters do not exist in production secrets. Do n
 Attractive later if we own plates; V1 generates the still via Flux to avoid licensing blockers.
 
 ### E. Still + full TTS mux via ffmpeg (**chosen V1 deliverable**)
-When lipsync is unavailable, origin endpoint `/api/christmas-santa-compose` (service-role auth) downloads still + speech audio and muxes **one MP4** (`libx264` stillimage + AAC, `-shortest`). Duration equals TTS length (~30–40s in proofs). This is a coherent downloadable file with matched spoken content — **not** a 5s clip plus detached audio.
+When lipsync is unavailable, origin endpoint `/api/christmas-santa-compose` (service-role auth) downloads still + speech audio and muxes **one MP4** (`libx264` stillimage + AAC, `-shortest`). Duration equals TTS length (~30–40s in proofs). This is a coherent downloadable file with matched spoken content · **not** a 5s clip plus detached audio.
 
 ## Why E for V1 (with C as upgrade)
 
@@ -88,7 +88,7 @@ Record into order/job metadata + cost_* fields; label `estimated` when exact inv
 
 ## Fallback
 
-- `CHRISTMAS_SANTA_GENERATION_MOCK=true`: stage through with placeholder MP4 for CI — **never** report as real video PASS.
+- `CHRISTMAS_SANTA_GENERATION_MOCK=true`: stage through with placeholder MP4 for CI · **never** report as real video PASS.
 - Lipsync 404 → compose mux.
 - If compose endpoint unreachable: job `failed` at video stage; paid order remains paid; admin retry resumes from failed stage.
 

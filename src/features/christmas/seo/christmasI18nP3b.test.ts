@@ -72,7 +72,7 @@ describe("christmas P3B Wave 1 localization", () => {
         expect(page!.h1).toBeTruthy();
         expect(page!.geo?.h2).toBeTruthy();
         expect(page!.faqs?.length ?? 0).toBeGreaterThanOrEqual(5);
-        expect(page!.title.toLowerCase()).not.toContain("thedigitalgifter — custom ai holiday");
+        expect(page!.title.toLowerCase()).not.toContain("thedigitalgifter · custom ai holiday");
       }
     }
   });

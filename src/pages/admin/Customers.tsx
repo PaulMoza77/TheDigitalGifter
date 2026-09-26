@@ -537,7 +537,7 @@ export default function CustomersPage() {
                               <span className="text-sm font-medium text-slate-200">
                                 {c.name || "Unknown"}
                               </span>
-                              <span className="text-xs text-slate-500">{c.email || "—"}</span>
+                              <span className="text-xs text-slate-500">{c.email || "-"}</span>
                               <span className="text-[10px] text-slate-600">{c.id}</span>
                             </div>
                           </div>
@@ -572,11 +572,11 @@ export default function CustomersPage() {
                               </div>
 
                               <div className="text-[11px] text-slate-500">
-                                {promoSent ? promoSent.toLocaleString() : "—"}
+                                {promoSent ? promoSent.toLocaleString() : "-"}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-500">—</span>
+                            <span className="text-xs text-slate-500">-</span>
                           )}
                         </TableCell>
 
@@ -598,11 +598,11 @@ export default function CustomersPage() {
                         </TableCell>
 
                         <TableCell className="text-xs text-slate-400">
-                          {joined ? joined.toLocaleDateString() : "—"}
+                          {joined ? joined.toLocaleDateString() : "-"}
                         </TableCell>
 
                         <TableCell className="text-xs text-slate-400">
-                          {last ? last.toLocaleString() : "—"}
+                          {last ? last.toLocaleString() : "-"}
                         </TableCell>
 
                         <TableCell className="text-right">

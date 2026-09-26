@@ -337,8 +337,8 @@ export default function LibraryVideoCard({
           <div className="rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-100">
             <p className="font-semibold">🔴 LIVE</p>
             <p className="mt-1 text-xs text-red-100/80">
-              Elapsed {liveElapsedLabel(liveSession.started_at) || "—"} · Stop{" "}
-              {liveSession.planned_end_at ? liveSession.planned_end_at.slice(11, 16) : "—"} UTC
+              Elapsed {liveElapsedLabel(liveSession.started_at) || "-"} · Stop{" "}
+              {liveSession.planned_end_at ? liveSession.planned_end_at.slice(11, 16) : "-"} UTC
             </p>
             {liveSession.youtube_url ? (
               <a href={liveSession.youtube_url} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-indigo-200">
@@ -400,7 +400,7 @@ export default function LibraryVideoCard({
           <p className="text-[11px] leading-4 text-slate-500">
             {longForm
               ? "Opens the video in Safari. Use Share → Save Video. The file is not downloaded into this page."
-              : `Stays on this page. When the share sheet opens, tap ${photo ? "Save Image" : "Save Video"} — that is the Photos option. Ignore Save to Files.`}
+              : `Stays on this page. When the share sheet opens, tap ${photo ? "Save Image" : "Save Video"} · that is the Photos option. Ignore Save to Files.`}
           </p>
         ) : null}
       </div>

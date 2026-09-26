@@ -425,9 +425,9 @@ export type CreateStripeCheckoutRequest = {
   uiMode?: "hosted" | "embedded" | "custom" | "elements";
   funnelSessionId?: string;
   deviceType?: "mobile" | "tablet" | "desktop";
-  /** Meta click cookie (`_fbc`) for CAPI attribution — never logged. */
+  /** Meta click cookie (`_fbc`) for CAPI attribution · never logged. */
   fbc?: string | null;
-  /** Meta browser cookie (`_fbp`) for CAPI matching — never logged. */
+  /** Meta browser cookie (`_fbp`) for CAPI matching · never logged. */
   fbp?: string | null;
   hasMetaClick?: boolean;
   attribution?: {

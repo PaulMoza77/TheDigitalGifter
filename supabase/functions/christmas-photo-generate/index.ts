@@ -308,7 +308,7 @@ Deno.serve(async (req) => {
             from,
             to: [email],
             subject: "Your Christmas portrait is ready",
-            html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
+            html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>- The Digital Gifter</p>`,
           }),
         });
       }

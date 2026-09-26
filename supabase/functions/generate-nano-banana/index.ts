@@ -96,7 +96,7 @@ async function generateWithReplicate(prompt: string, imageUrl: string | null) {
 async function generateWithGoogle(prompt: string, imageUrl: string | null) {
   const apiKey = Deno.env.get("GOOGLE_AI_API_KEY") || Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY / GEMINI_API_KEY is not configured");
-  // Placeholder path — prefer Replicate for image models in this codebase.
+  // Placeholder path · prefer Replicate for image models in this codebase.
   throw new Error(
     "Google image generation path is not fully configured. Set REPLICATE_API_TOKEN instead.",
   );

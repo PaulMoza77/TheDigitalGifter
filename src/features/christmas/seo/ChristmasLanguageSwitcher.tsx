@@ -8,7 +8,7 @@ import {
 } from "./localeRouting";
 
 /**
- * Compact Christmas language switcher — preserves conceptual route.
+ * Compact Christmas language switcher · preserves conceptual route.
  * Only lists locales usable for the current page (product-gated for Santa/Messages).
  * Does not put private personalization query params into the destination URL.
  */

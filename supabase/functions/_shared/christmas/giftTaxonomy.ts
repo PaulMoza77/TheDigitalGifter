@@ -727,7 +727,7 @@ export const GIFT_TYPES: Taxon[] = [
   { key: "either", labelEn: "Either", labelRo: "Oricare" },
 ];
 
-/** Legacy vibe keys — still validated for older sessions. */
+/** Legacy vibe keys · still validated for older sessions. */
 export const VIBES: Taxon[] = [
   { key: "cozy", labelEn: "Cozy", labelRo: "Cald / cozy" },
   { key: "practical", labelEn: "Practical", labelRo: "Practic" },
@@ -945,7 +945,7 @@ export function primaryVibeFromPersonalities(keys: string[]): string | null {
   return null;
 }
 
-/** Future programmatic SEO routes — do not mass-generate pages yet. */
+/** Future programmatic SEO routes · do not mass-generate pages yet. */
 export const SEO_TAXONOMY_LINKS = {
   byRecipient: [
     { slug: "for-mom", recipientKey: "mom", labelEn: "Gifts for Mom", labelRo: "Cadouri pentru mama" },

@@ -1,7 +1,7 @@
 /**
  * Christmas P2A/P2B content depth for Christmas product pages.
  * Node-safe (no React). Consumed by christmasSeo.mjs SSR shells.
- * Keep claims aligned with real product behavior — no fake inventory, ratings, or languages.
+ * Keep claims aligned with real product behavior · no fake inventory, ratings, or languages.
  */
 
 import { CHRISTMAS_CONTENT_DEPTH_P2B } from "./christmasContentDepthP2b.mjs";
@@ -31,14 +31,14 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Find the Perfect Christmas Gift",
         body:
-          "Not sure what to buy? The Christmas Gift Finder asks who you’re shopping for, what they like, how they show up in life, and what you want to spend. You get thoughtful gift ideas with a short reason each one fits — including options for someone who seems to have everything. Save favorites to a wishlist when you’re ready.",
+          "Not sure what to buy? The Christmas Gift Finder asks who you’re shopping for, what they like, how they show up in life, and what you want to spend. You get thoughtful gift ideas with a short reason each one fits · including options for someone who seems to have everything. Save favorites to a wishlist when you’re ready.",
         linkHref: "/christmas/gift-finder",
         linkLabel: "Find a Christmas gift they’ll actually love",
       },
       {
         h2: "Create Magical Christmas Photos",
         body:
-          "Upload a clear photo and transform it into a festive Christmas portrait. Create looks for families, couples, and pets — including dedicated paths for dogs and cats — then download privately or carry a portrait into a Christmas card.",
+          "Upload a clear photo and transform it into a festive Christmas portrait. Create looks for families, couples, and pets · including dedicated paths for dogs and cats · then download privately or carry a portrait into a Christmas card.",
         linkHref: "/christmas/photo-generator",
         linkLabel: "Turn your photo into Christmas magic",
       },
@@ -52,7 +52,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Create and Share a Christmas Wishlist",
         body:
-          "Build a Christmas wishlist with product links or free-written wishes. Share one simple link with family and friends. Viewers can reserve a gift so others don’t buy the same thing — without spoiling who bought it for the wishlist owner.",
+          "Build a Christmas wishlist with product links or free-written wishes. Share one simple link with family and friends. Viewers can reserve a gift so others don’t buy the same thing · without spoiling who bought it for the wishlist owner.",
         linkHref: "/christmas/wishlist",
         linkLabel: "Create a Christmas wishlist",
       },
@@ -85,7 +85,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       },
       {
         q: "Do I need design skills?",
-        a: "No design skills needed. Each Christmas experience walks you through the next step — upload a photo, answer a few questions, or start with a name — and the page handles the rest.",
+        a: "No design skills needed. Each Christmas experience walks you through the next step · upload a photo, answer a few questions, or start with a name · and the page handles the rest.",
       },
       {
         q: "Is this for digital gifts, physical gifts, or both?",
@@ -97,7 +97,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       },
       {
         q: "Is my family’s photo private?",
-        a: "Uploads are used to create your portrait or card. Kids experiences are privacy-first and expect a parent or guardian. When a result is ready, you download it privately — we don’t post your photos publicly.",
+        a: "Uploads are used to create your portrait or card. Kids experiences are privacy-first and expect a parent or guardian. When a result is ready, you download it privately · we don’t post your photos publicly.",
       },
       {
         q: "How long does creating something take?",
@@ -126,7 +126,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
     geo: {
       h2: "What is a Christmas Gift Finder?",
       body:
-        "A Christmas Gift Finder is a guided tool that recommends Christmas gift ideas based on who you’re shopping for, their interests and personality, and your budget. On TheDigitalGifter, you answer a short set of questions and receive curated ideas with clear reasons they may fit — then you can refine or save ideas to a wishlist.",
+        "A Christmas Gift Finder is a guided tool that recommends Christmas gift ideas based on who you’re shopping for, their interests and personality, and your budget. On TheDigitalGifter, you answer a short set of questions and receive curated ideas with clear reasons they may fit · then you can refine or save ideas to a wishlist.",
     },
     sections: [
       {
@@ -143,7 +143,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Find Gifts by Recipient",
         body:
-          "The Gift Finder supports common Christmas shopping relationships so recommendations stay appropriate. Use the tool for Mom, Dad, wife, husband, girlfriend, boyfriend, kids, teens, grandparents, friends, coworkers, and more. Recipient-specific landing pages are not live yet — start the finder and choose the recipient there.",
+          "The Gift Finder supports common Christmas shopping relationships so recommendations stay appropriate. Use the tool for Mom, Dad, wife, husband, girlfriend, boyfriend, kids, teens, grandparents, friends, coworkers, and more. Recipient-specific landing pages are not live yet · start the finder and choose the recipient there.",
         list: [
           "Mom",
           "Dad",
@@ -161,7 +161,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Find Christmas Gifts by Budget",
         body:
-          "Pick a spending range such as under $25, $25–$50, $50–$100, $100–$200, $200+, or no strict budget. Recommendations are gift ideas with typical price ranges — not live retailer inventory or guaranteed stock.",
+          "Pick a spending range such as under $25, $25–$50, $50–$100, $100–$200, $200+, or no strict budget. Recommendations are gift ideas with typical price ranges · not live retailer inventory or guaranteed stock.",
       },
       {
         h2: "Gifts for Someone Who Has Everything",
@@ -203,7 +203,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       },
       {
         q: "Does it show real products?",
-        a: "Today the finder shows curated gift ideas with typical price ranges. Live retailer prices, availability, and shop feeds are not connected yet — we do not invent exact stock or merchant prices.",
+        a: "Today the finder shows curated gift ideas with typical price ranges. Live retailer prices, availability, and shop feeds are not connected yet · we do not invent exact stock or merchant prices.",
       },
     ],
     markers: [
@@ -221,7 +221,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
     geo: {
       h2: "What is an AI Christmas photo generator?",
       body:
-        "An AI Christmas photo generator turns a real photo you upload into a festive Christmas portrait. On TheDigitalGifter, you choose who is in the photo, pick a Christmas style, and create a downloadable portrait for family, couples, people, or pets — private by default.",
+        "An AI Christmas photo generator turns a real photo you upload into a festive Christmas portrait. On TheDigitalGifter, you choose who is in the photo, pick a Christmas style, and create a downloadable portrait for family, couples, people, or pets · private by default.",
     },
     sections: [
       {
@@ -234,11 +234,11 @@ export const CHRISTMAS_CONTENT_DEPTH = {
         body:
           "Demo examples show common Christmas portrait directions. They are inspiration samples, not customer photos.",
         list: [
-          "Family Christmas Photo — a group portrait in a cozy Christmas scene",
-          "Couple Christmas Portrait — a romantic holiday portrait of two people",
-          "Dog Christmas Portrait — a festive portrait focused on a dog",
-          "Cat Christmas Portrait — a festive portrait focused on a cat",
-          "Family + Pet — people and a pet sharing one Christmas frame",
+          "Family Christmas Photo · a group portrait in a cozy Christmas scene",
+          "Couple Christmas Portrait · a romantic holiday portrait of two people",
+          "Dog Christmas Portrait · a festive portrait focused on a dog",
+          "Cat Christmas Portrait · a festive portrait focused on a cat",
+          "Family + Pet · people and a pet sharing one Christmas frame",
         ],
       },
       {
@@ -254,7 +254,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Christmas Photos for Families, Couples and Pets",
         body:
-          "Need a more specific starting point? Use the dedicated Christmas portrait routes for family, couples, pets, dogs, and cats — or continue here for the full photo generator.",
+          "Need a more specific starting point? Use the dedicated Christmas portrait routes for family, couples, pets, dogs, and cats · or continue here for the full photo generator.",
         list: [
           "Family Christmas Portraits → /christmas/family",
           "Couple Christmas Portraits → /christmas/couples",
@@ -320,7 +320,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "A Personalized Message From Santa",
         body:
-          "Create a Christmas video from Santa for a child, siblings, family, or someone special. Santa can say their name and weave in optional details you share — then you download or share the finished video.",
+          "Create a Christmas video from Santa for a child, siblings, family, or someone special. Santa can say their name and weave in optional details you share · then you download or share the finished video.",
       },
       {
         h2: "What Can Santa Mention?",
@@ -369,7 +369,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       },
       {
         q: "Can Santa mention a Christmas gift?",
-        a: "Yes — you can include a Christmas wish, and Santa can mention it when you provide one.",
+        a: "Yes · you can include a Christmas wish, and Santa can mention it when you provide one.",
       },
       {
         q: "Can I make a video for siblings?",
@@ -445,7 +445,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       },
       {
         q: "Can I add wishes without a link?",
-        a: "Yes. Write any wish — experiences, handmade ideas, or a simple “Surprise me.”",
+        a: "Yes. Write any wish · experiences, handmade ideas, or a simple “Surprise me.”",
       },
       {
         q: "Can I share one wishlist link?",
@@ -489,7 +489,7 @@ export const CHRISTMAS_CONTENT_DEPTH = {
       {
         h2: "Create a Personalized Christmas Card",
         body:
-          "Choose a Christmas card style, add your photo, write a message, and create a digital card you can download or share. Some messages deserve more than a text — this is for those.",
+          "Choose a Christmas card style, add your photo, write a message, and create a digital card you can download or share. Some messages deserve more than a text · this is for those.",
       },
       {
         h2: "Christmas Card Examples",

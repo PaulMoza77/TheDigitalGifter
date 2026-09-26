@@ -68,7 +68,7 @@ if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
     echo "Trying pooler host $HOST…"
     if command -v psql >/dev/null 2>&1; then
       if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
-        echo "Connected via $HOST — applying geo-exclusion migration…"
+        echo "Connected via $HOST · applying geo-exclusion migration…"
         PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$MIGRATION"
         APPLIED=1
         break
@@ -124,7 +124,7 @@ if [[ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
     exit 1
   fi
 else
-  echo "SUPABASE_SERVICE_ROLE_KEY unset — skipped RPC probe (migration apply already succeeded)."
+  echo "SUPABASE_SERVICE_ROLE_KEY unset · skipped RPC probe (migration apply already succeeded)."
 fi
 
 echo "GEO_EXCLUDE_DEPLOY_OK project=$PROJECT_REF"

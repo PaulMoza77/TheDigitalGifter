@@ -47,7 +47,7 @@ export function sanitizeV3Pathname(value?: string | null): string | null {
 }
 
 function clientTestFlag(): boolean {
-  /* Hint only — production ingest ignores this; see api/pet-v3-funnel-event.ts */
+  /* Hint only · production ingest ignores this; see api/pet-v3-funnel-event.ts */
   if (typeof window === "undefined") return false;
   try {
     return new URLSearchParams(window.location.search).get("tdg_funnel_test") === "1";

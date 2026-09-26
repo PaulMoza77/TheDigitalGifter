@@ -322,7 +322,7 @@ export type CheckoutResolve =
 
 /**
  * Server-authoritative web checkout. Client amount is refused when present and mismatched.
- * Missing / invalid config fails closed — seed prices are NOT used.
+ * Missing / invalid config fails closed · seed prices are NOT used.
  */
 export function resolveWebCheckout(input: {
   productKey: string;
@@ -485,7 +485,7 @@ export function mapCreditPackRow(row: PricingItemLike): CreditPackConfig | null 
 export function resolveIapGrant(input: {
   appleProductId: string;
   packs: CreditPackConfig[];
-  /** Ignored — client must never choose the grant amount. */
+  /** Ignored · client must never choose the grant amount. */
   clientCredits?: number | null;
 }):
   | { ok: true; pack: CreditPackConfig; creditsGranted: number }

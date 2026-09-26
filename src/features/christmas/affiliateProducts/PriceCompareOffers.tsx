@@ -66,7 +66,7 @@ export function PriceCompareOffers({
   const { comparison } = grouped;
   return (
     <div className="tdg-price-compare">
-      <p className="tdg-planner-muted">Exact match using product identifiers — not similar titles.</p>
+      <p className="tdg-planner-muted">Exact match using product identifiers · not similar titles.</p>
       {comparison.offers.map((offer) => {
         const key = `${offer.provider}:${offer.externalProductId}`;
         const lowest = comparison.lowest && comparison.lowest.provider === offer.provider && comparison.lowest.externalProductId === offer.externalProductId;

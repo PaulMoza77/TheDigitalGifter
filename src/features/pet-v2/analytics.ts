@@ -72,7 +72,7 @@ export function v2IdempotencyKey(input: {
   eventName: PetV2EventName;
   species?: string | null;
   attemptId?: string | null;
-  /** Per-fire UUID — required for unlock/checkout so rapid clicks never dedupe away. */
+  /** Per-fire UUID · required for unlock/checkout so rapid clicks never dedupe away. */
   eventId?: string | null;
 }): string {
   if (SESSION_ONCE.has(input.eventName) && input.eventName === "v2_landing_view") {

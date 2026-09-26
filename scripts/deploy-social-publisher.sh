@@ -107,7 +107,7 @@ apply_one_migration() {
       CAND="postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@${HOST}:5432/postgres"
       echo "Trying pooler host ${HOST}…"
       if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
-        echo "Connected via ${HOST} — applying migration…"
+        echo "Connected via ${HOST} · applying migration…"
         if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$migration_file" >/tmp/social-publisher-psql.txt 2>&1; then
           APPLIED=1
           break

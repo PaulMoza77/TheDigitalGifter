@@ -28,10 +28,10 @@ export const PET_COPY_HU: PetCopyMap = {
   // V2 landing
   "v2.landing.eyebrow": "Próbáld ki ingyen",
   "v2.landing.h1": "Nézd meg a kedvencedet Forma–1-es versenyzőként.",
-  "v2.landing.lede": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest {pet} titkos életéből — kártya nélkül.",
-  "v2.landing.lede.dog": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a kutyád titkos életéből — kártya nélkül.",
-  "v2.landing.lede.cat": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a macskád titkos életéből — kártya nélkül.",
-  "v2.landing.lede.other": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a kisállatod titkos életéből — kártya nélkül.",
+  "v2.landing.lede": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest {pet} titkos életéből · kártya nélkül.",
+  "v2.landing.lede.dog": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a kutyád titkos életéből · kártya nélkül.",
+  "v2.landing.lede.cat": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a macskád titkos életéből · kártya nélkül.",
+  "v2.landing.lede.other": "Tölts fel egy fotót, és kapj ingyen egy elmosódott előzetest a kisállatod titkos életéből · kártya nélkül.",
   "v2.landing.cta": "Töltsd fel a kedvenced fotóját",
   "v2.landing.chooseFile": "Válassz JPEG, PNG vagy WebP fájlt",
   "v2.landing.bullet.lives": "12 titkos élet",
@@ -43,7 +43,7 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.landing.proofAria": "Példa portrék és klipek",
   "v2.landing.livesH2": "Mind a 12 titkos élet",
   "v2.landing.livesLede.dog":
-    "Tizenkét portré ugyanarról a {pet}-ról — minden világ benne van. 2 mini klip is jár hozzá.",
+    "Tizenkét portré ugyanarról a {pet}-ról · minden világ benne van. 2 mini klip is jár hozzá.",
   "v2.landing.livesLede.other": "Tizenkét portré. Egy fotó. Sokféle kedvenc.",
   "v2.landing.closingH2": "Fedd fel a kedvenced titkos életét.",
   "v2.landing.closingLede":
@@ -62,12 +62,12 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.pack.headline": "12 titkos élet és 2 mini klip csak {price}-ért",
   "v2.pack.headlineRich": "12 titkos élet és 2 mini klip csak",
   "v2.pack.fine": "Egyszeri · nincs előfizetés · ugyanaz a kedvenc minden portrén és klipen",
-  "v2.shell.footer": "{headline}. Ingyenes személyre szabott előnézet — csak a feloldásért fizetsz.",
+  "v2.shell.footer": "{headline}. Ingyenes személyre szabott előnézet · csak a feloldásért fizetsz.",
 
   // V2 photo
   "v2.photo.h1": "Egy tiszta fotó.",
   "v2.photo.lede":
-    "Arc a kamera felé, mindkét szem látható, egyenletes fény. Csak egy {pet} — ne csoportkép vagy erős szűrő.",
+    "Arc a kamera felé, mindkét szem látható, egyenletes fény. Csak egy {pet} · ne csoportkép vagy erős szűrő.",
   "v2.photo.selectedAlt": "Kiválasztott kedvencfotó",
   "v2.photo.selectedNamed": "Kiválasztva: {fileName}",
   "v2.photo.replace": "Csere",
@@ -93,7 +93,7 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.teaser.alt": "A kedvenced titkos életének elmosódott előnézete",
   "v2.teaser.bullet.lives": "Ugyanannak a {pet}-nak 12 titkos élete",
   "v2.teaser.bullet.clips": "2 mini filmszerű klip",
-  "v2.teaser.bullet.price": "Egyszeri {price} fizetés — nincs előfizetés",
+  "v2.teaser.bullet.price": "Egyszeri {price} fizetés · nincs előfizetés",
   "v2.teaser.petName": "A kedvenc neve",
   "v2.teaser.email": "Email a galériához",
   "v2.teaser.payAria": "Biztonságos fizetés",
@@ -101,8 +101,8 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.teaser.hostedHint": "Folytasd a Stripe biztonságos fizetési oldalán az egyszeri fizetés befejezéséhez.",
   "v2.teaser.hostedOpening": "Stripe biztonságos fizetés megnyitása…",
   "v2.teaser.hostedBusy": "Biztonságos Stripe fizetés megnyitása…",
-  "v2.teaser.hostedCta": "Tovább a biztonságos Stripe fizetéshez — {price}",
-  "v2.teaser.retry": "Biztonságos Stripe fizetés megnyitása — {price}",
+  "v2.teaser.hostedCta": "Tovább a biztonságos Stripe fizetéshez · {price}",
+  "v2.teaser.retry": "Biztonságos Stripe fizetés megnyitása · {price}",
   "v2.teaser.retrying": "Újrapróbálás…",
   "v2.teaser.busyPay": "Biztonságos fizetés feldolgozása…",
   "v2.teaser.loadingPay": "Biztonságos fizetés betöltése…",
@@ -110,9 +110,9 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.teaser.paused":
     "A biztonságos fizetés szünetel, amíg a generálási kapacitás helyre nem áll. Nem történt terhelés.",
   "v2.teaser.secureLine": "Biztonságos egyszeri {price} Stripe fizetés. Nincs előfizetés.",
-  "v2.teaser.payDog": "Fedd fel a kutyám titkos életét — {price}",
-  "v2.teaser.payCat": "Fedd fel a macskám titkos életét — {price}",
-  "v2.teaser.payPet": "Fedd fel a kedvencem titkos életét — {price}",
+  "v2.teaser.payDog": "Fedd fel a kutyám titkos életét · {price}",
+  "v2.teaser.payCat": "Fedd fel a macskám titkos életét · {price}",
+  "v2.teaser.payPet": "Fedd fel a kedvencem titkos életét · {price}",
   "v2.teaser.sessionExpiredContact": "A fizetési munkamenet lejárt. Próbáld újra a biztonságos fizetést.",
 
   // V2 offer (legacy step)
@@ -130,7 +130,7 @@ export const PET_COPY_HU: PetCopyMap = {
   // V2 generating / preview (legacy)
   "v2.gen.h1": "Készül a kedvenced F1-es versenyző előnézete",
   "v2.gen.lede":
-    "A kedvencedet filmszerű Forma–1-es versenyzővé alakítjuk. Ez egy ingyenes előnézet — még nem a teljes gyűjtemény.",
+    "A kedvencedet filmszerű Forma–1-es versenyzővé alakítjuk. Ez egy ingyenes előnézet · még nem a teljes gyűjtemény.",
   "v2.gen.retry": "Próbáld újra",
   "v2.gen.change": "Fotó cseréje",
   "v2.gen.thumbAlt": "A feltöltött kedvenced",
@@ -145,7 +145,7 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.preview.f1Alt": "A {pet} mint Forma–1-es versenyző",
   "v2.preview.mock":
     "Prototípus előnézet: az élő AI-generálás ebben a környezetben ki van kapcsolva, ezért a fotódat F1-stílusú keretezéssel látod.",
-  "v2.preview.unlock": "Teljes gyűjtemény feloldása — {price}",
+  "v2.preview.unlock": "Teljes gyűjtemény feloldása · {price}",
   "v2.preview.regen": "Próbálj másik ingyenes előnézetet",
 
   // Checkout loading phases
@@ -158,7 +158,7 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.checkout.failed":
     "Nem sikerült megnyitni a biztonságos fizetési űrlapot. Kérjük, próbáld újra. Nem történt terhelés.",
   "v2.provider.unavailable":
-    "Átmenetileg nem tudunk új átalakulásokat létrehozni. Próbáld újra hamarosan — nem történt terhelés.",
+    "Átmenetileg nem tudunk új átalakulásokat létrehozni. Próbáld újra hamarosan · nem történt terhelés.",
 
   // Preview errors
   "v2.err.invalid_funnel":
@@ -166,9 +166,9 @@ export const PET_COPY_HU: PetCopyMap = {
   "v2.err.rate_limited":
     "Ez a munkamenet már felhasználta az ingyenes előnézeteket. Oldd fel a gyűjteményt, vagy próbáld holnap.",
   "v2.err.timeout":
-    "Az előnézet még készül. Várj egy pillanatot, majd koppints a Próbáld újra gombra — ott folytatjuk, ahol abbahagytuk.",
+    "Az előnézet még készül. Várj egy pillanatot, majd koppints a Próbáld újra gombra · ott folytatjuk, ahol abbahagytuk.",
   "v2.err.rate_limit":
-    "Az előnézeti szolgáltatás foglalt. Koppints hamarosan a Próbáld újra gombra — általában gyorsan oldódik.",
+    "Az előnézeti szolgáltatás foglalt. Koppints hamarosan a Próbáld újra gombra · általában gyorsan oldódik.",
   "v2.err.wrong_species":
     "A fotó nem illik ehhez az élményhez. Kérjük, tölts fel egy tiszta fotót a megfelelő kedvencről.",
   "v2.err.invalid_image": "Ezt a fotót nem lehetett használni. Próbálj kisebb JPEG, PNG vagy WebP fájlt.",
@@ -184,23 +184,23 @@ export const PET_COPY_HU: PetCopyMap = {
   "v1.product.name": "My Pet’s Secret Life",
   "v1.product.promise": "Egy fotó. 12 titkos élet. 2 filmszerű klip.",
   "v1.hero.subtitle":
-    "Nézd meg a kedvencedet királyiként, űrhajósként, vezérigazgatóként és még sok más szerepben — ugyanaz az arc minden világban.",
+    "Nézd meg a kedvencedet királyiként, űrhajósként, vezérigazgatóként és még sok más szerepben · ugyanaz az arc minden világban.",
   "v1.hero.promise": "Egy fotó. 12 titkos élet. 2 filmszerű klip.",
   "v1.offer.noSub": "Nincs előfizetés",
   "v1.offer.include.portraits": "12 portré ugyanarról a kedvencről",
   "v1.offer.include.clips": "2 filmszerű 5 másodperces klip",
   "v1.offer.include.review": "Emberi ellenőrzés letöltés előtt",
-  "v1.offer.include.price": "Egyszeri ár — nincs előfizetés",
+  "v1.offer.include.price": "Egyszeri ár · nincs előfizetés",
   "v1.landing.dog.heading": "Tizenkét titkos élet",
   "v1.landing.dog.description":
     "Vidd rá az egeret vagy koppints egy portréra, hogy mozgásban lásd. Ugyanaz a Golden Retriever. Minden képkockán más világ.",
   "v1.landing.dog.support":
-    "Változtasd a kutyádat királlyá, űrhajóssá, vezérigazgatóvá — és még kilenc titkos életté.",
+    "Változtasd a kutyádat királlyá, űrhajóssá, vezérigazgatóvá · és még kilenc titkos életté.",
   "v1.landing.cat.heading": "Tizenkét titkos élet",
   "v1.landing.cat.description":
     "Vidd rá az egeret vagy koppints egy portréra, hogy mozgásban lásd. Ugyanaz a macska. Minden képkockán más világ.",
   "v1.landing.cat.support":
-    "Változtasd a macskádat királlyá, űrhajóssá, vezérigazgatóvá — és még kilenc titkos életté.",
+    "Változtasd a macskádat királlyá, űrhajóssá, vezérigazgatóvá · és még kilenc titkos életté.",
   "v1.landing.other.heading": "Sokféle kedvencnek készült",
   "v1.landing.other.description":
     "Vidd rá az egeret vagy koppints egy portréra, hogy mozgásban lásd. Minden kedvenc megérdemel egy titkos életet.",
@@ -286,7 +286,7 @@ export const PET_COPY_HU: PetCopyMap = {
   "faq.sub.a": "Nem. Egyszeri fizetés. Semmi nem újul meg.",
   "faq.look.q": "Úgy fog kinézni, mint a kedvencem?",
   "faq.look.a":
-    "Igen — ez a termék. Egy fotó, tizenkét jelenet, két filmszerű klip, ugyanaz az arc. Ember ellenőrzi, mielőtt letöltöd.",
+    "Igen · ez a termék. Egy fotó, tizenkét jelenet, két filmszerű klip, ugyanaz az arc. Ember ellenőrzi, mielőtt letöltöd.",
   "faq.time.q": "Mennyi ideig tart?",
   "faq.time.a":
     "Általában pár perc a fizetés után. A Replicate azonnal elindítja a tizenkét portrét.",
@@ -312,5 +312,5 @@ export const PET_COPY_HU: PetCopyMap = {
     "A generált portréfájlokat és két filmszerű MP4 klipet kapod a rendelési galériából. Extra kivágások, például háttérképek, még nem tartoznak hozzá.",
 
   // Validation
-  "validate.name": "Adj nevet a kedvencednek — egy becenév is elég.",
+  "validate.name": "Adj nevet a kedvencednek · egy becenév is elég.",
 };

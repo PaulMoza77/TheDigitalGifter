@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
         .eq("order_id", order.id)
         .maybeSingle();
 
-      // Safe personalization summary — no raw custom free-text dump by default
+      // Safe personalization summary · no raw custom free-text dump by default
       const { data: perso } = await service
         .from("christmas_santa_personalization")
         .select("child_first_name,language,template_key,guardian_consent")

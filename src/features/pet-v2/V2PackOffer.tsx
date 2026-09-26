@@ -89,7 +89,7 @@ export function V2PackOffer({
   );
 }
 
-/** One-line urgency — no extra bordered box. Sticky CTA already repeats the timer. */
+/** One-line urgency · no extra bordered box. Sticky CTA already repeats the timer. */
 export function V2SaleLine({ onExpire }: { onExpire?: () => void }) {
   const t = usePetT();
   const { offer, refresh } = useV2OfferState(onExpire);

@@ -23,7 +23,7 @@ export function assertStyleAllowed(
   return { ok: true, style };
 }
 
-/** Reject arbitrary client-supplied prompt text — generation must use server registry only. */
+/** Reject arbitrary client-supplied prompt text · generation must use server registry only. */
 export function rejectClientPrompt(clientPrompt: unknown): { ok: true } | { ok: false; code: "client_prompt_rejected" } {
   if (clientPrompt == null || clientPrompt === "") return { ok: true };
   return { ok: false, code: "client_prompt_rejected" };

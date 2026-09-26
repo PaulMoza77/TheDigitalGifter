@@ -57,7 +57,7 @@ function sessionId() {
 }
 
 async function genCase(name, { file, funnel, species, scene, expectOk, expectError }) {
-  // Keep JPEG bytes intact — mutating EOI/last bytes breaks Moondream species vision.
+  // Keep JPEG bytes intact · mutating EOI/last bytes breaks Moondream species vision.
   const bytes = load(file);
   const imageDataUrl = `data:image/jpeg;base64,${bytes.toString("base64")}`;
   const hash12 = createHash("sha256").update(bytes).digest("hex").slice(0, 12);

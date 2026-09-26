@@ -73,7 +73,7 @@ export function usePetBrowserLocaleRedirect(): void {
       return;
     }
 
-    // No preference yet — detect browser once per session tab.
+    // No preference yet · detect browser once per session tab.
     if (readPetLocaleAutoFlag()) {
       writePetLocalePreference("en");
       if (typeof document !== "undefined") document.documentElement.lang = "en";

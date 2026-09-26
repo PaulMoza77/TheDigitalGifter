@@ -14,7 +14,7 @@ export function clearPreviewOnPhotoChange(patch: Partial<PetV2Draft>): Partial<P
 
 /**
  * After a successful live preview, navigating Back and tapping generate again for the
- * same upload must restore the cached preview — not start another Replicate job.
+ * same upload must restore the cached preview · not start another Replicate job.
  */
 export function shouldRestoreLocalPreview(
   draft: Pick<

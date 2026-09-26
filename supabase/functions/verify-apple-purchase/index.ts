@@ -19,7 +19,7 @@ type VerifyBody = {
   signedTransaction?: string;
   transactionJws?: string;
   purchaseToken?: string;
-  /** Optional client hint — never trusted for credits or environment. */
+  /** Optional client hint · never trusted for credits or environment. */
   productId?: string;
 };
 
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
       if (submitted.environment === "Xcode") {
         // StoreKit Testing in Xcode is not in App Store Server API.
-        // Opt-in only — never treat client JWS as authoritative for Sandbox/Production.
+        // Opt-in only · never treat client JWS as authoritative for Sandbox/Production.
         if (!allowXcodeIapGrants()) {
           throw new Error("xcode_grants_disabled");
         }

@@ -71,7 +71,7 @@ export function validateMessageInput(
   if (UNSAFE_RE.test(custom) || INJECTION_RE.test(custom)) {
     return { ok: false, error: "unsafe_input" };
   }
-  // Religious only when explicitly selected — no extra check needed
+  // Religious only when explicitly selected · no extra check needed
   return {
     ok: true,
     value: {
@@ -175,7 +175,7 @@ function systemPrompt(locale: LocaleCode): string {
   return `You write Christmas messages. Return ONLY valid JSON.
 Rules:
 - Exactly 3 distinct, natural alternatives written in ${lang} (locale=${locale}).
-- Natural native phrasing for Christmas in that language — not literal English translation.
+- Natural native phrasing for Christmas in that language · not literal English translation.
 - Do not invent facts about the recipient.
 - Respect relationship terminology and grammatical gender where the language requires it.
 - Obey the selected tone and length.
@@ -198,11 +198,11 @@ const BANK: TemplateBank = {
   "warm|medium|en": [
     "Merry Christmas! I hope this season brings you quiet joy, good company, and moments that feel like home.",
     "Wishing you a Christmas full of comfort, kindness, and the people who make your days brighter.",
-    "May your Christmas be gentle and warm — with good food, soft lights, and plenty of reasons to smile.",
+    "May your Christmas be gentle and warm · with good food, soft lights, and plenty of reasons to smile.",
   ],
   "warm|long|en": [
     "Merry Christmas! As the year winds down, I keep thinking about how grateful I am for you. May your holidays be filled with rest, laughter, and the kind of warmth that stays long after the lights come down.",
-    "Wishing you a Christmas that feels unhurried and kind. May you find time to breathe, celebrate little joys, and feel surrounded by love — today and all season long.",
+    "Wishing you a Christmas that feels unhurried and kind. May you find time to breathe, celebrate little joys, and feel surrounded by love · today and all season long.",
     "Merry Christmas from the heart. I hope this holiday gives you peaceful mornings, glowing evenings, and memories you'll want to keep. You deserve every bit of that warmth.",
   ],
   // EN funny
@@ -213,12 +213,12 @@ const BANK: TemplateBank = {
   ],
   "funny|medium|en": [
     "Merry Christmas! May your wrapping paper cooperate, your oven behave, and your relatives stay (mostly) on topic.",
-    "Hope your Christmas is merry, bright, and only mildly chaotic — the good kind of chaos, with snacks.",
+    "Hope your Christmas is merry, bright, and only mildly chaotic · the good kind of chaos, with snacks.",
     "Sending festive cheer and zero judgment about how many cookies you've already eaten. Merry Christmas!",
   ],
   "funny|long|en": [
     "Merry Christmas! May your lights untangle on the first try, your gifts fit in the wrapping paper, and someone else volunteer to do the dishes. You've earned a season of soft chairs and excellent leftovers.",
-    "Wishing you a Christmas comedy of errors that somehow still works out — burnt edges on the cookies, perfect hearts around the table. Laugh often and nap without guilt.",
+    "Wishing you a Christmas comedy of errors that somehow still works out · burnt edges on the cookies, perfect hearts around the table. Laugh often and nap without guilt.",
     "Merry Christmas! Official holiday goals: warm drinks, questionable sweater choices, and at least one moment where everyone forgets their phones. You've got this.",
   ],
   // EN romantic
@@ -229,11 +229,11 @@ const BANK: TemplateBank = {
   ],
   "romantic|medium|en": [
     "Merry Christmas to the person who makes ordinary days feel magical. Loving you is my favorite tradition.",
-    "This Christmas, I'm grateful for your laugh, your hand in mine, and the home we build together — one quiet moment at a time.",
+    "This Christmas, I'm grateful for your laugh, your hand in mine, and the home we build together · one quiet moment at a time.",
     "Merry Christmas, love. May this season wrap us in warmth the way your heart wraps around mine.",
   ],
   "romantic|long|en": [
-    "Merry Christmas, my love. Another year of choosing each other — through busy weeks and soft evenings — and I wouldn't trade a second. May this holiday remind us how lucky we are to share the lights, the quiet, and everything ahead.",
+    "Merry Christmas, my love. Another year of choosing each other · through busy weeks and soft evenings · and I wouldn't trade a second. May this holiday remind us how lucky we are to share the lights, the quiet, and everything ahead.",
     "To my favorite person: Christmas feels brighter because you're in it. Thank you for the love that feels like home. Here's to more winters side by side, more laughter, and more reasons to hold on tight.",
     "Merry Christmas. Falling in love with you was the best plot twist of my life, and every December I get to celebrate it again. You are my warmth, my joy, and my forever.",
   ],
@@ -244,12 +244,12 @@ const BANK: TemplateBank = {
     "You mean more than words can hold. Merry Christmas.",
   ],
   "heartfelt|medium|en": [
-    "Merry Christmas. I'm so grateful for the way you show up — with care, patience, and love. Wishing you a season as kind as you are.",
+    "Merry Christmas. I'm so grateful for the way you show up · with care, patience, and love. Wishing you a season as kind as you are.",
     "This Christmas, I want you to know how deeply you're appreciated. May peace and joy find you in every quiet moment.",
     "Sending you my warmest Christmas wishes. Your presence in my life is a gift I never take for granted.",
   ],
   "heartfelt|long|en": [
-    "Merry Christmas. When I look back on this year, your kindness stands out like candlelight — steady and true. I hope this holiday gives you the rest and joy you so often give to others. You are deeply loved.",
+    "Merry Christmas. When I look back on this year, your kindness stands out like candlelight · steady and true. I hope this holiday gives you the rest and joy you so often give to others. You are deeply loved.",
     "Thinking of you this Christmas with real gratitude. Thank you for the memories, the support, and the way you make people feel seen. May your days ahead be gentle and full of light.",
     "Merry Christmas from the heart. You've shaped so many of my happiest moments, and I hope this season wraps you in the same care you've always offered. Wishing you peace that lasts.",
   ],
@@ -266,14 +266,14 @@ const BANK: TemplateBank = {
   ],
   "short_and_sweet|long|en": [
     "Merry Christmas! Keeping this short because the wish is simple: joy today, peace tomorrow, and good people close by.",
-    "Warm Christmas wishes coming your way — may the season feel light, lovely, and just right.",
+    "Warm Christmas wishes coming your way · may the season feel light, lovely, and just right.",
     "Merry Christmas. Hope every little moment feels like a gift.",
   ],
   // EN professional
   "professional|short|en": [
     "Wishing you a peaceful Christmas and a strong year ahead.",
     "Season's greetings and warm wishes for the holidays.",
-    "Merry Christmas — grateful to work with you.",
+    "Merry Christmas · grateful to work with you.",
   ],
   "professional|medium|en": [
     "Wishing you a restful Christmas and a prosperous New Year. Thank you for your partnership and professionalism this year.",
@@ -282,23 +282,23 @@ const BANK: TemplateBank = {
   ],
   "professional|long|en": [
     "As the year closes, I want to thank you for your collaboration and trust. Wishing you a peaceful Christmas and a healthy, successful year ahead. May the holidays bring rest and renewed energy.",
-    "Season's greetings. It's been a pleasure working with you — wishing you and your team a calm Christmas and a bright start to the new year.",
+    "Season's greetings. It's been a pleasure working with you · wishing you and your team a calm Christmas and a bright start to the new year.",
     "Merry Christmas. Thank you for a year of thoughtful partnership. May your holiday season be restful and your coming year full of good opportunities.",
   ],
   // EN religious
   "religious|short|en": [
     "May the peace of Christ fill your Christmas.",
-    "Blessed Christmas — celebrating the gift of Jesus.",
+    "Blessed Christmas · celebrating the gift of Jesus.",
     "Joy to the world, and peace to your heart this Christmas.",
   ],
   "religious|medium|en": [
-    "Wishing you a blessed Christmas as we celebrate the birth of Jesus — may His peace and joy fill your home.",
+    "Wishing you a blessed Christmas as we celebrate the birth of Jesus · may His peace and joy fill your home.",
     "Merry Christmas. May the light of Christ guide your days and bring hope to your heart this holy season.",
     "Praying your Christmas is filled with faith, family, and the quiet joy of God's love.",
   ],
   "religious|long|en": [
     "Blessed Christmas to you. As we remember the birth of Jesus, may His love steady your heart and His peace settle over your home. Grateful for faith shared and hope renewed.",
-    "Merry Christmas. May this holy season draw you closer to the light of Christ — with gratitude, gentleness, and joy that lasts beyond the holidays.",
+    "Merry Christmas. May this holy season draw you closer to the light of Christ · with gratitude, gentleness, and joy that lasts beyond the holidays.",
     "Wishing you a Christmas rooted in faith. May the story of Christ's birth bring comfort, courage, and deep peace to you and those you love.",
   ],
 
@@ -311,7 +311,7 @@ const BANK: TemplateBank = {
   "warm|medium|ro": [
     "Crăciun fericit! Îți doresc o sărbătoare cu liniște, oameni dragi și momente care te încălzesc cu adevărat.",
     "Să ai un Crăciun plin de căldură, bunătate și zâmbete. Mă gândesc la tine cu drag.",
-    "Îți urez un Crăciun blând și luminos — cu lumințe moi, mâncare bună și inimă împăcată.",
+    "Îți urez un Crăciun blând și luminos · cu lumințe moi, mâncare bună și inimă împăcată.",
   ],
   "warm|long|ro": [
     "Crăciun fericit! La final de an, îți mulțumesc pentru căldura pe care o aduci. Să ai sărbători cu odihnă, râsete și dragoste care rămâne și după ce se sting lumințele.",
@@ -326,12 +326,12 @@ const BANK: TemplateBank = {
   ],
   "funny|medium|ro": [
     "Crăciun fericit! Să se descurce hârtia de împachetat, cuptorul să asculte, iar rudele să rămână (aproape) pe subiect.",
-    "Îți doresc un Crăciun vesel, luminos și doar puțin haotic — haosul bun, cu gustări.",
+    "Îți doresc un Crăciun vesel, luminos și doar puțin haotic · haosul bun, cu gustări.",
     "Îți trimit urări de sărbători și zero judecată pentru câte fursecuri ai mâncat deja. Crăciun fericit!",
   ],
   "funny|long|ro": [
     "Crăciun fericit! Să ți se descurce ghirlandele din prima, cadourile să încapă în hârtie, iar altcineva să se ofere la vase. Meriți fotoliu moale și resturi excelente.",
-    "Îți urez o comedie de Crăciun care totuși se termină bine — fursecuri puțin arse, inimi perfecte la masă. Râzi des și dormi fără vină.",
+    "Îți urez o comedie de Crăciun care totuși se termină bine · fursecuri puțin arse, inimi perfecte la masă. Râzi des și dormi fără vină.",
     "Crăciun fericit! Obiective oficiale: băuturi calde, pulovere îndoielnice și măcar un moment fără telefoane. Hai că poți!",
   ],
   // RO romantic
@@ -346,7 +346,7 @@ const BANK: TemplateBank = {
     "Crăciun fericit, dragoste. Să ne înfășoare sezonul în căldură, așa cum inima ta mă înconjoară pe mine.",
   ],
   "romantic|long|ro": [
-    "Crăciun fericit, iubirea mea. Încă un an în care ne alegem unul pe celălalt — și n-aș schimba nicio secundă. Să ne amintească sărbătoarea asta cât de norocoși suntem să împărțim luminile, liniștea și tot ce urmează.",
+    "Crăciun fericit, iubirea mea. Încă un an în care ne alegem unul pe celălalt · și n-aș schimba nicio secundă. Să ne amintească sărbătoarea asta cât de norocoși suntem să împărțim luminile, liniștea și tot ce urmează.",
     "Pentru persoana mea preferată: Crăciunul e mai luminos pentru că ești tu în el. Mulțumesc pentru dragostea care se simte ca acasă. Pentru ierni unul lângă altul și motive să ne ținem strâns.",
     "Crăciun fericit. Să mă îndrăgostesc de tine a fost cea mai frumoasă întorsătură, și în fiecare decembrie o sărbătoresc din nou. Ești căldura și bucuria mea.",
   ],
@@ -357,12 +357,12 @@ const BANK: TemplateBank = {
     "Înseamnă mai mult decât pot spune cuvintele. Crăciun fericit.",
   ],
   "heartfelt|medium|ro": [
-    "Crăciun fericit. Îți mulțumesc pentru felul în care ești prezent(ă) — cu grijă și răbdare. Să ai un sezon la fel de bun precum ești tu.",
+    "Crăciun fericit. Îți mulțumesc pentru felul în care ești prezent(ă) · cu grijă și răbdare. Să ai un sezon la fel de bun precum ești tu.",
     "Vreau să știi cât de mult ești apreciat(ă). Să-ți găsească liniștea și bucuria în fiecare moment liniștit.",
     "Îți trimit cele mai calde urări. Prezența ta în viața mea e un dar pe care nu-l iau de la sine.",
   ],
   "heartfelt|long|ro": [
-    "Crăciun fericit. Când mă uit la anul acesta, bunătatea ta strălucește ca o lumânare — statornică și adevărată. Sper ca sărbătoarea să-ți aducă odihna și bucuria pe care le oferi atât de des altora. Ești iubit(ă) cu adevărat.",
+    "Crăciun fericit. Când mă uit la anul acesta, bunătatea ta strălucește ca o lumânare · statornică și adevărată. Sper ca sărbătoarea să-ți aducă odihna și bucuria pe care le oferi atât de des altora. Ești iubit(ă) cu adevărat.",
     "Mă gândesc la tine cu recunoștință reală. Mulțumesc pentru amintiri, sprijin și pentru felul în care îi faci pe oameni să se simtă văzuți. Să-ți fie zilele blânde și pline de lumină.",
     "Crăciun fericit din suflet. Ai modelat multe dintre momentele mele fericite, și sper ca sezonul acesta să te înconjure cu aceeași grijă pe care tu o oferi. Îți doresc pace care rămâne.",
   ],
@@ -379,14 +379,14 @@ const BANK: TemplateBank = {
   ],
   "short_and_sweet|long|ro": [
     "Crăciun fericit! Țin scurt pentru că ura e simplă: bucurie azi, pace mâine și oameni buni aproape.",
-    "Urări calde de Crăciun — să se simtă sezonul ușor, frumos și exact cum trebuie.",
+    "Urări calde de Crăciun · să se simtă sezonul ușor, frumos și exact cum trebuie.",
     "Crăciun fericit. Sper ca fiecare moment mic să se simtă ca un dar.",
   ],
   // RO professional
   "professional|short|ro": [
     "Vă urez un Crăciun liniștit și un an bun înainte.",
     "Sărbători fericite și urări calde pentru sezonul acesta.",
-    "Crăciun fericit — recunoscător(oare) pentru colaborare.",
+    "Crăciun fericit · recunoscător(oare) pentru colaborare.",
   ],
   "professional|medium|ro": [
     "Vă urez un Crăciun odihnitor și un An Nou prosper. Mulțumesc pentru parteneriatul și profesionalismul din acest an.",
@@ -395,23 +395,23 @@ const BANK: TemplateBank = {
   ],
   "professional|long|ro": [
     "La final de an, vă mulțumesc pentru colaborare și încredere. Vă urez un Crăciun liniștit și un an sănătos, cu succes. Să vă aducă sărbătorile odihnă și energie reînnoită.",
-    "Sărbători fericite. A fost o plăcere să lucrăm împreună — vă urez vouă și echipei un Crăciun calm și un început de an luminos.",
+    "Sărbători fericite. A fost o plăcere să lucrăm împreună · vă urez vouă și echipei un Crăciun calm și un început de an luminos.",
     "Crăciun fericit. Mulțumesc pentru un an de parteneriat atent. Să aveți un sezon odihnitor și un an cu oportunități bune.",
   ],
   // RO religious
   "religious|short|ro": [
     "Să vă umple pacea lui Hristos Crăciunul.",
-    "Crăciun binecuvântat — sărbătorim darul lui Iisus.",
+    "Crăciun binecuvântat · sărbătorim darul lui Iisus.",
     "Bucurie lumii și pace inimii dumneavoastră de Crăciun.",
   ],
   "religious|medium|ro": [
-    "Vă urez un Crăciun binecuvântat, în care sărbătorim nașterea lui Iisus — să vă umple pacea și bucuria Lui casa.",
+    "Vă urez un Crăciun binecuvântat, în care sărbătorim nașterea lui Iisus · să vă umple pacea și bucuria Lui casa.",
     "Crăciun fericit. Lumina lui Hristos să vă călăuzească zilele și să aducă speranță în inimă în acest sezon sfânt.",
     "Mă rog ca Crăciunul să vă fie plin de credință, familie și bucuria liniștită a dragostei lui Dumnezeu.",
   ],
   "religious|long|ro": [
     "Crăciun binecuvântat. Amintindu-ne nașterea lui Iisus, dragostea Lui să vă întărească inima și pacea Lui să se așeze peste casă. Recunoscător(oare) pentru credință împărtășită și speranță reînnoită.",
-    "Crăciun fericit. Acest sezon sfânt să vă apropie de lumina lui Hristos — cu recunoștință, blândețe și bucurie care durează dincolo de sărbători.",
+    "Crăciun fericit. Acest sezon sfânt să vă apropie de lumina lui Hristos · cu recunoștință, blândețe și bucurie care durează dincolo de sărbători.",
     "Vă urez un Crăciun înrădăcinat în credință. Povestea nașterii lui Hristos să vă aducă mângâiere, curaj și pace adâncă, vouă și celor dragi.",
   ],
 };

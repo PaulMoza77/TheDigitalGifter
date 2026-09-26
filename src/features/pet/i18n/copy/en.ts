@@ -30,10 +30,10 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.landing.eyebrow": "Try it free",
   "v2.landing.h1": "See your pet as a Formula 1 driver.",
   "v2.landing.lede":
-    "Upload one photo and get a free blurred teaser of {pet}’s secret life — no card required.",
-  "v2.landing.lede.dog": "Upload one photo and get a free blurred teaser of your dog’s secret life — no card required.",
-  "v2.landing.lede.cat": "Upload one photo and get a free blurred teaser of your cat’s secret life — no card required.",
-  "v2.landing.lede.other": "Upload one photo and get a free blurred teaser of your pet’s secret life — no card required.",
+    "Upload one photo and get a free blurred teaser of {pet}’s secret life · no card required.",
+  "v2.landing.lede.dog": "Upload one photo and get a free blurred teaser of your dog’s secret life · no card required.",
+  "v2.landing.lede.cat": "Upload one photo and get a free blurred teaser of your cat’s secret life · no card required.",
+  "v2.landing.lede.other": "Upload one photo and get a free blurred teaser of your pet’s secret life · no card required.",
   "v2.landing.cta": "Upload your pet photo",
   "v2.landing.chooseFile": "Choose a JPEG, PNG, or WebP",
   "v2.landing.bullet.lives": "12 secret lives",
@@ -45,7 +45,7 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.landing.proofAria": "Example portraits and clips",
   "v2.landing.livesH2": "All 12 secret lives",
   "v2.landing.livesLede.dog":
-    "Twelve portraits of the same {pet} — every world included. 2 mini clips included.",
+    "Twelve portraits of the same {pet} · every world included. 2 mini clips included.",
   "v2.landing.livesLede.other": "Twelve portraits. One photo. Many kinds of pets.",
   "v2.landing.closingH2": "Reveal your pet’s secret life.",
   "v2.landing.closingLede":
@@ -64,12 +64,12 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.pack.headline": "Get 12 secret lives and 2 mini clips for only {price}",
   "v2.pack.headlineRich": "Get 12 secret lives and 2 mini clips for only",
   "v2.pack.fine": "One-time · no subscription · same pet in every portrait and clip",
-  "v2.shell.footer": "{headline}. Free personalized teaser — pay only to unlock.",
+  "v2.shell.footer": "{headline}. Free personalized teaser · pay only to unlock.",
 
   // V2 photo
   "v2.photo.h1": "One clear photo.",
   "v2.photo.lede":
-    "Face toward the camera, both eyes visible, even light. One {pet} only — no group shots or heavy filters.",
+    "Face toward the camera, both eyes visible, even light. One {pet} only · no group shots or heavy filters.",
   "v2.photo.selectedAlt": "Selected pet photo",
   "v2.photo.selectedNamed": "Selected {fileName}",
   "v2.photo.replace": "Replace",
@@ -95,7 +95,7 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.teaser.alt": "Blurred preview of your pet’s secret life",
   "v2.teaser.bullet.lives": "12 secret lives of the same {pet}",
   "v2.teaser.bullet.clips": "2 mini cinematic clips",
-  "v2.teaser.bullet.price": "One-time {price} payment — no subscription",
+  "v2.teaser.bullet.price": "One-time {price} payment · no subscription",
   "v2.teaser.petName": "Pet’s name",
   "v2.teaser.email": "Email for the gallery",
   "v2.teaser.payAria": "Secure payment",
@@ -103,8 +103,8 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.teaser.hostedHint": "Continue on Stripe’s secure checkout page to finish your one-time payment.",
   "v2.teaser.hostedOpening": "Opening Stripe’s secure checkout…",
   "v2.teaser.hostedBusy": "Opening secure Stripe checkout…",
-  "v2.teaser.hostedCta": "Continue to secure Stripe checkout — {price}",
-  "v2.teaser.retry": "Open secure Stripe checkout — {price}",
+  "v2.teaser.hostedCta": "Continue to secure Stripe checkout · {price}",
+  "v2.teaser.retry": "Open secure Stripe checkout · {price}",
   "v2.teaser.retrying": "Retrying…",
   "v2.teaser.busyPay": "Processing secure payment…",
   "v2.teaser.loadingPay": "Loading secure payment…",
@@ -112,9 +112,9 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.teaser.paused":
     "Secure payment is paused until generation capacity is restored. You haven’t been charged.",
   "v2.teaser.secureLine": "Secure one-time {price} Stripe payment. No subscription.",
-  "v2.teaser.payDog": "Reveal My Dog’s Secret Life — {price}",
-  "v2.teaser.payCat": "Reveal My Cat’s Secret Life — {price}",
-  "v2.teaser.payPet": "Reveal My Pet’s Secret Life — {price}",
+  "v2.teaser.payDog": "Reveal My Dog’s Secret Life · {price}",
+  "v2.teaser.payCat": "Reveal My Cat’s Secret Life · {price}",
+  "v2.teaser.payPet": "Reveal My Pet’s Secret Life · {price}",
   "v2.teaser.sessionExpiredContact": "Payment session expired. Retry secure payment.",
 
   // V2 offer (legacy step)
@@ -132,7 +132,7 @@ export const PET_COPY_EN: PetCopyMap = {
   // V2 generating / preview (legacy)
   "v2.gen.h1": "Creating your pet’s F1 driver preview",
   "v2.gen.lede":
-    "We’re turning your pet into a cinematic Formula 1 driver. This is one free preview — not the full collection yet.",
+    "We’re turning your pet into a cinematic Formula 1 driver. This is one free preview · not the full collection yet.",
   "v2.gen.retry": "Try again",
   "v2.gen.change": "Change photo",
   "v2.gen.thumbAlt": "Your uploaded pet",
@@ -147,7 +147,7 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.preview.f1Alt": "Your {pet} as a Formula 1 driver",
   "v2.preview.mock":
     "Prototype preview: live AI generation is off in this environment, so this is your photo with F1-styled framing.",
-  "v2.preview.unlock": "Unlock full collection — {price}",
+  "v2.preview.unlock": "Unlock full collection · {price}",
   "v2.preview.regen": "Try another free preview",
 
   // Checkout loading phases
@@ -160,7 +160,7 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.checkout.failed":
     "We couldn’t open the secure payment form. Please try again. You haven’t been charged.",
   "v2.provider.unavailable":
-    "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+    "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
 
   // Preview errors
   "v2.err.invalid_funnel":
@@ -168,9 +168,9 @@ export const PET_COPY_EN: PetCopyMap = {
   "v2.err.rate_limited":
     "This session already used its free previews. Unlock the collection or try again tomorrow.",
   "v2.err.timeout":
-    "Your preview is still rendering. Wait a moment, then tap Try again — we’ll pick up where it left off.",
+    "Your preview is still rendering. Wait a moment, then tap Try again · we’ll pick up where it left off.",
   "v2.err.rate_limit":
-    "The preview service is busy. Tap Try again in a moment — this usually clears quickly.",
+    "The preview service is busy. Tap Try again in a moment · this usually clears quickly.",
   "v2.err.wrong_species":
     "That photo doesn’t match this experience. Please upload a clear photo of the right pet.",
   "v2.err.invalid_image": "That photo could not be used. Try a smaller JPEG, PNG, or WebP.",
@@ -186,13 +186,13 @@ export const PET_COPY_EN: PetCopyMap = {
   "v1.product.name": "My Pet’s Secret Life",
   "v1.product.promise": "One photo. 12 secret lives. 2 cinematic clips.",
   "v1.hero.subtitle":
-    "See your pet as royalty, an astronaut, a CEO and more — the same face in every world.",
+    "See your pet as royalty, an astronaut, a CEO and more · the same face in every world.",
   "v1.hero.promise": "One photo. 12 secret lives. 2 cinematic clips.",
   "v1.offer.noSub": "No subscription",
   "v1.offer.include.portraits": "12 portraits of the same pet",
   "v1.offer.include.clips": "2 cinematic 5-second clips",
   "v1.offer.include.review": "Human review before download",
-  "v1.offer.include.price": "One-time price — no subscription",
+  "v1.offer.include.price": "One-time price · no subscription",
   "v1.landing.dog.heading": "Twelve secret lives",
   "v1.landing.dog.description":
     "Hover or tap a portrait to watch it move. Same Golden Retriever. A different world in every frame.",
@@ -288,7 +288,7 @@ export const PET_COPY_EN: PetCopyMap = {
   "faq.sub.a": "No. One-time payment. Nothing renews.",
   "faq.look.q": "Will it look like my pet?",
   "faq.look.a":
-    "Yes — that is the product. One photo, twelve scenes, two cinematic clips, the same face. A person checks before you download.",
+    "Yes · that is the product. One photo, twelve scenes, two cinematic clips, the same face. A person checks before you download.",
   "faq.time.q": "How long does it take?",
   "faq.time.a":
     "Usually a few minutes after payment. Replicate starts the twelve portraits immediately.",
@@ -314,5 +314,5 @@ export const PET_COPY_EN: PetCopyMap = {
     "You receive the generated portrait files and two cinematic MP4 clips from the order gallery. Extra crops such as wallpapers are not included yet.",
 
   // Validation
-  "validate.name": "Give your pet a name — even a nickname works.",
+  "validate.name": "Give your pet a name · even a nickname works.",
 };

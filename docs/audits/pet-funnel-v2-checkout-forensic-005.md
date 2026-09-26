@@ -33,7 +33,7 @@
 **UNKNOWN**
 
 - Exact decline / 3DS / Apple Pay availability per session (needs Stripe PI retrieve after edge deploy)
-- Facebook/Instagram IAB share of the 34 (events table has no user_agent column; only device_type on some begin_checkout rows — 9 mobile begin events)
+- Facebook/Instagram IAB share of the 34 (events table has no user_agent column; only device_type on some begin_checkout rows · 9 mobile begin events)
 
 ## Apply before relaunch
 

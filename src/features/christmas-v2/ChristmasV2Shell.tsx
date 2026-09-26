@@ -84,7 +84,7 @@ export function ChristmasV2Shell({
         <footer className="mt-8 border-t border-[#F7F0E4]/10 pt-5 text-xs text-[#F7F0E4]/45">
           <p>
             {footer ??
-              "Premium AI Christmas portraits by The Digital Gifter. One-time purchase — no subscription."}
+              "Premium AI Christmas portraits by The Digital Gifter. One-time purchase · no subscription."}
           </p>
           <p className="mt-2">
             <a className="underline-offset-2 hover:underline" href="/christmas">

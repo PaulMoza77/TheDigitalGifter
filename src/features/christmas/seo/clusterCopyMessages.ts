@@ -64,7 +64,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
           items: [
             {
               title: "Heartfelt",
-              text: "Mom — thank you for the night you waited up when the flight was late. This year I am trying to be as steady as you were in that kitchen.",
+              text: "Mom · thank you for the night you waited up when the flight was late. This year I am trying to be as steady as you were in that kitchen.",
             },
             {
               title: "Short",
@@ -148,7 +148,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
           items: [
             {
               title: "Din suflet",
-              text: "Mamă — mulțumesc pentru noaptea în care ai așteptat când avionul a întârziat. Anul ăsta încerc să fiu la fel de așezat cum ai fost tu în bucătăria aia.",
+              text: "Mamă · mulțumesc pentru noaptea în care ai așteptat când avionul a întârziat. Anul ăsta încerc să fiu la fel de așezat cum ai fost tu în bucătăria aia.",
             },
             {
               title: "Scurt",
@@ -252,7 +252,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "From the grandkids",
-              text: "They still think you can fix anything. They are not wrong. Merry Christmas, Grandpa — from all of us.",
+              text: "They still think you can fix anything. They are not wrong. Merry Christmas, Grandpa · from all of us.",
             },
             {
               title: "If you are not blood",
@@ -336,7 +336,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "De la nepoți",
-              text: "Încă cred că poți repara orice. N-au dreptate greșită. Crăciun fericit, tataie — de la toți.",
+              text: "Încă cred că poți repara orice. N-au dreptate greșită. Crăciun fericit, tataie · de la toți.",
             },
             {
               title: "Dacă nu e sânge",
@@ -375,7 +375,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Christmas messages for your boyfriend: romantic without a script, funny without mean, short enough for a card, and a generator that starts on him.",
       h1: "Christmas messages for your boyfriend",
       intro:
-        "A Christmas note for a boyfriend should sound like the person he dates, not like a movie quote. Mention a morning, a trip that almost went wrong, or the way he shows up when you are tired. Romance works when it is accurate; humor works when it is not a public roast. Use the drafts, then open the generator on boyfriend plus romantic or funny, and cut anything you would not say to his face. When it is done, put it on a card — do not bury a love note in a group chat screenshot.",
+        "A Christmas note for a boyfriend should sound like the person he dates, not like a movie quote. Mention a morning, a trip that almost went wrong, or the way he shows up when you are tired. Romance works when it is accurate; humor works when it is not a public roast. Use the drafts, then open the generator on boyfriend plus romantic or funny, and cut anything you would not say to his face. When it is done, put it on a card · do not bury a love note in a group chat screenshot.",
       imageAlt: "Romantic Christmas card still for a boyfriend message",
       ctaText: "Write a message for him",
       benefits: [
@@ -459,7 +459,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Mesaje de Crăciun pentru iubit: romantice fără scenariu, amuzante fără răutate, destul de scurte pentru o felicitare, cu generator pornit pe el.",
       h1: "Mesaje de Crăciun pentru iubitul tău",
       intro:
-        "Un bilet de Crăciun pentru un iubit trebuie să sune a omul cu care iese, nu a citat de film. Pomenește o dimineață, o călătorie care aproape a mers prost sau felul în care apare când ești obosită. Romantismul ține când e precis; umorul ține când nu e un roast public. Folosește ciornele, apoi deschide generatorul pe iubit plus romantic sau amuzant și taie tot ce n-ai zice în față. Când e gata, pune-l pe felicitare — nu îngropa un bilet de dragoste într-un screenshot de grup.",
+        "Un bilet de Crăciun pentru un iubit trebuie să sune a omul cu care iese, nu a citat de film. Pomenește o dimineață, o călătorie care aproape a mers prost sau felul în care apare când ești obosită. Romantismul ține când e precis; umorul ține când nu e un roast public. Folosește ciornele, apoi deschide generatorul pe iubit plus romantic sau amuzant și taie tot ce n-ai zice în față. Când e gata, pune-l pe felicitare · nu îngropa un bilet de dragoste într-un screenshot de grup.",
       imageAlt: "Felicitare romantică de Crăciun pentru un mesaj către iubit",
       ctaText: "Scrie un mesaj pentru el",
       benefits: [
@@ -557,7 +557,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       benefits: [
         {
           title: "Tone you choose on purpose",
-          text: "Romantic, funny, or short — do not mash them into a paragraph that apologizes and jokes at the same time.",
+          text: "Romantic, funny, or short · do not mash them into a paragraph that apologizes and jokes at the same time.",
         },
         {
           title: "Card studio next",
@@ -641,7 +641,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       benefits: [
         {
           title: "Ton ales dinadins",
-          text: "Romantic, amuzant sau scurt — nu le amesteca într-un paragraf care își cere iertare și glumește în același timp.",
+          text: "Romantic, amuzant sau scurt · nu le amesteca într-un paragraf care își cere iertare și glumește în același timp.",
         },
         {
           title: "Apoi studio-ul de felicitări",
@@ -727,7 +727,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Desk-safe Christmas messages for coworkers: professional, short, even across the team, with a generator that stays on work tone and a card you can send today.",
       h1: "Christmas messages for coworkers",
       intro:
-        "A coworker Christmas message should survive an open laptop. Name a project, thank them for coverage, wish them rest — then stop. The danger is warmth that sounds like a performance review or a joke that only the inner circle gets. This page keeps you on the professional side of the taxonomy, with drafts you can send to one person or lightly customize for a whole team. If clients sit on the same list, switch to the customer page. If you manage the person, keep the note even shorter and skip favorites.",
+        "A coworker Christmas message should survive an open laptop. Name a project, thank them for coverage, wish them rest · then stop. The danger is warmth that sounds like a performance review or a joke that only the inner circle gets. This page keeps you on the professional side of the taxonomy, with drafts you can send to one person or lightly customize for a whole team. If clients sit on the same list, switch to the customer page. If you manage the person, keep the note even shorter and skip favorites.",
       imageAlt: "Clean professional Christmas card for a coworker note",
       ctaText: "Write a coworker message",
       benefits: [
@@ -768,7 +768,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
           items: [
             {
               title: "Peer",
-              text: "Merry Christmas — thank you for every time you unblocked me without making it a ticket. Rest well.",
+              text: "Merry Christmas · thank you for every time you unblocked me without making it a ticket. Rest well.",
             },
             {
               title: "Manager to report",
@@ -780,7 +780,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Large list",
-              text: "Grateful to have built this year with you. Wishing you rest and a kind January — TheDigitalGifter team style: short.",
+              text: "Grateful to have built this year with you. Wishing you rest and a kind January · TheDigitalGifter team style: short.",
             },
             {
               title: "Remote teammate",
@@ -811,7 +811,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Mesaje de Crăciun sigure la birou: profesionale, scurte, egale pe toată echipa, cu generator pe ton de serviciu și felicitare de trimis azi.",
       h1: "Mesaje de Crăciun pentru colegi",
       intro:
-        "Un mesaj de Crăciun pentru un coleg trebuie să supraviețuiască unui laptop deschis. Numește un proiect, mulțumește pentru acoperire, urărește odihnă — apoi oprește-te. Pericolul e o căldură care sună a evaluare sau o glumă pe care o înțelege doar cercul mic. Pagina te ține pe partea profesională a taxonomiei, cu ciorne pe care le poți trimite unui om sau le poți ajusta ușor pentru toată echipa. Dacă pe listă sunt și clienți, treci pe pagina de clienți. Dacă ești șeful omului, ține biletul și mai scurt și sari peste favoriți.",
+        "Un mesaj de Crăciun pentru un coleg trebuie să supraviețuiască unui laptop deschis. Numește un proiect, mulțumește pentru acoperire, urărește odihnă · apoi oprește-te. Pericolul e o căldură care sună a evaluare sau o glumă pe care o înțelege doar cercul mic. Pagina te ține pe partea profesională a taxonomiei, cu ciorne pe care le poți trimite unui om sau le poți ajusta ușor pentru toată echipa. Dacă pe listă sunt și clienți, treci pe pagina de clienți. Dacă ești șeful omului, ține biletul și mai scurt și sari peste favoriți.",
       imageAlt: "Felicitare profesională, curată, pentru un mesaj de coleg",
       ctaText: "Scrie un mesaj pentru colegi",
       benefits: [
@@ -852,7 +852,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
           items: [
             {
               title: "Coleg",
-              text: "Crăciun fericit — mulțumesc de fiecare dată când m-ai deblocat fără să faci din asta un ticket. Odihnește-te.",
+              text: "Crăciun fericit · mulțumesc de fiecare dată când m-ai deblocat fără să faci din asta un ticket. Odihnește-te.",
             },
             {
               title: "Manager către raport",
@@ -864,7 +864,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Listă mare",
-              text: "Mă bucur că am construit anul ăsta cu voi. Odihnă și un ianuarie blând — scurt, în stilul echipei.",
+              text: "Mă bucur că am construit anul ăsta cu voi. Odihnă și un ianuarie blând · scurt, în stilul echipei.",
             },
             {
               title: "Coleg remote",
@@ -948,7 +948,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "After a hard delivery",
-              text: "We know this year asked a lot. We are grateful you stayed in it with us. Rest well — we will pick up cleanly in the new year.",
+              text: "We know this year asked a lot. We are grateful you stayed in it with us. Rest well · we will pick up cleanly in the new year.",
             },
             {
               title: "Small account, same respect",
@@ -1032,7 +1032,7 @@ export const MESSAGE_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "După o livrare grea",
-              text: "Știm că anul a cerut mult. Vă mulțumim că ați rămas în el cu noi. Odihniți-vă — reluăm curat în anul nou.",
+              text: "Știm că anul a cerut mult. Vă mulțumim că ați rămas în el cu noi. Odihniți-vă · reluăm curat în anul nou.",
             },
             {
               title: "Cont mic, același respect",

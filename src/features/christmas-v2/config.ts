@@ -10,7 +10,7 @@ export const CHRISTMAS_V2_SESSION_KEY = "tdg.christmasV2.session.v1" as const;
 export const CHRISTMAS_V2_CHECKOUT_HOLD_KEY = "tdg.christmasV2.checkoutSession.v1" as const;
 /** Same-origin VPS route (also used by local Vite). */
 export const CHRISTMAS_V2_EVENT_PATH = "/api/christmas-v2-funnel-event" as const;
-/** Supabase Edge ingest — primary production path. */
+/** Supabase Edge ingest · primary production path. */
 export const CHRISTMAS_V2_EVENT_EDGE_ACTION = "christmas-v2-funnel-event" as const;
 
 export const CHRISTMAS_STARTER_SKU = "christmas-starter-3" as const;
@@ -327,7 +327,7 @@ export const CHRISTMAS_PACKS: Record<ChristmasPackKey, ChristmasPackDef> = {
     priceDisplay: "$8",
     imageCount: 8,
     videoCount: 1,
-    cta: "Get 8 Photos + 1 Video — $8",
+    cta: "Get 8 Photos + 1 Video · $8",
     description: "8 Christmas Photos + 1 AI Video",
   },
   ultimate: {
@@ -338,7 +338,7 @@ export const CHRISTMAS_PACKS: Record<ChristmasPackKey, ChristmasPackDef> = {
     priceDisplay: "$12",
     imageCount: 12,
     videoCount: 2,
-    cta: "Get 12 Photos + 2 Videos — $12",
+    cta: "Get 12 Photos + 2 Videos · $12",
     badge: "BEST VALUE",
     description: "12 Christmas Photos + 2 AI Videos",
   },

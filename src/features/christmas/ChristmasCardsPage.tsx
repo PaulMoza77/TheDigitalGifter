@@ -530,7 +530,7 @@ export default function ChristmasCardsPage() {
       }
       return { id: data.project_id, token: data.owner_token };
     } catch {
-      // Local draft id — canvas render still works offline / when funnel is unavailable.
+      // Local draft id · canvas render still works offline / when funnel is unavailable.
       const localId = `local-${crypto.randomUUID().slice(0, 8)}`;
       setProjectId(localId);
       return { id: localId, token: null };
@@ -563,7 +563,7 @@ export default function ChristmasCardsPage() {
             await authBearer(),
           );
         } catch {
-          /* keep going — local render is the source of truth for V1 */
+          /* keep going · local render is the source of truth for V1 */
         }
       }
       const rendered = await renderChristmasCard({

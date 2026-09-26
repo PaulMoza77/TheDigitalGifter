@@ -108,7 +108,7 @@ export function PortraitUpsellSheet({
         cancelUrl: urls.cancelUrl,
       });
       if (checkout.checkoutUrl.startsWith("preview://")) {
-        toast.success("Unlocked — download your files below.");
+        toast.success("Unlocked · download your files below.");
         onPurchased?.();
         onOpenChange(false);
         return;
@@ -252,7 +252,7 @@ export function PortraitUpsellSheet({
                           ) : (
                             <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
                           )}
-                          Unlock — {offer.priceDisplay}
+                          Unlock · {offer.priceDisplay}
                         </Button>
                       )}
                     </div>

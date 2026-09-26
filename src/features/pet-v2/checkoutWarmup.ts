@@ -80,7 +80,7 @@ function warmPetFunnelEdge(): void {
   }
 }
 
-/** Call once on V2 landing / photo — safe to invoke repeatedly. */
+/** Call once on V2 landing / photo · safe to invoke repeatedly. */
 export function warmV2CheckoutDependencies(): void {
   if (typeof window === "undefined") return;
   if (warmed) {

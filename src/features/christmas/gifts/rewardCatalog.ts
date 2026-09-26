@@ -1,5 +1,5 @@
 /**
- * Christmas Gift Tree — centralized reward catalog + weights.
+ * Christmas Gift Tree · centralized reward catalog + weights.
  *
  * Probability notes (relative weights, not equal random):
  * - common: credits_10 (24), credits_25 (20), santa_discount_15 (18)
@@ -8,7 +8,7 @@
  * - rare: credits_50 (2), gift_tree_discount_25 (1)
  *
  * Server must own the same catalog for durable claims (see giftTreeRewards.ts shared mirror).
- * This is a promotional digital reward mechanic — not a sweepstakes or cash prize.
+ * This is a promotional digital reward mechanic · not a sweepstakes or cash prize.
  */
 
 export const GIFT_TREE_SEASON_YEAR = 2026;
@@ -80,7 +80,7 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
     value: 50,
     title: "50 Christmas Credits",
     headline: "You won 50 Christmas Credits",
-    description: "A rare Christmas boost — create something spectacular.",
+    description: "A rare Christmas boost · create something spectacular.",
     weight: 2,
     rarity: "rare",
     claimPath: "/generator?occasion=christmas",
@@ -145,7 +145,7 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
     value: 25,
     title: "25% Off Your Christmas Gift Tree",
     headline: "You unlocked 25% off Gift Tree",
-    description: "Reserved for the premium Gift Tree product — your discount is saved.",
+    description: "Reserved for the premium Gift Tree product · your discount is saved.",
     weight: 1,
     rarity: "rare",
     claimPath: "/christmas/tree",
@@ -158,7 +158,7 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
     value: 1,
     title: "One Extra Christmas Gift",
     headline: "You unlocked an Extra Christmas Gift",
-    description: "Open another present under the tree — on us.",
+    description: "Open another present under the tree · on us.",
     weight: 5,
     rarity: "uncommon",
     claimPath: "/christmas/tree-gifts",
@@ -167,7 +167,7 @@ export const GIFT_TREE_REWARD_CATALOG: GiftTreeRewardDef[] = [
   },
 ];
 
-/** Paid more chances packages — checkout resolves price server-side. */
+/** Paid more chances packages · checkout resolves price server-side. */
 export const GIFT_TREE_PAID_OFFERS = [
   {
     packageKey: "open_another",

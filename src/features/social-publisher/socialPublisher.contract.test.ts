@@ -50,7 +50,7 @@ describe("social publisher wiring", () => {
     expect(edge).toContain("encryptSecret");
     expect(edge).not.toContain("page_access_token: undefined");
     expect(edge).toContain("SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS");
-    expect(edge).toContain("IMPLEMENTED — WAITING FOR PROVIDER APPROVAL");
+    expect(edge).toContain("IMPLEMENTED · WAITING FOR PROVIDER APPROVAL");
     expect(edge).not.toContain("instagram_content_publish App Review");
     expect(edge).not.toContain("VITE_META_APP_SECRET");
     expect(edge).toContain("Already published; will not repost");

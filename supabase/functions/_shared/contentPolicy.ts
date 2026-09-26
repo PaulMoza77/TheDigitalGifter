@@ -1,5 +1,5 @@
 /**
- * App Store Guideline 1.1 — intimate physical contact / suggestive catalog.
+ * App Store Guideline 1.1 · intimate physical contact / suggestive catalog.
  * Stable IDs/slugs are the primary blocklist. Text matching is a
  * defensive extra layer and must not treat lighting-only "intimate"
  * mood copy as a hit.

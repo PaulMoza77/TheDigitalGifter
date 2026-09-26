@@ -162,7 +162,7 @@ export function SceneImage({
   );
 }
 
-/** Muted looping clip that starts on its own — no hover or tap. */
+/** Muted looping clip that starts on its own · no hover or tap. */
 export function AutoSceneClip({
   sceneId,
   alt,

@@ -200,7 +200,7 @@ export function PetCheckoutPage({
         setPublishableKey(cached.publishableKey!);
         return;
       }
-      // Legacy/partial cache (e.g. missing publicToken) would hide checkout forever — invalidate and bootstrap.
+      // Legacy/partial cache (e.g. missing publicToken) would hide checkout forever · invalidate and bootstrap.
       clearCachedEmbeddedCheckout();
     }
 
@@ -312,7 +312,7 @@ export function PetCheckoutPage({
             {checkoutPreparingHeadline(draft.petName)}
           </h1>
           <p className="mt-1 text-sm leading-6 text-[#f6efe4]/65">
-            Pay once on this page. Portraits start after Stripe confirms — no subscription.
+            Pay once on this page. Portraits start after Stripe confirms · no subscription.
           </p>
         </div>
 
@@ -386,7 +386,7 @@ export function PetCheckoutPage({
                     ? "Starting checkout…"
                     : appliedPromo.ok && appliedPromo.code
                       ? "Start free order"
-                      : `Pay ${dueDisplay.replace(" USD", "")} — Apple Pay or card`}
+                      : `Pay ${dueDisplay.replace(" USD", "")} · Apple Pay or card`}
                 </Button>
               </div>
             )}
@@ -416,7 +416,7 @@ export function PetCheckoutPage({
                     setPromoMessage("Enter a promo code.");
                     return;
                   }
-                  setPromoMessage(`${resolved.code} applied — 100% off. Due today $0.`);
+                  setPromoMessage(`${resolved.code} applied · 100% off. Due today $0.`);
                 }}
               >
                 Apply

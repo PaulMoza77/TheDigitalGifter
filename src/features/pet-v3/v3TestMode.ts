@@ -49,7 +49,7 @@ export function syncV3AnalyticsTestModeFromQuery(): boolean {
 
 /** @deprecated */
 export function setV3AnalyticsTestMode(_enabled: boolean): void {
-  /* no-op — server registration required */
+  /* no-op · server registration required */
 }
 
 /** @deprecated */

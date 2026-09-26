@@ -1,10 +1,10 @@
-/* Family Christmas portrait — immersive living-room experience */
+/* Family Christmas portrait · immersive living-room experience */
 
 .ff-page.xmas-landing {
   --ff-max: 1180px;
 }
 
-/* —— Immersive hero —— */
+/* -- Immersive hero -- */
 .ff-hero {
   position: relative;
   z-index: 1;
@@ -506,7 +506,7 @@
   text-transform: uppercase;
 }
 
-/* —— Sections —— */
+/* -- Sections -- */
 .ff-section {
   position: relative;
   z-index: 1;

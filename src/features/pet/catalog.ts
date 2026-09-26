@@ -32,7 +32,7 @@ export const PET_OFFER = {
     "12 portraits of the same pet",
     "2 cinematic 5-second clips",
     "Human review before download",
-    "One-time price — no subscription",
+    "One-time price · no subscription",
   ] as const,
 } as const;
 
@@ -134,7 +134,7 @@ export const PET_LANDING_COPY: Record<
 };
 
 export const PET_HERO_SUBTITLE =
-  "See your pet as royalty, an astronaut, a CEO and more — the same face in every world.";
+  "See your pet as royalty, an astronaut, a CEO and more · the same face in every world.";
 
 export const PET_HERO_PROMISE = "One photo. 12 secret lives. 2 cinematic clips.";
 
@@ -365,7 +365,7 @@ export const PET_FAQS = [
   {
     question: "Will it look like my pet?",
     answer:
-      "Yes — that is the product. One photo, twelve scenes, two cinematic clips, the same face. A person checks before you download.",
+      "Yes · that is the product. One photo, twelve scenes, two cinematic clips, the same face. A person checks before you download.",
   },
   {
     question: "How long does it take?",

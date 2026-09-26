@@ -69,7 +69,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Personalized Family Recipe Book",
         reason:
-          "She loves cooking and sentimental gifts — this turns family recipes into something she can actually keep, especially as a new grandmother.",
+          "She loves cooking and sentimental gifts · this turns family recipes into something she can actually keep, especially as a new grandmother.",
         budget_min: 35,
         budget_max: 70,
         category: "personalized",
@@ -81,7 +81,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Premium Travel Organizer",
         reason:
-          "A polished everyday upgrade for trips she already takes — useful without feeling generic.",
+          "A polished everyday upgrade for trips she already takes · useful without feeling generic.",
         budget_min: 40,
         budget_max: 85,
         category: "practical",
@@ -93,7 +93,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Custom Family Illustration",
         reason:
-          "A warm keepsake that celebrates family — especially meaningful now that she’s a grandmother.",
+          "A warm keepsake that celebrates family · especially meaningful now that she’s a grandmother.",
         budget_min: 45,
         budget_max: 95,
         category: "personalized",
@@ -117,7 +117,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "High-Quality Kitchen Accessory",
         reason:
-          "A thoughtful upgrade she’ll use constantly — practical, elevated, and easy to love.",
+          "A thoughtful upgrade she’ll use constantly · practical, elevated, and easy to love.",
         budget_min: 40,
         budget_max: 80,
         category: "practical",
@@ -139,7 +139,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Mechanical Keyboard Accessory Upgrade",
         reason:
-          "A practical tech upgrade gamers notice daily — useful, personal to his setup, and within budget.",
+          "A practical tech upgrade gamers notice daily · useful, personal to his setup, and within budget.",
         budget_min: 80,
         budget_max: 160,
         category: "tech",
@@ -151,7 +151,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Specialty Coffee Subscription",
         reason:
-          "Combines his coffee habit with something he can enjoy for months — practical and thoughtful.",
+          "Combines his coffee habit with something he can enjoy for months · practical and thoughtful.",
         budget_min: 60,
         budget_max: 120,
         category: "practical",
@@ -163,7 +163,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Personalized Tech Organizer",
         reason:
-          "Keeps cables and gadgets tidy — a small personal touch for someone who lives with tech.",
+          "Keeps cables and gadgets tidy · a small personal touch for someone who lives with tech.",
         budget_min: 40,
         budget_max: 90,
         category: "personalized",
@@ -175,7 +175,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Gaming Event or Experience Ticket",
         reason:
-          "An experience he’ll remember — better than another generic gadget when he already has gear.",
+          "An experience he’ll remember · better than another generic gadget when he already has gear.",
         budget_min: 100,
         budget_max: 200,
         category: "experience",
@@ -209,7 +209,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Scenic Drive or Track-Day Experience",
         reason:
-          "When someone has everything, experiences beat objects — especially if he loves cars.",
+          "When someone has everything, experiences beat objects · especially if he loves cars.",
         budget_min: 60,
         budget_max: 100,
         category: "experience",
@@ -221,7 +221,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Premium Everyday Coffee Ritual Kit",
         reason:
-          "A small luxury for a daily habit — elevated without being another thing he’ll stash away.",
+          "A small luxury for a daily habit · elevated without being another thing he’ll stash away.",
         budget_min: 45,
         budget_max: 90,
         category: "practical",
@@ -233,7 +233,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Custom Family Keepsake Print",
         reason:
-          "Meaningful beats material when shelves are full — a personal piece he’ll actually display.",
+          "Meaningful beats material when shelves are full · a personal piece he’ll actually display.",
         budget_min: 40,
         budget_max: 85,
         category: "personalized",
@@ -245,7 +245,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Travel Day Upgrade",
         reason:
-          "A refined packing or comfort upgrade for trips — hobby-adjacent without buying another gadget.",
+          "A refined packing or comfort upgrade for trips · hobby-adjacent without buying another gadget.",
         budget_min: 50,
         budget_max: 100,
         category: "practical",
@@ -279,7 +279,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Wireless Earbuds Case + Accessories",
         reason:
-          "Music is central for teens — a stylish accessory upgrade they’ll actually use every day.",
+          "Music is central for teens · a stylish accessory upgrade they’ll actually use every day.",
         budget_min: 20,
         budget_max: 45,
         category: "tech",
@@ -291,7 +291,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Trendy Everyday Fashion Piece",
         reason:
-          "A wearable they’ll choose themselves vibe — fashion-forward without guessing their exact style.",
+          "A wearable they’ll choose themselves vibe · fashion-forward without guessing their exact style.",
         budget_min: 25,
         budget_max: 50,
         category: "fashion",
@@ -303,7 +303,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Custom Playlist Poster or Lyric Print",
         reason:
-          "Personal and creative — turns their music taste into something they can hang up.",
+          "Personal and creative · turns their music taste into something they can hang up.",
         budget_min: 20,
         budget_max: 40,
         category: "personalized",
@@ -315,7 +315,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Concert or Event Ticket Fund Contribution",
         reason:
-          "Experiences rank high for teens — even a contribution toward a show feels big.",
+          "Experiences rank high for teens · even a contribution toward a show feels big.",
         budget_min: 25,
         budget_max: 50,
         category: "experience",
@@ -327,7 +327,7 @@ export const EXAMPLE_SETS: ExampleProfile[] = [
       {
         title: "Creative Desk or Room Accent",
         reason:
-          "A small aesthetic upgrade for their space — unique without being childish.",
+          "A small aesthetic upgrade for their space · unique without being childish.",
         budget_min: 20,
         budget_max: 45,
         category: "home",

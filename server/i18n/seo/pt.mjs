@@ -1,6 +1,6 @@
 /**
  * Portuguese (Portugal, pt-PT) SEO content for the Christmas routes.
- * European Portuguese spelling and vocabulary — Pai Natal, lista de desejos,
+ * European Portuguese spelling and vocabulary · Pai Natal, lista de desejos,
  * calendário do Advento, gerador de fotos de Natal, postais de Natal.
  * Santa video and message generation remain EN/RO only; this content never
  * claims a Portuguese-spoken Santa or Portuguese message generation.
@@ -13,10 +13,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas": {
     title: "Natal na TheDigitalGifter | Presentes, Fotos, Pai Natal e Muito Mais",
     description:
-      "Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento — experiências digitais personalizadas de Natal da TheDigitalGifter.",
+      "Crie presentes de Natal, retratos com IA, vídeos do Pai Natal, listas de desejos, postais de Natal e surpresas de Advento · experiências digitais personalizadas de Natal da TheDigitalGifter.",
     h1: "Crie Algo Que Vão Recordar Este Natal",
     lede:
-      "Explore presentes de Natal, retratos fotográficos, vídeos do Pai Natal, árvores digitais, calendários do Advento, postais de Natal e mensagens — tudo num só lugar na TheDigitalGifter.",
+      "Explore presentes de Natal, retratos fotográficos, vídeos do Pai Natal, árvores digitais, calendários do Advento, postais de Natal e mensagens · tudo num só lugar na TheDigitalGifter.",
     h2: "Experiências de Natal",
     h2Body: "Escolha um produto de Natal abaixo e crie algo pessoal em poucos minutos.",
     breadcrumbs: [{ href: "/pt/christmas", label: "Natal" }],
@@ -39,14 +39,14 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Encontre o Presente de Natal Perfeito",
         body:
-          "Não sabe o que comprar? O Gift Finder de Natal pergunta para quem está a comprar, o que essa pessoa gosta, como é o seu dia a dia e quanto quer gastar. Recebe ideias de presentes cuidadas com uma razão curta para cada uma — incluindo opções para quem parece já ter tudo. Guarde os favoritos numa lista de desejos quando estiver pronto.",
+          "Não sabe o que comprar? O Gift Finder de Natal pergunta para quem está a comprar, o que essa pessoa gosta, como é o seu dia a dia e quanto quer gastar. Recebe ideias de presentes cuidadas com uma razão curta para cada uma · incluindo opções para quem parece já ter tudo. Guarde os favoritos numa lista de desejos quando estiver pronto.",
         linkHref: "/pt/christmas/gift-finder",
         linkLabel: "Encontre um presente de Natal que vão mesmo adorar",
       },
       {
         h2: "Crie Fotos de Natal Mágicas",
         body:
-          "Carregue uma fotografia nítida e transforme-a num retrato de Natal festivo. Crie visuais para famílias, casais e animais de estimação — incluindo percursos dedicados a cães e gatos — e depois descarregue em privado ou leve o retrato para um postal de Natal.",
+          "Carregue uma fotografia nítida e transforme-a num retrato de Natal festivo. Crie visuais para famílias, casais e animais de estimação · incluindo percursos dedicados a cães e gatos · e depois descarregue em privado ou leve o retrato para um postal de Natal.",
         linkHref: "/pt/christmas/photo-generator",
         linkLabel: "Transforme a sua fotografia em magia de Natal",
       },
@@ -60,7 +60,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Crie e Partilhe uma Lista de Desejos de Natal",
         body:
-          "Construa uma lista de desejos de Natal com links de produtos ou desejos escritos livremente. Partilhe um único link simples com a família e amigos. Quem vê a lista pode reservar um presente para que ninguém compre o mesmo — sem revelar quem comprou à pessoa da lista.",
+          "Construa uma lista de desejos de Natal com links de produtos ou desejos escritos livremente. Partilhe um único link simples com a família e amigos. Quem vê a lista pode reservar um presente para que ninguém compre o mesmo · sem revelar quem comprou à pessoa da lista.",
         linkHref: "/pt/christmas/wishlist",
         linkLabel: "Crie uma lista de desejos de Natal",
       },
@@ -89,11 +89,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "O Pai Natal pode dizer o nome do meu filho?",
-        a: "Pode começar pelo nome na página de Natal ou na experiência do Pai Natal e acrescentar detalhes opcionais. Os vídeos falados estão disponíveis hoje em inglês e romeno — outras línguas virão a seguir.",
+        a: "Pode começar pelo nome na página de Natal ou na experiência do Pai Natal e acrescentar detalhes opcionais. Os vídeos falados estão disponíveis hoje em inglês e romeno · outras línguas virão a seguir.",
       },
       {
         q: "Preciso de competências de design?",
-        a: "Não. Cada experiência de Natal guia-o passo a passo — carregue uma foto, responda a algumas perguntas ou comece com um nome — e a página faz o resto.",
+        a: "Não. Cada experiência de Natal guia-o passo a passo · carregue uma foto, responda a algumas perguntas ou comece com um nome · e a página faz o resto.",
       },
       {
         q: "É para presentes digitais, físicos ou ambos?",
@@ -101,11 +101,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Funciona no meu telemóvel?",
-        a: "Sim — o hub de Natal e as experiências de produto foram pensados primeiro para telemóvel e também funcionam no computador.",
+        a: "Sim · o hub de Natal e as experiências de produto foram pensados primeiro para telemóvel e também funcionam no computador.",
       },
       {
         q: "A foto da minha família é privada?",
-        a: "Os envios são usados para criar o seu retrato ou cartão. As experiências para crianças são privacy-first e esperam um pai ou tutor. Quando o resultado estiver pronto, descarrega-o em privado — não publicamos as suas fotos.",
+        a: "Os envios são usados para criar o seu retrato ou cartão. As experiências para crianças são privacy-first e esperam um pai ou tutor. Quando o resultado estiver pronto, descarrega-o em privado · não publicamos as suas fotos.",
       },
       {
         q: "Quanto tempo demora a criar algo?",
@@ -139,7 +139,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um Encontrador de Presentes de Natal?",
       body:
-        "Um Encontrador de Presentes de Natal é uma ferramenta guiada que recomenda ideias de presentes de Natal com base em para quem está a comprar, nos seus interesses e personalidade, e no seu orçamento. Na TheDigitalGifter, responde a um conjunto curto de perguntas e recebe ideias organizadas com razões claras para cada uma — depois pode afinar as respostas ou guardar ideias numa lista de desejos.",
+        "Um Encontrador de Presentes de Natal é uma ferramenta guiada que recomenda ideias de presentes de Natal com base em para quem está a comprar, nos seus interesses e personalidade, e no seu orçamento. Na TheDigitalGifter, responde a um conjunto curto de perguntas e recebe ideias organizadas com razões claras para cada uma · depois pode afinar as respostas ou guardar ideias numa lista de desejos.",
     },
     sections: [
       {
@@ -156,7 +156,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Encontre Presentes por Destinatário",
         body:
-          "O Encontrador de Presentes cobre as relações mais comuns nas compras de Natal para que as sugestões sejam apropriadas. Use a ferramenta para a mãe, o pai, esposa, marido, namorada, namorado, filhos, adolescentes, avós, amigos, colegas de trabalho e mais. As páginas específicas por destinatário ainda não estão disponíveis — comece o encontrador e escolha o destinatário aí.",
+          "O Encontrador de Presentes cobre as relações mais comuns nas compras de Natal para que as sugestões sejam apropriadas. Use a ferramenta para a mãe, o pai, esposa, marido, namorada, namorado, filhos, adolescentes, avós, amigos, colegas de trabalho e mais. As páginas específicas por destinatário ainda não estão disponíveis · comece o encontrador e escolha o destinatário aí.",
         list: [
           "Mãe",
           "Pai",
@@ -174,7 +174,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Encontre Presentes de Natal por Orçamento",
         body:
-          "Escolha uma faixa de gasto, como até 25€, 25€–50€, 50€–100€, 100€–200€, 200€+, ou sem orçamento definido. As recomendações são ideias de presentes com preços típicos — não são inventário em tempo real de lojas nem stock garantido.",
+          "Escolha uma faixa de gasto, como até 25€, 25€–50€, 50€–100€, 100€–200€, 200€+, ou sem orçamento definido. As recomendações são ideias de presentes com preços típicos · não são inventário em tempo real de lojas nem stock garantido.",
       },
       {
         h2: "Presentes Para Quem Já Tem Tudo",
@@ -216,7 +216,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Mostra produtos reais?",
-        a: "Hoje o encontrador mostra ideias de presentes organizadas com faixas de preço típicas. Preços e disponibilidade em tempo real de lojas ainda não estão ligados — não inventamos stock exato nem preços de comerciantes.",
+        a: "Hoje o encontrador mostra ideias de presentes organizadas com faixas de preço típicas. Preços e disponibilidade em tempo real de lojas ainda não estão ligados · não inventamos stock exato nem preços de comerciantes.",
       },
     ],
   },
@@ -285,7 +285,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Posso adicionar desejos sem link?",
-        a: "Sim. Escreva qualquer desejo — experiências, ideias artesanais, ou um simples «Surpreende-me».",
+        a: "Sim. Escreva qualquer desejo · experiências, ideias artesanais, ou um simples «Surpreende-me».",
       },
       {
         q: "Posso partilhar um único link da lista?",
@@ -335,7 +335,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um gerador de fotos de Natal com IA?",
       body:
-        "Um gerador de fotos de Natal com IA transforma uma fotografia real que carrega num retrato de Natal festivo. Na TheDigitalGifter, escolhe quem está na fotografia, seleciona um estilo de Natal e cria um retrato para descarregar, feito para famílias, casais, pessoas ou animais de estimação — privado por defeito.",
+        "Um gerador de fotos de Natal com IA transforma uma fotografia real que carrega num retrato de Natal festivo. Na TheDigitalGifter, escolhe quem está na fotografia, seleciona um estilo de Natal e cria um retrato para descarregar, feito para famílias, casais, pessoas ou animais de estimação · privado por defeito.",
     },
     sections: [
       {
@@ -348,11 +348,11 @@ export const CHRISTMAS_SEO_CONTENT = {
         body:
           "Os exemplos de demonstração mostram direções comuns de retratos de Natal. São amostras de inspiração, não fotografias de clientes.",
         list: [
-          "Foto de Natal em Família — um retrato de grupo num cenário acolhedor de Natal",
-          "Retrato de Natal em Casal — um retrato romântico de duas pessoas",
-          "Retrato de Natal de Cão — um retrato festivo centrado num cão",
-          "Retrato de Natal de Gato — um retrato festivo centrado num gato",
-          "Família + Animal — pessoas e um animal de estimação num único enquadramento de Natal",
+          "Foto de Natal em Família · um retrato de grupo num cenário acolhedor de Natal",
+          "Retrato de Natal em Casal · um retrato romântico de duas pessoas",
+          "Retrato de Natal de Cão · um retrato festivo centrado num cão",
+          "Retrato de Natal de Gato · um retrato festivo centrado num gato",
+          "Família + Animal · pessoas e um animal de estimação num único enquadramento de Natal",
         ],
       },
       {
@@ -368,7 +368,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Fotos de Natal para Famílias, Casais e Animais",
         body:
-          "Precisa de um ponto de partida mais específico? Use os percursos dedicados de retratos de Natal para família, casais, animais, cães e gatos — ou continue aqui para o gerador completo.",
+          "Precisa de um ponto de partida mais específico? Use os percursos dedicados de retratos de Natal para família, casais, animais, cães e gatos · ou continue aqui para o gerador completo.",
         list: [
           "Retratos de Natal em Família → /pt/christmas/family",
           "Retratos de Natal em Casal → /pt/christmas/couples",
@@ -438,13 +438,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um gerador de fotos de Natal em família?",
       body:
-        "Um gerador de fotos de Natal em família transforma uma fotografia de família carregada num retrato de grupo festivo de Natal. Na TheDigitalGifter, carrega uma fotografia nítida da sua família, escolhe um estilo de Natal pensado para várias pessoas e cria um retrato para descarregar — privado por defeito, com a opção de continuar para um postal de Natal.",
+        "Um gerador de fotos de Natal em família transforma uma fotografia de família carregada num retrato de grupo festivo de Natal. Na TheDigitalGifter, carrega uma fotografia nítida da sua família, escolhe um estilo de Natal pensado para várias pessoas e cria um retrato para descarregar · privado por defeito, com a opção de continuar para um postal de Natal.",
     },
     sections: [
       {
         h2: "Crie um Retrato de Natal em Família",
         body:
-          "Esta experiência foi construída especificamente para famílias — não é um visual genérico de uma só pessoa. Carregue uma fotografia de grupo, escolha um ambiente de Natal e crie um retrato que procura manter todos no enquadramento.",
+          "Esta experiência foi construída especificamente para famílias · não é um visual genérico de uma só pessoa. Carregue uma fotografia de grupo, escolha um ambiente de Natal e crie um retrato que procura manter todos no enquadramento.",
       },
       {
         h2: "Exemplos de Fotos de Natal em Família",
@@ -496,7 +496,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Posso incluir os avós?",
-        a: "Sim. Fotografias multigeracionais — incluindo avós e bebés — são bem-vindas quando os rostos estão visíveis.",
+        a: "Sim. Fotografias multigeracionais · incluindo avós e bebés · são bem-vindas quando os rostos estão visíveis.",
       },
       {
         q: "Posso incluir o animal de estimação da família?",
@@ -527,7 +527,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       "Crie um retrato romântico de Natal em casal a partir da sua fotografia. Perfeito para um primeiro Natal juntos ou um presente personalizado para o casal.",
     h1: "Crie um Retrato de Natal Mágico Juntos",
     lede:
-      "Carregue uma fotografia onde estejam os dois e crie um retrato romântico de Natal em casal — privado por defeito.",
+      "Carregue uma fotografia onde estejam os dois e crie um retrato romântico de Natal em casal · privado por defeito.",
     h2: "Mais retratos de Natal",
     breadcrumbs: [
       { href: "/pt/christmas", label: "Natal" },
@@ -549,11 +549,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Crie um Retrato de Natal Juntos",
         body:
-          "Esta experiência é para duas pessoas — parceiros, casais noivos, marido e mulher, ou namorado e namorada. Carregue uma fotografia onde os dois estejam claramente visíveis, escolha um visual de Natal e crie um retrato feito para vocês dois.",
+          "Esta experiência é para duas pessoas · parceiros, casais noivos, marido e mulher, ou namorado e namorada. Carregue uma fotografia onde os dois estejam claramente visíveis, escolha um visual de Natal e crie um retrato feito para vocês dois.",
       },
       {
         h2: "Ideias de Fotos de Natal em Casal",
-        body: "Casos de uso frequentes para este retrato — como inspiração, não modos de produto separados:",
+        body: "Casos de uso frequentes para este retrato · como inspiração, não modos de produto separados:",
         list: [
           "Primeiro Natal juntos",
           "Retrato de Natal de casal noivo",
@@ -596,7 +596,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "As duas pessoas mantêm-se reconhecíveis?",
-        a: "É esse o objetivo. Comece com uma fotografia nítida com ambos os rostos — evite desfoque extremo ou uma pessoa quase fora do enquadramento.",
+        a: "É esse o objetivo. Comece com uma fotografia nítida com ambos os rostos · evite desfoque extremo ou uma pessoa quase fora do enquadramento.",
       },
       {
         q: "Posso criar um retrato romântico de Natal?",
@@ -623,7 +623,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/pets": {
     title: "Gerador de Fotos de Natal para Animais | Retratos Festivos",
-    description: "Transforme a fotografia do seu animal num retrato festivo de Natal. Cães e gatos bem-vindos — privado por defeito.",
+    description: "Transforme a fotografia do seu animal num retrato festivo de Natal. Cães e gatos bem-vindos · privado por defeito.",
     h1: "Transforme o Seu Animal em Magia de Natal",
     lede: "Carregue uma fotografia nítida do animal e crie um retrato festivo de Natal para cães ou gatos.",
     h2: "Retratos de Natal por espécie",
@@ -647,12 +647,12 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Transforme o Seu Animal em Magia de Natal",
         body:
-          "Carregue uma fotografia nítida do animal, escolha um estilo de Natal para animais e crie um retrato festivo do animal que ama. Este é o ponto central geral de animais — não um pacote de banda desenhada.",
+          "Carregue uma fotografia nítida do animal, escolha um estilo de Natal para animais e crie um retrato festivo do animal que ama. Este é o ponto central geral de animais · não um pacote de banda desenhada.",
       },
       {
         h2: "Retratos de Natal para Cães e Gatos",
         body:
-          "Quer um ponto de partida mais claro para uma espécie? Use os percursos especializados de cão ou gato — ajudam a validar a fotografia e mantêm a experiência centrada no cão ou no gato.",
+          "Quer um ponto de partida mais claro para uma espécie? Use os percursos especializados de cão ou gato · ajudam a validar a fotografia e mantêm a experiência centrada no cão ou no gato.",
         list: [
           "Gerador de Fotos de Natal de Cães → /pt/christmas/dogs",
           "Gerador de Fotos de Natal de Gatos → /pt/christmas/cats",
@@ -737,7 +737,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um gerador de fotos de Natal de cães?",
       body:
-        "Um gerador de fotos de Natal de cães cria um retrato festivo de Natal a partir de uma fotografia do seu cão. Na TheDigitalGifter, carrega uma fotografia nítida do cão, escolhe um estilo de Natal para animais e descarrega um retrato de época centrado no cão — com um percurso opcional para um postal de Natal.",
+        "Um gerador de fotos de Natal de cães cria um retrato festivo de Natal a partir de uma fotografia do seu cão. Na TheDigitalGifter, carrega uma fotografia nítida do cão, escolhe um estilo de Natal para animais e descarrega um retrato de época centrado no cão · com um percurso opcional para um postal de Natal.",
     },
     sections: [
       {
@@ -747,7 +747,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Exemplos de Retratos de Natal de Cães",
-        body: "Direções de demonstração para retratos de Natal de cães — amostras de inspiração, não fotografias de clientes.",
+        body: "Direções de demonstração para retratos de Natal de cães · amostras de inspiração, não fotografias de clientes.",
         list: [
           "Cão junto a uma árvore de Natal decorada",
           "Retrato acolhedor de cão à lareira no Natal",
@@ -844,7 +844,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Exemplos de Retratos de Natal de Gatos",
-        body: "Direções de demonstração com gatos — amostras de inspiração, não fotografias de clientes.",
+        body: "Direções de demonstração com gatos · amostras de inspiração, não fotografias de clientes.",
         list: [
           "Gato junto a uma árvore de Natal",
           "Retrato acolhedor de gato à lareira no Natal",
@@ -931,13 +931,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um vídeo personalizado do Pai Natal?",
       body:
-        "Um vídeo personalizado do Pai Natal é um vídeo de mensagem de Natal que pode incluir o nome do destinatário e outros detalhes que fornecer. Na TheDigitalGifter, responde a um formulário guiado curto, revê a mensagem e depois cria um vídeo que pode descarregar e partilhar. As mensagens são geradas em inglês ou romeno — o Pai Natal ainda não fala em português nesta ferramenta.",
+        "Um vídeo personalizado do Pai Natal é um vídeo de mensagem de Natal que pode incluir o nome do destinatário e outros detalhes que fornecer. Na TheDigitalGifter, responde a um formulário guiado curto, revê a mensagem e depois cria um vídeo que pode descarregar e partilhar. As mensagens são geradas em inglês ou romeno · o Pai Natal ainda não fala em português nesta ferramenta.",
     },
     sections: [
       {
         h2: "Uma Mensagem Personalizada do Pai Natal",
         body:
-          "Crie um vídeo de Natal do Pai Natal para uma criança, irmãos, família ou alguém especial. O Pai Natal pode dizer o nome e incluir detalhes opcionais que partilhar — depois descarrega ou partilha o vídeo terminado. O vídeo é falado em inglês ou romeno.",
+          "Crie um vídeo de Natal do Pai Natal para uma criança, irmãos, família ou alguém especial. O Pai Natal pode dizer o nome e incluir detalhes opcionais que partilhar · depois descarrega ou partilha o vídeo terminado. O vídeo é falado em inglês ou romeno.",
       },
       {
         h2: "O Que Pode o Pai Natal Mencionar?",
@@ -981,7 +981,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "O Pai Natal pode mencionar um presente de Natal?",
-        a: "Sim — pode incluir um desejo de Natal, e o Pai Natal pode mencioná-lo quando o fornecer.",
+        a: "Sim · pode incluir um desejo de Natal, e o Pai Natal pode mencioná-lo quando o fornecer.",
       },
       {
         q: "Posso fazer um vídeo para irmãos?",
@@ -1021,7 +1021,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é uma árvore de Natal digital?",
       body:
-        "Uma árvore de Natal digital é uma árvore de Natal online e interativa que pode personalizar e partilhar. Na TheDigitalGifter, escolhe um visual de árvore, adiciona decorações, coloca caixas de presentes com mensagens pessoais por baixo e partilha um link privado para que alguém especial possa abrir os presentes no seu ecrã — sem transformar a página de partilha num resultado público de motores de busca.",
+        "Uma árvore de Natal digital é uma árvore de Natal online e interativa que pode personalizar e partilhar. Na TheDigitalGifter, escolhe um visual de árvore, adiciona decorações, coloca caixas de presentes com mensagens pessoais por baixo e partilha um link privado para que alguém especial possa abrir os presentes no seu ecrã · sem transformar a página de partilha num resultado público de motores de busca.",
     },
     sections: [
       {
@@ -1032,7 +1032,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "O Que Pode Colocar Debaixo da Sua Árvore?",
         body:
-          "Hoje pode adicionar caixas de presente que guardam mensagens pessoais de Natal. Cada presente pode usar um estilo de caixa festivo, como vermelho, dourado, verde, azul ou neve. Mais tipos de presentes podem ser adicionados mais tarde — o criador atual foca-se em presentes de mensagem.",
+          "Hoje pode adicionar caixas de presente que guardam mensagens pessoais de Natal. Cada presente pode usar um estilo de caixa festivo, como vermelho, dourado, verde, azul ou neve. Mais tipos de presentes podem ser adicionados mais tarde · o criador atual foca-se em presentes de mensagem.",
         list: ["Mensagens pessoais de Natal dentro de caixas de presente", "Estilos de caixa festivos (vermelho, dourado, verde, azul, neve)"],
       },
       {
@@ -1043,7 +1043,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Um Presente Feito Para Ser Aberto",
         body:
-          "Os destinatários podem tocar nos presentes debaixo da árvore para revelar as mensagens que deixou — um momento digital pensado para parecer algo colocado ali especialmente para eles.",
+          "Os destinatários podem tocar nos presentes debaixo da árvore para revelar as mensagens que deixou · um momento digital pensado para parecer algo colocado ali especialmente para eles.",
       },
       {
         h2: "Como Funciona",
@@ -1088,7 +1088,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Preciso de uma conta?",
-        a: "Pode começar a criar uma árvore sem uma configuração complexa — a posse é gerida pela sessão de criação para poder continuar a editar.",
+        a: "Pode começar a criar uma árvore sem uma configuração complexa · a posse é gerida pela sessão de criação para poder continuar a editar.",
       },
       {
         q: "A árvore partilhada é pública?",
@@ -1122,7 +1122,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Um Pouco de Magia de Natal Todos os Dias",
         body:
-          "O calendário do Advento é uma experiência de contagem decrescente com vinte e quatro portas. Cada dia de dezembro tem a sua própria porta — um pequeno ritual de abrir algo novo à medida que o Natal se aproxima.",
+          "O calendário do Advento é uma experiência de contagem decrescente com vinte e quatro portas. Cada dia de dezembro tem a sua própria porta · um pequeno ritual de abrir algo novo à medida que o Natal se aproxima.",
       },
       {
         h2: "Abra uma Nova Porta Todos os Dias",
@@ -1132,7 +1132,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "O Que Pode Estar Por Trás das Portas?",
         body:
-          "As recompensas das portas são momentos de Natal configurados para a época — como um resgate surpresa quando os resgates de produção estão ativos. A disponibilidade pode depender das definições da época e de ter sessão iniciada.",
+          "As recompensas das portas são momentos de Natal configurados para a época · como um resgate surpresa quando os resgates de produção estão ativos. A disponibilidade pode depender das definições da época e de ter sessão iniciada.",
       },
       {
         h2: "Antes de 1 de Dezembro",
@@ -1165,7 +1165,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Posso abrir portas anteriores?",
-        a: "Não. Os dias perdidos ficam fechados — apenas a porta de hoje está disponível.",
+        a: "Não. Os dias perdidos ficam fechados · apenas a porta de hoje está disponível.",
       },
       {
         q: "O calendário é gratuito?",
@@ -1173,7 +1173,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "O que posso encontrar por trás de uma porta?",
-        a: "Surpresas de Natal sazonais configuradas para esse dia quando os resgates estão ativos — não é garantia de prémios em dinheiro ou créditos de loja todos os dias.",
+        a: "Surpresas de Natal sazonais configuradas para esse dia quando os resgates estão ativos · não é garantia de prémios em dinheiro ou créditos de loja todos os dias.",
       },
       {
         q: "Preciso de uma conta?",
@@ -1192,7 +1192,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/cards": {
     title: "Criador de Postais de Natal | Postais de Natal Personalizados",
-    description: "Crie um postal de Natal personalizado que vão querer guardar — escolha um design, adicione a sua mensagem e partilhe ou descarregue.",
+    description: "Crie um postal de Natal personalizado que vão querer guardar · escolha um design, adicione a sua mensagem e partilhe ou descarregue.",
     h1: "Crie um Postal de Natal Que Vão Querer Guardar",
     lede: "Desenhe um postal de Natal personalizado com layouts festivos e a sua própria mensagem. Algumas mensagens merecem mais do que um simples texto.",
     h2: "Combine com Mensagens de Natal",
@@ -1215,7 +1215,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Crie um Postal de Natal Personalizado",
         body:
-          "Escolha um estilo de postal de Natal, adicione a sua fotografia, escreva uma mensagem e crie um postal digital que pode descarregar ou partilhar. Algumas mensagens merecem mais do que um simples texto — este é para essas.",
+          "Escolha um estilo de postal de Natal, adicione a sua fotografia, escreva uma mensagem e crie um postal digital que pode descarregar ou partilhar. Algumas mensagens merecem mais do que um simples texto · este é para essas.",
       },
       {
         h2: "Exemplos de Postais de Natal",
@@ -1285,7 +1285,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/messages": {
     title: "Gerador de Mensagens de Natal | Desejos para Família e Amigos",
-    description: "Encontre a mensagem de Natal perfeita para família, amigos e colegas de trabalho — depois use-a num postal de Natal personalizado.",
+    description: "Encontre a mensagem de Natal perfeita para família, amigos e colegas de trabalho · depois use-a num postal de Natal personalizado.",
     h1: "Encontre a Mensagem de Natal Perfeita",
     lede: "Gere desejos de Natal calorosos, divertidos, românticos ou profissionais, depois coloque o seu favorito num postal de Natal.",
     h2: "Transforme Palavras num Postal",
@@ -1302,7 +1302,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "O que é um gerador de mensagens de Natal?",
       body:
-        "Um gerador de mensagens de Natal ajuda a escrever desejos de Natal escolhendo para quem é a mensagem e o tom que quer — depois gera opções de mensagem editáveis. Na TheDigitalGifter, pode criar mensagens de Natal carinhosas, divertidas, românticas, calorosas, curtas, profissionais ou religiosas em inglês ou romeno, e depois copiá-las ou continuar para um postal de Natal.",
+        "Um gerador de mensagens de Natal ajuda a escrever desejos de Natal escolhendo para quem é a mensagem e o tom que quer · depois gera opções de mensagem editáveis. Na TheDigitalGifter, pode criar mensagens de Natal carinhosas, divertidas, românticas, calorosas, curtas, profissionais ou religiosas em inglês ou romeno, e depois copiá-las ou continuar para um postal de Natal.",
     },
     sections: [
       {
@@ -1313,7 +1313,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Mensagens de Natal por Destinatário",
         body:
-          "O gerador cobre as relações de Natal mais comuns. Comece a ferramenta e escolha para quem está a escrever — as páginas dedicadas por destinatário ainda não estão disponíveis.",
+          "O gerador cobre as relações de Natal mais comuns. Comece a ferramenta e escolha para quem está a escrever · as páginas dedicadas por destinatário ainda não estão disponíveis.",
         list: ["Mãe", "Pai", "Esposa", "Marido", "Namorada", "Namorado", "Família", "Amigo", "Colega de trabalho"],
       },
       {
@@ -1322,7 +1322,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Exemplos de Mensagens de Natal",
-        body: "Direções de demonstração para o tipo de desejos que a ferramenta pode ajudar a esboçar — edite qualquer coisa para soar como você.",
+        body: "Direções de demonstração para o tipo de desejos que a ferramenta pode ajudar a esboçar · edite qualquer coisa para soar como você.",
         list: [
           "Nota carinhosa para a mãe agradecendo mais um ano de bondade silenciosa",
           "Desejo curto e caloroso para um amigo que não vê o suficiente",
@@ -1333,7 +1333,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Como Escrever uma Mensagem de Natal com Significado",
         body:
-          "Dirija-se à pessoa pelo nome ou relação, mencione uma memória ou qualidade partilhada quando fizer sentido, expresse um sentimento claro, mantenha as palavras naturais e termine de forma pessoal. O gerador é um ponto de partida — a sua edição é que a torna real.",
+          "Dirija-se à pessoa pelo nome ou relação, mencione uma memória ou qualidade partilhada quando fizer sentido, expresse um sentimento claro, mantenha as palavras naturais e termine de forma pessoal. O gerador é um ponto de partida · a sua edição é que a torna real.",
       },
       {
         h2: "Use a Sua Mensagem num Postal de Natal",
@@ -1353,7 +1353,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Pode criar mensagens divertidas de Natal?",
-        a: "Sim. Selecione o tom divertido — mantenha as mensagens de trabalho profissionais quando escrever para colegas.",
+        a: "Sim. Selecione o tom divertido · mantenha as mensagens de trabalho profissionais quando escrever para colegas.",
       },
       {
         q: "Posso editar as mensagens geradas?",

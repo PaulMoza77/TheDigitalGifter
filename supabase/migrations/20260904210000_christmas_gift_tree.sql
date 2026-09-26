@@ -40,9 +40,9 @@ select p.id, v.package_key, v.package_name, v.description, 'usd', 0, null, true,
 from public.christmas_products p
 cross join (
   values
-    ('open_another', 'Open Another Gift', 'Future paid extra gift — not purchasable yet.',
+    ('open_another', 'Open Another Gift', 'Future paid extra gift · not purchasable yet.',
      '["1 extra gift opening"]', 10),
-    ('open_five', 'Open 5 Gifts', 'Future gift bundle — not purchasable yet.',
+    ('open_five', 'Open 5 Gifts', 'Future gift bundle · not purchasable yet.',
      '["5 gift openings"]', 20)
 ) as v(package_key, package_name, description, features, sort_order)
 where p.product_key = 'christmas_gift_tree'

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Safe production Edge deploy for Meta purchase attribution:
-#   1) pet-funnel   — checkout metadata + InitiateCheckout CAPI (fbc/fbp)
-#   2) stripe-webhook — Purchase CAPI + v2/v3 purchase attribution (shared fulfill)
+#   1) pet-funnel   · checkout metadata + InitiateCheckout CAPI (fbc/fbp)
+#   2) stripe-webhook · Purchase CAPI + v2/v3 purchase attribution (shared fulfill)
 # Does NOT touch pet-provider-status or frontend.
 # Requires: SUPABASE_ACCESS_TOKEN with deploy rights for kjlsocejpmnzhhduyumy.
 set -euo pipefail
@@ -33,7 +33,7 @@ deploy_fn stripe-webhook
 if [[ -x "${ROOT}/scripts/deploy-exclude-internal-geos.sh" ]]; then
   echo "Applying RO/IT funnel geo exclusion (migration + pet-analytics-sync)…"
   if ! bash "${ROOT}/scripts/deploy-exclude-internal-geos.sh"; then
-    echo "WARN: geo exclusion SQL/edge apply failed — pet-funnel deploy itself succeeded."
+    echo "WARN: geo exclusion SQL/edge apply failed · pet-funnel deploy itself succeeded."
     echo "Re-run scripts/deploy-exclude-internal-geos.sh once SUPABASE_DB_PASSWORD or Management API access works."
   fi
 fi
@@ -47,7 +47,7 @@ CODE="$(curl -sS -m 20 -o /tmp/pet-funnel-probe.txt -w '%{http_code}' \
 BODY_HEAD="$(head -c 120 /tmp/pet-funnel-probe.txt 2>/dev/null || true)"
 echo "Probe HTTP $CODE body[:120]=$BODY_HEAD"
 if echo "$BODY_HEAD" | grep -qi '<html'; then
-  echo "ERROR: pet-funnel returned HTML — deploy may have missed the function."
+  echo "ERROR: pet-funnel returned HTML · deploy may have missed the function."
   exit 1
 fi
 
@@ -59,11 +59,11 @@ WH_CODE="$(curl -sS -m 20 -o /tmp/stripe-webhook-probe.txt -w '%{http_code}' \
 WH_HEAD="$(head -c 200 /tmp/stripe-webhook-probe.txt 2>/dev/null || true)"
 echo "stripe-webhook probe HTTP $WH_CODE body[:200]=$WH_HEAD"
 if echo "$WH_HEAD" | grep -qi '<html'; then
-  echo "ERROR: stripe-webhook returned HTML — deploy may have missed the function."
+  echo "ERROR: stripe-webhook returned HTML · deploy may have missed the function."
   exit 1
 fi
 if [[ "$WH_CODE" == "503" ]] || echo "$WH_HEAD" | grep -qi 'BOOT_ERROR'; then
-  echo "ERROR: stripe-webhook BOOT_ERROR — function failed to start (check duplicate imports / edge logs)."
+  echo "ERROR: stripe-webhook BOOT_ERROR · function failed to start (check duplicate imports / edge logs)."
   exit 1
 fi
 

@@ -28,7 +28,7 @@ export function generatePublicToken(): string {
 }
 
 export async function encryptPublicToken(token: string): Promise<string> {
-  // Soft ciphertext for recovery tooling — hashed token remains the auth gate.
+  // Soft ciphertext for recovery tooling · hashed token remains the auth gate.
   return Buffer.from(token, "utf8").toString("base64");
 }
 

@@ -59,7 +59,7 @@ select
     when 'christmas_pet' then 'Single pet portrait'
     else 'Single portrait'
   end,
-  'Draft package configuration — not a live public offer.',
+  'Draft package configuration · not a live public offer.',
   'usd',
   0,
   null,
@@ -93,7 +93,7 @@ insert into public.christmas_styles (
   'classic_family_christmas',
   'Classic Family Christmas',
   'Warm traditional family portrait by the tree.',
-  'Transform this family photo into a photoreal classic Christmas family portrait. Preserve the exact facial identity, approximate age, and likeness of every person. Keep the same number of people — do not add, remove, or clone anyone. Cohesive group posing near a decorated Christmas tree, soft warm lights, natural skin, no text, no watermark, no deformed hands.',
+  'Transform this family photo into a photoreal classic Christmas family portrait. Preserve the exact facial identity, approximate age, and likeness of every person. Keep the same number of people · do not add, remove, or clone anyone. Cohesive group posing near a decorated Christmas tree, soft warm lights, natural skin, no text, no watermark, no deformed hands.',
   'extra people, missing people, cloned faces, cartoon, text, watermark, deformed hands',
   true,
   10,
@@ -173,7 +173,7 @@ insert into public.christmas_styles (
   'romantic_snowfall',
   'Romantic Snowfall',
   'Soft snow and intimate winter light.',
-  'Transform this couple photo into a photoreal romantic Christmas snowfall portrait. Preserve both people''s exact facial identities. Keep exactly two people — do not merge, clone, or drop either person. Soft falling snow, warm lantern glow, intimate pose, natural skin, no text, no watermark.',
+  'Transform this couple photo into a photoreal romantic Christmas snowfall portrait. Preserve both people''s exact facial identities. Keep exactly two people · do not merge, clone, or drop either person. Soft falling snow, warm lantern glow, intimate pose, natural skin, no text, no watermark.',
   'one person, three people, merged faces, cartoon, text, watermark',
   true,
   10,

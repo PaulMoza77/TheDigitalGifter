@@ -17,7 +17,7 @@ export function ChristmasGeneratingScreen({ progressPercent = 12 }: { progressPe
           Creating your Christmas magic…
         </h1>
         <p className="mt-2 text-sm text-[#F7F0E4]/65">
-          Your portraits are being crafted. This page updates automatically — safe to refresh.
+          Your portraits are being crafted. This page updates automatically · safe to refresh.
         </p>
       </div>
       <div className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-[#F7F0E4]/15">

@@ -90,7 +90,7 @@ describe("pet preview identity + funnel integrity", () => {
     expect(decodePreviewDataUrl("data:image/jpeg;base64,@@@").ok).toBe(false);
     expect(decodePreviewDataUrl("data:image/heic;base64,AAAA").ok).toBe(false);
     const ok = decodePreviewDataUrl(TINY_JPEG);
-    // Tiny JPEG may fail MIN_BYTES — either decode magic or reject as too small is fine.
+    // Tiny JPEG may fail MIN_BYTES · either decode magic or reject as too small is fine.
     if (ok.ok) {
       expect(ok.image.magic).toBe("jpeg");
     } else {
@@ -240,7 +240,7 @@ describe("pet preview identity + funnel integrity", () => {
     expect(edge).toContain("images/edits");
     expect(edge).toContain('url.startsWith("data:image/")');
     expect(edge).toContain("PET_PREVIEW_PREFERRED_PROVIDER");
-    // Stable Idempotency-Key across create retries — no per-attempt suffix that double-charges.
+    // Stable Idempotency-Key across create retries · no per-attempt suffix that double-charges.
     expect(edge).toMatch(/Idempotency-Key":\s*replicateIdempotency/);
     expect(edge).not.toMatch(/Idempotency-Key":\s*`\$\{idempotencyKey\.slice\(0,\s*48\)\}:\$\{attempt\}`/);
     expect(IDENTITY_LOCK).toMatch(/Chow Chow/i);

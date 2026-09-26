@@ -7,9 +7,9 @@
 
 | Route | Commerce product | Species metadata |
 |-------|------------------|------------------|
-| `/christmas/photo-generator` | `christmas_photo` | — |
-| `/christmas/family` | `christmas_family` | — |
-| `/christmas/couples` | `christmas_couple` | — |
+| `/christmas/photo-generator` | `christmas_photo` | · |
+| `/christmas/family` | `christmas_family` | · |
+| `/christmas/couples` | `christmas_couple` | · |
 | `/christmas/pets` | `christmas_pet` | optional / any |
 | `/christmas/dogs` | `christmas_pet` | `dog` |
 | `/christmas/cats` | `christmas_pet` | `cat` |
@@ -27,7 +27,7 @@ ChristmasPortraitFunnelPage  (shared UI)
 
 - **No five copied funnels.** All six routes (incl. generic photo) use one page driven by `portraitVerticals.ts`.
 - **Server-owned prompts.** Browser never submits prompt text. Unknown product+style → rejected.
-- **Preview:** local canvas blur of the original (`photoPreview.ts`) — **0 Replicate generation** before payment.
+- **Preview:** local canvas blur of the original (`photoPreview.ts`) · **0 Replicate generation** before payment.
 - **Species check (dogs/cats):** reuses `_shared/pet/speciesValidate.ts` via funnel `validateSpecies`. Wrong species offers route switch (not a dead end). Vision classification may use Moondream/OpenAI; that is not image generation.
 
 ## Styles
@@ -35,15 +35,15 @@ ChristmasPortraitFunnelPage  (shared UI)
 - Photo: 8 styles (`styles.ts`)
 - Family: 8 styles (`portraitStyles.ts` / `CHRISTMAS_FAMILY_STYLES`)
 - Couple: 8 styles (`CHRISTMAS_COUPLE_STYLES`)
-- Pet: 8 styles (`CHRISTMAS_PET_STYLES`) — dog/cat share catalog; prompts append species when known
+- Pet: 8 styles (`CHRISTMAS_PET_STYLES`) · dog/cat share catalog; prompts append species when known
 
 ## Order metadata
 
 Columns (migration `20260903010000_christmas_portrait_verticals.sql`):
 
-- `portrait_type` — person | family | couple | pet
-- `species` — dog | cat | null
-- `source_route` — acquisition path
+- `portrait_type` · person | family | couple | pet
+- `species` · dog | cat | null
+- `source_route` · acquisition path
 
 Packages for family/couple/pet seeded with **`purchasable=false`**, **`price_cents=0`**. No price invented.
 
@@ -77,10 +77,10 @@ Same Resend template; recovery link uses `source_route` / product+species mappin
 
 | Vertical | Order id | Style | Latency | Cost (est.) | QA |
 |----------|----------|-------|---------|-------------|-----|
-| Family | `38c43935-11b2-4c39-87cc-cc288b1cce19` | classic_family_christmas | 11207 ms | ~$0.04 | PASS — multi-person festive portrait |
-| Couple | `9d02ca2b-2d29-4365-a6fa-613540ad5f36` | couple_classic_portrait | 11378 ms | ~$0.04 | PASS — both people preserved (first romantic_snowfall attempt timed out as `prediction_processing`, retry OK) |
-| Dog | `d6cbf2ec-33f1-4fca-8b55-cd3f7569ffe8` | santa_pet | 11391 ms | ~$0.04 | PASS — dog species preserved |
-| Cat | `0c0791fe-7e9e-4371-afb1-9e8f0afb675f` | pet_cozy_christmas | 11508 ms | ~$0.04 | PASS — cat species preserved |
+| Family | `38c43935-11b2-4c39-87cc-cc288b1cce19` | classic_family_christmas | 11207 ms | ~$0.04 | PASS · multi-person festive portrait |
+| Couple | `9d02ca2b-2d29-4365-a6fa-613540ad5f36` | couple_classic_portrait | 11378 ms | ~$0.04 | PASS · both people preserved (first romantic_snowfall attempt timed out as `prediction_processing`, retry OK) |
+| Dog | `d6cbf2ec-33f1-4fca-8b55-cd3f7569ffe8` | santa_pet | 11391 ms | ~$0.04 | PASS · dog species preserved |
+| Cat | `0c0791fe-7e9e-4371-afb1-9e8f0afb675f` | pet_cozy_christmas | 11508 ms | ~$0.04 | PASS · cat species preserved |
 
 Provider: Replicate · Model: `black-forest-labs/flux-kontext-pro` · `mock:false`
 

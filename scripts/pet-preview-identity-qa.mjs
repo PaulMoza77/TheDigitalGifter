@@ -6,8 +6,8 @@
  *   REPLICATE_API_TOKEN=... OPENAI_API_KEY=... node scripts/pet-preview-identity-qa.mjs
  *
  * Optional:
- *   PET_PREVIEW_QA_LIVE=1   — call live Replicate (costs ~$0.04/image)
- *   PET_PREVIEW_QA_OUT=...  — output directory (default: output/pet-preview-qa)
+ *   PET_PREVIEW_QA_LIVE=1   · call live Replicate (costs ~$0.04/image)
+ *   PET_PREVIEW_QA_OUT=...  · output directory (default: output/pet-preview-qa)
  *
  * Without PET_PREVIEW_QA_LIVE, runs offline gate checks + contact-sheet scaffolding only.
  * Never logs raw image bytes, secrets, or signed URLs.
@@ -239,7 +239,7 @@ async function main() {
     };
 
     if (fixture.id === "chow-chow" && liveResult.previewDataUrl) {
-      // Manual visual gate still required — do not auto-pass identity.
+      // Manual visual gate still required · do not auto-pass identity.
       scores.correct_species = "needs_visual_review";
       GATES.chowChowPass = false;
     }

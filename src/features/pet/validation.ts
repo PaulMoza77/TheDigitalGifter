@@ -17,7 +17,7 @@ export const petDraftSchema = z.object({
   petName: z
     .string()
     .trim()
-    .min(1, "Give your pet a name — even a nickname works.")
+    .min(1, "Give your pet a name · even a nickname works.")
     .max(40, "Keep the name under 40 characters."),
   species: z.enum(PET_SPECIES, {
     error: "Choose dog, cat, or other.",

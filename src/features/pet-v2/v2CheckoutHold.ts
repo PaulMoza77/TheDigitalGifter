@@ -139,7 +139,7 @@ export function clearCachedV2EmbeddedCheckout() {
   storage()?.removeItem(V2_CHECKOUT_SESSION_CACHE_KEY);
 }
 
-/** Session-scoped placeholder contact — Stripe collects the real email at pay time. */
+/** Session-scoped placeholder contact · Stripe collects the real email at pay time. */
 export function v2BootstrapContact(
   funnelSessionId: string,
   species: PetV2Species = "dog",
@@ -153,5 +153,5 @@ export function v2BootstrapContact(
 }
 
 export function v2PayButtonLabel(payLabel: string) {
-  return `Reveal My Dog’s Secret Life — ${payLabel}`;
+  return `Reveal My Dog’s Secret Life · ${payLabel}`;
 }

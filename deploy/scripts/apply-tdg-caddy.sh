@@ -48,7 +48,7 @@ install_caddyfile_atomic "${SRC_HTTP}" "${PROXY_DIR}/Caddyfile" "${BACKUP}"
 ln -sfn "$(basename "${BACKUP}")" "${PROXY_DIR}/Caddyfile.bak-tdg"
 
 if ! docker exec mozas-caddy caddy validate --config /etc/caddy/Caddyfile >/dev/null; then
-  echo "Caddyfile failed validation — restoring previous file" >&2
+  echo "Caddyfile failed validation · restoring previous file" >&2
   restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
   exit 1
 fi
@@ -66,7 +66,7 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   fi
   sleep 1
 done
-echo "Caddy restarted but :80 healthz did not recover — restoring previous file" >&2
+echo "Caddy restarted but :80 healthz did not recover · restoring previous file" >&2
 restore_caddyfile_from_backup "${PROXY_DIR}/Caddyfile" "${BACKUP}"
 docker restart mozas-caddy >/dev/null || true
 exit 1

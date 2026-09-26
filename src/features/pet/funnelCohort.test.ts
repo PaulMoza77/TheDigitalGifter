@@ -109,7 +109,7 @@ describe("V1 landing-cohort sequential conversion", () => {
       ev("in-range", "pet_name_submitted", "2026-08-24T10:01:00.000Z"),
       ev("in-range", "photo_upload_completed", "2026-08-24T10:02:00.000Z"),
 
-      // Landing outside range — later in-range events must not invent a cohort session
+      // Landing outside range · later in-range events must not invent a cohort session
       ev("out-range", "landing_view", "2026-08-20T10:00:00.000Z"),
       ev("out-range", "pet_name_submitted", "2026-08-24T10:01:00.000Z"),
       ev("out-range", "photo_upload_completed", "2026-08-24T10:02:00.000Z"),

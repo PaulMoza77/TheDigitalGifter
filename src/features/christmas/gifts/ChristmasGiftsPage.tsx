@@ -123,7 +123,7 @@ export function ChristmasGiftsExperience({
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
     setIsMobileScene(window.matchMedia("(max-width: 767px)").matches);
-    // Do NOT preload gift-open.mp4 here — it races the hero MP4 (~3.8MB).
+    // Do NOT preload gift-open.mp4 here · it races the hero MP4 (~3.8MB).
     // Warm it only after the hero is ready (see onHeroReady).
     captureFunnelAttribution(window.location.search);
     void supabase.auth.getSession().then(({ data }) => {
@@ -216,7 +216,7 @@ export function ChristmasGiftsExperience({
       setClaimHint(
         opens > 0
           ? `🎁 ${opens} more gift${opens === 1 ? "" : "s"} ${opens === 1 ? "is" : "are"} waiting for you`
-          : "Payment received — your gifts will appear shortly. Tap a present.",
+          : "Payment received · your gifts will appear shortly. Tap a present.",
       );
       setMoreOpen(false);
       setCheckout(null);
@@ -442,7 +442,7 @@ export function ChristmasGiftsExperience({
       const msg = e instanceof Error ? e.message : "Could not start checkout.";
       setPurchaseError(
         /not enabled|checkout_disabled|disabled/i.test(msg)
-          ? "Checkout is warming up — try again shortly."
+          ? "Checkout is warming up · try again shortly."
           : msg,
       );
       void trackChristmasEvent("christmas_extra_gift_payment_failed", {
@@ -528,7 +528,7 @@ export function ChristmasGiftsExperience({
     setModalOpen(false);
     setCheckout(null);
     setRevealStep("reveal");
-    setClaimHint("Your free gift is already yours — tap another present anytime.");
+    setClaimHint("Your free gift is already yours · tap another present anytime.");
   }, []);
 
   function presentState(id: string): "available" | "opening" | "opened" | "locked" {
@@ -641,7 +641,7 @@ export function ChristmasGiftsExperience({
                 className="rounded-full border border-amber-100/20 bg-black/25 px-4 py-1.5 text-[11px] text-amber-100/85 backdrop-blur-md"
                 role="status"
               >
-                🎁 {waitingOpens} gift{waitingOpens === 1 ? "" : "s"} waiting — tap a present
+                🎁 {waitingOpens} gift{waitingOpens === 1 ? "" : "s"} waiting · tap a present
               </p>
             ) : null}
 
@@ -763,8 +763,8 @@ export function ChristmasGiftsExperience({
               payButtonLabel={(pay) => {
                 const offer = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey);
                 const opens = offer?.opensGranted ?? 0;
-                if (opens > 1) return `Pay ${pay} — ${opens} more chances`;
-                if (opens === 1) return `Pay ${pay} — 1 more chance`;
+                if (opens > 1) return `Pay ${pay} · ${opens} more chances`;
+                if (opens === 1) return `Pay ${pay} · 1 more chance`;
                 return `Pay ${pay}`;
               }}
               onWalletAvailability={(info) => {

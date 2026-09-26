@@ -59,7 +59,7 @@ export type AffiliateSearchRequest = {
   condition?: "new" | "any" | null;
   limit?: number | null;
   deliveryCountry?: string | null;
-  /** Opaque gc_* reference only — never PII. */
+  /** Opaque gc_* reference only · never PII. */
   affiliateReferenceId?: string | null;
 };
 

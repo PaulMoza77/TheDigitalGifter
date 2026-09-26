@@ -194,7 +194,7 @@ export function V3OfferScreen({
       <ul className="space-y-2 text-sm text-[#f6efe4]/72">
         <li>12 secret lives of the same cat</li>
         <li>2 mini cinematic clips</li>
-        <li>One-time {offer.priceDisplay} payment — no subscription</li>
+        <li>One-time {offer.priceDisplay} payment · no subscription</li>
         <li>Usually ready a few minutes after payment</li>
       </ul>
       <div>
@@ -271,7 +271,7 @@ export function V3OfferScreen({
             >
               {checkout.hostedFallbackBusy
                 ? "Opening secure Stripe checkout…"
-                : `Continue to secure Stripe checkout — ${offer.priceDisplay}`}
+                : `Continue to secure Stripe checkout · ${offer.priceDisplay}`}
             </Button>
           </div>
         ) : null}
@@ -286,7 +286,7 @@ export function V3OfferScreen({
               onClick={checkout.retry}
               disabled={checkout.loading || checkout.hostedFallbackBusy}
             >
-              {checkout.loading ? "Retrying…" : `Open secure Stripe checkout — ${offer.priceDisplay}`}
+              {checkout.loading ? "Retrying…" : `Open secure Stripe checkout · ${offer.priceDisplay}`}
             </Button>
           </div>
         ) : null}

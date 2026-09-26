@@ -67,7 +67,7 @@ type Props = {
 
 /**
  * DOM/CSS lighting layer ABOVE the static photoreal tree.
- * Does not redraw the tree — only adds living sparkle.
+ * Does not redraw the tree · only adds living sparkle.
  */
 export function TreeLightLayer({ reduceMotion }: Props) {
   if (reduceMotion) return null;

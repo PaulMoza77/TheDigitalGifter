@@ -18,8 +18,8 @@ Consent version stored; assets private-by-default; no public gallery; no marketi
 
 ## Data model
 
-- `christmas_santa_personalization` — minimized fields + consent
-- `christmas_santa_video_jobs` — stage statuses, providers, costs, assets, retention_delete_after
+- `christmas_santa_personalization` · minimized fields + consent
+- `christmas_santa_video_jobs` · stage statuses, providers, costs, assets, retention_delete_after
 - Packages `basic` / `premium` / `deluxe` exist with **price_cents=0**, **purchasable=false**
 
 ## Pipeline
@@ -36,7 +36,7 @@ Browser may close; recovery via `?token=` on the product route.
 
 ## Admin
 
-Filter `christmas_santa_video` on `/admin/christmas-orders`. Detail shows job stage/cost fields (no child free-text by default). Retry via `christmas-santa-funnel` `retryGeneration` (service role) — no re-charge.
+Filter `christmas_santa_video` on `/admin/christmas-orders`. Detail shows job stage/cost fields (no child free-text by default). Retry via `christmas-santa-funnel` `retryGeneration` (service role) · no re-charge.
 
 ## Retention
 
@@ -44,7 +44,7 @@ Defaults: final video ~365d (`CHRISTMAS_SANTA_RETENTION_DAYS`); personalization/
 
 ## Analytics
 
-Funnel events use language/template/package/order dimensions only — **no child free-text**.
+Funnel events use language/template/package/order dimensions only · **no child free-text**.
 
 ## QA evidence (synthetic profiles)
 

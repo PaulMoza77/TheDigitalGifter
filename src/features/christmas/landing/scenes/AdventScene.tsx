@@ -13,7 +13,7 @@ function pickAdventLoop(): string {
 }
 
 /**
- * Landing Advent: framed photoreal loop (door opens, light spills) —
+ * Landing Advent: framed photoreal loop (door opens, light spills) -
  * sized like the gift-tree frame. Product flow stays on /christmas/advent.
  */
 export function AdventScene({
@@ -50,7 +50,7 @@ export function AdventScene({
     video.addEventListener("loadeddata", markReady);
     video.addEventListener("canplay", markReady);
     void video.play().catch(() => {
-      /* autoplay blocked — poster remains */
+      /* autoplay blocked · poster remains */
     });
     return () => {
       video.removeEventListener("loadeddata", markReady);

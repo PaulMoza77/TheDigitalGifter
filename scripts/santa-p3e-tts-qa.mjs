@@ -15,7 +15,7 @@ import { spawnSync } from "node:child_process";
 const OUT = process.env.SANTA_P3E_OUT || "/opt/cursor/artifacts/santa-p3e-qa";
 const TOKEN = String(process.env.REPLICATE_API_TOKEN || "").trim();
 if (!TOKEN) {
-  console.error("REPLICATE_API_TOKEN missing — cannot run live TTS QA");
+  console.error("REPLICATE_API_TOKEN missing · cannot run live TTS QA");
   process.exit(1);
 }
 
@@ -34,7 +34,7 @@ const SCRIPTS = {
     languageBoost: "German",
     mustTerms: ["Weihnachtsmann", "Weihnachten", "Emma"],
     script:
-      "Ho ho ho! Hallo Emma! Der Weihnachtsmann freut sich sehr, dich zu sehen. Du bist sieben und hast deinem kleinen Bruder so liebevoll geholfen. Ich weiß, dass du gerne malst, und dein Wunsch nach einem Fahrrad ist angekommen. Bleib so freundlich! Frohe Weihnachten von Mama und Papa — und von mir!",
+      "Ho ho ho! Hallo Emma! Der Weihnachtsmann freut sich sehr, dich zu sehen. Du bist sieben und hast deinem kleinen Bruder so liebevoll geholfen. Ich weiß, dass du gerne malst, und dein Wunsch nach einem Fahrrad ist angekommen. Bleib so freundlich! Frohe Weihnachten von Mama und Papa · und von mir!",
   },
   fr: {
     localeKey: "fr",
@@ -43,7 +43,7 @@ const SCRIPTS = {
     languageBoost: "French",
     mustTerms: ["Père Noël", "Noël", "Emma"],
     script:
-      "Ho ho ho ! Bonjour Emma ! C’est le Père Noël. Tu as sept ans et tu as aidé ton petit frère avec tant de gentillesse. J’ai vu que tu aimes dessiner, et ton vœu pour un vélo est bien arrivé. Continue d’être aussi attentionnée ! Joyeux Noël de la part de Maman et Papa — et de moi !",
+      "Ho ho ho ! Bonjour Emma ! C’est le Père Noël. Tu as sept ans et tu as aidé ton petit frère avec tant de gentillesse. J’ai vu que tu aimes dessiner, et ton vœu pour un vélo est bien arrivé. Continue d’être aussi attentionnée ! Joyeux Noël de la part de Maman et Papa · et de moi !",
   },
   es: {
     localeKey: "es",
@@ -61,7 +61,7 @@ const SCRIPTS = {
     languageBoost: "Italian",
     mustTerms: ["Babbo Natale", "Natale", "Emma"],
     script:
-      "Ho ho ho! Ciao Emma! Sono Babbo Natale. Hai sette anni e hai aiutato il tuo fratellino con tanto amore. So che ti piace disegnare, e il tuo desiderio di una bicicletta è arrivato. Continua a essere così gentile! Buon Natale da mamma e papà — e da me!",
+      "Ho ho ho! Ciao Emma! Sono Babbo Natale. Hai sette anni e hai aiutato il tuo fratellino con tanto amore. So che ti piace disegnare, e il tuo desiderio di una bicicletta è arrivato. Continua a essere così gentile! Buon Natale da mamma e papà · e da me!",
   },
   pt: {
     localeKey: "pt",
@@ -70,7 +70,7 @@ const SCRIPTS = {
     languageBoost: "Portuguese",
     mustTerms: ["Pai Natal", "Natal", "Emma"],
     script:
-      "Ho ho ho! Olá Emma! Sou o Pai Natal. Tens sete anos e ajudaste o teu irmãozinho com muito carinho. Sei que gostas de desenhar, e o teu desejo de uma bicicleta chegou bem. Continua a ser tão gentil! Feliz Natal da Mamã e do Papá — e de mim!",
+      "Ho ho ho! Olá Emma! Sou o Pai Natal. Tens sete anos e ajudaste o teu irmãozinho com muito carinho. Sei que gostas de desenhar, e o teu desejo de uma bicicleta chegou bem. Continua a ser tão gentil! Feliz Natal da Mamã e do Papá · e de mim!",
   },
   nl: {
     localeKey: "nl",
@@ -79,7 +79,7 @@ const SCRIPTS = {
     languageBoost: "Dutch",
     mustTerms: ["Kerstman", "kerst", "Emma"],
     script:
-      "Ho ho ho! Hallo Emma! De Kerstman hier. Je bent zeven en je hebt je kleine broertje zo lief geholpen. Ik weet dat je graag tekent, en je wens voor een fiets is aangekomen. Blijf zo aardig! Fijne kerst van mama en papa — en van mij!",
+      "Ho ho ho! Hallo Emma! De Kerstman hier. Je bent zeven en je hebt je kleine broertje zo lief geholpen. Ik weet dat je graag tekent, en je wens voor een fiets is aangekomen. Blijf zo aardig! Fijne kerst van mama en papa · en van mij!",
   },
   pl: {
     localeKey: "pl",
@@ -88,7 +88,7 @@ const SCRIPTS = {
     languageBoost: "Polish",
     mustTerms: ["Mikołaj", "Świąt", "Emma"],
     script:
-      "Ho ho ho! Cześć Emma! Tu Święty Mikołaj. Masz siedem lat i tak troskliwie pomogłaś młodszemu bratu. Wiem, że lubisz rysować, a Twoje życzenie o rower dotarło. Bądź nadal taka miła! Wesołych Świąt od Mamy i Taty — i ode mnie!",
+      "Ho ho ho! Cześć Emma! Tu Święty Mikołaj. Masz siedem lat i tak troskliwie pomogłaś młodszemu bratu. Wiem, że lubisz rysować, a Twoje życzenie o rower dotarło. Bądź nadal taka miła! Wesołych Świąt od Mamy i Taty · i ode mnie!",
   },
 };
 
@@ -420,7 +420,7 @@ const manifest = {
     fictional: true,
   },
   productionPath: {
-    note: "santaTts.ts auto: non-en prefers Replicate MiniMax first; OpenAI tts-1-hd fallback. OPENAI_API_KEY unavailable here — MiniMax used for QA (matches non-en primary).",
+    note: "santaTts.ts auto: non-en prefers Replicate MiniMax first; OpenAI tts-1-hd fallback. OPENAI_API_KEY unavailable here · MiniMax used for QA (matches non-en primary).",
     ttsModel: TTS_MODEL,
     ttsVoice: TTS_VOICE,
   },

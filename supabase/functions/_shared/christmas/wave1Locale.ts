@@ -26,7 +26,7 @@ export const GENERATION_LANGUAGE_NAME: Record<Wave1GenerationLocale, string> = {
   fr: "French",
   es: "Spanish",
   it: "Italian",
-  pt: "European Portuguese (Portugal) — Português de Portugal, not Brazilian",
+  pt: "European Portuguese (Portugal) · Português de Portugal, not Brazilian",
   nl: "Dutch",
   pl: "Polish",
 };

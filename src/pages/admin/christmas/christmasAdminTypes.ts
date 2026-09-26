@@ -114,7 +114,7 @@ export function moneyByCurrency(rows: ChristmasOrderRow[]): string {
     const currency = (row.currency || "usd").toUpperCase();
     totals.set(currency, (totals.get(currency) || 0) + row.amount_cents);
   }
-  if (!totals.size) return "—";
+  if (!totals.size) return "-";
   return [...totals.entries()]
     .map(([currency, cents]) => formatMoney(cents, currency))
     .join(" + ");
@@ -133,7 +133,7 @@ export function formatUsd(amount: number): string {
 }
 
 export function pct(numerator: number, denominator: number): string {
-  return denominator > 0 ? `${((numerator / denominator) * 100).toFixed(1)}%` : "—";
+  return denominator > 0 ? `${((numerator / denominator) * 100).toFixed(1)}%` : "-";
 }
 
 export function sinceIso(days: RangeDays): string | null {

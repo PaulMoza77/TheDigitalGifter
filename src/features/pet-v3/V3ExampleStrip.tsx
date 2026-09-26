@@ -77,7 +77,7 @@ export function V3ExampleStrip() {
           All 12 secret lives
         </h2>
         <p className="mt-1 text-sm text-[#f6efe4]/65">
-          Twelve portraits of the same cat — every world included. 2 mini clips included.
+          Twelve portraits of the same cat · every world included. 2 mini clips included.
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

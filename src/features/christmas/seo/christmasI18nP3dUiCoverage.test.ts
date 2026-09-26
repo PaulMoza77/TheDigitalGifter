@@ -1,5 +1,5 @@
 /**
- * P3D Wave 1 — missing translation key coverage + English leak detector
+ * P3D Wave 1 · missing translation key coverage + English leak detector
  * for Christmas client UI packs.
  */
 import { describe, expect, it } from "vitest";

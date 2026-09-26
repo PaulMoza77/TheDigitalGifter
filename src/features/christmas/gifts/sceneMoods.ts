@@ -91,7 +91,7 @@ export const BOX_THEMES: Record<
   },
 };
 
-/** Default production look — can be switched via UI for founder review. */
+/** Default production look · can be switched via UI for founder review. */
 export const DEFAULT_SCENE_MOOD: GiftSceneMood = "alpine_suite";
 export const DEFAULT_CTA_STYLE: GiftCtaStyle = "champagne_gold";
 export const DEFAULT_BOX_THEME: GiftBoxTheme = "mystery_velvet";

@@ -14,7 +14,7 @@ export const HEIC_UNSUPPORTED_MESSAGE =
 
 /**
  * Convert HEIC/HEIF to JPEG when the browser can decode it (typically Safari/iOS).
- * No third-party dependency — fails closed with a clear message elsewhere.
+ * No third-party dependency · fails closed with a clear message elsewhere.
  */
 export async function convertHeicLikeToJpeg(file: File): Promise<File> {
   if (typeof createImageBitmap !== "function") {

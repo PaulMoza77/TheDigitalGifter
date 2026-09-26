@@ -329,7 +329,7 @@ function applyPreset(order: PetOrder, preset: PreviewOrderPreset): PetOrder {
     next.status = "failed";
     next.completedAt = null;
     next.scenes = next.scenes.map((scene) =>
-      failedScene(scene, "Generation paused. Your payment is safe — nothing else was charged.")
+      failedScene(scene, "Generation paused. Your payment is safe · nothing else was charged.")
     );
   }
 

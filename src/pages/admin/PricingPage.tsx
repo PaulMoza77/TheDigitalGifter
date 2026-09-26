@@ -829,7 +829,7 @@ function PetOfferSettings() {
           Save pet offer
         </button>
         <span className="text-xs text-slate-500">
-          SKU pet-secret-life-12 · version {version ?? "—"} · 12 images · 2 videos · not a subscription
+          SKU pet-secret-life-12 · version {version ?? "-"} · 12 images · 2 videos · not a subscription
         </span>
       </div>
     </section>

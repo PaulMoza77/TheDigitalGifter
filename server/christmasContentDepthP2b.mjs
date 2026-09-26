@@ -13,13 +13,13 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
     geo: {
       h2: "What is a family Christmas photo generator?",
       body:
-        "A family Christmas photo generator turns one uploaded family photo into a festive group Christmas portrait. On TheDigitalGifter, you upload a clear photo of your family, choose a Christmas style made for multiple people, and create a downloadable portrait — private by default, with an option to continue into a Christmas card.",
+        "A family Christmas photo generator turns one uploaded family photo into a festive group Christmas portrait. On TheDigitalGifter, you upload a clear photo of your family, choose a Christmas style made for multiple people, and create a downloadable portrait · private by default, with an option to continue into a Christmas card.",
     },
     sections: [
       {
         h2: "Create a Family Christmas Portrait",
         body:
-          "This experience is built specifically for families — not a generic one-person Christmas look. Upload a group photo, pick a Christmas atmosphere, and create a portrait that aims to keep everyone in the frame.",
+          "This experience is built specifically for families · not a generic one-person Christmas look. Upload a group photo, pick a Christmas atmosphere, and create a portrait that aims to keep everyone in the frame.",
       },
       {
         h2: "Family Christmas Photo Examples",
@@ -71,7 +71,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "Can grandparents be included?",
-        a: "Yes. Multi-generation photos — including grandparents and babies — are welcome when faces are visible.",
+        a: "Yes. Multi-generation photos · including grandparents and babies · are welcome when faces are visible.",
       },
       {
         q: "Can I include a family pet?",
@@ -115,12 +115,12 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Create a Christmas Portrait Together",
         body:
-          "This experience is for two people — partners, engaged couples, husband and wife, or boyfriend and girlfriend. Upload one photo with both of you clearly visible, pick a Christmas look, and create a portrait made for the two of you.",
+          "This experience is for two people · partners, engaged couples, husband and wife, or boyfriend and girlfriend. Upload one photo with both of you clearly visible, pick a Christmas look, and create a portrait made for the two of you.",
       },
       {
         h2: "Christmas Couple Photo Ideas",
         body:
-          "Use cases this portrait often fits — as inspiration, not separate product modes:",
+          "Use cases this portrait often fits · as inspiration, not separate product modes:",
         list: [
           "First Christmas together",
           "Engaged couple Christmas portrait",
@@ -164,7 +164,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "Can both people stay recognizable?",
-        a: "That’s the goal. Start with a clear photo of both faces — avoid extreme blur or one person mostly out of frame.",
+        a: "That’s the goal. Start with a clear photo of both faces · avoid extreme blur or one person mostly out of frame.",
       },
       {
         q: "Can I create a romantic Christmas portrait?",
@@ -208,12 +208,12 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Turn Your Pet Into Christmas Magic",
         body:
-          "Upload a clear pet photo, choose a Christmas pet style, and create a festive portrait of the animal you love. This is the general pet hub — not a Secret Life comic pack.",
+          "Upload a clear pet photo, choose a Christmas pet style, and create a festive portrait of the animal you love. This is the general pet hub · not a Secret Life comic pack.",
       },
       {
         h2: "Christmas Portraits for Dogs and Cats",
         body:
-          "Want a clearer start for one species? Use the specialized dog or cat routes — they help validate the photo and keep the experience dog- or cat-focused.",
+          "Want a clearer start for one species? Use the specialized dog or cat routes · they help validate the photo and keep the experience dog- or cat-focused.",
         list: [
           "Christmas Dog Photo Generator → /christmas/dogs",
           "Christmas Cat Photo Generator → /christmas/cats",
@@ -291,7 +291,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
     geo: {
       h2: "What is a Christmas dog photo generator?",
       body:
-        "A Christmas dog photo generator creates a festive Christmas portrait from a photo of your dog. On TheDigitalGifter, you upload a clear dog photo, choose a Christmas pet style, and download a dog-focused holiday portrait — with an optional path into a Christmas card.",
+        "A Christmas dog photo generator creates a festive Christmas portrait from a photo of your dog. On TheDigitalGifter, you upload a clear dog photo, choose a Christmas pet style, and download a dog-focused holiday portrait · with an optional path into a Christmas card.",
     },
     sections: [
       {
@@ -302,7 +302,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Christmas Dog Portrait Examples",
         body:
-          "Demonstration directions for dog Christmas portraits — inspiration samples, not customer photos.",
+          "Demonstration directions for dog Christmas portraits · inspiration samples, not customer photos.",
         list: [
           "Dog beside a decorated Christmas tree look",
           "Cozy fireplace dog Christmas portrait",
@@ -392,7 +392,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Christmas Cat Portrait Examples",
         body:
-          "Demonstration directions featuring cats — inspiration samples, not customer photos.",
+          "Demonstration directions featuring cats · inspiration samples, not customer photos.",
         list: [
           "Cat by a Christmas tree look",
           "Fireplace cozy cat Christmas portrait",
@@ -471,7 +471,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
     geo: {
       h2: "What is a digital Christmas tree?",
       body:
-        "A digital Christmas tree is an interactive online Christmas tree you can customize and share. On TheDigitalGifter, you choose a tree look, add decorations, place gift boxes with personal messages underneath, and share a private link so someone special can open the gifts on their screen — without turning the share page into a public search result.",
+        "A digital Christmas tree is an interactive online Christmas tree you can customize and share. On TheDigitalGifter, you choose a tree look, add decorations, place gift boxes with personal messages underneath, and share a private link so someone special can open the gifts on their screen · without turning the share page into a public search result.",
     },
     sections: [
       {
@@ -482,7 +482,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "What Can You Put Under Your Tree?",
         body:
-          "Today you can add gift boxes that hold personal Christmas messages. Each gift can use a festive box style such as red, gold, green, blue, or snow. Additional gift types may expand later — the current creator focuses on message gifts.",
+          "Today you can add gift boxes that hold personal Christmas messages. Each gift can use a festive box style such as red, gold, green, blue, or snow. Additional gift types may expand later · the current creator focuses on message gifts.",
         list: [
           "Personal Christmas messages inside gift boxes",
           "Festive box styles (red, gold, green, blue, snow)",
@@ -496,7 +496,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "A Christmas Gift Made to Be Opened",
         body:
-          "Recipients can tap gifts under the tree to reveal the messages you left — a digital moment meant to feel like opening something placed there for them.",
+          "Recipients can tap gifts under the tree to reveal the messages you left · a digital moment meant to feel like opening something placed there for them.",
       },
       {
         h2: "How It Works",
@@ -541,7 +541,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "Do I need an account?",
-        a: "You can start creating a tree without a complex setup — ownership is handled for the creator session so you can keep editing.",
+        a: "You can start creating a tree without a complex setup · ownership is handled for the creator session so you can keep editing.",
       },
       {
         q: "Is the shared tree public?",
@@ -569,7 +569,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "A Little Christmas Magic Every Day",
         body:
-          "The Advent calendar is a countdown experience with twenty-four doors. Each day in December has its own door — a small ritual of opening something new as Christmas approaches.",
+          "The Advent calendar is a countdown experience with twenty-four doors. Each day in December has its own door · a small ritual of opening something new as Christmas approaches.",
       },
       {
         h2: "Open a New Door Every Day",
@@ -579,7 +579,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "What Can Be Behind the Doors?",
         body:
-          "Door rewards are Christmas moments configured for the season — such as a surprise claim when production claims are enabled. Availability can depend on season settings and whether you are signed in.",
+          "Door rewards are Christmas moments configured for the season · such as a surprise claim when production claims are enabled. Availability can depend on season settings and whether you are signed in.",
       },
       {
         h2: "Before December 1",
@@ -616,7 +616,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "Can I open earlier doors?",
-        a: "No. Missed days stay closed — only today’s door is available.",
+        a: "No. Missed days stay closed · only today’s door is available.",
       },
       {
         q: "Is the calendar free?",
@@ -624,7 +624,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "What can I find behind a door?",
-        a: "Seasonal Christmas surprises configured for that day when claims are enabled — not a guarantee of cash prizes or shop credits every day.",
+        a: "Seasonal Christmas surprises configured for that day when claims are enabled · not a guarantee of cash prizes or shop credits every day.",
       },
       {
         q: "Do I need an account?",
@@ -654,7 +654,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
     geo: {
       h2: "What is a Christmas message generator?",
       body:
-        "A Christmas message generator helps you write Christmas wishes by choosing who the message is for and the tone you want — then generating editable message options. On TheDigitalGifter, you can create heartfelt, funny, romantic, warm, short, professional, or religious Christmas messages in English or Romanian, then copy them or continue into a Christmas card.",
+        "A Christmas message generator helps you write Christmas wishes by choosing who the message is for and the tone you want · then generating editable message options. On TheDigitalGifter, you can create heartfelt, funny, romantic, warm, short, professional, or religious Christmas messages in English or Romanian, then copy them or continue into a Christmas card.",
     },
     sections: [
       {
@@ -665,7 +665,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Christmas Messages by Recipient",
         body:
-          "The generator supports common Christmas relationships. Start the tool and choose who you’re writing to — dedicated recipient landing pages are not live yet.",
+          "The generator supports common Christmas relationships. Start the tool and choose who you’re writing to · dedicated recipient landing pages are not live yet.",
         list: [
           "Mom",
           "Dad",
@@ -686,7 +686,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Christmas Message Examples",
         body:
-          "Demonstration directions for the kinds of wishes the tool can help you draft — edit anything to sound like you.",
+          "Demonstration directions for the kinds of wishes the tool can help you draft · edit anything to sound like you.",
         list: [
           "Heartfelt note to Mom thanking her for another year of quiet kindness",
           "Short warm wish for a friend you don’t see enough",
@@ -697,7 +697,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "How to Write a Meaningful Christmas Message",
         body:
-          "Address the person by name or relationship, mention one shared memory or quality when it fits, express one clear feeling, keep the wording natural, and close personally. The generator is a starting point — your edit makes it real.",
+          "Address the person by name or relationship, mention one shared memory or quality when it fits, express one clear feeling, keep the wording natural, and close personally. The generator is a starting point · your edit makes it real.",
       },
       {
         h2: "Use Your Message in a Christmas Card",
@@ -718,7 +718,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       },
       {
         q: "Can it create funny Christmas messages?",
-        a: "Yes. Select the funny tone — keep workplace messages professional when writing to coworkers.",
+        a: "Yes. Select the funny tone · keep workplace messages professional when writing to coworkers.",
       },
       {
         q: "Can I edit generated messages?",
@@ -751,7 +751,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
     geo: {
       h2: "What is a Christmas planner?",
       body:
-        "A Christmas planner is a private command center for the season: countdown, a date-aware checklist, gifts you are giving, budget, meals, and hosting. TheDigitalGifter planner is not a PDF or spreadsheet — it changes from a 13-week plan in September to a rescue plan in late December.",
+        "A Christmas planner is a private command center for the season: countdown, a date-aware checklist, gifts you are giving, budget, meals, and hosting. TheDigitalGifter planner is not a PDF or spreadsheet · it changes from a 13-week plan in September to a rescue plan in late December.",
     },
     sections: [
       {
@@ -774,7 +774,7 @@ export const CHRISTMAS_CONTENT_DEPTH_P2B = {
       {
         h2: "Christmas hosting planner",
         body:
-          "Keep a guest list with RSVP, adults/kids, dietary notes, and what people bring — without collecting passports or payment cards.",
+          "Keep a guest list with RSVP, adults/kids, dietary notes, and what people bring · without collecting passports or payment cards.",
       },
       {
         h2: "Christmas planning timeline",

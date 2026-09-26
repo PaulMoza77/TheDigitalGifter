@@ -29,7 +29,7 @@ export function CabinHeroScene({ alt }: { alt: string }) {
     video.addEventListener("loadeddata", markReady);
     video.addEventListener("canplay", markReady);
     void video.play().catch(() => {
-      /* autoplay blocked — poster remains */
+      /* autoplay blocked · poster remains */
     });
     return () => {
       video.removeEventListener("loadeddata", markReady);

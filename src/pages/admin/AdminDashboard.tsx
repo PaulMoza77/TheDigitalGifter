@@ -128,7 +128,7 @@ export default function AdminDashboard() {
                 className="bg-transparent text-sm text-slate-100 outline-none"
               />
 
-              <span className="text-slate-600">—</span>
+              <span className="text-slate-600">-</span>
 
               <input
                 type="date"
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
           <a href="/admin/pet-orders" className="font-medium underline-offset-2 hover:underline">
             Pet Orders
           </a>
-          {" — "}
+          {" · "}
           My Pet’s Secret Life ($27 one-time). QC and delivery live in a dedicated queue so credit packs stay unchanged.
         </section>
 

@@ -276,14 +276,14 @@ export function useV3EmbeddedCheckout(input: {
 
     const cached = readCachedV3EmbeddedCheckout();
     if (cached && isValidCachedV3EmbeddedCheckout(cached)) {
-      // A: valid Elements checkout — restore without photo File / new order / upload / preview.
+      // A: valid Elements checkout · restore without photo File / new order / upload / preview.
       hydrateFromCache(cached, orderRef, setters);
       return;
     }
 
     const recoverable = readRecoverableV3CheckoutOrder();
     if (recoverable) {
-      // B: cached secret invalid / Custom legacy — recover same unpaid order with one Elements Session.
+      // B: cached secret invalid / Custom legacy · recover same unpaid order with one Elements Session.
       orderRef.current = { orderId: recoverable.orderId, publicToken: recoverable.publicToken };
       bootstrapInFlight.current = true;
       setLoading(true);
@@ -320,7 +320,7 @@ export function useV3EmbeddedCheckout(input: {
 
     try {
       // Create order first so hosted fallback can reuse it even if Elements session create fails.
-      // Resize on-device in parallel with order create prep — cuts multi-MB phone upload latency.
+      // Resize on-device in parallel with order create prep · cuts multi-MB phone upload latency.
       const upload = await prepareV2CheckoutUpload(input.file);
       const order = await api.createOrder({
         email: contact.email,

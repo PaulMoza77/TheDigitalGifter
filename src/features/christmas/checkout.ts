@@ -7,7 +7,7 @@ import {
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas" as const;
 export const CHRISTMAS_CHECKOUT_UI_MODE = "custom" as const;
 
-/** Kill switch — checkout sessions are never created while false. */
+/** Kill switch · checkout sessions are never created while false. */
 export function christmasCheckoutEnabled(): boolean {
   const raw = String(
     (typeof process !== "undefined" && process.env?.CHRISTMAS_CHECKOUT_ENABLED) || "",
@@ -35,7 +35,7 @@ export type CreateChristmasCheckoutInput = {
   productKey: string;
   packageKey: string;
   email?: string | null;
-  /** Ignored for amount — security gate. */
+  /** Ignored for amount · security gate. */
   clientAmountCents?: number | null;
   clientCurrency?: string | null;
   locale?: string | null;

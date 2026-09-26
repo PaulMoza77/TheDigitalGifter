@@ -209,7 +209,7 @@ export default function AdminLongFormStudioPage() {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
           <section>
-            <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 1 — Choose scene</p>
+            <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 1 · Choose scene</p>
             <div className="overflow-hidden rounded-[28px] border border-white/10 bg-black shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
               <div className="relative aspect-video bg-zinc-950">
                 {scene ? (
@@ -262,7 +262,7 @@ export default function AdminLongFormStudioPage() {
 
           <aside className="space-y-6">
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 2 — Choose music</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 2 · Choose music</p>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="flex flex-wrap gap-2">
                   {MUSIC_MOODS.map((id) => (
@@ -287,7 +287,7 @@ export default function AdminLongFormStudioPage() {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 3 — Duration</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 3 · Duration</p>
               <div className="flex flex-wrap gap-2">
                 {DURATION_BUTTONS.map((item) => (
                   <Chip
@@ -306,7 +306,7 @@ export default function AdminLongFormStudioPage() {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 4 — Style</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">Step 4 · Style</p>
               <div className="flex flex-wrap gap-2">
                 {STYLE_PRESETS.map((id) => (
                   <Chip key={id} active={style === id} label={STYLE_LABELS[id]} onClick={() => setStyle(id)} />
@@ -317,7 +317,7 @@ export default function AdminLongFormStudioPage() {
               </button>
               {customizeOpen ? (
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Style quietly shapes music mood, motion, titles, and thumbnail ideas. Keep it simple — variation lives in the scene and soundtrack, not in extra prompts.
+                  Style quietly shapes music mood, motion, titles, and thumbnail ideas. Keep it simple · variation lives in the scene and soundtrack, not in extra prompts.
                 </p>
               ) : null}
             </section>

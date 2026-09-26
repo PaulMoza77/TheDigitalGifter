@@ -64,11 +64,11 @@ export function formatRightsManifestText(manifest: RightsManifest): string {
   const lines = ["RIGHTS MANIFEST", "", "VISUALS"];
   for (const visual of manifest.visuals) {
     const mark = visual.status === "cleared" ? "✓" : "⚠";
-    lines.push(`${mark} ${visual.title} — ${visual.origin}${visual.notes ? ` (${visual.notes})` : ""}`);
+    lines.push(`${mark} ${visual.title} · ${visual.origin}${visual.notes ? ` (${visual.notes})` : ""}`);
   }
   lines.push("", "MUSIC");
   for (const track of manifest.music) {
-    lines.push(`Track — ${track.title}`);
+    lines.push(`Track · ${track.title}`);
     lines.push(`Source: ${track.source}`);
     lines.push(`License: ${track.licenseType}`);
     lines.push(`Attribution: ${track.attributionRequired ? "Required" : "No"}`);

@@ -119,7 +119,7 @@ const cases = [
   },
   {
     layoutKey: "square",
-    message: "Warm Christmas wishes — text only, no photo required.",
+    message: "Warm Christmas wishes · text only, no photo required.",
     filename: "text-only-square.png",
     withPhoto: false,
   },

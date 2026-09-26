@@ -19,7 +19,7 @@ describe("V2 checkout performance helpers", () => {
   });
 
   it("prepareV2CheckoutUpload returns usable photo metadata without throwing", async () => {
-    // jsdom may lack createImageBitmap — then helper returns the original file safely.
+    // jsdom may lack createImageBitmap · then helper returns the original file safely.
     const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9, ...new Array(2_000).fill(1)]);
     const file = new File([bytes], "buddy.png", { type: "image/png" });
     const prepared = await prepareV2CheckoutUpload(file);

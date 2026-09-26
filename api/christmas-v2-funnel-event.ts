@@ -1,6 +1,6 @@
 import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 
-/** Self-contained Christmas V2 ingest. Do not import ./_lib here — match pet-v2 pattern. */
+/** Self-contained Christmas V2 ingest. Do not import ./_lib here · match pet-v2 pattern. */
 
 const CHRISTMAS_V2_EVENT_NAMES = [
   "christmas_v2_view",

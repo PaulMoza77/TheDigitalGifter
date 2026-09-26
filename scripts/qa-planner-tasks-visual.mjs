@@ -50,7 +50,7 @@ const rawHtml = `<!doctype html>
         <header class="tdg-tasks-hero">
           <div class="tdg-tasks-hero-copy">
             <h1>Tasks</h1>
-            <p>Everything you need to get Christmas done — without the last-minute stress.</p>
+            <p>Everything you need to get Christmas done · without the last-minute stress.</p>
           </div>
           <div class="tdg-tasks-hero-art" aria-hidden="true">
             <div class="tdg-tasks-hero-fade"></div>

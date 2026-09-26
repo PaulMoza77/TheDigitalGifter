@@ -105,7 +105,7 @@ describe("V2 teaser conversion rebuild", () => {
     expect(api).toContain("application/octet-stream");
     expect(api).toContain("Must never return SPA HTML");
     expect(api).toContain("STRIPE_APPLE_PAY_DOMAIN_ASSOCIATION_FALLBACK");
-    // Stripe's universal association file — served statically from public/ on the VPS.
+    // Stripe's universal association file · served statically from public/ on the VPS.
     const association = readSrc("public/.well-known/apple-developer-merchantid-domain-association");
     expect(association).not.toContain("PLACEHOLDER_CONFIGURE");
     expect(association.length).toBeGreaterThan(1000);
@@ -150,7 +150,7 @@ describe("V2 teaser conversion rebuild", () => {
     expect(readSrc("src/features/pet-v2/providerStatus.ts")).toContain("probe_token_absent");
     expect(readSrc("api/pet-provider-status.ts")).toContain("REPLICATE_API_TOKEN");
     expect(readSrc("api/pet-provider-status.ts")).toContain("insufficient_credit");
-    // Missing origin probe token must not fail-closed — fulfillment uses Edge secrets.
+    // Missing origin probe token must not fail-closed · fulfillment uses Edge secrets.
     expect(readSrc("api/pet-provider-status.ts")).toContain("probe_token_absent");
     expect(readSrc("api/pet-provider-status.ts")).toContain('available: true, reason: "probe_token_absent"');
   });
@@ -227,7 +227,7 @@ describe("V2 teaser conversion rebuild", () => {
     // Express sheet must be failed closed when contact gate blocks confirm.
     expect(ui).toContain("paymentFailed");
     expect(ui).toContain('reason: "fail"');
-    // Apple Pay must confirm immediately — no await onBeforeConfirm before checkout.confirm().
+    // Apple Pay must confirm immediately · no await onBeforeConfirm before checkout.confirm().
     expect(ui).toContain("isExpressCheckoutConfirmEvent");
     expect(ui).toContain("never block Express");
     expect(ui).toContain("CARD_PAY_INCOMPLETE_MESSAGE");

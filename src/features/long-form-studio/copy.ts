@@ -67,7 +67,7 @@ export function generateDescription(input: {
   const hours = Math.round(input.durationSeconds / 3600);
   const length = hours >= 1 ? `${hours}-hour` : "long";
   const paragraphs = [
-    `A ${length} ${style.scene.toLowerCase()} atmosphere with ${moodLabel.toLowerCase()} — made for reading, working, sleeping, and slow winter evenings.`,
+    `A ${length} ${style.scene.toLowerCase()} atmosphere with ${moodLabel.toLowerCase()} · made for reading, working, sleeping, and slow winter evenings.`,
     `The Digital Gifter · original long-form ambience. Visuals from the TDG Library. Music is used only from tracks with stored commercial and YouTube rights.`,
   ];
   const chapters = chapterMarks(input.durationSeconds);

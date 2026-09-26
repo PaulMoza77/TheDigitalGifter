@@ -1,4 +1,4 @@
-/** Illustrated gift motifs — SVG art keyed by idea category / title cues. */
+/** Illustrated gift motifs · SVG art keyed by idea category / title cues. */
 
 import type { CSSProperties, ReactElement } from "react";
 

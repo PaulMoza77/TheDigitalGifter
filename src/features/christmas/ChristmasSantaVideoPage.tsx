@@ -182,7 +182,7 @@ export default function ChristmasSantaVideoPage() {
     trackSanta("christmas_santa_page_view");
   }, []);
 
-  // Homepage / query name handoff — skip asking for the name again
+  // Homepage / query name handoff · skip asking for the name again
   useEffect(() => {
     if (handoffApplied.current) return;
     if (params.get("token")) return;
@@ -468,7 +468,7 @@ export default function ChristmasSantaVideoPage() {
     if (!purchasable) {
       patch({
         step: "offer",
-        lastError: "Checkout is not enabled yet — production price is not configured.",
+        lastError: "Checkout is not enabled yet · production price is not configured.",
       });
       return;
     }
@@ -555,7 +555,7 @@ export default function ChristmasSantaVideoPage() {
       }
       await navigator.clipboard.writeText(shareUrl);
       patch({ lastError: null });
-      alert("Link copied — share it privately with family.");
+      alert("Link copied · share it privately with family.");
     } catch {
       /* user cancelled share */
     }
@@ -914,7 +914,7 @@ export default function ChristmasSantaVideoPage() {
                       {previewScript}
                     </blockquote>
                     <p className="mt-2 text-xs text-[#F5EDE0]/45">
-                      Preview only — the final spoken video may vary slightly.
+                      Preview only · the final spoken video may vary slightly.
                     </p>
                     <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                       <SecondaryButton onClick={() => go("achievement")}>
@@ -1074,7 +1074,7 @@ export default function ChristmasSantaVideoPage() {
               <section className="mx-auto max-w-xl px-4 py-10 sm:px-6">
                 <h2 className="santa-display text-3xl">Something went wrong</h2>
                 <p className="mt-3 text-sm text-[#F5EDE0]/7">
-                  If you already paid, keep your order link — support can retry without charging again.
+                  If you already paid, keep your order link · support can retry without charging again.
                 </p>
                 <Link className="mt-6 inline-block text-[#d4af37] hover:underline" to="/christmas">
                   Christmas hub

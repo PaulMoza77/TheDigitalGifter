@@ -1,4 +1,4 @@
--- Christmas Planner V1 — product tables, RLS, catalog, entitlements.
+-- Christmas Planner V1 · product tables, RLS, catalog, entitlements.
 -- Additive. Reuses christmas_orders / christmas-checkout. Does not replace
 -- existing wishlist, gift finder, cards, messages, tree, or photo commerce.
 
@@ -1266,7 +1266,7 @@ values
     'planner-travel',
     'other',
     'Christmas Travel add-on',
-    'Trips, packing, and home arrangements — no passport or card data.',
+    'Trips, packing, and home arrangements · no passport or card data.',
     true, true, 84, '/christmas/planner',
     '{"planner_addon":"travel","planner_v1":true}'::jsonb
   )
@@ -1363,7 +1363,7 @@ values
   (
     'citrus-honey-carrots',
     'Citrus honey roasted carrots',
-    'A bright side dish with orange zest and honey — original TDG holiday table recipe.',
+    'A bright side dish with orange zest and honey · original TDG holiday table recipe.',
     '["800g carrots, halved","2 tbsp honey","1 orange, zest and juice","2 tbsp olive oil","pinch salt","fresh thyme"]'::jsonb,
     '["Heat oven to 200°C.","Toss carrots with oil, honey, zest, juice, salt.","Roast 25–30 minutes until caramelised.","Finish with thyme."]'::jsonb,
     6, 10, 30, 'side_dishes', array['easy','vegetarian','make-ahead'], 'free', true, true, 'en'
@@ -1395,7 +1395,7 @@ values
   (
     'crispy-roast-potatoes',
     'Crispy rosemary roast potatoes',
-    'Parboil, rough the edges, roast hot — a TDG table staple.',
+    'Parboil, rough the edges, roast hot · a TDG table staple.',
     '["1.5kg potatoes","4 tbsp oil","rosemary","salt"]'::jsonb,
     '["Peel and cut potatoes. Parboil 8 minutes.","Drain, shake to fluff.","Roast in hot oil at 210°C for 40–50 minutes."]'::jsonb,
     8, 15, 50, 'side_dishes', array['easy','vegetarian'], 'recipes', false, true, 'en'
@@ -1411,7 +1411,7 @@ values
   (
     'spiced-cookie-rounds',
     'Soft spiced cookie rounds',
-    'A simple spice cookie for decorating with kids — original TDG bake.',
+    'A simple spice cookie for decorating with kids · original TDG bake.',
     '["250g flour","125g butter","100g brown sugar","1 egg","1 tsp mixed spice","pinch salt"]'::jsonb,
     '["Cream butter and sugar. Beat in egg.","Mix in flour, spice, salt. Chill 30 minutes.","Roll, cut, bake 12 minutes at 180°C."]'::jsonb,
     24, 20, 12, 'cookies', array['family/kids','easy'], 'recipes', false, true, 'en'

@@ -4,7 +4,7 @@ set -euo pipefail
 DEST="${1:-/opt/mozas/secrets/RESTIC_PASSWORD_RECOVERY.txt}"
 umask 077
 cat >"${DEST}" <<'EOF'
-Mozas / TDG — RESTIC_PASSWORD off-VPS recovery
+Mozas / TDG · RESTIC_PASSWORD off-VPS recovery
 ==============================================
 
 The restic repository password lives ONLY in:

@@ -95,7 +95,7 @@ export default function AdminEmailOffersPage() {
   function openCreate() {
     setEditing(null);
     setForm({
-      title: "70% OFF — Welcome Offer",
+      title: "70% OFF · Welcome Offer",
       discount_percent: 70,
       coupon_code: "TDG70",
       expires_at: "",
@@ -239,7 +239,7 @@ export default function AdminEmailOffersPage() {
                       </Badge>
 
                       <Badge className={cn("rounded-xl", expired && "bg-red-600")}>
-                        {r.coupon_code || "—"}
+                        {r.coupon_code || "-"}
                       </Badge>
 
                       {r.expires_at && (
@@ -293,7 +293,7 @@ export default function AdminEmailOffersPage() {
                 className="rounded-xl"
                 value={form.title}
                 onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))}
-                placeholder="70% OFF — Welcome Offer"
+                placeholder="70% OFF · Welcome Offer"
               />
             </div>
 

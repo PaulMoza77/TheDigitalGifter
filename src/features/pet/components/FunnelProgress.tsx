@@ -25,7 +25,7 @@ export function FunnelProgress({ current }: { current: 1 | 2 | 3 | 4 }) {
             )}
           >
             {step.id} {step.label}
-            {complete ? " — complete" : active ? " — current" : ""}
+            {complete ? " · complete" : active ? " · current" : ""}
           </li>
         );
       })}

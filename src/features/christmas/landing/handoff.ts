@@ -96,7 +96,7 @@ export function consumeSantaNameHandoff(): string {
 }
 
 /**
- * Prefer sessionStorage handoff — do not put the child's name in the URL
+ * Prefer sessionStorage handoff · do not put the child's name in the URL
  * (avoids referrer / analytics leakage). Optional name query remains readable
  * on the Santa page for deep links, but the landing CTA no longer emits it.
  */

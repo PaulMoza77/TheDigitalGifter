@@ -1,4 +1,4 @@
-/** Card maker UX taxonomy — types, steps, curated examples. */
+/** Card maker UX taxonomy · types, steps, curated examples. */
 
 import type { CardStyleKey } from "./cardStyles";
 import { LANDING_ASSETS } from "../landing/assets";
@@ -144,8 +144,8 @@ export const CARD_DESIGN_BLURBS: Record<
     categoryRo: "Crăciun romantic",
   },
   playful_christmas: {
-    en: "Playful energy — great for pets and laughs.",
-    ro: "Energie jucăușă — perfect pentru animale și glume.",
+    en: "Playful energy · great for pets and laughs.",
+    ro: "Energie jucăușă · perfect pentru animale și glume.",
     categoryEn: "Funny / Pet",
     categoryRo: "Amuzant / Pet",
   },
@@ -266,8 +266,8 @@ export const HERO_EXAMPLES: HeroExample[] = [
     photoAltRo: "Fotografie demonstrativă pentru un card amuzant",
     greetingEn: "We checked twice",
     greetingRo: "Am verificat de două ori",
-    messageEn: "We checked the nice list twice. You’re still on it — somehow.",
-    messageRo: "Am verificat lista celor cuminți de două ori. Încă ești pe ea — cumva.",
+    messageEn: "We checked the nice list twice. You’re still on it · somehow.",
+    messageRo: "Am verificat lista celor cuminți de două ori. Încă ești pe ea · cumva.",
     toEn: "Best friend",
     toRo: "Cel mai bun prieten",
     fromEn: "Your favorite troublemaker",
@@ -288,9 +288,9 @@ export const EXAMPLES_GALLERY: CardExample[] = [
     greetingEn: "Our Christmas portrait",
     greetingRo: "Portretul nostru de Crăciun",
     messageEn:
-      "We turned our Christmas portrait into a card — so the people we love can keep this moment too.",
+      "We turned our Christmas portrait into a card · so the people we love can keep this moment too.",
     messageRo:
-      "Am transformat portretul nostru de Crăciun într-un card — ca oamenii pe care îi iubim să păstreze și ei acest moment.",
+      "Am transformat portretul nostru de Crăciun într-un card · ca oamenii pe care îi iubim să păstreze și ei acest moment.",
     toEn: "Family",
     toRo: "Familie",
     fromEn: "With love",

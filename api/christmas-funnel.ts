@@ -5,7 +5,7 @@
  * is blocked (missing SUPABASE_ACCESS_TOKEN). This file re-implements every
  * christmas-funnel action against @supabase/supabase-js + process.env so it
  * can run on the VPS origin. Keep the two copies in sync
- * whenever the funnel's request/response contract changes — the Deno source
+ * whenever the funnel's request/response contract changes · the Deno source
  * stays live so the Edge function can be redeployed once the token is
  * available again.
  */
@@ -55,7 +55,7 @@ type StripeCheckoutSessionResponse = {
 };
 
 const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
-/** Elements Checkout (`ui_mode: elements`) — match pet V2 Dahlia quickstart. */
+/** Elements Checkout (`ui_mode: elements`) · match pet V2 Dahlia quickstart. */
 const STRIPE_API_VERSION_ELEMENTS = "2026-07-29.dahlia";
 
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);

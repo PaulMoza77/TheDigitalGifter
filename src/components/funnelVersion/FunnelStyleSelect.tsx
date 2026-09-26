@@ -102,34 +102,34 @@ function descriptionForTemplateTitle(title: string) {
   const s = safeString(title).toLowerCase();
 
   if (s === "angel sleep") {
-    return "A serene, dreamy motion that feels like a lullaby — calm, tender, and instantly heart-melting.";
+    return "A serene, dreamy motion that feels like a lullaby · calm, tender, and instantly heart-melting.";
   }
   if (s === "cozy blanket") {
-    return "Warm, comforting movement with a soft “home” feeling — perfect for snuggly, intimate moments.";
+    return "Warm, comforting movement with a soft “home” feeling · perfect for snuggly, intimate moments.";
   }
   if (s === "first light") {
-    return "A gentle sunrise-style reveal — clean, hopeful, and beautifully cinematic without feeling overdone.";
+    return "A gentle sunrise-style reveal · clean, hopeful, and beautifully cinematic without feeling overdone.";
   }
   if (s === "golden memory") {
-    return "A premium golden glow that elevates the moment — nostalgic, radiant, and made to be shared.";
+    return "A premium golden glow that elevates the moment · nostalgic, radiant, and made to be shared.";
   }
   if (s === "minimal studio") {
-    return "Modern, clean, and editorial — subtle motion with a polished finish that looks expensive.";
+    return "Modern, clean, and editorial · subtle motion with a polished finish that looks expensive.";
   }
   if (s === "soft pastel") {
-    return "A delicate pastel touch with smooth, airy motion — sweet, elegant, and gift-ready.";
+    return "A delicate pastel touch with smooth, airy motion · sweet, elegant, and gift-ready.";
   }
 
-  if (s.includes("angel")) return "Soft, heavenly motion with a gentle glow — tender, peaceful, and emotionally rich.";
-  if (s.includes("sleep") || s.includes("dream")) return "A dreamy, slow-motion feel — soothing, intimate, and perfect for quiet memories.";
-  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) return "Warm, comforting movement — like a hug in motion, soft and reassuring.";
-  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) return "A bright, uplifting reveal — clean, cinematic, and naturally beautiful.";
-  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) return "A premium glow that adds warmth and depth — timeless, radiant, and share-worthy.";
-  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) return "Minimal, modern, and polished — subtle motion that feels premium and intentional.";
-  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) return "Soft, delicate color energy — gentle motion with a sweet, elegant finish.";
-  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) return "Cinematic motion with tasteful depth — dramatic in a subtle, premium way.";
+  if (s.includes("angel")) return "Soft, heavenly motion with a gentle glow · tender, peaceful, and emotionally rich.";
+  if (s.includes("sleep") || s.includes("dream")) return "A dreamy, slow-motion feel · soothing, intimate, and perfect for quiet memories.";
+  if (s.includes("cozy") || s.includes("blanket") || s.includes("warm")) return "Warm, comforting movement · like a hug in motion, soft and reassuring.";
+  if (s.includes("first") || s.includes("light") || s.includes("sunrise")) return "A bright, uplifting reveal · clean, cinematic, and naturally beautiful.";
+  if (s.includes("gold") || s.includes("golden") || s.includes("glow")) return "A premium glow that adds warmth and depth · timeless, radiant, and share-worthy.";
+  if (s.includes("minimal") || s.includes("studio") || s.includes("editorial")) return "Minimal, modern, and polished · subtle motion that feels premium and intentional.";
+  if (s.includes("pastel") || s.includes("soft") || s.includes("pink")) return "Soft, delicate color energy · gentle motion with a sweet, elegant finish.";
+  if (s.includes("cinema") || s.includes("film") || s.includes("movie")) return "Cinematic motion with tasteful depth · dramatic in a subtle, premium way.";
 
-  return "A premium motion style designed to make your photo feel alive — elegant, emotional, and gift-ready.";
+  return "A premium motion style designed to make your photo feel alive · elegant, emotional, and gift-ready.";
 }
 
 function headerForOccasion(occasion: string) {
@@ -137,7 +137,7 @@ function headerForOccasion(occasion: string) {
     case "newborn":
       return {
         title: "Choose the style for your newborn memory",
-        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+        subtitle: "Pick a vibe · we’ll generate a beautiful preview in seconds.",
       };
     case "birthday":
       return {
@@ -152,7 +152,7 @@ function headerForOccasion(occasion: string) {
     default:
       return {
         title: "Choose the style for your digital gift",
-        subtitle: "Pick a vibe — we’ll generate a beautiful preview in seconds.",
+        subtitle: "Pick a vibe · we’ll generate a beautiful preview in seconds.",
       };
   }
 }
