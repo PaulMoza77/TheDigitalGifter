@@ -476,7 +476,7 @@ select
   p.id,
   'single',
   'Single portrait',
-  'Draft package configuration — not a live public offer.',
+  'Draft package configuration · not a live public offer.',
   'usd',
   0,
   null,

@@ -862,7 +862,7 @@ export default function ChristmasPlannerPage() {
               <li>Access for the Christmas 2026 season</li>
               <li>300 bonus credits for AI images and videos</li>
               <li>Works on phone, iPad, and computer</li>
-              <li>One-time payment — no subscription</li>
+              <li>One-time payment · no subscription</li>
             </ul>
             <p className="tdg-pl__micro tdg-pl__micro--on-dark tdg-pl__bonus-note">
               Use your bonus credits in The Digital Gifter Generator to create Christmas images or videos.

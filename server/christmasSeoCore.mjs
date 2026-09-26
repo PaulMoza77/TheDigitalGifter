@@ -47,11 +47,11 @@ export const CHRISTMAS_SEO_ROUTES = [
     path: "/christmas",
     title: "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
     description:
-      "Create Christmas gifts, AI portraits, Santa videos, wishlists, cards, and advent surprises — personalized digital Christmas experiences from TheDigitalGifter.",
+      "Create Christmas gifts, AI portraits, Santa videos, wishlists, cards, and advent surprises · personalized digital Christmas experiences from TheDigitalGifter.",
     canonicalPath: "/christmas",
     h1: "Create Something They’ll Remember This Christmas",
     lede:
-      "Explore Christmas gifts, photo portraits, Santa videos, digital trees, advent calendars, cards, and messages — all in one place at TheDigitalGifter.",
+      "Explore Christmas gifts, photo portraits, Santa videos, digital trees, advent calendars, cards, and messages · all in one place at TheDigitalGifter.",
     h2: "Christmas experiences",
     h2Body: "Pick a Christmas product below and create something personal in minutes.",
     links: [
@@ -108,7 +108,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     canonicalPath: "/christmas/planner",
     h1: "Your entire Christmas, beautifully planned.",
     lede:
-      "Christmas Planner by The Digital Gifter is an interactive Christmas planning experience — gifts, budget, meals, hosting, cards, and traditions in one place. It is not a PDF.",
+      "Christmas Planner by The Digital Gifter is an interactive Christmas planning experience · gifts, budget, meals, hosting, cards, and traditions in one place. It is not a PDF.",
     h2: "A digital Christmas planner for the whole season",
     h2Body:
       "Use it as a Christmas gift planner, budget planner, and meal planner. Start on your phone from Instagram or TikTok, pay once, and keep access on your account.",
@@ -232,7 +232,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     canonicalPath: "/christmas/couples",
     h1: "Create a Magical Christmas Portrait Together",
     lede:
-      "Upload one photo with both of you and create a romantic Christmas couple portrait — private by default.",
+      "Upload one photo with both of you and create a romantic Christmas couple portrait · private by default.",
     h2: "More Christmas portraits",
     links: [
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
@@ -251,7 +251,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     path: "/christmas/pets",
     title: "Christmas Pet Photo Generator | Festive Pet Portraits",
     description:
-      "Turn your pet photo into a festive Christmas portrait. Dogs and cats welcome — private by default.",
+      "Turn your pet photo into a festive Christmas portrait. Dogs and cats welcome · private by default.",
     canonicalPath: "/christmas/pets",
     h1: "Turn Your Pet Into Christmas Magic",
     lede:
@@ -414,7 +414,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     path: "/christmas/cards",
     title: "Christmas Card Maker | Personalized Christmas Cards",
     description:
-      "Create a personalized Christmas card they’ll want to keep — choose a design, add your message, and share or download.",
+      "Create a personalized Christmas card they’ll want to keep · choose a design, add your message, and share or download.",
     canonicalPath: "/christmas/cards",
     h1: "Create a Christmas Card They’ll Want to Keep",
     lede:
@@ -436,7 +436,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     path: "/christmas/messages",
     title: "Christmas Message Generator | Wishes for Family & Friends",
     description:
-      "Find the perfect Christmas message for family, friends, and coworkers — then use it in a personalized Christmas card.",
+      "Find the perfect Christmas message for family, friends, and coworkers · then use it in a personalized Christmas card.",
     canonicalPath: "/christmas/messages",
     h1: "Find the Perfect Christmas Message",
     lede:
@@ -462,7 +462,7 @@ export const CHRISTMAS_SEO_ROUTES = [
     canonicalPath: "/christmas-ai-photos",
     h1: "Create Your Christmas Photos",
     lede:
-      "Create your Christmas photos with TheDigitalGifter’s AI photo experience — festive portraits from your own picture.",
+      "Create your Christmas photos with TheDigitalGifter’s AI photo experience · festive portraits from your own picture.",
     h2: "More Christmas photo options",
     links: [
       { href: "/christmas/photo-generator", label: "AI Christmas Photo Generator" },
@@ -473,7 +473,7 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/", label: "Home" },
       { href: "/christmas-ai-photos", label: "Christmas AI Photos" },
     ],
-    // Paid acquisition funnel — same organic intent as /christmas/photo-generator.
+    // Paid acquisition funnel · same organic intent as /christmas/photo-generator.
     noindex: true,
   },
   {
@@ -805,7 +805,7 @@ function replaceChristmasSeoShell(html, shell) {
     const nextOpen = html.indexOf("<div", pos);
     const nextClose = html.indexOf("</div>", pos);
     if (nextClose === -1) {
-      // Malformed shell — fall back to stripping from open tag to EOF root close.
+      // Malformed shell · fall back to stripping from open tag to EOF root close.
       return `${html.slice(0, start)}${shell}`;
     }
 
@@ -950,7 +950,7 @@ export function applyChristmasSeo(html, pathname) {
   const robots = !indexable || entry.noindex ? "noindex,follow" : "index,follow";
   next = replaceMetaName(next, "robots", robots);
 
-  // Hreflang only for complete/indexable clusters (incomplete pages still get English cluster if EN base is indexable — but only when this page itself is indexable)
+  // Hreflang only for complete/indexable clusters (incomplete pages still get English cluster if EN base is indexable · but only when this page itself is indexable)
   if (indexable && !entry.noindex) {
     next = replaceHreflangBlock(next, basePath);
   } else {

@@ -168,7 +168,7 @@ export default function AdminSocialAccountsPage() {
         return;
       }
       toast.message(
-        `IMPLEMENTED — WAITING FOR PROVIDER APPROVAL. Missing: ${(result.missing || []).join(", ") || "app credentials"}`,
+        `IMPLEMENTED · WAITING FOR PROVIDER APPROVAL. Missing: ${(result.missing || []).join(", ") || "app credentials"}`,
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Connect failed.");

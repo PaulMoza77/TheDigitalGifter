@@ -52,7 +52,7 @@ describe("Tasks page copy and assets", () => {
   it("keeps the reference Tasks composition wired to live data", () => {
     const page = readFileSync("src/features/christmas/planner/PlanPage.tsx", "utf8");
     const css = readFileSync("src/features/christmas/planner/plannerApp.css", "utf8");
-    expect(page).toContain("Everything you need to get Christmas done — without the last-minute stress.");
+    expect(page).toContain("Everything you need to get Christmas done · without the last-minute stress.");
     expect(page).toContain("Your Christmas plan starts here");
     expect(page).toContain("Add all to my plan");
     expect(page).toContain("Not now, I’ll explore on my own");

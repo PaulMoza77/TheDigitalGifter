@@ -1,4 +1,4 @@
-# TDG North Star — implementation audit
+# TDG North Star · implementation audit
 
 Baseline: main after Founding Pass product work. DONE requires a working intended flow, not merely a file or unit test.
 

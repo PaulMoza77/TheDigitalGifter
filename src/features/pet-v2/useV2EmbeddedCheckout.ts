@@ -424,7 +424,7 @@ export function useV2EmbeddedCheckout(input: {
     const analytics = checkoutAnalyticsContext();
 
     try {
-      // Resize + provider probe in parallel — biggest win on phone camera uploads.
+      // Resize + provider probe in parallel · biggest win on phone camera uploads.
       const [provider, upload] = await Promise.all([
         ensureV2CheckoutAllowed(input.species),
         prepareV2CheckoutUpload(input.file),
@@ -524,7 +524,7 @@ export function useV2EmbeddedCheckout(input: {
         failureCategory: "checkout_error",
         attemptId: order.orderId,
       });
-      // Elements contract invalid — skip scary Retry and offer hosted Stripe.
+      // Elements contract invalid · skip scary Retry and offer hosted Stripe.
       setInitError(null);
       setShowHostedFallback(true);
     } catch (caught) {

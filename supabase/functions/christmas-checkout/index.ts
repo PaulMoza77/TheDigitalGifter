@@ -74,9 +74,9 @@ type Body = {
   template_key?: string;
   guardian_consent?: boolean;
   consent_version?: string;
-  /** Gift-tree guest continuity — hashed server-side into order metadata. */
+  /** Gift-tree guest continuity · hashed server-side into order metadata. */
   guest_token?: string;
-  /** Planner add-ons — charged only when not already included in the package. */
+  /** Planner add-ons · charged only when not already included in the package. */
   addon_keys?: string[];
   prompt?: string;
   client_prompt?: string;
@@ -470,7 +470,7 @@ Deno.serve(async (req) => {
     const params = new URLSearchParams();
     params.set("mode", "payment");
     params.set("ui_mode", "custom");
-    // Do not set payment_method_types — automatic methods include Apple Pay / Google Pay when Stripe + domain + device allow them.
+    // Do not set payment_method_types · automatic methods include Apple Pay / Google Pay when Stripe + domain + device allow them.
     const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
       ? successUrl
       : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;

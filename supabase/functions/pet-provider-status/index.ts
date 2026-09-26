@@ -2,7 +2,7 @@
  * Fulfillment capacity probe for Dog V2 payment gate.
  * Fail-closed only on kill-switch, recent billing holds, or Replicate evidence
  * (402 / auth / rate-limit / provider errors). Missing REPLICATE_API_TOKEN here
- * means the probe cannot check Replicate — not that paid Edge fulfillment is down.
+ * means the probe cannot check Replicate · not that paid Edge fulfillment is down.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
         available: false,
         reason: "kill_switch",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       });
     }
 
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
           available: false,
           reason: "recent_billing_holds",
           message:
-            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
         });
       }
     }
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Lightweight account probe — 402 / auth failures mean do not accept payment.
+    // Lightweight account probe · 402 / auth failures mean do not accept payment.
     const accountRes = await fetch("https://api.replicate.com/v1/account", {
       method: "GET",
       headers: {
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         available: false,
         reason: "insufficient_credit",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       });
     }
     if (accountRes.status === 401 || accountRes.status === 403) {
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         available: false,
         reason: "provider_auth",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       });
     }
     if (accountRes.status === 429) {
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
         available: false,
         reason: "rate_limited",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       });
     }
     if (!accountRes.ok) {
@@ -92,11 +92,11 @@ Deno.serve(async (req) => {
         available: false,
         reason: "provider_error",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       });
     }
 
-    // Some accounts return credit fields — treat zero/negative as unavailable when present.
+    // Some accounts return credit fields · treat zero/negative as unavailable when present.
     try {
       const body = (await accountRes.json()) as Record<string, unknown>;
       const credit =
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
           available: false,
           reason: "insufficient_credit",
           message:
-            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
         });
       }
     } catch {
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
         available: false,
         reason: "probe_failed",
         message:
-          "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+          "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
       },
       200,
     );

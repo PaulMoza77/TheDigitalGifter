@@ -21,7 +21,7 @@ TDG_COMPOSE="${TDG_DIR}/docker-compose.yml"
 mkdir -p "${TDG_RELEASES}"
 
 docker image inspect mozas/thedigitalgifter:previous >/dev/null 2>&1 \
-  || die "no mozas/thedigitalgifter:previous image — nothing to roll back to"
+  || die "no mozas/thedigitalgifter:previous image · nothing to roll back to"
 
 # Prefer the last verified pin when present (coherent metadata + image tag).
 TARGET_TAG="previous"

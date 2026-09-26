@@ -13,7 +13,7 @@ export type SantaPreviewInput = {
 
 /**
  * Client-side script preview (illustrative). Real generation uses the server pipeline.
- * Kept aligned in spirit with supabase mockSantaScript — not a duplicate of production prompts.
+ * Kept aligned in spirit with supabase mockSantaScript · not a duplicate of production prompts.
  */
 export function buildSantaMessagePreview(input: SantaPreviewInput): string {
   const name = input.childFirstName.trim();

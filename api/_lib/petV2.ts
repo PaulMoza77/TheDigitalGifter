@@ -132,7 +132,7 @@ export async function writePetV2FunnelEvent(raw: unknown): Promise<{ ok: true; d
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    // Forensic migration may not be applied yet — retry without diagnostic columns.
+    // Forensic migration may not be applied yet · retry without diagnostic columns.
     if (/p_browser_family|p_in_app_browser|p_error_code|Could not find/i.test(text)) {
       const retry = await fetch(`${supabaseUrl}/rest/v1/rpc/record_pet_v2_funnel_event`, {
         method: "POST",

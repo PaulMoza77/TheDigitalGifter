@@ -95,7 +95,7 @@ export async function executeTargetPublish(input: {
       ok: false,
       code: "live_posting_disabled",
       message:
-        "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL / live posting flag. No production post was made.",
+        "IMPLEMENTED · WAITING FOR PROVIDER APPROVAL / live posting flag. No production post was made.",
       retryable: true,
       waitingForApproval: true,
     };

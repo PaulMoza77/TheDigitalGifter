@@ -1,4 +1,4 @@
-# Pet Funnel V2 — Free Personalized Preview Feasibility
+# Pet Funnel V2 · Free Personalized Preview Feasibility
 
 **Status:** Preview-only prototype. Not production. Do not merge as a replacement for `/pet/dog`.  
 **Routes:** `/pet/dog-v2` · `/pet/cat-v2` · `/pet/other-v2`  
@@ -32,7 +32,7 @@ Exactly **one** scene: `royal-portrait`.
 - **Provider:** Replicate  
 - **Model:** `black-forest-labs/flux-kontext-pro`  
 - **Tariff in repo:** `$0.04` per successful output (`src/features/pet/aiCost.ts`, `KONTEXT_PRO_UNIT_COST_USD`)  
-- **Pricing source:** `ai_model_pricing` (project tariff snapshot — not a live Replicate invoice scrape)  
+- **Pricing source:** `ai_model_pricing` (project tariff snapshot · not a live Replicate invoice scrape)  
 - **Live switch:** `PET_V2_PREVIEW_LIVE=true` **and** `REPLICATE_API_TOKEN`  
 - **Default:** live generation is **off**. The client then composites the visitor’s own photo into a framed “royal” preview with a PREVIEW watermark. That is honest local UX, **not** the conversion hypothesis.
 
@@ -189,9 +189,9 @@ Upload    one photo, no name / email / personality
  ↓
 Free personalized preview   (1× royal-portrait)
  ↓
-Offer     $19 TEST COPY — production still $27
+Offer     $19 TEST COPY · production still $27
  ↓
-Checkout  prototype handoff — no live Stripe
+Checkout  prototype handoff · no live Stripe
  ↓
 Purchase  not implemented (would unlock current 12+2 product)
 ```
@@ -228,4 +228,4 @@ Moved after preview: pet name, email, personality.
 
 **Modify first. Do not ship paid traffic yet.**
 
-The $0.04 preview cost is fine. The hypothesis (preview before pay) is worth testing. This build is not ready for Meta spend until live generation is verified on a private URL, HEIC drop-off is measured, and the test keeps **$27** so the funnel — not the price — is the variable.
+The $0.04 preview cost is fine. The hypothesis (preview before pay) is worth testing. This build is not ready for Meta spend until live generation is verified on a private URL, HEIC drop-off is measured, and the test keeps **$27** so the funnel · not the price · is the variable.

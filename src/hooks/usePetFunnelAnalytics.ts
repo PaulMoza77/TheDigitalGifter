@@ -111,8 +111,8 @@ function mapBreakdown(row: RpcRow, kind: "campaign" | "ad", metaSpendByKey?: Map
   const roas = spendCents == null ? null : safeRoas(asNumber(row.revenue_cents) || meta?.purchaseValueCents || 0, spendCents);
   return {
     campaign: String(row.campaign || fallback.label),
-    adSet: String(row.ad_set || "—"),
-    ad: String(row.ad || (kind === "ad" ? fallback.label : "—")),
+    adSet: String(row.ad_set || "-"),
+    ad: String(row.ad || (kind === "ad" ? fallback.label : "-")),
     campaignId,
     adsetId: row.adset_id ? String(row.adset_id) : null,
     adId,
@@ -559,8 +559,8 @@ export function usePetFunnelAnalytics(
               const cpcCents = spendCents > 0 && linkClicks > 0 ? Math.round(spendCents / linkClicks) : null;
               return {
                 campaign: String(row.campaign_name || row.campaign_id || "Campaign"),
-                adSet: String(row.adset_name || "—"),
-                ad: String(row.ad_name || "—"),
+                adSet: String(row.adset_name || "-"),
+                ad: String(row.ad_name || "-"),
                 campaignId: String(row.campaign_id || ""),
                 adsetId: String(row.adset_id || ""),
                 adId: String(row.ad_id || ""),
@@ -644,8 +644,8 @@ export function usePetFunnelAnalytics(
       const v3CampaignRows: AttributionBreakdownRow[] = datasetId === "v3"
         ? (((v3Context?.campaigns as RpcRow[]) || []).map((row) => ({
             campaign: String(row.campaign || "Unattributed"),
-            adSet: "—",
-            ad: "—",
+            adSet: "-",
+            ad: "-",
             campaignId: row.campaign_id ? String(row.campaign_id) : null,
             adsetId: null,
             adId: null,

@@ -1,5 +1,5 @@
 /**
- * Christmas product catalog — language-independent keys + display seams.
+ * Christmas product catalog · language-independent keys + display seams.
  * Server and tests resolve prices from this contract (or DB rows mapped into it).
  * Do not hardcode checkout amounts in React UI.
  */
@@ -75,7 +75,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     productType: "planner",
     name: "Christmas Planner by The Digital Gifter",
     description:
-      "An interactive Christmas planning experience — gifts, budget, meals, hosting, cards, traditions, and more in one place. Not a PDF.",
+      "An interactive Christmas planning experience · gifts, budget, meals, hosting, cards, traditions, and more in one place. Not a PDF.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 8,
@@ -168,7 +168,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       {
         packageKey: "all_in",
         packageName: "All-In Christmas",
-        description: "The complete Planner — recipes, premium planning, bonus credits, and future AI assistant access.",
+        description: "The complete Planner · recipes, premium planning, bonus credits, and future AI assistant access.",
         currency: "usd",
         priceCents: 4900,
         compareAtCents: null,
@@ -288,7 +288,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       {
         packageKey: "single",
         packageName: "Single portrait",
-        description: "Draft package — not a live public offer.",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -317,7 +317,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       {
         packageKey: "single",
         packageName: "Single family portrait",
-        description: "Draft package — not a live public offer.",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -346,7 +346,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       {
         packageKey: "single",
         packageName: "Single couple portrait",
-        description: "Draft package — not a live public offer.",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -394,7 +394,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       {
         packageKey: "single",
         packageName: "Single pet portrait",
-        description: "Draft package — not a live public offer.",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -427,8 +427,8 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     packages: [
       {
         packageKey: "basic",
-        packageName: "Santa Video — Basic",
-        description: "Draft package — not a live public offer.",
+        packageName: "Santa Video · Basic",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -441,8 +441,8 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       },
       {
         packageKey: "premium",
-        packageName: "Santa Video — Premium",
-        description: "Draft package — not a live public offer.",
+        packageName: "Santa Video · Premium",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -455,8 +455,8 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
       },
       {
         packageKey: "deluxe",
-        packageName: "Santa Video — Deluxe",
-        description: "Draft package — not a live public offer.",
+        packageName: "Santa Video · Deluxe",
+        description: "Draft package · not a live public offer.",
         currency: "usd",
         priceCents: 0,
         compareAtCents: null,
@@ -545,7 +545,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     slug: "advent",
     productType: "advent",
     name: "Advent Calendar",
-    description: "Daily Christmas rewards — starts December 1.",
+    description: "Daily Christmas rewards · starts December 1.",
     active: true,
     publicDiscoverable: true,
     sortOrder: 90,
@@ -632,7 +632,7 @@ export function resolvePurchasableOffer(input: {
   catalog: ChristmasProductDef[];
   productKey: string;
   packageKey: string;
-  /** Optional tampered client amount — must never win. */
+  /** Optional tampered client amount · must never win. */
   clientAmountCents?: number | null;
   clientCurrency?: string | null;
 }): ResolveOfferResult {

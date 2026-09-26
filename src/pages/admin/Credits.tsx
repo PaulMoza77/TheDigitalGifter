@@ -313,7 +313,7 @@ export default function Credits() {
           <div>
             <h1 className="text-2xl font-semibold">Credits</h1>
             <p className="text-sm text-white/60">
-              Ledger (Supabase) — istoric complet + balance calculat din ledger.
+              Ledger (Supabase) · istoric complet + balance calculat din ledger.
             </p>
           </div>
 

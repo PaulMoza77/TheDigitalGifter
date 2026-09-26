@@ -430,7 +430,7 @@ export function parseV4AnalyticsPayload(raw: unknown): V4DashboardReport {
 }
 
 export function formatDurationSec(sec: number | null | undefined): string {
-  if (sec == null || !Number.isFinite(sec)) return "—";
+  if (sec == null || !Number.isFinite(sec)) return "-";
   if (sec < 60) return `${Math.round(sec)}s`;
   const m = Math.floor(sec / 60);
   const s = Math.round(sec % 60);
@@ -440,7 +440,7 @@ export function formatDurationSec(sec: number | null | undefined): string {
 export function minutesAgoLabel(iso: string | null | undefined, now = Date.now()): string {
   if (!iso) return "no events yet";
   const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return "—";
+  if (!Number.isFinite(t)) return "-";
   const mins = Math.max(0, Math.round((now - t) / 60000));
   if (mins <= 0) return "just now";
   if (mins === 1) return "1 minute ago";

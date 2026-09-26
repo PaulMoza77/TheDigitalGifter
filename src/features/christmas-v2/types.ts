@@ -87,6 +87,6 @@ export const CHRISTMAS_CHECKOUT_FAILED_COPY =
   "We couldn’t open the secure payment form. Please try again. You haven’t been charged.";
 
 export const CHRISTMAS_PROVIDER_UNAVAILABLE_COPY =
-  "We’re temporarily unable to create new Christmas portraits. Please try again shortly — you haven’t been charged.";
+  "We’re temporarily unable to create new Christmas portraits. Please try again shortly · you haven’t been charged.";
 
 export { CHRISTMAS_STARTER_PRICE_CENTS };

@@ -1,6 +1,6 @@
 /**
  * Vision-based pet species check before preview generation.
- * Records only outcome + confidence — never biometrics or customer PII.
+ * Records only outcome + confidence · never biometrics or customer PII.
  *
  * Provider order:
  * 1) OpenAI (if key present and billed)
@@ -32,7 +32,7 @@ export type SpeciesValidation =
 
 const HIGH_CONFIDENCE = 0.72;
 const DEFAULT_REPLICATE_VISION_MODEL = "lucataco/moondream2";
-/** Pin Moondream version — /v1/models/.../predictions returns 404 for some hosts. */
+/** Pin Moondream version · /v1/models/.../predictions returns 404 for some hosts. */
 const DEFAULT_MOONDREAM_VERSION =
   "72ccb656353c348c1385df54b237eeb7bfa874bf11486cf0b9473e691b662d31";
 
@@ -221,7 +221,7 @@ async function classifyWithReplicate(
   const prompt =
     'Is the primary animal a dog or a cat? Reply with JSON only: {"species":"dog"|"cat"|"other"|"unclear","confidence":0-1}. No breed names.';
 
-  // Prefer versioned predictions API (stable). Keep retries short — edge wall-clock is tight.
+  // Prefer versioned predictions API (stable). Keep retries short · edge wall-clock is tight.
   let lastError = "";
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {

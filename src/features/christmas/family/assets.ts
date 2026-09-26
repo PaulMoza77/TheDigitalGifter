@@ -21,7 +21,7 @@ export const FAMILY_ASSETS = {
   catBefore: "/pet/cat/source.webp",
 } as const;
 
-/** Hero style chips — Christmas-first labels mapped to registry keys. */
+/** Hero style chips · Christmas-first labels mapped to registry keys. */
 export type FamilyStyleChip = {
   styleKey: string;
   labelKey: string;

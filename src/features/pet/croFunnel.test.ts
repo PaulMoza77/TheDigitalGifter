@@ -125,7 +125,7 @@ describe("pet funnel CRO", () => {
 
   it("7. create page stays photo-first without re-asking species", () => {
     const create = readSrc("src/features/pet/PetCreatePage.tsx");
-    expect(create).toContain("Great — now upload a photo of");
+    expect(create).toContain("Great · now upload a photo of");
     expect(create).toContain("PhotoUploader");
     expect(create).not.toContain("PetTypePicker");
     expect(create).toContain('eventName: "photo_step_viewed"');
@@ -172,7 +172,7 @@ describe("pet funnel CRO", () => {
   });
 
   it("11. continue clearly states that no charge occurs yet", () => {
-    expect(readSrc("src/features/pet/PetCreatePage.tsx")).toContain("Continue — no charge yet");
+    expect(readSrc("src/features/pet/PetCreatePage.tsx")).toContain("Continue · no charge yet");
     expect(readSrc("src/features/pet/components/NameCapture.tsx")).toContain("No charge yet");
   });
 

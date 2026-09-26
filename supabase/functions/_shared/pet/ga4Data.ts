@@ -1,5 +1,5 @@
 /**
- * GA4 Data API — server-only via Google service account.
+ * GA4 Data API · server-only via Google service account.
  * Measurement ID G-YF2GRM2TL4 alone is NOT sufficient; needs GA4_PROPERTY_ID + SA credentials.
  * Never log private keys. Never expose to the browser.
  */
@@ -32,7 +32,7 @@ export type Ga4ConfigStatus = {
 
 const GA4_MEASUREMENT_ID = "G-YF2GRM2TL4";
 
-/** Founder / internal geos — excluded from hybrid analytics upserts. */
+/** Founder / internal geos · excluded from hybrid analytics upserts. */
 const INTERNAL_GA4_COUNTRIES = new Set(["romania", "italy"]);
 
 export function ga4CountryIsInternal(country: string | null | undefined): boolean {

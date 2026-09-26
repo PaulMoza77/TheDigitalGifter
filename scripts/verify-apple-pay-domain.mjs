@@ -16,7 +16,7 @@ const results = [];
 
 function record(name, ok, detail) {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` · ${detail}` : ""}`);
 }
 
 record("local_association_not_placeholder", local.length > 1000 && !local.includes("PLACEHOLDER_CONFIGURE"), `bytes=${local.length}`);

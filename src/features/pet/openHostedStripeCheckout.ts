@@ -20,7 +20,7 @@ export function openHostedStripeCheckout(
       const opened = window.open(target, "_blank", "noopener,noreferrer");
       if (opened) return "new_tab";
     } catch {
-      // Popup blocked or window.open unavailable — same-tab below.
+      // Popup blocked or window.open unavailable · same-tab below.
     }
   }
 

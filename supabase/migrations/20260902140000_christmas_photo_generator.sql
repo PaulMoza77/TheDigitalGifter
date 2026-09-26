@@ -248,6 +248,6 @@ values
   ('christmas-generated', 'christmas-generated', false, 20971520, array['image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;
 
--- No public storage policies — service role / signed URLs only.
+-- No public storage policies · service role / signed URLs only.
 
 commit;

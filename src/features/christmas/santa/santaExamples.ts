@@ -9,7 +9,7 @@ export type SantaDemoExample = {
   tags: string[];
 };
 
-/** Demo-only examples — not customer testimonials. */
+/** Demo-only examples · not customer testimonials. */
 export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
   {
     id: "emma",
@@ -35,7 +35,7 @@ export const SANTA_DEMO_EXAMPLES: SantaDemoExample[] = [
     lines: [
       "Ho ho ho, Noah! The elves told me you’ve been learning to swim…",
       "They also said you’ve been especially kind this year.",
-      "I heard you’re hoping for a LEGO set — I’ll check my workshop!",
+      "I heard you’re hoping for a LEGO set · I’ll check my workshop!",
     ],
     tags: ["swimming", "kindness", "LEGO"],
   },

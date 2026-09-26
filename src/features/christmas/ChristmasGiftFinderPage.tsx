@@ -314,7 +314,7 @@ export default function ChristmasGiftFinderPage() {
         ageRangeKey: age,
         interestKeys: interests,
         customInterest,
-        // Privacy: sent to generation only — never included in analytics metadata.
+        // Privacy: sent to generation only · never included in analytics metadata.
         personalDetail: personalDetail.slice(0, 280),
         personalityKeys: personalities,
         budgetKey: budget,
@@ -1111,7 +1111,7 @@ export default function ChristmasGiftFinderPage() {
           <section>
             <h2 className="gf-display">{gfT("seo.section.budget", locale)}</h2>
             <p>
-              Recommendations use typical price ranges for gift ideas — not live retailer inventory
+              Recommendations use typical price ranges for gift ideas · not live retailer inventory
               or guaranteed stock.
             </p>
             <ul>

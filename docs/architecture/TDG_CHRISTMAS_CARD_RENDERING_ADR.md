@@ -2,11 +2,11 @@
 
 ## Status
 
-Accepted — V1 (`tdg-christmas-cards-messages-011`)
+Accepted · V1 (`tdg-christmas-cards-messages-011`)
 
 ## Context
 
-Personalized Christmas Cards must produce **actual downloadable image files**, work without paid AI image APIs, support EN/RO Unicode (diacritics), optional photos, and three social layouts — without activating Christmas checkout.
+Personalized Christmas Cards must produce **actual downloadable image files**, work without paid AI image APIs, support EN/RO Unicode (diacritics), optional photos, and three social layouts · without activating Christmas checkout.
 
 ## Decision
 
@@ -18,7 +18,7 @@ Personalized Christmas Cards must produce **actual downloadable image files**, w
 4. Adaptive font sizing + measured line wrapping with safe margins
 5. Message sanitized as plain text; never interpreted as HTML
 6. `canvas.toBlob('image/png')` for download + Web Share files
-7. Server (`christmas_card_projects` / `christmas_card_assets`) persists metadata, ownership, and counters — not a public CDN of private photos in V1
+7. Server (`christmas_card_projects` / `christmas_card_assets`) persists metadata, ownership, and counters · not a public CDN of private photos in V1
 
 ## Alternatives considered
 

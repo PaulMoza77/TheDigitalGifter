@@ -29,7 +29,7 @@ function waiting(message: string): AdapterResult {
   return {
     ok: false,
     code: "waiting_for_provider_approval",
-    message: `IMPLEMENTED — WAITING FOR PROVIDER APPROVAL. ${safe}`,
+    message: `IMPLEMENTED · WAITING FOR PROVIDER APPROVAL. ${safe}`,
     retryable: true,
     waitingForApproval: true,
   };

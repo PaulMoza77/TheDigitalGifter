@@ -113,7 +113,7 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_join_completed",
   "christmas_google_auth_started",
   "christmas_google_auth_completed",
-  // Photo generator hub (SEO/money page) — privacy-safe; never include image bytes
+  // Photo generator hub (SEO/money page) · privacy-safe; never include image bytes
   "christmas_photo_generator_page_view",
   "christmas_photo_upload_started",
   "christmas_photo_upload_completed",
@@ -125,7 +125,7 @@ export const CHRISTMAS_FUNNEL_ALLOWED_EVENTS = [
   "christmas_photo_downloaded",
   "christmas_photo_shared",
   "christmas_photo_card_cross_sell",
-  // Family Christmas portrait hub — privacy-safe; never include image bytes
+  // Family Christmas portrait hub · privacy-safe; never include image bytes
   "christmas_family_page_view",
   "christmas_family_upload_started",
   "christmas_family_upload_completed",

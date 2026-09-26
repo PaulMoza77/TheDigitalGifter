@@ -60,7 +60,7 @@ function CheckoutBody({
 
   async function finalizeAndNavigate(confirmedSessionId?: string | null) {
     const resolvedSessionId = confirmedSessionId || sessionId;
-    // Best-effort fulfillment nudge — verifies payment with Stripe and runs the same
+    // Best-effort fulfillment nudge · verifies payment with Stripe and runs the same
     // RPC the webhook uses, so results unlock immediately even if stripe-webhook (Edge)
     // hasn't been redeployed yet. Never block navigation on this call.
     if (publicToken && resolvedSessionId) {

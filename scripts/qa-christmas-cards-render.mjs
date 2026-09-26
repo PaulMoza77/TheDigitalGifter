@@ -18,7 +18,7 @@ function pngSize(buf) {
 
 const require = createRequire(import.meta.url);
 const stylesPath = new URL("../src/features/christmas/cards/cardStyles.ts", import.meta.url);
-// Inline minimal renderer mirror in page — load built page isn't available offline.
+// Inline minimal renderer mirror in page · load built page isn't available offline.
 // Use page.evaluate with self-contained canvas draw matching production layout sizes.
 
 const cases = [

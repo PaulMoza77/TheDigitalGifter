@@ -25,7 +25,7 @@ const blocked = [];
 function rec(bucket, name, ok, detail) {
   bucket.push({ name, ok, detail });
   const label = bucket === negative ? "NEG" : bucket === functional ? "FUN" : "BLK";
-  console.log(`${ok ? "PASS" : "FAIL"} [${label}] ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"} [${label}] ${name}${detail ? ` · ${detail}` : ""}`);
 }
 
 async function edge(path, body, method = "POST") {
@@ -183,7 +183,7 @@ function origin(path, extra = []) {
   );
 }
 {
-  // Accepts $2.99 for V2 (price check passes) then fails on email — no order created.
+  // Accepts $2.99 for V2 (price check passes) then fails on email · no order created.
   const v2 = await edge("/functions/v1/pet-funnel", {
     action: "createOrder",
     funnelVariant: "v2",
@@ -275,7 +275,7 @@ function origin(path, extra = []) {
   );
 }
 
-// Paid generation / real Stripe charge — blocked without isolated test keys
+// Paid generation / real Stripe charge · blocked without isolated test keys
 {
   const hasTestStripe = Boolean(process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_TEST_SECRET_KEY);
   if (!hasTestStripe) {

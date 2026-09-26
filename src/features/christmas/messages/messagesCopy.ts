@@ -1,4 +1,4 @@
-/** Christmas Messages UI copy — Wave 1 locale packs (en, ro, de, fr, es, it, pt, nl, pl). */
+/** Christmas Messages UI copy · Wave 1 locale packs (en, ro, de, fr, es, it, pt, nl, pl). */
 
 export type MessagesLocale = "en" | "ro" | "de" | "fr" | "es" | "it" | "pt" | "nl" | "pl";
 
@@ -20,7 +20,7 @@ const EN: Record<string, string> = {
 
   "hero.h1": "Find the right Christmas words in seconds",
   "hero.lede":
-    "Guided Christmas messages for family, friends, and coworkers — then drop your favorite into a personalized card.",
+    "Guided Christmas messages for family, friends, and coworkers · then drop your favorite into a personalized card.",
 
   "a11y.language": "Language",
   "a11y.options": "Message options",
@@ -41,14 +41,14 @@ const EN: Record<string, string> = {
   "cta.useInCard": "Use in Christmas Card",
 
   "error.generate": "Could not generate messages",
-  "error.copy": "Could not copy — select the text manually.",
+  "error.copy": "Could not copy · select the text manually.",
 
   "fallback.notice":
     "Using curated Christmas wording (provider unavailable). Still ready to copy or use in a card.",
 
   "results.title": "Your Christmas messages",
   "empty.title": "No messages yet",
-  "empty.hint": "Pick who it’s for, a tone, and length — then generate a few ideas.",
+  "empty.hint": "Pick who it’s for, a tone, and length · then generate a few ideas.",
   "loading.state": "Finding the right words…",
 
   "seo.ideasTitle": "Christmas message ideas",
@@ -68,7 +68,7 @@ const RO: Record<string, string> = {
 
   "hero.h1": "Găsește cuvintele potrivite de Crăciun",
   "hero.lede":
-    "Mesaje ghidate pentru familie, prieteni și colegi — apoi folosește favoritul într-un card personalizat.",
+    "Mesaje ghidate pentru familie, prieteni și colegi · apoi folosește favoritul într-un card personalizat.",
 
   "a11y.language": "Limbă",
   "a11y.options": "Opțiuni mesaj",
@@ -96,7 +96,7 @@ const RO: Record<string, string> = {
 
   "results.title": "Mesajele tale de Crăciun",
   "empty.title": "Niciun mesaj încă",
-  "empty.hint": "Alege destinatarul, tonul și lungimea — apoi generează câteva idei.",
+  "empty.hint": "Alege destinatarul, tonul și lungimea · apoi generează câteva idei.",
   "loading.state": "Căutăm cuvintele potrivite…",
 
   "seo.ideasTitle": "Idei de mesaje de Crăciun",
@@ -116,7 +116,7 @@ const DE: Record<string, string> = {
 
   "hero.h1": "Die richtigen Weihnachtsworte in Sekunden",
   "hero.lede":
-    "Geführte Weihnachtsnachrichten für Familie, Freunde und Kollegen — danach deine Lieblingsnachricht in eine personalisierte Karte übernehmen.",
+    "Geführte Weihnachtsnachrichten für Familie, Freunde und Kollegen · danach deine Lieblingsnachricht in eine personalisierte Karte übernehmen.",
 
   "a11y.language": "Sprache",
   "a11y.options": "Nachrichtenoptionen",
@@ -137,14 +137,14 @@ const DE: Record<string, string> = {
   "cta.useInCard": "In Weihnachtskarte verwenden",
 
   "error.generate": "Nachrichten konnten nicht erstellt werden",
-  "error.copy": "Kopieren fehlgeschlagen — bitte den Text manuell markieren.",
+  "error.copy": "Kopieren fehlgeschlagen · bitte den Text manuell markieren.",
 
   "fallback.notice":
     "Wir nutzen kuratierte Weihnachtsformulierungen (Anbieter nicht verfügbar). Trotzdem bereit zum Kopieren oder für eine Karte.",
 
   "results.title": "Deine Weihnachtsnachrichten",
   "empty.title": "Noch keine Nachrichten",
-  "empty.hint": "Wähle Empfänger, Ton und Länge — dann erstelle ein paar Ideen.",
+  "empty.hint": "Wähle Empfänger, Ton und Länge · dann erstelle ein paar Ideen.",
   "loading.state": "Wir finden die richtigen Worte…",
 
   "seo.ideasTitle": "Ideen für Weihnachtsnachrichten",
@@ -164,7 +164,7 @@ const FR: Record<string, string> = {
 
   "hero.h1": "Trouvez les bons mots de Noël en quelques secondes",
   "hero.lede":
-    "Des messages de Noël guidés pour la famille, les amis et les collègues — puis glissez votre favori dans une carte personnalisée.",
+    "Des messages de Noël guidés pour la famille, les amis et les collègues · puis glissez votre favori dans une carte personnalisée.",
 
   "a11y.language": "Langue",
   "a11y.options": "Options du message",
@@ -185,14 +185,14 @@ const FR: Record<string, string> = {
   "cta.useInCard": "Utiliser dans une carte",
 
   "error.generate": "Impossible de générer les messages",
-  "error.copy": "Copie impossible — sélectionnez le texte manuellement.",
+  "error.copy": "Copie impossible · sélectionnez le texte manuellement.",
 
   "fallback.notice":
     "Nous utilisons des formulations de Noël sélectionnées (service indisponible). Toujours prêtes à copier ou à utiliser dans une carte.",
 
   "results.title": "Vos messages de Noël",
   "empty.title": "Pas encore de messages",
-  "empty.hint": "Choisissez le destinataire, le ton et la longueur — puis générez quelques idées.",
+  "empty.hint": "Choisissez le destinataire, le ton et la longueur · puis générez quelques idées.",
   "loading.state": "Nous cherchons les bons mots…",
 
   "seo.ideasTitle": "Idées de messages de Noël",
@@ -212,7 +212,7 @@ const ES: Record<string, string> = {
 
   "hero.h1": "Encuentra las palabras navideñas perfectas en segundos",
   "hero.lede":
-    "Mensajes de Navidad guiados para familia, amigos y compañeros — luego lleva tu favorito a una tarjeta personalizada.",
+    "Mensajes de Navidad guiados para familia, amigos y compañeros · luego lleva tu favorito a una tarjeta personalizada.",
 
   "a11y.language": "Idioma",
   "a11y.options": "Opciones del mensaje",
@@ -233,14 +233,14 @@ const ES: Record<string, string> = {
   "cta.useInCard": "Usar en tarjeta de Navidad",
 
   "error.generate": "No se pudieron generar los mensajes",
-  "error.copy": "No se pudo copiar — selecciona el texto manualmente.",
+  "error.copy": "No se pudo copiar · selecciona el texto manualmente.",
 
   "fallback.notice":
     "Usamos formulaciones navideñas seleccionadas (servicio no disponible). Listas para copiar o usar en una tarjeta.",
 
   "results.title": "Tus mensajes de Navidad",
   "empty.title": "Aún no hay mensajes",
-  "empty.hint": "Elige para quién, el tono y la longitud — luego genera algunas ideas.",
+  "empty.hint": "Elige para quién, el tono y la longitud · luego genera algunas ideas.",
   "loading.state": "Buscando las palabras adecuadas…",
 
   "seo.ideasTitle": "Ideas de mensajes de Navidad",
@@ -260,7 +260,7 @@ const IT: Record<string, string> = {
 
   "hero.h1": "Trova le parole di Natale giuste in pochi secondi",
   "hero.lede":
-    "Messaggi di Natale guidati per famiglia, amici e colleghi — poi inserisci il preferito in un biglietto personalizzato.",
+    "Messaggi di Natale guidati per famiglia, amici e colleghi · poi inserisci il preferito in un biglietto personalizzato.",
 
   "a11y.language": "Lingua",
   "a11y.options": "Opzioni del messaggio",
@@ -281,14 +281,14 @@ const IT: Record<string, string> = {
   "cta.useInCard": "Usa nel biglietto di Natale",
 
   "error.generate": "Impossibile generare i messaggi",
-  "error.copy": "Copia non riuscita — seleziona il testo manualmente.",
+  "error.copy": "Copia non riuscita · seleziona il testo manualmente.",
 
   "fallback.notice":
     "Usiamo formulazioni natalizie curate (servizio non disponibile). Pronte da copiare o da usare in un biglietto.",
 
   "results.title": "I tuoi messaggi di Natale",
   "empty.title": "Nessun messaggio ancora",
-  "empty.hint": "Scegli destinatario, tono e lunghezza — poi genera alcune idee.",
+  "empty.hint": "Scegli destinatario, tono e lunghezza · poi genera alcune idee.",
   "loading.state": "Stiamo cercando le parole giuste…",
 
   "seo.ideasTitle": "Idee per messaggi di Natale",
@@ -302,14 +302,14 @@ const IT: Record<string, string> = {
   "crossSell.cardCta": "Crea un biglietto di Natale",
 };
 
-/** European Portuguese (Portugal) — not Brazilian. */
+/** European Portuguese (Portugal) · not Brazilian. */
 const PT: Record<string, string> = {
   "breadcrumb.christmas": "Natal",
   "breadcrumb.messages": "Mensagens",
 
   "hero.h1": "Encontre as palavras certas de Natal em segundos",
   "hero.lede":
-    "Mensagens de Natal guiadas para família, amigos e colegas — depois use a favorita num cartão personalizado.",
+    "Mensagens de Natal guiadas para família, amigos e colegas · depois use a favorita num cartão personalizado.",
 
   "a11y.language": "Idioma",
   "a11y.options": "Opções da mensagem",
@@ -330,14 +330,14 @@ const PT: Record<string, string> = {
   "cta.useInCard": "Usar no cartão de Natal",
 
   "error.generate": "Não foi possível gerar as mensagens",
-  "error.copy": "Não foi possível copiar — selecione o texto manualmente.",
+  "error.copy": "Não foi possível copiar · selecione o texto manualmente.",
 
   "fallback.notice":
     "Estamos a usar formulações de Natal selecionadas (serviço indisponível). Prontas para copiar ou usar num cartão.",
 
   "results.title": "As suas mensagens de Natal",
   "empty.title": "Ainda sem mensagens",
-  "empty.hint": "Escolha o destinatário, o tom e o comprimento — depois gere algumas ideias.",
+  "empty.hint": "Escolha o destinatário, o tom e o comprimento · depois gere algumas ideias.",
   "loading.state": "A encontrar as palavras certas…",
 
   "seo.ideasTitle": "Ideias de mensagens de Natal",
@@ -357,7 +357,7 @@ const NL: Record<string, string> = {
 
   "hero.h1": "Vind de juiste kerstwoorden in seconden",
   "hero.lede":
-    "Begeleide kerstberichten voor familie, vrienden en collega’s — zet daarna je favoriet in een gepersonaliseerde kaart.",
+    "Begeleide kerstberichten voor familie, vrienden en collega’s · zet daarna je favoriet in een gepersonaliseerde kaart.",
 
   "a11y.language": "Taal",
   "a11y.options": "Berichtopties",
@@ -378,14 +378,14 @@ const NL: Record<string, string> = {
   "cta.useInCard": "Gebruik in kerstkaart",
 
   "error.generate": "Berichten konden niet worden gegenereerd",
-  "error.copy": "Kopiëren mislukt — selecteer de tekst handmatig.",
+  "error.copy": "Kopiëren mislukt · selecteer de tekst handmatig.",
 
   "fallback.notice":
     "We gebruiken geselecteerde kerstformuleringen (dienst niet beschikbaar). Klaar om te kopiëren of in een kaart te zetten.",
 
   "results.title": "Jouw kerstberichten",
   "empty.title": "Nog geen berichten",
-  "empty.hint": "Kies voor wie, toon en lengte — genereer daarna een paar ideeën.",
+  "empty.hint": "Kies voor wie, toon en lengte · genereer daarna een paar ideeën.",
   "loading.state": "De juiste woorden zoeken…",
 
   "seo.ideasTitle": "Ideeën voor kerstberichten",
@@ -405,7 +405,7 @@ const PL: Record<string, string> = {
 
   "hero.h1": "Znajdź właściwe świąteczne słowa w kilka sekund",
   "hero.lede":
-    "Prowadzone wiadomości świąteczne dla rodziny, przyjaciół i współpracowników — potem wstaw ulubioną do spersonalizowanej kartki.",
+    "Prowadzone wiadomości świąteczne dla rodziny, przyjaciół i współpracowników · potem wstaw ulubioną do spersonalizowanej kartki.",
 
   "a11y.language": "Język",
   "a11y.options": "Opcje wiadomości",
@@ -426,14 +426,14 @@ const PL: Record<string, string> = {
   "cta.useInCard": "Użyj w kartce świątecznej",
 
   "error.generate": "Nie udało się wygenerować wiadomości",
-  "error.copy": "Nie udało się skopiować — zaznacz tekst ręcznie.",
+  "error.copy": "Nie udało się skopiować · zaznacz tekst ręcznie.",
 
   "fallback.notice":
     "Używamy wyselekcjonowanych świątecznych sformułowań (usługa niedostępna). Gotowe do skopiowania lub użycia w kartce.",
 
   "results.title": "Twoje wiadomości świąteczne",
   "empty.title": "Brak wiadomości",
-  "empty.hint": "Wybierz adresata, ton i długość — potem wygeneruj kilka pomysłów.",
+  "empty.hint": "Wybierz adresata, ton i długość · potem wygeneruj kilka pomysłów.",
   "loading.state": "Szukamy właściwych słów…",
 
   "seo.ideasTitle": "Pomysły na wiadomości świąteczne",

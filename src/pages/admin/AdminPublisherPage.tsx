@@ -375,7 +375,7 @@ export default function AdminPublisherPage() {
                         <div>
                           <p className="font-medium">{row.asset_title || "Needs content"}</p>
                           <p className="text-xs text-slate-400">
-                            {local.date} {local.time} · {row.timezone} · Library {row.library_asset_id || "—"}
+                            {local.date} {local.time} · {row.timezone} · Library {row.library_asset_id || "-"}
                           </p>
                           <p className={`text-xs ${statusClass(row.status)}`}>{row.status} · {row.destinations.join(", ")}</p>
                         </div>

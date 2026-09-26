@@ -5,7 +5,7 @@ import { useInViewOnce } from "../useInViewOnce";
 
 /**
  * Landing section: the real interactive Christmas gift tree (hotspots + open flow),
- * framed cleanly under the cabin hero — not the abstract CSS triangle.
+ * framed cleanly under the cabin hero · not the abstract CSS triangle.
  */
 export function GiftTreeLandingScene({
   locale,

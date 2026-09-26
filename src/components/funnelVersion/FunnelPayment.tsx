@@ -576,7 +576,7 @@ export default function FunnelPayment(): JSX.Element {
       setPromoApplied(true);
 
       toast.success(
-        `${result.code} applied — ${result.discountPercent}% off first month.`
+        `${result.code} applied · ${result.discountPercent}% off first month.`
       );
     } catch (error) {
       const message =
@@ -794,7 +794,7 @@ export default function FunnelPayment(): JSX.Element {
 
           {promoApplied ? (
             <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              ✅ {normalizePromoCode(promo)} applied —{" "}
+              ✅ {normalizePromoCode(promo)} applied -{" "}
               <b>{promoDiscountPercent}% off your first month</b>. Regular
               monthly price starts next month.
             </div>

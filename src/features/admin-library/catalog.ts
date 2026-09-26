@@ -136,7 +136,7 @@ export const CHRISTMAS_LIBRARY_KINDS: LibraryKindFilter[] = [
   {
     id: "short",
     label: "Shorts",
-    description: "The 3–5s clips that make up the Reels — including NYC ice and snowy village.",
+    description: "The 3–5s clips that make up the Reels · including NYC ice and snowy village.",
   },
   {
     id: "photo",
@@ -178,7 +178,7 @@ function petClips(species: "dog" | "cat" | "other", category: LibraryCategoryId)
 const CHRISTMAS_REELS: LibraryVideo[] = [
   {
     id: "reel-christmas-express",
-    title: "The Christmas Express — 30s",
+    title: "The Christmas Express · 30s",
     description:
       "30.0s 1080×1920 silent train-heavy Reel. Five new Higgsfield Kling 3.0 Pro Christmas Express shorts plus existing viaduct, station, and train-window Library clips. Hard cuts. No audio.",
     src: "/assets/christmas/christmas-express/final/the-christmas-express-30s.mp4",
@@ -208,7 +208,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-is-coming",
-    title: "Christmas Is Coming — 30s",
+    title: "Christmas Is Coming · 30s",
     description:
       "29.9s 1080×1920 silent Reel. Train + villages + Santa + gifts. Tasteful “93 days until Christmas” overlay computed at render time. Hard cuts. No audio.",
     src: "/assets/christmas/christmas-express/final/christmas-is-coming-30s.mp4",
@@ -238,7 +238,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-pov-christmas-looked-like-this",
-    title: "POV: Christmas Looked Like This — 30s",
+    title: "POV: Christmas Looked Like This · 30s",
     description:
       "29.9s 1080×1920 silent fantasy/travel Reel. Aurora viaduct, Santa over London, Lapland, Alps, Polar Express. Hard cuts. No audio.",
     src: "/assets/christmas/christmas-express/final/pov-christmas-looked-like-this-30s.mp4",
@@ -268,7 +268,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-magic-getting-closer",
-    title: "The Magic Is Getting Closer — 30s",
+    title: "The Magic Is Getting Closer · 30s",
     description:
       "29.9s 1080×1920 silent Reel. Santa/reindeer + Christmas Express + snowy villages. Hard cuts. No audio.",
     src: "/assets/christmas/christmas-express/final/the-magic-is-getting-closer-30s.mp4",
@@ -298,7 +298,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-all-aboard-christmas",
-    title: "All Aboard for Christmas — 30s",
+    title: "All Aboard for Christmas · 30s",
     description:
       "30.0s 1080×1920 silent high-impact compilation from the strongest Christmas Express and Library train/Santa footage. Hard cuts. No audio.",
     src: "/assets/christmas/christmas-express/final/all-aboard-for-christmas-30s.mp4",
@@ -428,7 +428,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-lauren-overwhelm-master",
-    title: "Lauren — Christmas Overwhelm Story 01 · MASTER",
+    title: "Lauren · Christmas Overwhelm Story 01 · MASTER",
     description:
       "31.9s 1080×1920. Voice-over corrected master (active). Buyer-persona story: love Christmas → overwhelm → discovery → relief. Warm slower narration + captions + original music. Visual stream reused; no video regeneration. Open My Christmas Planner CTA.",
     src: "/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_master.mp4",
@@ -455,7 +455,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-lauren-overwhelm-clean",
-    title: "Lauren — Christmas Overwhelm Story 01 · CLEAN",
+    title: "Lauren · Christmas Overwhelm Story 01 · CLEAN",
     description:
       "31.9s 1080×1920. Voice-over corrected CLEAN (no captions). Same slower human narration + music as the active master. Visual stream reused.",
     src: "/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_clean.mp4",
@@ -482,7 +482,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-lauren-overwhelm-visual",
-    title: "Lauren — Christmas Overwhelm Story 01 · VISUAL",
+    title: "Lauren · Christmas Overwhelm Story 01 · VISUAL",
     description:
       "31.9s 1080×1920 silent visual master for reuse. No voiceover, no captions.",
     src: "/assets/christmas/lauren-overwhelm/final/lauren_overwhelm_visual.mp4",
@@ -510,7 +510,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
     id: "reel-pick-one-christmas",
     title: "You can only pick one · still cuts",
     description:
-      "6.93s 1080×1920 silent still Reel (legacy). Hard cuts of still photos only — not I2V. Prefer reel-pick-one-i2v for the real AI shorts Reel.",
+      "6.93s 1080×1920 silent still Reel (legacy). Hard cuts of still photos only · not I2V. Prefer reel-pick-one-i2v for the real AI shorts Reel.",
     src: "/assets/christmas/reels/final/you-can-only-pick-one.mp4",
     filename: "you-can-only-pick-one.mp4",
     category: "christmas_reels",
@@ -531,7 +531,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-np-journey-01",
-    title: "The Journey — Magical Train to the North Pole",
+    title: "The Journey · Magical Train to the North Pole",
     description:
       "36.8s 1080×1920 silent long Reel. Spectacular viaduct train → carriage window → aurora → Polar Express → station → Santa Village → workshop → sleigh → Plaza payoff. Tags: christmas, final-reel, ready-to-post, long-reel, the-journey.",
     src: "/assets/christmas/np-journey/final/the_journey_north_pole_reel_01.mp4",
@@ -563,7 +563,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-follow-santa-02",
-    title: "Follow Santa — Christmas Eve",
+    title: "Follow Santa · Christmas Eve",
     description:
       "35.8s 1080×1920 silent long Reel. Workshop list → elves wrapping → reindeer street → sleigh departure → London → Rockefeller → Plaza → Home Alone house → child watching Santa. Tags: christmas, final-reel, ready-to-post, long-reel, follow-santa.",
     src: "/assets/christmas/np-journey/final/follow_santa_reel_02.mp4",
@@ -627,7 +627,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-viral-short-04",
-    title: "Viral Cut — Where is this train going?",
+    title: "Viral Cut · Where is this train going?",
     description:
       "14.6s 1080×1920 silent short Reel. Loop-friendly WOW cut: aurora viaduct → train window mountains → North Pole arrival → Santa over London → child watching sleigh → viaduct. Tags: christmas, final-reel, ready-to-post, short-reel, viral-train-hook.",
     src: "/assets/christmas/np-journey/final/viral_train_north_pole_short_04.mp4",
@@ -652,7 +652,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-viral-night-05",
-    title: "Viral Cut — The most magical Christmas night",
+    title: "Viral Cut · The most magical Christmas night",
     description:
       "14.3s 1080×1920 silent short Reel. Snowman square → workshop street → wrapping → sleigh load → Plaza NYC → child watching Santa. Tags: christmas, final-reel, ready-to-post, short-reel, most-magical-night.",
     src: "/assets/christmas/np-journey/final/viral_most_magical_night_short_05.mp4",
@@ -678,7 +678,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-magic-30s",
-    title: "Christmas Magic — 30s",
+    title: "Christmas Magic · 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Strongest cinematic Christmas scenes: Santa over London, Polar Express, North Pole village, workshop, sleigh, Rockefeller, Plaza. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-magic-30s.mp4",
@@ -706,7 +706,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-new-york-30s",
-    title: "Christmas in New York — 30s",
+    title: "Christmas in New York · 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. NYC Plaza, Rockefeller rink, skating, Coca-Cola truck, snowy Fifth Avenue. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-new-york-30s.mp4",
@@ -734,7 +734,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-escape-30s",
-    title: "Christmas Escape — 30s",
+    title: "Christmas Escape · 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Lapland aurora, Alps hotel, chalets, Polar Express trains, snowy landscapes. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-escape-30s.mp4",
@@ -762,7 +762,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-dream-home-30s",
-    title: "Christmas Dream Home — 30s",
+    title: "Christmas Dream Home · 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Decorated houses, luxury palace, fireplaces, cozy interiors. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-dream-home-30s.mp4",
@@ -791,7 +791,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-childhood-30s",
-    title: "Christmas Childhood — 30s",
+    title: "Christmas Childhood · 30s",
     description:
       "Silent ~30s 1080×1920 Reel assembled from Library Shorts. Polar Express, Santa, reindeer, sledding, snowman, child watching the sleigh. No text, no watermark, no audio.",
     src: "/assets/christmas/reels/final/christmas-childhood-30s.mp4",
@@ -820,7 +820,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-movie-nostalgia-01",
-    title: "Christmas Movie Nostalgia — Reel 01",
+    title: "Christmas Movie Nostalgia · Reel 01",
     description:
       "12–15s 1080×1920 silent Reel. Home Alone-style house → Polar Express → Rockefeller → Plaza → cozy fireside → Santa and child. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
     src: "/assets/christmas/cinematic-sep20/final/christmas_movie_nostalgia_reel_01.mp4",
@@ -846,7 +846,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-christmas-magic-02",
-    title: "Christmas Magic — Reel 02",
+    title: "Christmas Magic · Reel 02",
     description:
       "12–15s 1080×1920 silent Reel. Santa over London → Polar Express → North Pole workshop → village balcony → Coca-Cola truck → Rockefeller tree. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
     src: "/assets/christmas/cinematic-sep20/final/christmas_magic_reel_02.mp4",
@@ -872,7 +872,7 @@ const CHRISTMAS_REELS: LibraryVideo[] = [
   },
   {
     id: "reel-perfect-christmas-03",
-    title: "The Perfect Christmas — Reel 03",
+    title: "The Perfect Christmas · Reel 03",
     description:
       "12–15s 1080×1920 silent Reel. Loop-friendly cozy cut: house → fireplace → Prague bakery → Alps terrace → humble home → house. Tags: christmas, reel, ready-to-post, instagram, tiktok, facebook, youtube-shorts, viral-candidate.",
     src: "/assets/christmas/cinematic-sep20/final/the_perfect_christmas_reel_03.mp4",
@@ -1236,7 +1236,7 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
     id: "short-countdown-93-days",
     title: "Short · 93 days until Christmas",
     description:
-      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Cozy fireplace living room with a snowy village window. Overlay text “93 DAYS UNTIL Christmas” is locked and unmoving. Real image-to-video — not a still.",
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Cozy fireplace living room with a snowy village window. Overlay text “93 DAYS UNTIL Christmas” is locked and unmoving. Real image-to-video · not a still.",
     src: "/assets/christmas/countdown-93/masters/countdown_93_days_until_christmas.mp4",
     filename: "countdown_93_days_until_christmas.mp4",
     category: "christmas_reels",
@@ -1341,7 +1341,7 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
     id: "short-pick-one-01-cozy-cabin",
     title: "Short · Pick one cozy cabin",
     description:
-      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Cozy cabin fireplace, Christmas tree, sleeping dog, mountain window. Real image-to-video — not a still Reel.",
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Cozy cabin fireplace, Christmas tree, sleeping dog, mountain window. Real image-to-video · not a still Reel.",
     src: "/assets/christmas/pick-one/masters/pick_one_01_cozy_cabin.mp4",
     filename: "pick_one_01_cozy_cabin.mp4",
     category: "christmas_reels",
@@ -1362,7 +1362,7 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
     id: "short-pick-one-02-nyc-penthouse",
     title: "Short · Pick one NYC penthouse",
     description:
-      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Luxury NYC penthouse Christmas night with Empire State skyline. Real image-to-video — not a still Reel.",
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Luxury NYC penthouse Christmas night with Empire State skyline. Real image-to-video · not a still Reel.",
     src: "/assets/christmas/pick-one/masters/pick_one_02_nyc_penthouse.mp4",
     filename: "pick_one_02_nyc_penthouse.mp4",
     category: "christmas_reels",
@@ -1383,7 +1383,7 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
     id: "short-pick-one-03-alpine-chalet",
     title: "Short · Pick one alpine chalet hot tub",
     description:
-      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Alpine chalet terrace hot tub steam at Christmas twilight. Real image-to-video — not a still Reel.",
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Alpine chalet terrace hot tub steam at Christmas twilight. Real image-to-video · not a still Reel.",
     src: "/assets/christmas/pick-one/masters/pick_one_03_alpine_chalet.mp4",
     filename: "pick_one_03_alpine_chalet.mp4",
     category: "christmas_reels",
@@ -1404,7 +1404,7 @@ const CHRISTMAS_SHORTS: LibraryVideo[] = [
     id: "short-pick-one-04-christmas-mansion",
     title: "Short · Pick one Christmas mansion foyer",
     description:
-      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Grand mansion foyer Christmas tree and staircase. Real image-to-video — not a still Reel.",
+      "Higgsfield Kling 3.0 Pro I2V, 5s, 1080×1920, silent. Grand mansion foyer Christmas tree and staircase. Real image-to-video · not a still Reel.",
     src: "/assets/christmas/pick-one/masters/pick_one_04_christmas_mansion.mp4",
     filename: "pick_one_04_christmas_mansion.mp4",
     category: "christmas_reels",
@@ -3161,7 +3161,7 @@ const CHRISTMAS_PHOTOS: LibraryVideo[] = [
   {
     id: "photo-wan-ice-rink",
     title: "Photo · NYC Rockefeller ice rink",
-    description: "Source still for the Rockefeller ice-skating short — tree, rink, and skaters in New York.",
+    description: "Source still for the Rockefeller ice-skating short · tree, rink, and skaters in New York.",
     src: "/assets/christmas/instagram-reel/source/clip_06.jpg",
     filename: "nyc_rockefeller_ice_rink.jpg",
     category: "christmas_reels",

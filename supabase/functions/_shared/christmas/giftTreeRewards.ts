@@ -48,7 +48,7 @@ export const GIFT_TREE_REWARDS: GiftTreeReward[] = [
     type: "credits",
     value: 50,
     title: "50 Christmas Credits",
-    description: "A rare Christmas boost — create something spectacular.",
+    description: "A rare Christmas boost · create something spectacular.",
     weight: 2,
     claim_path: "/generator?occasion=christmas",
     entitlement_key: "gift_tree_credits_50",
@@ -103,7 +103,7 @@ export const GIFT_TREE_REWARDS: GiftTreeReward[] = [
     type: "discount",
     value: 25,
     title: "25% Off Your Christmas Gift Tree",
-    description: "Reserved for the premium Gift Tree product — your discount is saved.",
+    description: "Reserved for the premium Gift Tree product · your discount is saved.",
     weight: 1,
     claim_path: "/christmas/tree",
     entitlement_key: "gift_tree_premium_discount_25",
@@ -114,7 +114,7 @@ export const GIFT_TREE_REWARDS: GiftTreeReward[] = [
     type: "gift_token",
     value: 1,
     title: "One Extra Christmas Gift",
-    description: "Open another present under the tree — on us.",
+    description: "Open another present under the tree · on us.",
     weight: 5,
     claim_path: "/christmas/tree-gifts",
     entitlement_key: "gift_tree_extra_open",
@@ -177,7 +177,7 @@ export function publicGiftTreeReward(reward: GiftTreeReward) {
 }
 
 
-/** Paid packs — keep in sync with rewardCatalog.ts + funnel migration. */
+/** Paid packs · keep in sync with rewardCatalog.ts + funnel migration. */
 export const GIFT_TREE_PAID_OFFERS = [
   {
     package_key: "open_another",

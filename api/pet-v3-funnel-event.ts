@@ -111,7 +111,7 @@ async function resolveAuthoritativeV3IsTest(input: {
       }
     }
   } catch {
-    /* fall through — never trust client hints */
+    /* fall through · never trust client hints */
   }
 
   return { isTest: false, clientIp, clientIpHostname, countryCode };
@@ -265,7 +265,7 @@ async function ensureV3InternalTestSession(input: {
       }),
     });
   } catch {
-    /* best-effort — record path still sets p_is_test */
+    /* best-effort · record path still sets p_is_test */
   }
 }
 

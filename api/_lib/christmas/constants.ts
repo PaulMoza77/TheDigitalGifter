@@ -1,6 +1,6 @@
 /**
  * Node origin port of supabase/functions/_shared/christmas/constants.ts.
- * Keep in sync with the Deno source — this copy exists because the VPS Node
+ * Keep in sync with the Deno source · this copy exists because the VPS Node
  * origin cannot import Deno-flavored modules (esm.sh URLs, Deno.env, ...).
  */
 

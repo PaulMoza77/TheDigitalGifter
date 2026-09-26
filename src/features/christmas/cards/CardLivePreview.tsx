@@ -15,7 +15,7 @@ type Props = {
 };
 
 /**
- * Debounced client canvas preview — same renderer as the final PNG.
+ * Debounced client canvas preview · same renderer as the final PNG.
  * Keeps the finished-card object as the hero during editing.
  */
 export function CardLivePreview({

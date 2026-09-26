@@ -197,7 +197,7 @@ export function ChristmasPlannerPlanPage() {
       <header className="tdg-tasks-hero">
         <div className="tdg-tasks-hero-copy">
           <h1>Tasks</h1>
-          <p>Everything you need to get Christmas done — without the last-minute stress.</p>
+          <p>Everything you need to get Christmas done · without the last-minute stress.</p>
         </div>
         <div className="tdg-tasks-hero-art" aria-hidden="true">
           <div className="tdg-tasks-hero-fade" />

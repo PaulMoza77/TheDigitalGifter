@@ -1,5 +1,5 @@
 /**
- * Client-side personalized teaser — destructive pixel transform, not CSS blur.
+ * Client-side personalized teaser · destructive pixel transform, not CSS blur.
  * Never embeds the clear source under a translucent layer.
  * Cost: $0 (no Replicate/OpenAI).
  */
@@ -7,7 +7,7 @@
 export const V2_TEASER_MAX_EDGE = 480;
 export const V2_TEASER_PIXEL_BLOCK = 10;
 export const V2_TEASER_BLUR_RADIUS = 14;
-/** Soft performance budget for mobile (ms). Soft fail — still return result. */
+/** Soft performance budget for mobile (ms). Soft fail · still return result. */
 export const V2_TEASER_BUDGET_MS = 5000;
 
 export type V2TeaserResult = {
@@ -93,7 +93,7 @@ function fail(
   return { ok: false, error, failureCategory, latencyMs };
 }
 
-/** Average each block into a solid color — irreversible downsampling. */
+/** Average each block into a solid color · irreversible downsampling. */
 export function pixelateInPlace(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -137,7 +137,7 @@ export function pixelateInPlace(
   ctx.putImageData(image, 0, 0);
 }
 
-/** Separable box blur approximating Gaussian — baked into pixels. */
+/** Separable box blur approximating Gaussian · baked into pixels. */
 export function boxBlurInPlace(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -190,7 +190,7 @@ function blurAxis(
   }
 }
 
-/** Generic racing-inspired frame — no protected team/sponsor logos. */
+/** Generic racing-inspired frame · no protected team/sponsor logos. */
 function drawRacingInspiredFrame(ctx: CanvasRenderingContext2D, width: number, height: number): void {
   const inset = Math.round(Math.min(width, height) * 0.06);
   const grad = ctx.createLinearGradient(0, 0, width, height);

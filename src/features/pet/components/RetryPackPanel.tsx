@@ -84,7 +84,7 @@ export function RetryPackPanel({
           <div>
             <p className="text-sm font-semibold text-white">3-Scene Retry</p>
             <p className="mt-1 text-xs text-zinc-400">
-              Pick up to 3 portraits to regenerate — same pet photo.
+              Pick up to 3 portraits to regenerate · same pet photo.
             </p>
           </div>
           <p className="text-lg font-bold text-amber-300">{offer.priceDisplay}</p>
@@ -93,7 +93,7 @@ export function RetryPackPanel({
         {offer.purchased ? (
           <p className="mt-3 flex items-center gap-2 text-xs text-emerald-300">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-            Retry purchased — refresh to see updated portraits.
+            Retry purchased · refresh to see updated portraits.
           </p>
         ) : (
           <>
@@ -129,7 +129,7 @@ export function RetryPackPanel({
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
               )}
-              Retry {selected.length || 3} scenes — {offer.priceDisplay}
+              Retry {selected.length || 3} scenes · {offer.priceDisplay}
             </Button>
             <p className="mt-2 text-center text-[11px] text-zinc-500">
               {selected.length}/3 selected

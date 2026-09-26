@@ -20,7 +20,7 @@ export function ChristmasOfferScreen({
           Your 3 AI Christmas Portraits
         </h1>
         <p className="mt-2 text-sm text-[#F7F0E4]/70">
-          From your photo — identity preserved, premium Christmas styling.
+          From your photo · identity preserved, premium Christmas styling.
         </p>
       </div>
 

@@ -148,7 +148,7 @@ export const CHRISTMAS_LOCALE_REGISTRY = {
     urlPrefix: "sv",
     wave: 2,
   },
-  // Wave 3 RTL sample (disabled) — architecture readiness
+  // Wave 3 RTL sample (disabled) · architecture readiness
   ar: {
     code: "ar",
     hreflang: "ar",

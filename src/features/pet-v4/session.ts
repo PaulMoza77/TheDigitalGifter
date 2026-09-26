@@ -52,7 +52,7 @@ export function getPetV4SessionId(): string {
   }
 }
 
-/** Anonymous visitor id (localStorage only) — never PII. */
+/** Anonymous visitor id (localStorage only) · never PII. */
 export function getPetV4VisitorId(): string {
   if (typeof window === "undefined") return randomUuid();
   try {

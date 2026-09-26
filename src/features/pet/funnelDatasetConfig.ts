@@ -76,7 +76,7 @@ export const FUNNEL_DATASETS: Record<FunnelDatasetId, FunnelDatasetConfig> = {
       step2Of: "first-party landing",
       step3Of: "uploads",
       step4Of: "teasers",
-      checkoutOf: "offers (infra — not Payment UI viewed)",
+      checkoutOf: "offers (infra · not Payment UI viewed)",
     },
     stageLabels: {
       landing_view: "Landing Sessions (FP raw)",
@@ -282,7 +282,7 @@ export function maxSessionCount(a: number | undefined, b: number | undefined): n
 
 /**
  * Map isolated V2 event counts into the original 6-card funnel shape (teaser rebuild).
- * These are RAW independent unique-session counts — NOT a sequential cohort.
+ * These are RAW independent unique-session counts · NOT a sequential cohort.
  * Teaser uses max(teaser_viewed, preview_viewed). Checkout CTA uses max(session_created, begin_checkout).
  */
 export function mapV2CountsToPrimarySteps(v2: Record<string, number>): FunnelStepCounts {

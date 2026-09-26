@@ -233,7 +233,7 @@ export function percentChange(current: number, previous: number): number | null 
 }
 
 export function formatPct(value: number | null, digits = 1): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return `${value.toFixed(digits)}%`;
 }
 
@@ -351,9 +351,9 @@ export function funnelWarnings(input: {
 }): string[] {
   const warnings: string[] = [];
   if (!input.firstEventAt) {
-    warnings.push("First-party tracking has not recorded events yet — showing historical Meta/GA4/Stripe where available");
+    warnings.push("First-party tracking has not recorded events yet · showing historical Meta/GA4/Stripe where available");
   } else if (input.rangeMode === "historical" || input.rangeMode === "mixed") {
-    warnings.push("Range includes dates before first-party tracking — mid-funnel stages may be unavailable");
+    warnings.push("Range includes dates before first-party tracking · mid-funnel stages may be unavailable");
   }
   if (input.metaConfigured === false) {
     warnings.push("Meta historical sync not configured");

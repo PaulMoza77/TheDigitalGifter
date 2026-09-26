@@ -122,7 +122,7 @@ export function PetCreatePage({
             tabIndex={-1}
             className="text-[1.65rem] font-semibold leading-tight tracking-tight text-[#f6efe4] outline-none sm:text-3xl"
           >
-            Great — now upload a photo of {petLabel}
+            Great · now upload a photo of {petLabel}
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#f6efe4]/70">
             Choose a clear photo where {petLabel === "your pet" ? "their" : `${petLabel}’s`} face is easy to
@@ -142,7 +142,7 @@ export function PetCreatePage({
           guidance=""
           successMessage={
             draft.photo
-              ? `Great photo — ${petLabel === "your pet" ? "their" : `${petLabel}’s`} face is clear.`
+              ? `Great photo · ${petLabel === "your pet" ? "their" : `${petLabel}’s`} face is clear.`
               : undefined
           }
           onFileAccepted={(file) => {
@@ -182,7 +182,7 @@ export function PetCreatePage({
           <div className="min-w-0">
             <p className="text-sm font-medium text-[#f6efe4]">One photo. Incredible secret lives.</p>
             <p className="mt-0.5 text-xs leading-5 text-[#f6efe4]/55">
-              Same face — transformed into scenes like this.
+              Same face · transformed into scenes like this.
             </p>
           </div>
         </aside>
@@ -229,7 +229,7 @@ export function PetCreatePage({
           type="submit"
           className="h-12 min-h-[44px] w-full rounded-full bg-[#d4a84b] text-base font-semibold text-[#1a140e] hover:bg-[#e2bc63]"
         >
-          Continue — no charge yet
+          Continue · no charge yet
         </Button>
         <p className="text-center text-xs text-[#f6efe4]/45">
           Your photo is used only to create your order.

@@ -40,7 +40,7 @@ values (
   'planner',
   'planner',
   'Christmas Planner by The Digital Gifter',
-  'An interactive Christmas planning experience — gifts, budget, meals, hosting, cards, traditions, and more in one place. Not a PDF.',
+  'An interactive Christmas planning experience · gifts, budget, meals, hosting, cards, traditions, and more in one place. Not a PDF.',
   true,
   true,
   8,
@@ -91,7 +91,7 @@ cross join (
     (
       'all_in',
       'All-In Christmas',
-      'The complete Planner — recipes, premium planning, bonus credits, and future AI assistant access.',
+      'The complete Planner · recipes, premium planning, bonus credits, and future AI assistant access.',
       'usd', 4900, null, 30,
       '["Everything in Christmas Magic","Recipe collection / food planner","Premium planning content","Digital Gifter photo credit bonus","Future AI Christmas Assistant access","Premium Christmas Club content where applicable"]',
       '{"kind":"package","tier":"all_in","highlight":true,"badge":"Best value"}'::jsonb

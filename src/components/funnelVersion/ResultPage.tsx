@@ -1133,7 +1133,7 @@ export default function ResultPage() {
 
                       <div className="mt-2 text-sm text-zinc-600">
                         {loading
-                          ? "Keep this tab open — we’ll show it as soon as it’s ready."
+                          ? "Keep this tab open · we’ll show it as soon as it’s ready."
                           : "Click Refresh to check again."}
                       </div>
                     </div>

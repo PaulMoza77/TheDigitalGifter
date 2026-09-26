@@ -9,7 +9,7 @@ import {
   SITE_ORIGIN,
 } from "../../../../server/christmasSeo.mjs";
 
-const GENERIC = "TheDigitalGifter — Custom AI Holiday Cards & Memories";
+const GENERIC = "TheDigitalGifter · Custom AI Holiday Cards & Memories";
 
 describe("christmas SEO SSR registry", () => {
   it("covers every scoped Christmas route with unique titles", () => {

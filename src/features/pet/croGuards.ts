@@ -37,7 +37,7 @@ export function normalizePetName(value: string): string {
 export function validatePetName(value: string): { ok: true; name: string } | { ok: false; message: string } {
   const name = normalizePetName(value);
   if (!name) {
-    return { ok: false, message: "Give your pet a name — even a nickname works." };
+    return { ok: false, message: "Give your pet a name · even a nickname works." };
   }
   if (name.length > PET_NAME_MAX_LENGTH) {
     return { ok: false, message: "Keep the name under 40 characters." };

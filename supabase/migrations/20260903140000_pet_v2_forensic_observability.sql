@@ -59,7 +59,7 @@ alter table public.pet_v2_funnel_events
   add column if not exists in_app_browser text;
 
 comment on column public.pet_v2_funnel_events.error_code is
-  'Safe Stripe/client error category code only — never card numbers or secrets.';
+  'Safe Stripe/client error category code only · never card numbers or secrets.';
 
 -- ---------------------------------------------------------------------------
 -- 2) Refresh record_pet_v2_funnel_event allow-list (+ optional diagnostic cols)
@@ -256,7 +256,7 @@ grant execute on function public.record_pet_v2_funnel_event(
 ) to anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
--- 3) Admin checkout diagnostics — raw vs sequential vs Stripe order truth
+-- 3) Admin checkout diagnostics · raw vs sequential vs Stripe order truth
 -- ---------------------------------------------------------------------------
 create or replace function public.admin_pet_v2_checkout_diagnostics(
   p_from timestamptz,
@@ -356,7 +356,7 @@ begin
     'from', p_from,
     'to', p_to,
     'definitions', jsonb_build_object(
-      'raw', 'Independent unique-session counts per event — stages are NOT nested.',
+      'raw', 'Independent unique-session counts per event · stages are NOT nested.',
       'sequential_human', 'Landing→Upload→Teaser→Offer→Payment UI visible→Attempt→Purchase. Never equate Stripe session_created with Payment UI viewed.',
       'stripe_infrastructure', 'pet_orders / Stripe session rows are infrastructure, not proof a human saw payment UI.',
       'purchase_authority', 'Stripe/server verified pet_orders.paid_at is authoritative.'

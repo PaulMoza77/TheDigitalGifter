@@ -82,7 +82,7 @@ export function buildProviderReadiness(input: ProviderReadinessInput) {
       publishing:
         input.live && input.configured.meta
           ? "adapter_ready_not_live_proven"
-          : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
+          : "IMPLEMENTED · WAITING FOR PROVIDER APPROVAL",
       missing: metaReadinessMissing({
         oauthConfigured: input.configured.meta,
         missingEnv: input.missingEnv.meta,
@@ -96,7 +96,7 @@ export function buildProviderReadiness(input: ProviderReadinessInput) {
       publishing:
         input.live && input.configured.tiktok
           ? "adapter_ready_not_live_proven"
-          : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
+          : "IMPLEMENTED · WAITING FOR PROVIDER APPROVAL",
       missing: tiktokReadinessMissing({
         oauthConfigured: input.configured.tiktok,
         missingEnv: input.missingEnv.tiktok,
@@ -109,7 +109,7 @@ export function buildProviderReadiness(input: ProviderReadinessInput) {
       publishing:
         input.live && input.configured.youtube
           ? "adapter_ready_not_live_proven"
-          : "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL",
+          : "IMPLEMENTED · WAITING FOR PROVIDER APPROVAL",
       missing: youtubeReadinessMissing({
         oauthConfigured: input.configured.youtube,
         missingEnv: input.missingEnv.youtube,

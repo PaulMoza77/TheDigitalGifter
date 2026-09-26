@@ -87,8 +87,8 @@ export function trackBadges(track: MusicTrack): TrackBadge {
 
 export function youtubeAudioLibraryLicenseType(attributionRequired: boolean): string {
   return attributionRequired
-    ? "YouTube Audio Library — Attribution Required"
-    : "YouTube Audio Library — Attribution Not Required";
+    ? "YouTube Audio Library · Attribution Required"
+    : "YouTube Audio Library · Attribution Not Required";
 }
 
 export function clearedForCommercialYoutube(track: MusicTrack): boolean {

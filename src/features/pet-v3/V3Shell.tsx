@@ -21,7 +21,7 @@ export function V3Shell({
     <div className="min-h-[100dvh] bg-[#140e0a] text-[#f6efe4]">
       {testBanner.active ? (
         <div className="border-b border-amber-500/40 bg-amber-500/15 px-4 py-2 text-center text-xs text-amber-100">
-          Server-authorized analytics test mode — excluded from production KPIs
+          Server-authorized analytics test mode · excluded from production KPIs
           {testBanner.expiresAt ? ` (until ${new Date(testBanner.expiresAt).toLocaleString("en-US")})` : ""}.
         </div>
       ) : null}

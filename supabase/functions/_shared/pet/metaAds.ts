@@ -1,5 +1,5 @@
 /**
- * Meta Marketing API (Ads Insights) — server-only.
+ * Meta Marketing API (Ads Insights) · server-only.
  * Uses META_ADS_ACCESS_TOKEN (ads_read). Do NOT reuse CAPI tokens blindly.
  * Never log tokens. Never expose to the browser.
  *

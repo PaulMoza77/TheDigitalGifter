@@ -54,7 +54,7 @@ describe("V1 name → photo UX and diagnostics", () => {
 
   it("photo step renders personalized upload copy and a lightweight wow example", () => {
     const create = readSrc("src/features/pet/PetCreatePage.tsx");
-    expect(create).toContain("Great — now upload a photo of");
+    expect(create).toContain("Great · now upload a photo of");
     expect(create).toContain("face is easy to");
     expect(create).toContain("Upload");
     expect(create).toContain("Takes a few seconds · Your photo stays private");

@@ -176,12 +176,12 @@ export function PetOrderPage({
         setLoading(false);
         const hasOrder = loadedOnce || Boolean(orderRef.current);
         if (hasOrder && isTransientPollError(caught)) {
-          setStatusHint("Still checking the studio. You can leave this page — generation keeps going.");
+          setStatusHint("Still checking the studio. You can leave this page · generation keeps going.");
           setError(null);
           return;
         }
         if (hasOrder && !isFatalOrderLookupError(caught)) {
-          setStatusHint("Still checking the studio. You can leave this page — generation keeps going.");
+          setStatusHint("Still checking the studio. You can leave this page · generation keeps going.");
           setError(null);
           return;
         }
@@ -243,7 +243,7 @@ export function PetOrderPage({
           <p className="mt-2 text-sm text-[#f6efe4]/55">Replicate starts as soon as you pay. Portraits usually appear within a few minutes.</p>
           {live ? (
             <p className="mt-2 text-sm text-[#f6efe4]/50">
-              This page stays live and never locks. You can go back anytime — the studio keeps working.
+              This page stays live and never locks. You can go back anytime · the studio keeps working.
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-4">

@@ -1,4 +1,4 @@
-# TDG Product North Star — Christmas 2026 to Evergreen Planner
+# TDG Product North Star · Christmas 2026 to Evergreen Planner
 
 **Status:** canonical product target
 **Launch product:** Christmas 2026
@@ -6,7 +6,7 @@
 
 ## Commercial target
 Immediate product: a paid interactive Christmas planning system, not a PDF or disconnected tools.
-Launch offer: **Christmas 2026 Founding Pass — $17 one-time**.
+Launch offer: **Christmas 2026 Founding Pass · $17 one-time**.
 Commercial price ladder to test as depth/proof/urgency improve: **$17 → $27 → $37 → $47 → $57**.
 Evergreen destination: membership usable for birthdays, Thanksgiving, Easter, Valentine's, anniversaries, dinner parties and recurring meal/gift planning. Working target: **$6.99/month / $59/year**, subject to validation.
 
@@ -17,22 +17,22 @@ Example: 12 people, $1,500 total budget, six gifts left, Romanian-American dinne
 
 ## Six standalone products
 
-### 1. AI Occasion Planner / Christmas Planner — value target ~$19
+### 1. AI Occasion Planner / Christmas Planner · value target ~$19
 Onboarding/profile; countdown/dates; calendar/timeline; tasks/priorities; total/category budgets; Today recommendations; sprint/rescue/last-minute modes; hosting/travel where relevant.
 
-### 2. Gift Planner + Gift Finder — value target ~$19
+### 2. Gift Planner + Gift Finder · value target ~$19
 Recipients, interests and per-person budgets; gift recommendations; wishlist; gift lifecycle from idea to given; save real products to recipient; delivery awareness; budget integration.
 
-### 3. Gift Shopping + Price Compare — value target ~$9–15
+### 3. Gift Shopping + Price Compare · value target ~$9–15
 “I know what I want” search; exact-product matching where reliable using model/GTIN/UPC/provider identifiers; offers from supported major retailers/providers; compare price, merchant, condition and delivery when supplied; affiliate attribution; Add to Gift Plan. Never fabricate retailer availability or prices.
 
-### 4. Recipes + Meal Planner — value target ~$19
+### 4. Recipes + Meal Planner · value target ~$19
 Target 1,500 high-quality global recipes first, expandable toward 3,000+; Christmas/winter/Thanksgiving first; country/culture/course/diet/allergen/difficulty/cost/time metadata; structured ingredients/instructions; serving scaler; menus by occasion/date; AI-assisted planning from guests, budget, diet and time.
 
-### 5. Smart Grocery Planner — value target ~$9
+### 5. Smart Grocery Planner · value target ~$9
 One list from selected recipes/meals; scaled quantities; duplicate ingredient aggregation; safe unit normalization; aisle grouping; check-off/already-have; manual items; cost hooks where data exists.
 
-### 6. Christmas Studio — value target ~$15–30
+### 6. Christmas Studio · value target ~$15–30
 Personalized Christmas photos; Santa/personalized video; cards/messages; credits/generation entitlements; contextual Planner cross-sells.
 
 Combined standalone perceived value target: roughly **$90–110+**, before cross-module automation.
@@ -60,7 +60,7 @@ Long-term model must support concepts equivalent to occasions, recipes, recipe i
 Do not scrape and republish copyrighted recipe text/images. Published content must be original, licensed/open or otherwise permitted.
 
 ## Monetization
-Immediate: **Christmas 2026 Founding Pass — $17 one-time**.
+Immediate: **Christmas 2026 Founding Pass · $17 one-time**.
 Free acquisition can include selected recipes, Gift Finder previews and Planner teaser/results.
 Seasonal: test $27 / $37 / $47 / $57 as capability and urgency increase.
 Evergreen: target **$6.99/month / $59/year** for multi-occasion recurring utility and member benefits/credits where economics support them.

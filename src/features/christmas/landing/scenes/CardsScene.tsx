@@ -12,7 +12,7 @@ const LABELS: Record<CardTheme, string> = {
 };
 
 const INSIDE: Record<CardTheme, { kicker: string; line: string }> = {
-  elegant: { kicker: "Elegant", line: "With gold light and quiet joy — Merry Christmas." },
+  elegant: { kicker: "Elegant", line: "With gold light and quiet joy · Merry Christmas." },
   family: { kicker: "Family", line: "The table is full. So is the heart. Merry Christmas." },
   romantic: { kicker: "Romantic", line: "All I want this Christmas is closer to you." },
   funny: { kicker: "Funny", line: "We checked the list twice. You’re still on it." },

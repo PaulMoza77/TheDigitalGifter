@@ -194,7 +194,7 @@ export default function AdminEmailTemplatesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* PAGE CARD — keep same dark admin style */}
+      {/* PAGE CARD · keep same dark admin style */}
       <Card className="rounded-2xl border-slate-800 bg-slate-950/60 shadow-none">
         <CardHeader className="space-y-1">
           <CardTitle className="text-xl text-slate-50">Email Templates</CardTitle>
@@ -204,7 +204,7 @@ export default function AdminEmailTemplatesPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* TOP BAR (no tabs here — left sidebar already handles nav) */}
+          {/* TOP BAR (no tabs here · left sidebar already handles nav) */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -275,7 +275,7 @@ export default function AdminEmailTemplatesPage() {
                           </div>
 
                           <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs", badgeCls)}>
-                            {r.type || "—"}
+                            {r.type || "-"}
                           </span>
                         </div>
 

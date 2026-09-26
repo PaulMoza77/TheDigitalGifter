@@ -9,7 +9,7 @@ function readSrc(relative: string) {
   return readFileSync(resolve(root, relative), "utf8");
 }
 
-describe("V3 ingest security — client cannot self-exclude production KPIs", () => {
+describe("V3 ingest security · client cannot self-exclude production KPIs", () => {
   const ingest = readSrc("api/pet-v3-funnel-event.ts");
   const migration = readSrc("supabase/migrations/20260828140000_pet_v3_trusted_analytics_hardening.sql");
 

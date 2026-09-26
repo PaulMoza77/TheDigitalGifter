@@ -1622,7 +1622,7 @@ export default function AdminFunnelPage() {
                     <div className="truncate text-xs text-slate-400">
                       style_id:{" "}
                       <span className="text-slate-200">
-                        {row.style_id ?? "—"}
+                        {row.style_id ?? "-"}
                       </span>{" "}
                       • id: <span className="text-slate-200">{row.id}</span>
                     </div>

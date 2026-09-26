@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Christmas SEO smoke — P0 SSR shells + P1 indexing / redirects / sitemap.
+ * Christmas SEO smoke · P0 SSR shells + P1 indexing / redirects / sitemap.
  *
  * Modes:
  *   1) Registry + indexing policy (always)
@@ -42,7 +42,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
-const GENERIC_TITLE = "TheDigitalGifter — Custom AI Holiday Cards & Memories";
+const GENERIC_TITLE = "TheDigitalGifter · Custom AI Holiday Cards & Memories";
 
 const failures = [];
 
@@ -114,7 +114,7 @@ function robotsIsIndex(html) {
   return robots.includes("index") && !robots.includes("noindex");
 }
 
-// —— 1) Registry uniqueness ——
+// -- 1) Registry uniqueness --
 const paths = listChristmasSeoPaths();
 assert(paths.length >= 16, `expected ≥16 Christmas SEO routes, got ${paths.length}`);
 assert(!paths.includes("/christmas/gifts"), "registry must not index /christmas/gifts alias");
@@ -135,7 +135,7 @@ for (const route of CHRISTMAS_SEO_ROUTES) {
   assert(!route.canonicalPath.includes("?"), `${route.path} canonical has no query`);
 }
 
-// —— P1 indexing policy ——
+// -- P1 indexing policy --
 assert(
   getChristmasPermanentRedirectTarget("/christmas/gifts") === "/christmas/gift-finder",
   "gifts → gift-finder permanent redirect",
@@ -214,7 +214,7 @@ const indexing = readFileSync(join(root, "server/christmasIndexing.mjs"), "utf8"
 assert(indexing.includes('"/christmas/gifts"'), "VPS redirects gifts");
 assert(indexing.includes('"/christmas/gift-finder"'), "VPS gifts target");
 
-// —— 2) Injection against HTML template ——
+// -- 2) Injection against HTML template --
 const distIndex = join(root, "dist", "index.html");
 const srcIndex = join(root, "index.html");
 const templatePath = existsSync(distIndex) ? distIndex : srcIndex;
@@ -305,7 +305,7 @@ for (const href of [
   assert(hasLink(photo, href), `photo-generator hierarchy link ${href}`);
 }
 
-// —— P2A content depth / GEO ——
+// -- P2A content depth / GEO --
 const moneyPaths = [
   "/christmas",
   "/christmas/gift-finder",
@@ -339,7 +339,7 @@ for (const [path, question] of Object.entries(geoQuestions)) {
     assert(html.includes(marker), `${path} marker: ${marker}`);
   }
   assert(depth.faqs.length >= 5, `${path} has at least 5 FAQs`);
-  // Distinct intros — avoid cannibalization copies
+  // Distinct intros · avoid cannibalization copies
   assert(depth.geo.body.length > 80, `${path} GEO body has useful length`);
 }
 assert(
@@ -372,7 +372,7 @@ assert(
   "no fake AggregateRating on hub",
 );
 
-// —— P2B adjacent content depth / GEO ——
+// -- P2B adjacent content depth / GEO --
 const adjacentGeo = {
   "/christmas/family": "What is a family Christmas photo generator?",
   "/christmas/couples": "What is a couple Christmas photo generator?",
@@ -429,7 +429,7 @@ assert(
   "kids remains without P2B depth (still noindex product)",
 );
 
-// —— P3A international SEO foundation ——
+// -- P3A international SEO foundation --
 assert(
   englishPrefixRedirectTarget("/en/christmas/cards") === "/christmas/cards",
   "P3A /en/* redirects to unprefixed English",
@@ -480,7 +480,7 @@ assert(deSantaHtml.includes('hreflang="en"'), "P3E DE santa reciprocal EN");
 assert(deSantaHtml.includes('hreflang="pt-PT"'), "P3E DE santa reciprocal pt-PT");
 assert(deSantaHtml.includes('hreflang="x-default"'), "P3E DE santa x-default");
 
-// —— P3B Wave 1 spot checks ——
+// -- P3B Wave 1 spot checks --
 const deCards = applyChristmasSeo(template, "/de/christmas/cards");
 assert(/lang="de"/.test(deCards), "P3B DE cards lang=de");
 assert(robotsIsIndex(deCards), "P3B DE cards indexable");
@@ -537,7 +537,7 @@ if (existsSync(distDeCards)) {
   ok("P3B prerender DE cards not in dist yet (run build first)");
 }
 
-// —— 3) Optional live / origin fetch ——
+// -- 3) Optional live / origin fetch --
 const liveBase = String(process.env.CHRISTMAS_SEO_BASE || "").replace(/\/$/, "");
 const originBase = String(process.env.CHRISTMAS_SEO_ORIGIN || "").replace(/\/$/, "");
 
@@ -599,7 +599,7 @@ if (originBase) {
     fail(`origin checks: ${err instanceof Error ? err.message : String(err)}`);
   }
 } else {
-  console.log("\n(skip origin HTTP — set CHRISTMAS_SEO_ORIGIN to enable)");
+  console.log("\n(skip origin HTTP · set CHRISTMAS_SEO_ORIGIN to enable)");
 }
 
 if (liveBase) {
@@ -621,7 +621,7 @@ if (liveBase) {
     }
   }
 } else {
-  console.log("(skip live fetch — set CHRISTMAS_SEO_BASE to enable)");
+  console.log("(skip live fetch · set CHRISTMAS_SEO_BASE to enable)");
 }
 
 const outDir = join(root, "output");
@@ -643,7 +643,7 @@ writeFileSync(
   ),
 );
 
-console.log("\n—— summary ——");
+console.log("\n-- summary --");
 console.log(`routes: ${paths.length}`);
 console.log(`indexable: ${CHRISTMAS_INDEXABLE_PATHS.length}`);
 console.log(`unique titles: ${uniqueTitles.size}/${titles.length}`);

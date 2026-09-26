@@ -16,7 +16,7 @@ export default function VideoModal({ src, title, onClose }: VideoModalProps) {
     // Try to autoplay when modal opens; catch any promise rejection
     v.muted = false;
     v.play().catch(() => {
-      // autoplay may be blocked; that's fine — user can press play
+      // autoplay may be blocked; that's fine · user can press play
     });
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();

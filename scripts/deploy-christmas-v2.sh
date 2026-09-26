@@ -46,7 +46,7 @@ if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
     if command -v psql >/dev/null 2>&1; then
       if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 \
         -c "select 1" >/dev/null 2>&1; then
-        echo "Connected via $HOST — applying Christmas migration SQL directly…"
+        echo "Connected via $HOST · applying Christmas migration SQL directly…"
         PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 \
           -f supabase/migrations/20260831190000_christmas_v2_funnel.sql
         APPLIED=1
@@ -60,7 +60,7 @@ if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
     npx --yes supabase db push --linked --include-all
   fi
 else
-  echo "SUPABASE_DB_PASSWORD unset — attempting linked db push…"
+  echo "SUPABASE_DB_PASSWORD unset · attempting linked db push…"
   npx --yes supabase db push --project-ref "$PROJECT_REF" --include-all || {
     echo "WARN: migration push failed without DB password. Continuing with function deploy."
   }
@@ -95,7 +95,7 @@ if echo "$WH_HEAD" | grep -qi '<html\|BOOT_ERROR'; then
   exit 1
 fi
 if [[ "$WH_CODE" == "503" ]]; then
-  echo "ERROR: stripe-webhook HTTP 503 after deploy — refusing to leave Pet/Christmas fulfill broken."
+  echo "ERROR: stripe-webhook HTTP 503 after deploy · refusing to leave Pet/Christmas fulfill broken."
   exit 1
 fi
 

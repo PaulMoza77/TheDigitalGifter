@@ -1,6 +1,6 @@
 /**
  * German (de) SEO content for the Christmas route family (P3B).
- * Natural German search-intent phrasing — not literal machine translation.
+ * Natural German search-intent phrasing · not literal machine translation.
  * Honesty constraints: Santa video voice is EN/RO only today; message generator
  * text is EN/RO only today. German copy explains the experience without
  * promising a German-spoken Santa video or German-generated messages.
@@ -25,10 +25,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas": {
     title: "Weihnachten bei TheDigitalGifter | Geschenke, Fotos, Weihnachtsmann und mehr",
     description:
-      "Erstelle Weihnachtsgeschenke, KI-Weihnachtsporträts, ein Weihnachtsmann-Video, Wunschzettel, Karten und Adventsüberraschungen — persönliche digitale Weihnachtserlebnisse von TheDigitalGifter.",
+      "Erstelle Weihnachtsgeschenke, KI-Weihnachtsporträts, ein Weihnachtsmann-Video, Wunschzettel, Karten und Adventsüberraschungen · persönliche digitale Weihnachtserlebnisse von TheDigitalGifter.",
     h1: "Schenke dieses Weihnachten etwas Unvergessliches",
     lede:
-      "Entdecke Weihnachtsgeschenke, Foto-Porträts, ein Weihnachtsmann-Video, digitale Weihnachtsbäume, den Adventskalender, Weihnachtskarten und Weihnachtsgrüße — alles an einem Ort bei TheDigitalGifter.",
+      "Entdecke Weihnachtsgeschenke, Foto-Porträts, ein Weihnachtsmann-Video, digitale Weihnachtsbäume, den Adventskalender, Weihnachtskarten und Weihnachtsgrüße · alles an einem Ort bei TheDigitalGifter.",
     h2: "Weihnachtserlebnisse",
     h2Body: "Wähle unten ein Weihnachtsprodukt und erstelle in wenigen Minuten etwas Persönliches.",
     links: [
@@ -51,14 +51,14 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Finde das perfekte Weihnachtsgeschenk",
         body:
-          "Unsicher, was du schenken sollst? Der Weihnachts-Geschenke-Finder fragt, für wen du einkaufst, was diese Person mag, wie sie im Leben steht und wie viel du ausgeben möchtest. Du erhältst durchdachte Geschenkideen mit einer kurzen Begründung, warum sie passen — auch für Menschen, die scheinbar schon alles haben. Speichere Favoriten in einem Wunschzettel, wenn du bereit bist.",
+          "Unsicher, was du schenken sollst? Der Weihnachts-Geschenke-Finder fragt, für wen du einkaufst, was diese Person mag, wie sie im Leben steht und wie viel du ausgeben möchtest. Du erhältst durchdachte Geschenkideen mit einer kurzen Begründung, warum sie passen · auch für Menschen, die scheinbar schon alles haben. Speichere Favoriten in einem Wunschzettel, wenn du bereit bist.",
         linkHref: "/de/christmas/gift-finder",
         linkLabel: "Finde ein Geschenk, das wirklich ankommt",
       },
       {
         h2: "Zaubere magische Weihnachtsfotos",
         body:
-          "Lade ein klares Foto hoch und verwandle es in ein festliches Weihnachtsporträt. Erstelle Looks für Familien, Paare und Haustiere — inklusive eigener Wege für Hunde und Katzen — und lade das Ergebnis privat herunter oder nutze es für eine Weihnachtskarte.",
+          "Lade ein klares Foto hoch und verwandle es in ein festliches Weihnachtsporträt. Erstelle Looks für Familien, Paare und Haustiere · inklusive eigener Wege für Hunde und Katzen · und lade das Ergebnis privat herunter oder nutze es für eine Weihnachtskarte.",
         linkHref: "/de/christmas/photo-generator",
         linkLabel: "Verwandle dein Foto in Weihnachtsmagie",
       },
@@ -72,7 +72,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Erstelle und teile einen Weihnachtswunschzettel",
         body:
-          "Baue einen Weihnachtswunschzettel mit Produktlinks oder frei geschriebenen Wünschen. Teile einen einfachen Link mit Familie und Freunden. Betrachter können ein Geschenk reservieren, damit niemand dasselbe doppelt kauft — ohne der Person, für die der Wunschzettel ist, die Überraschung zu verraten.",
+          "Baue einen Weihnachtswunschzettel mit Produktlinks oder frei geschriebenen Wünschen. Teile einen einfachen Link mit Familie und Freunden. Betrachter können ein Geschenk reservieren, damit niemand dasselbe doppelt kauft · ohne der Person, für die der Wunschzettel ist, die Überraschung zu verraten.",
         linkHref: "/de/christmas/wishlist",
         linkLabel: "Weihnachtswunschzettel erstellen",
       },
@@ -101,11 +101,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kann der Weihnachtsmann den Namen meines Kindes sagen?",
-        a: "Du kannst mit dem Vornamen auf der Weihnachtsseite oder im Santa-Erlebnis starten und optionale Details ergänzen. Gesprochene Videos sind derzeit für Englisch und Rumänisch verfügbar — andere Sprachen folgen.",
+        a: "Du kannst mit dem Vornamen auf der Weihnachtsseite oder im Santa-Erlebnis starten und optionale Details ergänzen. Gesprochene Videos sind derzeit für Englisch und Rumänisch verfügbar · andere Sprachen folgen.",
       },
       {
         q: "Brauche ich Design-Kenntnisse?",
-        a: "Nein. Jedes Weihnachtserlebnis führt dich Schritt für Schritt — lade ein Foto hoch, beantworte ein paar Fragen oder starte mit einem Namen — und die Seite erledigt den Rest.",
+        a: "Nein. Jedes Weihnachtserlebnis führt dich Schritt für Schritt · lade ein Foto hoch, beantworte ein paar Fragen oder starte mit einem Namen · und die Seite erledigt den Rest.",
       },
       {
         q: "Ist das für digitale Geschenke, physische Geschenke oder beides?",
@@ -113,11 +113,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Funktioniert das auch auf dem Handy?",
-        a: "Ja — der Weihnachts-Hub und die Produkterlebnisse sind zuerst für Handys gebaut und funktionieren auch am Desktop.",
+        a: "Ja · der Weihnachts-Hub und die Produkterlebnisse sind zuerst für Handys gebaut und funktionieren auch am Desktop.",
       },
       {
         q: "Ist das Familienfoto privat?",
-        a: "Uploads werden genutzt, um dein Porträt oder deine Karte zu erstellen. Kinder-Erlebnisse sind privacy-first und erwarten eine Erziehungsberechtigte Person. Fertige Ergebnisse lädst du privat herunter — wir veröffentlichen deine Fotos nicht.",
+        a: "Uploads werden genutzt, um dein Porträt oder deine Karte zu erstellen. Kinder-Erlebnisse sind privacy-first und erwarten eine Erziehungsberechtigte Person. Fertige Ergebnisse lädst du privat herunter · wir veröffentlichen deine Fotos nicht.",
       },
       {
         q: "Wie lange dauert das Erstellen?",
@@ -151,7 +151,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein Weihnachts-Geschenke-Finder?",
       body:
-        "Ein Weihnachts-Geschenke-Finder ist ein geführtes Tool, das Geschenkideen basierend darauf empfiehlt, für wen du einkaufst, welche Interessen und welche Persönlichkeit diese Person hat und wie hoch dein Budget ist. Bei TheDigitalGifter beantwortest du ein paar kurze Fragen und erhältst kuratierte Ideen mit einer klaren Begründung — danach kannst du Antworten anpassen oder Ideen in einem Wunschzettel speichern.",
+        "Ein Weihnachts-Geschenke-Finder ist ein geführtes Tool, das Geschenkideen basierend darauf empfiehlt, für wen du einkaufst, welche Interessen und welche Persönlichkeit diese Person hat und wie hoch dein Budget ist. Bei TheDigitalGifter beantwortest du ein paar kurze Fragen und erhältst kuratierte Ideen mit einer klaren Begründung · danach kannst du Antworten anpassen oder Ideen in einem Wunschzettel speichern.",
     },
     sections: [
       {
@@ -168,7 +168,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Geschenke nach beschenkter Person finden",
         body:
-          "Der Geschenke-Finder deckt gängige Weihnachts-Einkaufsbeziehungen ab, damit die Empfehlungen passend bleiben. Nutze das Tool für Mama, Papa, Ehefrau, Ehemann, Freundin, Freund, Kinder, Teenager, Großeltern, Freunde, Kollegen und mehr. Eigene Landingpages je Person sind noch nicht verfügbar — starte den Finder und wähle die Person dort aus.",
+          "Der Geschenke-Finder deckt gängige Weihnachts-Einkaufsbeziehungen ab, damit die Empfehlungen passend bleiben. Nutze das Tool für Mama, Papa, Ehefrau, Ehemann, Freundin, Freund, Kinder, Teenager, Großeltern, Freunde, Kollegen und mehr. Eigene Landingpages je Person sind noch nicht verfügbar · starte den Finder und wähle die Person dort aus.",
         list: [
           "Mama",
           "Papa",
@@ -186,7 +186,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Weihnachtsgeschenke nach Budget finden",
         body:
-          "Wähle einen Budgetrahmen wie unter 25 €, 25–50 €, 50–100 €, 100–200 €, 200 €+ oder ohne festes Budget. Die Empfehlungen sind Geschenkideen mit typischen Preisspannen — keine Live-Bestände oder garantierte Verfügbarkeit bei Händlern.",
+          "Wähle einen Budgetrahmen wie unter 25 €, 25–50 €, 50–100 €, 100–200 €, 200 €+ oder ohne festes Budget. Die Empfehlungen sind Geschenkideen mit typischen Preisspannen · keine Live-Bestände oder garantierte Verfügbarkeit bei Händlern.",
       },
       {
         h2: "Geschenke für Menschen, die schon alles haben",
@@ -228,7 +228,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Zeigt das Tool echte Produkte an?",
-        a: "Heute zeigt der Finder kuratierte Geschenkideen mit typischen Preisspannen. Live-Preise, Verfügbarkeit und Shop-Feeds sind noch nicht angebunden — wir erfinden keine genauen Lagerbestände oder Händlerpreise.",
+        a: "Heute zeigt der Finder kuratierte Geschenkideen mit typischen Preisspannen. Live-Preise, Verfügbarkeit und Shop-Feeds sind noch nicht angebunden · wir erfinden keine genauen Lagerbestände oder Händlerpreise.",
       },
     ],
   },
@@ -276,7 +276,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Doppelte Weihnachtsgeschenke vermeiden",
         body:
-          "Betrachter können auf „Das kaufe ich“ tippen, um ein Geschenk zu reservieren. Reservierungen bleiben für die Person, für die der Wunschzettel ist, anonym — so bleibt die Überraschung erhalten, während die Familie vermeidet, dasselbe doppelt zu kaufen.",
+          "Betrachter können auf „Das kaufe ich“ tippen, um ein Geschenk zu reservieren. Reservierungen bleiben für die Person, für die der Wunschzettel ist, anonym · so bleibt die Überraschung erhalten, während die Familie vermeidet, dasselbe doppelt zu kaufen.",
       },
       {
         h2: "Weihnachtswunschzettel für Kinder und Familien",
@@ -297,7 +297,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kann ich Wünsche auch ohne Link hinzufügen?",
-        a: "Ja. Schreibe jeden beliebigen Wunsch — Erlebnisse, selbstgemachte Ideen oder ein einfaches „Überrasch mich“.",
+        a: "Ja. Schreibe jeden beliebigen Wunsch · Erlebnisse, selbstgemachte Ideen oder ein einfaches „Überrasch mich“.",
       },
       {
         q: "Kann ich einen Wunschzettel-Link teilen?",
@@ -347,7 +347,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein KI-Weihnachtsfoto-Generator?",
       body:
-        "Ein KI-Weihnachtsfoto-Generator verwandelt ein hochgeladenes Foto in ein festliches Weihnachtsporträt. Bei TheDigitalGifter wählst du, wer auf dem Foto zu sehen ist, entscheidest dich für einen Weihnachtsstil und erstellst ein herunterladbares Porträt für Familie, Paare, Personen oder Haustiere — standardmäßig privat.",
+        "Ein KI-Weihnachtsfoto-Generator verwandelt ein hochgeladenes Foto in ein festliches Weihnachtsporträt. Bei TheDigitalGifter wählst du, wer auf dem Foto zu sehen ist, entscheidest dich für einen Weihnachtsstil und erstellst ein herunterladbares Porträt für Familie, Paare, Personen oder Haustiere · standardmäßig privat.",
     },
     sections: [
       {
@@ -360,11 +360,11 @@ export const CHRISTMAS_SEO_CONTENT = {
         body:
           "Demo-Beispiele zeigen gängige Richtungen für Weihnachtsporträts. Es handelt sich um Inspirationsbeispiele, nicht um Kundenfotos.",
         list: [
-          "Familien-Weihnachtsfoto — ein Gruppenporträt in gemütlicher Weihnachtsszene",
-          "Paar-Weihnachtsporträt — ein romantisches Winterporträt von zwei Personen",
-          "Hunde-Weihnachtsporträt — ein festliches Porträt mit Fokus auf den Hund",
-          "Katzen-Weihnachtsporträt — ein festliches Porträt mit Fokus auf die Katze",
-          "Familie + Haustier — Menschen und ein Haustier in einem gemeinsamen Weihnachtsbild",
+          "Familien-Weihnachtsfoto · ein Gruppenporträt in gemütlicher Weihnachtsszene",
+          "Paar-Weihnachtsporträt · ein romantisches Winterporträt von zwei Personen",
+          "Hunde-Weihnachtsporträt · ein festliches Porträt mit Fokus auf den Hund",
+          "Katzen-Weihnachtsporträt · ein festliches Porträt mit Fokus auf die Katze",
+          "Familie + Haustier · Menschen und ein Haustier in einem gemeinsamen Weihnachtsbild",
         ],
       },
       {
@@ -380,7 +380,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Weihnachtsfotos für Familien, Paare und Haustiere",
         body:
-          "Suchst du einen gezielteren Einstieg? Nutze die eigenen Wege für Familie, Paare, Haustiere, Hunde und Katzen — oder bleib hier für den vollständigen Foto-Generator.",
+          "Suchst du einen gezielteren Einstieg? Nutze die eigenen Wege für Familie, Paare, Haustiere, Hunde und Katzen · oder bleib hier für den vollständigen Foto-Generator.",
         list: [
           "Familien-Weihnachtsporträts → /de/christmas/family",
           "Weihnachtsporträts für Paare → /de/christmas/couples",
@@ -394,7 +394,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Wie funktioniert der Weihnachtsfoto-Generator?",
-        a: "Lade ein Foto hoch, wähle, wer darauf zu sehen ist, entscheide dich für einen Weihnachtsstil und erstelle dein Porträt — je nach Ablauf nach dem Bezahlvorgang.",
+        a: "Lade ein Foto hoch, wähle, wer darauf zu sehen ist, entscheide dich für einen Weihnachtsstil und erstelle dein Porträt · je nach Ablauf nach dem Bezahlvorgang.",
       },
       {
         q: "Welches Foto sollte ich hochladen?",
@@ -450,13 +450,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein Familien-Weihnachtsfoto-Generator?",
       body:
-        "Ein Familien-Weihnachtsfoto-Generator verwandelt ein hochgeladenes Familienfoto in ein festliches Gruppen-Weihnachtsporträt. Bei TheDigitalGifter lädst du ein klares Foto deiner Familie hoch, wählst einen für mehrere Personen geeigneten Weihnachtsstil und erstellst ein herunterladbares Porträt — standardmäßig privat, mit der Option, direkt in eine Weihnachtskarte weiterzugehen.",
+        "Ein Familien-Weihnachtsfoto-Generator verwandelt ein hochgeladenes Familienfoto in ein festliches Gruppen-Weihnachtsporträt. Bei TheDigitalGifter lädst du ein klares Foto deiner Familie hoch, wählst einen für mehrere Personen geeigneten Weihnachtsstil und erstellst ein herunterladbares Porträt · standardmäßig privat, mit der Option, direkt in eine Weihnachtskarte weiterzugehen.",
     },
     sections: [
       {
         h2: "Erstelle ein Familien-Weihnachtsporträt",
         body:
-          "Dieses Erlebnis ist speziell für Familien gebaut — kein generischer Einzelperson-Look. Lade ein Gruppenfoto hoch, wähle eine Weihnachtsstimmung und erstelle ein Porträt, das darauf abzielt, alle im Bild zu behalten.",
+          "Dieses Erlebnis ist speziell für Familien gebaut · kein generischer Einzelperson-Look. Lade ein Gruppenfoto hoch, wähle eine Weihnachtsstimmung und erstelle ein Porträt, das darauf abzielt, alle im Bild zu behalten.",
       },
       {
         h2: "Beispiele für Familien-Weihnachtsfotos",
@@ -508,7 +508,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Können Großeltern dabei sein?",
-        a: "Ja. Mehrgenerationen-Fotos — inklusive Großeltern und Babys — sind willkommen, solange die Gesichter sichtbar sind.",
+        a: "Ja. Mehrgenerationen-Fotos · inklusive Großeltern und Babys · sind willkommen, solange die Gesichter sichtbar sind.",
       },
       {
         q: "Kann ich ein Haustier der Familie einbeziehen?",
@@ -539,7 +539,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       "Erstelle ein romantisches Weihnachtsporträt für Paare aus eurem Foto. Perfekt für das erste gemeinsame Weihnachten oder als persönliches Geschenk für zwei.",
     h1: "Erschaffe zusammen ein magisches Weihnachtsporträt",
     lede:
-      "Lade ein Foto von euch beiden hoch und erstelle ein romantisches Weihnachtsporträt für Paare — standardmäßig privat.",
+      "Lade ein Foto von euch beiden hoch und erstelle ein romantisches Weihnachtsporträt für Paare · standardmäßig privat.",
     h2: "Weitere Weihnachtsporträts",
     links: [
       { href: "/de/christmas/photo-generator", label: "KI-Weihnachtsfoto-Generator" },
@@ -561,11 +561,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Erschafft gemeinsam ein Weihnachtsporträt",
         body:
-          "Dieses Erlebnis ist für zwei Personen gedacht — Partner, Verlobte, Ehepaare oder Freund und Freundin. Lade ein Foto hoch, auf dem ihr beide gut sichtbar seid, wähle einen weihnachtlichen Look und erstelle ein Porträt genau für euch zwei.",
+          "Dieses Erlebnis ist für zwei Personen gedacht · Partner, Verlobte, Ehepaare oder Freund und Freundin. Lade ein Foto hoch, auf dem ihr beide gut sichtbar seid, wähle einen weihnachtlichen Look und erstelle ein Porträt genau für euch zwei.",
       },
       {
         h2: "Ideen für Weihnachtsfotos zu zweit",
-        body: "Anwendungsfälle, für die dieses Porträt oft passt — als Inspiration, nicht als eigene Produktmodi:",
+        body: "Anwendungsfälle, für die dieses Porträt oft passt · als Inspiration, nicht als eigene Produktmodi:",
         list: [
           "Erstes gemeinsames Weihnachten",
           "Weihnachtsporträt für Verlobte",
@@ -608,7 +608,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Bleiben beide Personen erkennbar?",
-        a: "Das ist das Ziel. Beginne mit einem klaren Foto beider Gesichter — vermeide starke Unschärfe oder eine Person, die größtenteils außerhalb des Bildes ist.",
+        a: "Das ist das Ziel. Beginne mit einem klaren Foto beider Gesichter · vermeide starke Unschärfe oder eine Person, die größtenteils außerhalb des Bildes ist.",
       },
       {
         q: "Kann ich ein romantisches Weihnachtsporträt erstellen?",
@@ -635,7 +635,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/pets": {
     title: "Weihnachtsfoto-Generator für Haustiere | Festliche Tierporträts",
-    description: "Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen — standardmäßig privat.",
+    description: "Verwandle das Foto deines Haustiers in ein festliches Weihnachtsporträt. Hunde und Katzen willkommen · standardmäßig privat.",
     h1: "Verwandle dein Haustier in Weihnachtsmagie",
     lede: "Lade ein klares Foto deines Haustiers hoch und erstelle ein festliches Weihnachts-Tierporträt für Hunde oder Katzen.",
     h2: "Tierartspezifische Weihnachtsporträts",
@@ -659,12 +659,12 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Verwandle dein Haustier in Weihnachtsmagie",
         body:
-          "Lade ein klares Foto deines Haustiers hoch, wähle einen Weihnachtsstil für Tiere und erstelle ein festliches Porträt des Tieres, das du liebst. Dies ist die allgemeine Anlaufstelle für Haustiere — kein spezielles Comic-Set.",
+          "Lade ein klares Foto deines Haustiers hoch, wähle einen Weihnachtsstil für Tiere und erstelle ein festliches Porträt des Tieres, das du liebst. Dies ist die allgemeine Anlaufstelle für Haustiere · kein spezielles Comic-Set.",
       },
       {
         h2: "Weihnachtsporträts für Hunde und Katzen",
         body:
-          "Möchtest du einen klareren Einstieg für eine Tierart? Nutze die spezialisierten Wege für Hund oder Katze — sie helfen bei der Fotoprüfung und halten das Erlebnis hund- oder katzenspezifisch.",
+          "Möchtest du einen klareren Einstieg für eine Tierart? Nutze die spezialisierten Wege für Hund oder Katze · sie helfen bei der Fotoprüfung und halten das Erlebnis hund- oder katzenspezifisch.",
         list: [
           "Weihnachtsfoto-Generator für Hunde → /de/christmas/dogs",
           "Weihnachtsfoto-Generator für Katzen → /de/christmas/cats",
@@ -749,7 +749,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein Weihnachtsfoto-Generator für Hunde?",
       body:
-        "Ein Weihnachtsfoto-Generator für Hunde erstellt aus einem Foto deines Hundes ein festliches Weihnachtsporträt. Bei TheDigitalGifter lädst du ein klares Hundefoto hoch, wählst einen weihnachtlichen Tierstil und lädst ein hundefokussiertes Winterporträt herunter — mit optionalem Weg zu einer Weihnachtskarte.",
+        "Ein Weihnachtsfoto-Generator für Hunde erstellt aus einem Foto deines Hundes ein festliches Weihnachtsporträt. Bei TheDigitalGifter lädst du ein klares Hundefoto hoch, wählst einen weihnachtlichen Tierstil und lädst ein hundefokussiertes Winterporträt herunter · mit optionalem Weg zu einer Weihnachtskarte.",
     },
     sections: [
       {
@@ -759,7 +759,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Beispiele für Hunde-Weihnachtsporträts",
-        body: "Demo-Richtungen für Hunde-Weihnachtsporträts — Inspirationsbeispiele, keine Kundenfotos.",
+        body: "Demo-Richtungen für Hunde-Weihnachtsporträts · Inspirationsbeispiele, keine Kundenfotos.",
         list: [
           "Hund neben einem geschmückten Weihnachtsbaum",
           "Gemütliches Kamin-Weihnachtsporträt mit Hund",
@@ -856,7 +856,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Beispiele für Katzen-Weihnachtsporträts",
-        body: "Demo-Richtungen mit Katzen — Inspirationsbeispiele, keine Kundenfotos.",
+        body: "Demo-Richtungen mit Katzen · Inspirationsbeispiele, keine Kundenfotos.",
         list: [
           "Katze am Weihnachtsbaum",
           "Gemütliches Kamin-Weihnachtsporträt mit Katze",
@@ -944,18 +944,18 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein persönliches Weihnachtsmann-Video?",
       body:
-        "Ein persönliches Weihnachtsmann-Video ist eine Weihnachtsbotschaft vom Weihnachtsmann, die den Namen der beschenkten Person und weitere von dir angegebene Details enthalten kann. Bei TheDigitalGifter beantwortest du ein kurzes geführtes Formular, prüfst die Nachricht und erstellst dann ein Video, das du herunterladen und teilen kannst. Die Personalisierung mit Namen funktioniert unabhängig von der gesprochenen Sprache — gesprochene Videos sind derzeit auf Englisch und Rumänisch verfügbar.",
+        "Ein persönliches Weihnachtsmann-Video ist eine Weihnachtsbotschaft vom Weihnachtsmann, die den Namen der beschenkten Person und weitere von dir angegebene Details enthalten kann. Bei TheDigitalGifter beantwortest du ein kurzes geführtes Formular, prüfst die Nachricht und erstellst dann ein Video, das du herunterladen und teilen kannst. Die Personalisierung mit Namen funktioniert unabhängig von der gesprochenen Sprache · gesprochene Videos sind derzeit auf Englisch und Rumänisch verfügbar.",
     },
     sections: [
       {
         h2: "Eine persönliche Nachricht vom Weihnachtsmann",
         body:
-          "Erstelle ein Weihnachtsvideo vom Weihnachtsmann für ein Kind, Geschwister, die Familie oder eine besondere Person. Der Weihnachtsmann kann den Namen sagen und optionale Details einbauen, die du mitteilst — danach lädst du das fertige Video herunter oder teilst es.",
+          "Erstelle ein Weihnachtsvideo vom Weihnachtsmann für ein Kind, Geschwister, die Familie oder eine besondere Person. Der Weihnachtsmann kann den Namen sagen und optionale Details einbauen, die du mitteilst · danach lädst du das fertige Video herunter oder teilst es.",
       },
       {
         h2: "Was kann der Weihnachtsmann erwähnen?",
         body:
-          "Du kannst mit dem Namen der beschenkten Person, optionalem Alter, etwas, das sie gut gemacht hat, einem Weihnachtswunsch, einem zusätzlichen Detail (wie einem Haustier oder Hobby) und der Sprache des Weihnachtsmanns personalisieren. Gesprochene Videos werden derzeit auf Englisch und Rumänisch angeboten — die Namenspersonalisierung selbst ist davon unabhängig.",
+          "Du kannst mit dem Namen der beschenkten Person, optionalem Alter, etwas, das sie gut gemacht hat, einem Weihnachtswunsch, einem zusätzlichen Detail (wie einem Haustier oder Hobby) und der Sprache des Weihnachtsmanns personalisieren. Gesprochene Videos werden derzeit auf Englisch und Rumänisch angeboten · die Namenspersonalisierung selbst ist davon unabhängig.",
         list: [
           "Name der beschenkten Person",
           "Optionales Alter",
@@ -1003,7 +1003,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kann der Weihnachtsmann ein Weihnachtsgeschenk erwähnen?",
-        a: "Ja — du kannst einen Weihnachtswunsch angeben, den der Weihnachtsmann erwähnen kann, wenn du einen hinzufügst.",
+        a: "Ja · du kannst einen Weihnachtswunsch angeben, den der Weihnachtsmann erwähnen kann, wenn du einen hinzufügst.",
       },
       {
         q: "Kann ich ein Video für Geschwister erstellen?",
@@ -1040,7 +1040,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein digitaler Weihnachtsbaum?",
       body:
-        "Ein digitaler Weihnachtsbaum ist ein interaktiver Online-Weihnachtsbaum, den du gestalten und teilen kannst. Bei TheDigitalGifter wählst du einen Baum-Look, fügst Schmuck hinzu, platzierst Geschenkboxen mit persönlichen Nachrichten darunter und teilst einen privaten Link, damit eine besondere Person die Geschenke am Bildschirm öffnen kann — ohne dass die Teilenseite zu einem öffentlichen Suchergebnis wird.",
+        "Ein digitaler Weihnachtsbaum ist ein interaktiver Online-Weihnachtsbaum, den du gestalten und teilen kannst. Bei TheDigitalGifter wählst du einen Baum-Look, fügst Schmuck hinzu, platzierst Geschenkboxen mit persönlichen Nachrichten darunter und teilst einen privaten Link, damit eine besondere Person die Geschenke am Bildschirm öffnen kann · ohne dass die Teilenseite zu einem öffentlichen Suchergebnis wird.",
     },
     sections: [
       {
@@ -1051,7 +1051,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Was kannst du unter deinen Baum legen?",
         body:
-          "Aktuell kannst du Geschenkboxen mit persönlichen Weihnachtsnachrichten hinzufügen. Jedes Geschenk kann einen festlichen Boxstil wie Rot, Gold, Grün, Blau oder Schnee nutzen. Weitere Geschenktypen können später ergänzt werden — der aktuelle Ersteller konzentriert sich auf Nachrichten-Geschenke.",
+          "Aktuell kannst du Geschenkboxen mit persönlichen Weihnachtsnachrichten hinzufügen. Jedes Geschenk kann einen festlichen Boxstil wie Rot, Gold, Grün, Blau oder Schnee nutzen. Weitere Geschenktypen können später ergänzt werden · der aktuelle Ersteller konzentriert sich auf Nachrichten-Geschenke.",
         list: ["Persönliche Weihnachtsnachrichten in Geschenkboxen", "Festliche Boxstile (Rot, Gold, Grün, Blau, Schnee)"],
       },
       {
@@ -1062,7 +1062,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Ein Weihnachtsgeschenk zum Öffnen",
         body:
-          "Empfänger können auf Geschenke unter dem Baum tippen, um die Nachrichten zu sehen, die du hinterlassen hast — ein digitaler Moment, der sich anfühlen soll wie das Öffnen von etwas, das eigens für sie dort platziert wurde.",
+          "Empfänger können auf Geschenke unter dem Baum tippen, um die Nachrichten zu sehen, die du hinterlassen hast · ein digitaler Moment, der sich anfühlen soll wie das Öffnen von etwas, das eigens für sie dort platziert wurde.",
       },
       {
         h2: "So funktioniert es",
@@ -1107,7 +1107,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Brauche ich ein Konto?",
-        a: "Du kannst ohne aufwendige Einrichtung mit dem Bauen beginnen — die Zuordnung erfolgt über die Erstellersitzung, damit du weiter bearbeiten kannst.",
+        a: "Du kannst ohne aufwendige Einrichtung mit dem Bauen beginnen · die Zuordnung erfolgt über die Erstellersitzung, damit du weiter bearbeiten kannst.",
       },
       {
         q: "Ist der geteilte Baum öffentlich?",
@@ -1141,7 +1141,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Ein bisschen Weihnachtsmagie an jedem Tag",
         body:
-          "Der Adventskalender ist ein Countdown-Erlebnis mit vierundzwanzig Türchen. Jeder Tag im Dezember hat sein eigenes Türchen — ein kleines Ritual, in dem man in der Vorweihnachtszeit jeden Tag etwas Neues öffnet.",
+          "Der Adventskalender ist ein Countdown-Erlebnis mit vierundzwanzig Türchen. Jeder Tag im Dezember hat sein eigenes Türchen · ein kleines Ritual, in dem man in der Vorweihnachtszeit jeden Tag etwas Neues öffnet.",
       },
       {
         h2: "Öffne jeden Tag ein neues Türchen",
@@ -1151,7 +1151,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Was kann sich hinter den Türchen verbergen?",
         body:
-          "Türchen-Belohnungen sind Weihnachtsmomente, die für die Saison konfiguriert sind — etwa eine Überraschung zum Einlösen, wenn Aktionen aktiv sind. Die Verfügbarkeit kann von Saison-Einstellungen und davon abhängen, ob du angemeldet bist.",
+          "Türchen-Belohnungen sind Weihnachtsmomente, die für die Saison konfiguriert sind · etwa eine Überraschung zum Einlösen, wenn Aktionen aktiv sind. Die Verfügbarkeit kann von Saison-Einstellungen und davon abhängen, ob du angemeldet bist.",
       },
       {
         h2: "Vor dem 1. Dezember",
@@ -1184,7 +1184,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kann ich frühere Türchen öffnen?",
-        a: "Nein. Verpasste Tage bleiben geschlossen — nur das heutige Türchen ist verfügbar.",
+        a: "Nein. Verpasste Tage bleiben geschlossen · nur das heutige Türchen ist verfügbar.",
       },
       {
         q: "Ist der Kalender kostenlos?",
@@ -1192,7 +1192,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Was kann ich hinter einem Türchen finden?",
-        a: "Saisonale Weihnachtsüberraschungen, die für den jeweiligen Tag konfiguriert sind, wenn Aktionen aktiv sind — keine Garantie auf Bargeldpreise oder Shop-Guthaben an jedem Tag.",
+        a: "Saisonale Weihnachtsüberraschungen, die für den jeweiligen Tag konfiguriert sind, wenn Aktionen aktiv sind · keine Garantie auf Bargeldpreise oder Shop-Guthaben an jedem Tag.",
       },
       {
         q: "Brauche ich ein Konto?",
@@ -1212,7 +1212,7 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas/cards": {
     title: "Weihnachtskarten-Ersteller | Persönliche Weihnachtskarten",
     description:
-      "Erstelle eine persönliche Weihnachtskarte, die man aufheben möchte — wähle ein Design, füge deine Nachricht hinzu und teile oder lade sie herunter.",
+      "Erstelle eine persönliche Weihnachtskarte, die man aufheben möchte · wähle ein Design, füge deine Nachricht hinzu und teile oder lade sie herunter.",
     h1: "Erstelle eine Weihnachtskarte, die man aufheben möchte",
     lede:
       "Gestalte eine persönliche Weihnachtskarte mit festlichen Layouts und deiner eigenen Nachricht. Manche Botschaften verdienen mehr als eine Textnachricht.",
@@ -1236,7 +1236,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Erstelle eine persönliche Weihnachtskarte",
         body:
-          "Wähle einen Weihnachtskarten-Stil, füge dein Foto hinzu, schreibe eine Nachricht und erstelle eine digitale Karte, die du herunterladen oder teilen kannst. Manche Botschaften verdienen mehr als eine Textnachricht — genau dafür ist das gemacht.",
+          "Wähle einen Weihnachtskarten-Stil, füge dein Foto hinzu, schreibe eine Nachricht und erstelle eine digitale Karte, die du herunterladen oder teilen kannst. Manche Botschaften verdienen mehr als eine Textnachricht · genau dafür ist das gemacht.",
       },
       {
         h2: "Beispiele für Weihnachtskarten",
@@ -1284,7 +1284,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Gibt es auch deutsche Nachrichtenvorlagen?",
-        a: "Noch nicht direkt im Assistenten — dieser deckt heute Englisch und Rumänisch ab. Du kannst deine deutsche Nachricht aber jederzeit frei eingeben und mit einem festlichen Design kombinieren.",
+        a: "Noch nicht direkt im Assistenten · dieser deckt heute Englisch und Rumänisch ab. Du kannst deine deutsche Nachricht aber jederzeit frei eingeben und mit einem festlichen Design kombinieren.",
       },
       {
         q: "Kann ich eine Familienkarte erstellen?",
@@ -1308,10 +1308,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas/messages": {
     title: "Weihnachtsnachrichten-Generator | Grüße für Familie & Freunde",
     description:
-      "Finde die perfekte Weihnachtsbotschaft für Familie, Freunde und Kollegen — und nutze sie dann in einer persönlichen Weihnachtskarte.",
+      "Finde die perfekte Weihnachtsbotschaft für Familie, Freunde und Kollegen · und nutze sie dann in einer persönlichen Weihnachtskarte.",
     h1: "Finde die perfekte Weihnachtsbotschaft",
     lede:
-      "Lerne, wie unser Weihnachtsnachrichten-Generator herzliche, witzige, romantische oder professionelle Grüße erstellt — heute auf Englisch und Rumänisch, dann setze deine deutsche Botschaft in eine Weihnachtskarte.",
+      "Lerne, wie unser Weihnachtsnachrichten-Generator herzliche, witzige, romantische oder professionelle Grüße erstellt · heute auf Englisch und Rumänisch, dann setze deine deutsche Botschaft in eine Weihnachtskarte.",
     h2: "Verwandle Worte in eine Karte",
     links: [
       { href: "/de/christmas/cards", label: "Weihnachtskarten-Ersteller" },
@@ -1326,18 +1326,18 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Was ist ein Weihnachtsnachrichten-Generator?",
       body:
-        "Ein Weihnachtsnachrichten-Generator hilft dir, Weihnachtsgrüße zu schreiben, indem du auswählst, für wen die Nachricht ist und welchen Ton du möchtest — danach werden bearbeitbare Textvorschläge erstellt. Bei TheDigitalGifter funktioniert der generierte Text heute auf Englisch und Rumänisch; diese Seite erklärt das Konzept, damit du die Idee auf Deutsch selbst umsetzen oder auf zukünftige Sprachunterstützung warten kannst.",
+        "Ein Weihnachtsnachrichten-Generator hilft dir, Weihnachtsgrüße zu schreiben, indem du auswählst, für wen die Nachricht ist und welchen Ton du möchtest · danach werden bearbeitbare Textvorschläge erstellt. Bei TheDigitalGifter funktioniert der generierte Text heute auf Englisch und Rumänisch; diese Seite erklärt das Konzept, damit du die Idee auf Deutsch selbst umsetzen oder auf zukünftige Sprachunterstützung warten kannst.",
     },
     sections: [
       {
         h2: "So funktioniert der Weihnachtsnachrichten-Generator",
         body:
-          "Wähle eine beschenkte Person, entscheide dich für einen Ton, lege eine Länge fest (kurz, mittel oder lang), füge optional ein persönliches Detail hinzu und erhalte Textvorschläge, die du bearbeiten und verwenden kannst. Die generierten Vorschläge liegen heute auf Englisch und Rumänisch vor — praktisch als Struktur- und Ideenvorlage, die du auf Deutsch selbst ausformulierst.",
+          "Wähle eine beschenkte Person, entscheide dich für einen Ton, lege eine Länge fest (kurz, mittel oder lang), füge optional ein persönliches Detail hinzu und erhalte Textvorschläge, die du bearbeiten und verwenden kannst. Die generierten Vorschläge liegen heute auf Englisch und Rumänisch vor · praktisch als Struktur- und Ideenvorlage, die du auf Deutsch selbst ausformulierst.",
       },
       {
         h2: "Weihnachtsgrüße nach Empfänger",
         body:
-          "Der Generator deckt gängige Weihnachtsbeziehungen ab. Starte das Tool und wähle, an wen du schreibst — eigene Landingpages je Empfänger sind noch nicht verfügbar.",
+          "Der Generator deckt gängige Weihnachtsbeziehungen ab. Starte das Tool und wähle, an wen du schreibst · eigene Landingpages je Empfänger sind noch nicht verfügbar.",
         list: ["Mama", "Papa", "Ehefrau", "Ehemann", "Freundin", "Freund", "Familie", "Freund/in", "Kollege/in"],
       },
       {
@@ -1348,7 +1348,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Beispiele für Weihnachtsgrüße",
         body:
-          "Demo-Richtungen für die Art von Wünschen, bei denen das Tool helfen kann — passe alles an, damit es nach dir klingt und auf Deutsch stimmt.",
+          "Demo-Richtungen für die Art von Wünschen, bei denen das Tool helfen kann · passe alles an, damit es nach dir klingt und auf Deutsch stimmt.",
         list: [
           "Herzliche Zeilen für Mama, die ein weiteres Jahr stiller Fürsorge würdigen",
           "Kurzer warmer Gruß für eine Freundin, die du zu selten siehst",
@@ -1359,7 +1359,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "So schreibst du eine bedeutungsvolle Weihnachtsbotschaft",
         body:
-          "Sprich die Person mit Namen oder Beziehung an, erwähne eine gemeinsame Erinnerung oder Eigenschaft, wenn sie passt, drücke ein klares Gefühl aus, halte die Sprache natürlich und schließe persönlich. Der Generator ist ein Ausgangspunkt — deine eigene deutsche Formulierung macht ihn echt.",
+          "Sprich die Person mit Namen oder Beziehung an, erwähne eine gemeinsame Erinnerung oder Eigenschaft, wenn sie passt, drücke ein klares Gefühl aus, halte die Sprache natürlich und schließe persönlich. Der Generator ist ein Ausgangspunkt · deine eigene deutsche Formulierung macht ihn echt.",
       },
       {
         h2: "Nutze deine Botschaft in einer Weihnachtskarte",
@@ -1383,7 +1383,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Kann es witzige Weihnachtsbotschaften erstellen?",
-        a: "Ja. Wähle den witzigen Ton — halte Kollegen-Nachrichten dabei professionell.",
+        a: "Ja. Wähle den witzigen Ton · halte Kollegen-Nachrichten dabei professionell.",
       },
       {
         q: "Kann ich generierte Nachrichten bearbeiten?",

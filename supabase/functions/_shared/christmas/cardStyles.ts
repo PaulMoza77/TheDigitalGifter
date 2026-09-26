@@ -100,7 +100,7 @@ export function getCardLayout(key: string) {
   return CARD_LAYOUTS.find((l) => l.key === key) || CARD_LAYOUTS[0];
 }
 
-/** Pure text wrap for canvas/tests — no DOM. */
+/** Pure text wrap for canvas/tests · no DOM. */
 export function wrapTextLines(
   text: string,
   maxCharsPerLine: number,

@@ -162,7 +162,7 @@ export default function ChristmasWishlistPage() {
     setMyReservations(readReservations());
   }, []);
 
-  // Localize the create-form default title when locale changes — never rewrite user/server titles.
+  // Localize the create-form default title when locale changes · never rewrite user/server titles.
   useEffect(() => {
     const knownDefaults = [
       "en",
@@ -667,7 +667,7 @@ export default function ChristmasWishlistPage() {
       <div className="wl-glow wl-glow--gold" aria-hidden />
 
       <div className="wl-shell">
-        {/* ——— Shared public view ——— */}
+        {/* --- Shared public view --- */}
         {isShare ? (
           <>
             <header className="wl-brand">
@@ -788,7 +788,7 @@ export default function ChristmasWishlistPage() {
           </>
         ) : null}
 
-        {/* ——— Owner / landing ——— */}
+        {/* --- Owner / landing --- */}
         {!isShare ? (
           <>
             {!owner ? (

@@ -20,7 +20,7 @@ export function HeroProof({ species }: { species: PetSpecies }) {
               <SceneImage
                 sceneId={id}
                 species={species}
-                alt={`${mixedOtherGalleryLabel()} — ${id.replace("-", " ")} example`}
+                alt={`${mixedOtherGalleryLabel()} · ${id.replace("-", " ")} example`}
                 eager={index === 0}
                 className="aspect-[3/4] h-full w-full object-cover"
               />

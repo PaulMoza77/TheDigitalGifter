@@ -3,7 +3,7 @@
 **Task:** `tdg-christmas-photo-generator-003`  
 **Route:** `/christmas/photo-generator`
 
-> Portrait verticals (family / couples / pets / dogs / cats) reuse this engine — see `docs/TDG_CHRISTMAS_PORTRAIT_VERTICALS.md`.
+> Portrait verticals (family / couples / pets / dogs / cats) reuse this engine · see `docs/TDG_CHRISTMAS_PORTRAIT_VERTICALS.md`.
 >
 > Hub UI rebuild: `src/features/christmas/photoGenerator/` (premium landing + creation). Shared logic: `useChristmasPortraitFunnel.ts`.
 
@@ -23,7 +23,7 @@ Intro → Upload → Style → **Blurred ORIGINAL preview** → Offer → Embedd
 - Source: user original upload only
 - Method: canvas `blur()` + obscuring veil + “Preview · your photo” label
 - **Replicate calls before payment: 0** (enforced in code + tests)
-- Copy: “Your Christmas transformation is ready to create” — does not claim finished AI result
+- Copy: “Your Christmas transformation is ready to create” · does not claim finished AI result
 
 ## Styles
 
@@ -44,7 +44,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 - Gate: `payment_status === paid` required (402 otherwise)
 - Model default: `black-forest-labs/flux-kontext-pro`
 - Mock: `CHRISTMAS_GENERATION_MOCK=true` copies source to result bucket for pipeline proof
-- Cost: estimated `$0.04` tariff snapshot stored on order metadata (`cost_state: estimated`) — pet `ai_cost_ledger` remains pet-scoped
+- Cost: estimated `$0.04` tariff snapshot stored on order metadata (`cost_state: estimated`) · pet `ai_cost_ledger` remains pet-scoped
 
 ## Storage / privacy
 
@@ -52,7 +52,7 @@ V1: classic_christmas, winter_wonderland, santas_workshop, cozy_fireplace, elega
 - Results via short-lived signed URLs (**~15 min**)
 - Default private; share uses Web Share API / file share (no public result page in V1)
 - Generation provider (Replicate / Flux Kontext Pro) receives the source image only after paid generation
-- **Retention:** paid sources kept for order recovery; unpaid `uploads/` purge is a documented ops seam (**not implemented yet**) — privacy copy must not claim automatic deletion after generation
+- **Retention:** paid sources kept for order recovery; unpaid `uploads/` purge is a documented ops seam (**not implemented yet**) · privacy copy must not claim automatic deletion after generation
 - Analytics never send image bytes, emails, or source paths
 
 ## Hub rebuild notes (structure / conversion)
@@ -93,12 +93,12 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 ## Migrations
 
 1. Remote history alignment: `20260827180000`–`20260831190000` (fetched/quarantined)
-2. `20260902105000_quarantine_legacy_christmas_v2_schema.sql` — renames conflicting V2 prototype tables to `christmas_v2_*` (5 test rows preserved; no paid customers)
+2. `20260902105000_quarantine_legacy_christmas_v2_schema.sql` · renames conflicting V2 prototype tables to `christmas_v2_*` (5 test rows preserved; no paid customers)
 3. `20260902120000_christmas_commerce_foundation.sql`
 4. `20260902140000_christmas_photo_generator.sql`
-5. `20260902150000_christmas_claim_requires_paid.sql` — claim RPC requires `payment_status=paid`
+5. `20260902150000_christmas_claim_requires_paid.sql` · claim RPC requires `payment_status=paid`
 
-**Production apply status (project `kjlsocejpmnzhhduyumy`):** APPLIED — verified via `supabase migration list` (local=remote for all four `20260902*`) and table/catalog checks (`christmas_products`/`packages`/`styles`/`orders` commerce schema present; package `christmas_photo`/`single` remains `purchasable=false`, `price_cents=0`).
+**Production apply status (project `kjlsocejpmnzhhduyumy`):** APPLIED · verified via `supabase migration list` (local=remote for all four `20260902*`) and table/catalog checks (`christmas_products`/`packages`/`styles`/`orders` commerce schema present; package `christmas_photo`/`single` remains `purchasable=false`, `price_cents=0`).
 
 **Synthetic payment proof (no Stripe charge):** `fulfill_christmas_order_payment` → paid/queued; unpaid `claim_christmas_generation_job` → `payment_required`; paid claim once; replay claim `already_running`.
 
@@ -118,5 +118,5 @@ Allowlisted events via `/api/christmas/funnel-event` including upload/style/prev
 
 - Stripe Custom Checkout Elements UI not exercised end-to-end (checkout kill-switched; no live/test charge). Payment entitlement proven via fulfill RPC + webhook code path deployed.
 - Multi-person identity quality depends on Kontext limits
-- Abandoned upload TTL cleanup is configurable seam (manual/ops) — default: keep paid sources; unpaid uploads under `uploads/` should be purged by a later retention job
+- Abandoned upload TTL cleanup is configurable seam (manual/ops) · default: keep paid sources; unpaid uploads under `uploads/` should be purged by a later retention job
 - Legacy V2 tables remain as `christmas_v2_*` quarantine (not used by Photo Generator V1)

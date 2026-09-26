@@ -42,7 +42,7 @@ async function edge(action, body) {
 const results = [];
 function rec(name, ok, detail) {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` · ${detail}` : ""}`);
 }
 
 const order = await edge("createOrder", {

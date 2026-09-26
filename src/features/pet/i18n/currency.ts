@@ -1,5 +1,5 @@
 /**
- * Pet presentment currencies — browser/locale detected, server-owned amounts.
+ * Pet presentment currencies · browser/locale detected, server-owned amounts.
  * Stripe charges the selected currency (not display-only FX).
  */
 
@@ -8,7 +8,7 @@ export type PetCurrency = (typeof PET_CURRENCIES)[number];
 
 export const PET_DEFAULT_CURRENCY: PetCurrency = "usd";
 
-/** Stripe zero-decimal currencies — unit_amount is whole major units. */
+/** Stripe zero-decimal currencies · unit_amount is whole major units. */
 export const PET_ZERO_DECIMAL_CURRENCIES = new Set<PetCurrency>(["huf"]);
 
 export const PET_CURRENCY_META: Record<

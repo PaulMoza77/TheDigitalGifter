@@ -1,4 +1,4 @@
-/** Pure helpers for Tree / Advent — unit-testable without DOM. */
+/** Pure helpers for Tree / Advent · unit-testable without DOM. */
 
 export const TREE_STYLES = ["classic", "snowy", "gold", "cozy", "minimal", "magical"] as const;
 export type TreeStyle = (typeof TREE_STYLES)[number];

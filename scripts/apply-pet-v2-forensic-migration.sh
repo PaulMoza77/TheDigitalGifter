@@ -72,7 +72,7 @@ if [[ "$APPLIED" != "1" && -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
     echo "Trying pooler host $HOST…"
     if command -v psql >/dev/null 2>&1; then
       if PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -c "select 1" >/dev/null 2>&1; then
-        echo "Connected via $HOST — applying forensic migration…"
+        echo "Connected via $HOST · applying forensic migration…"
         PGPASSWORD="$SUPABASE_DB_PASSWORD" psql "$CAND" -v ON_ERROR_STOP=1 -f "$MIGRATION"
         APPLIED=1
         break

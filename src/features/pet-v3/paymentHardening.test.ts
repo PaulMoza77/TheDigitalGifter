@@ -116,7 +116,7 @@ describe("Cat V3 + return URL payment hardening", () => {
     const hook = readSrc("src/features/pet-v3/useV3EmbeddedCheckout.ts");
     expect(hook).toContain("readCachedV3EmbeddedCheckout()");
     expect(hook).toContain("hydrateFromCache");
-    expect(hook).toContain("valid Elements checkout — restore without photo File");
+    expect(hook).toContain("valid Elements checkout · restore without photo File");
     expect(hook).not.toMatch(/localStorage.*photo|photo.*localStorage/i);
   });
 

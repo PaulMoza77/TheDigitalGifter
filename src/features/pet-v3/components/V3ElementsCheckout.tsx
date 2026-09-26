@@ -1,5 +1,5 @@
 /**
- * Cat V3 Stripe Elements checkout — Minutes Guides architecture.
+ * Cat V3 Stripe Elements checkout · Minutes Guides architecture.
  * Uses official loadStripe() + CheckoutElementsProvider. Does NOT use stripeLoader /
  * Dahlia script injection / window.Stripe mutation.
  */

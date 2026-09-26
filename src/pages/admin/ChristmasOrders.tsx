@@ -420,7 +420,7 @@ export default function ChristmasOrdersPage() {
           <div>
             <h2 className="text-sm font-semibold text-white">Christmas trees</h2>
             <p className="text-xs text-slate-500">
-              Aggregates only — no gift messages. Disable sharing for abuse.
+              Aggregates only · no gift messages. Disable sharing for abuse.
             </p>
           </div>
           <Button
@@ -484,7 +484,7 @@ export default function ChristmasOrdersPage() {
         <div className="mb-3 flex items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-white">Christmas wishlists</h2>
-            <p className="text-xs text-slate-500">Aggregates only — no item notes. Disable sharing for abuse.</p>
+            <p className="text-xs text-slate-500">Aggregates only · no item notes. Disable sharing for abuse.</p>
           </div>
           <Button
             variant="outline"
@@ -542,7 +542,7 @@ export default function ChristmasOrdersPage() {
           <div>
             <h2 className="text-sm font-semibold text-white">Cards &amp; messages</h2>
             <p className="text-xs text-slate-500">
-              Aggregates only — no message bodies or card photos.
+              Aggregates only · no message bodies or card photos.
             </p>
           </div>
           <Button
@@ -558,16 +558,16 @@ export default function ChristmasOrdersPage() {
           <div className="rounded border border-slate-800 p-3">
             <p className="font-medium text-white">Message generator</p>
             <p className="mt-1">
-              sessions {msgStats?.totals?.sessions ?? "—"} · completed {msgStats?.totals?.completed ?? "—"} ·
-              failed {msgStats?.totals?.failed ?? "—"} · fallback {msgStats?.totals?.fallback ?? "—"}
+              sessions {msgStats?.totals?.sessions ?? "-"} · completed {msgStats?.totals?.completed ?? "-"} ·
+              failed {msgStats?.totals?.failed ?? "-"} · fallback {msgStats?.totals?.fallback ?? "-"}
             </p>
           </div>
           <div className="rounded border border-slate-800 p-3">
             <p className="font-medium text-white">Cards</p>
             <p className="mt-1">
-              projects {cardStats?.totals?.projects ?? "—"} · rendered {cardStats?.totals?.rendered ?? "—"} ·
-              downloads {cardStats?.totals?.downloads ?? "—"} · shares {cardStats?.totals?.shares ?? "—"} ·
-              failures {cardStats?.totals?.failures ?? "—"}
+              projects {cardStats?.totals?.projects ?? "-"} · rendered {cardStats?.totals?.rendered ?? "-"} ·
+              downloads {cardStats?.totals?.downloads ?? "-"} · shares {cardStats?.totals?.shares ?? "-"} ·
+              failures {cardStats?.totals?.failures ?? "-"}
             </p>
           </div>
         </div>
@@ -672,13 +672,13 @@ export default function ChristmasOrdersPage() {
                     {new Date(row.created_at).toLocaleString()}
                   </TableCell>
                   <TableCell className="max-w-[180px] truncate text-sm">
-                    {row.email || "—"}
+                    {row.email || "-"}
                   </TableCell>
                   <TableCell className="text-sm">{row.product_key}</TableCell>
                   <TableCell className="text-sm">
-                    {[row.portrait_type, row.species].filter(Boolean).join(" · ") || "—"}
+                    {[row.portrait_type, row.species].filter(Boolean).join(" · ") || "-"}
                   </TableCell>
-                  <TableCell className="text-sm">{row.style_key || "—"}</TableCell>
+                  <TableCell className="text-sm">{row.style_key || "-"}</TableCell>
                   <TableCell className="text-sm">{row.package_key}</TableCell>
                   <TableCell className="text-sm">
                     {money(row.amount_cents, row.currency)}
@@ -690,7 +690,7 @@ export default function ChristmasOrdersPage() {
                     <Badge variant="outline">{row.fulfillment_status}</Badge>
                   </TableCell>
                   <TableCell className="max-w-[140px] truncate font-mono text-xs text-slate-400">
-                    {row.stripe_checkout_session_id || "—"}
+                    {row.stripe_checkout_session_id || "-"}
                   </TableCell>
                 </TableRow>
               ))
@@ -714,19 +714,19 @@ export default function ChristmasOrdersPage() {
             </div>
             <div>
               <dt className="text-slate-500">Paid at</dt>
-              <dd>{selected.paid_at ? new Date(selected.paid_at).toLocaleString() : "—"}</dd>
+              <dd>{selected.paid_at ? new Date(selected.paid_at).toLocaleString() : "-"}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Payment intent</dt>
-              <dd className="font-mono text-xs">{selected.stripe_payment_intent_id || "—"}</dd>
+              <dd className="font-mono text-xs">{selected.stripe_payment_intent_id || "-"}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Last error</dt>
-              <dd>{selected.last_error || "—"}</dd>
+              <dd>{selected.last_error || "-"}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Landing</dt>
-              <dd>{selected.landing_path || "—"}</dd>
+              <dd>{selected.landing_path || "-"}</dd>
             </div>
             {selected.product_key === "christmas_planner_2026" ? (
               <>
@@ -775,23 +775,23 @@ export default function ChristmasOrdersPage() {
             <div>
               <dt className="text-slate-500">UTM</dt>
               <dd>
-                {[selected.utm_source, selected.utm_campaign].filter(Boolean).join(" / ") || "—"}
+                {[selected.utm_source, selected.utm_campaign].filter(Boolean).join(" / ") || "-"}
               </dd>
             </div>
             <div>
               <dt className="text-slate-500">Portrait / species</dt>
               <dd>
-                {[selected.portrait_type, selected.species].filter(Boolean).join(" · ") || "—"}
+                {[selected.portrait_type, selected.species].filter(Boolean).join(" · ") || "-"}
               </dd>
             </div>
             <div>
               <dt className="text-slate-500">Source route</dt>
-              <dd className="font-mono text-xs">{selected.source_route || "—"}</dd>
+              <dd className="font-mono text-xs">{selected.source_route || "-"}</dd>
             </div>
             <div>
               <dt className="text-slate-500">Style / model</dt>
               <dd>
-                {selected.style_key || "—"}
+                {selected.style_key || "-"}
                 {selected.model_name ? ` · ${selected.model_name}` : ""}
               </dd>
             </div>
@@ -800,7 +800,7 @@ export default function ChristmasOrdersPage() {
               <dd>
                 {typeof selected.metadata?.estimated_cost_usd === "number"
                   ? `~$${selected.metadata.estimated_cost_usd}`
-                  : "—"}
+                  : "-"}
               </dd>
             </div>
             <div>
@@ -808,16 +808,16 @@ export default function ChristmasOrdersPage() {
               <dd className="text-xs">
                 {selected.generation_started_at
                   ? new Date(selected.generation_started_at).toLocaleString()
-                  : "—"}
+                  : "-"}
                 {" → "}
                 {selected.generation_finished_at
                   ? new Date(selected.generation_finished_at).toLocaleString()
-                  : "—"}
+                  : "-"}
               </dd>
             </div>
             <div>
               <dt className="text-slate-500">Affiliate</dt>
-              <dd>{selected.affiliate_ref || "—"}</dd>
+              <dd>{selected.affiliate_ref || "-"}</dd>
             </div>
           </dl>
           {selected.product_key === "christmas_santa_video" ? (
@@ -857,7 +857,7 @@ export default function ChristmasOrdersPage() {
                     <dd className="text-xs">
                       {[santaJob.provider_script, santaJob.provider_tts, santaJob.provider_video]
                         .filter(Boolean)
-                        .join(" → ") || "—"}
+                        .join(" → ") || "-"}
                     </dd>
                   </div>
                   <div>
@@ -865,15 +865,15 @@ export default function ChristmasOrdersPage() {
                     <dd className="text-xs">
                       {[santaJob.model_script, santaJob.model_tts, santaJob.model_video]
                         .filter(Boolean)
-                        .join(" · ") || "—"}
+                        .join(" · ") || "-"}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-slate-500">Cost stages (est.)</dt>
                     <dd className="text-xs">
-                      script {santaJob.cost_script_usd ?? "—"} · tts {santaJob.cost_tts_usd ?? "—"} ·
-                      still {santaJob.cost_still_usd ?? "—"} · video {santaJob.cost_video_usd ?? "—"}{" "}
-                      · total {santaJob.cost_total_usd ?? "—"}
+                      script {santaJob.cost_script_usd ?? "-"} · tts {santaJob.cost_tts_usd ?? "-"} ·
+                      still {santaJob.cost_still_usd ?? "-"} · video {santaJob.cost_video_usd ?? "-"}{" "}
+                      · total {santaJob.cost_total_usd ?? "-"}
                     </dd>
                   </div>
                   <div>
@@ -881,23 +881,23 @@ export default function ChristmasOrdersPage() {
                     <dd className="text-xs">
                       {santaJob.error_code
                         ? `${santaJob.error_code}: ${santaJob.error_message_safe || ""}`
-                        : "—"}
+                        : "-"}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-slate-500">Result path</dt>
-                    <dd className="font-mono text-xs">{santaJob.result_video_path || "—"}</dd>
+                    <dd className="font-mono text-xs">{santaJob.result_video_path || "-"}</dd>
                   </div>
                   <div>
                     <dt className="text-slate-500">Timestamps</dt>
                     <dd className="text-xs">
                       {santaJob.started_at
                         ? new Date(santaJob.started_at).toLocaleString()
-                        : "—"}
+                        : "-"}
                       {" → "}
                       {santaJob.completed_at
                         ? new Date(santaJob.completed_at).toLocaleString()
-                        : "—"}
+                        : "-"}
                     </dd>
                   </div>
                 </dl>

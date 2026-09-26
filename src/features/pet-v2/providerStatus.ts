@@ -17,7 +17,7 @@ export type V2ProviderStatus = {
 const CACHE_MS = 60_000;
 let cached: V2ProviderStatus | null = null;
 
-/** Same-origin VPS route — primary probe after conversion rebuild. */
+/** Same-origin VPS route · primary probe after conversion rebuild. */
 export const V2_PROVIDER_STATUS_ORIGIN_PATH = "/api/pet-provider-status" as const;
 
 export function clearV2ProviderStatusCache() {
@@ -124,7 +124,7 @@ export async function fetchV2ProviderStatus(force = false): Promise<V2ProviderSt
   }
 }
 
-/** Pure helper for tests — classify Replicate-style errors. */
+/** Pure helper for tests · classify Replicate-style errors. */
 export function classifyProviderAvailabilityError(detail: string | null | undefined): {
   available: false;
   reason: "insufficient_credit" | "rate_limited" | "provider_error" | "unknown";

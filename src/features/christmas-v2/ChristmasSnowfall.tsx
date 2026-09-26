@@ -1,6 +1,6 @@
 import { memo, useMemo, type CSSProperties } from "react";
 
-/** Deterministic flake layout — computed once, no runtime random churn. */
+/** Deterministic flake layout · computed once, no runtime random churn. */
 const FLAKE_COUNT = 52;
 
 function buildFlakes() {

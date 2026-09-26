@@ -62,7 +62,7 @@ function clientError(code: string, status = 400, extra: Record<string, unknown> 
     insufficient_credits: "Not enough credits",
     product_disabled: "This experience isn’t available right now",
     not_found: "We couldn't find that creation.",
-    provider_failed: "Generation failed — credits restored",
+    provider_failed: "Generation failed · credits restored",
     config_missing: "Christmas pricing is not configured",
     pricing_changed: "Credit cost changed. Confirm the new amount.",
   };
@@ -104,7 +104,7 @@ async function fulfillPhoto(
       credit_cost: creditCost,
       credits: creditCost,
       metadata: {
-        // Client metadata first — server skip flags must win to avoid double debit.
+        // Client metadata first · server skip flags must win to avoid double debit.
         ...(payload.metadata && typeof payload.metadata === "object"
           ? (payload.metadata as Record<string, unknown>)
           : {}),
@@ -165,7 +165,7 @@ async function fulfillPhoto(
     null;
 
   if (status === "failed" || (!url && status !== "completed" && status !== "succeeded")) {
-    // Still processing is OK — client polls generation / job
+    // Still processing is OK · client polls generation / job
     if (status === "pending" || status === "processing" || status === "queued") {
       return {
         status: "processing",
@@ -366,7 +366,7 @@ async function fulfillSanta(
   };
 
   // Require a provider job id so status polling can reconcile or refund.
-  // If enqueue fails, throw — caller refunds credits atomically.
+  // If enqueue fails, throw · caller refunds credits atomically.
   const { data, error } = await service
     .from("christmas_santa_video_jobs")
     .insert({
@@ -469,7 +469,7 @@ Deno.serve(async (req) => {
             ok: true,
             status: "refunded",
             job_id: jobId,
-            error: "Generation failed — credits restored",
+            error: "Generation failed · credits restored",
             code: "refunded",
             credits_restored: !!refund?.credits_restored,
           });
@@ -499,7 +499,7 @@ Deno.serve(async (req) => {
             ok: true,
             status: "refunded",
             job_id: jobId,
-            error: "Generation failed — credits restored",
+            error: "Generation failed · credits restored",
             code: "refunded",
             credits_restored: !!refund?.credits_restored,
           });
@@ -554,7 +554,7 @@ Deno.serve(async (req) => {
               ok: true,
               status: "refunded",
               job_id: jobId,
-              error: "Generation failed — credits restored",
+              error: "Generation failed · credits restored",
               code: "refunded",
               credits_restored: !!refund?.credits_restored,
             });
@@ -638,7 +638,7 @@ Deno.serve(async (req) => {
     const jobId = String(spendRow.job_id || "");
     if (!jobId) return clientError("invalid_payload", 500);
 
-    // Idempotent replay — do not re-run provider if already terminal/succeeded.
+    // Idempotent replay · do not re-run provider if already terminal/succeeded.
     if (spendRow.already_processed) {
       return jsonResponse({
         ok: true,
@@ -697,7 +697,7 @@ Deno.serve(async (req) => {
           ok: false,
           status: "refunded",
           job_id: jobId,
-          error: "Generation failed — credits restored",
+          error: "Generation failed · credits restored",
           code: "refunded",
           credits_restored: !!refund?.credits_restored,
         },

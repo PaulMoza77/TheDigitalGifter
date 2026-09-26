@@ -24,11 +24,11 @@ export const PET_UPSELL_OFFERS: Record<PetUpsellKey, PetUpsellDefinition> = {
   gift_pack: {
     key: "gift_pack",
     name: "Gift Pack",
-    description: "Phone wallpaper, Instagram square & story, plus a share card — instant download.",
+    description: "Phone wallpaper, Instagram square & story, plus a share card · instant download.",
     priceCents: 1500,
     currency: "usd",
     scope: "scene",
-    cta: "Get Gift Pack — $15",
+    cta: "Get Gift Pack · $15",
     purchasedCta: "Download Gift Pack",
   },
   holiday_card: {
@@ -38,7 +38,7 @@ export const PET_UPSELL_OFFERS: Record<PetUpsellKey, PetUpsellDefinition> = {
     priceCents: 900,
     currency: "usd",
     scope: "scene",
-    cta: "Get Holiday Card — $9",
+    cta: "Get Holiday Card · $9",
     purchasedCta: "Download Holiday Card",
   },
   print_pack: {
@@ -48,7 +48,7 @@ export const PET_UPSELL_OFFERS: Record<PetUpsellKey, PetUpsellDefinition> = {
     priceCents: 1200,
     currency: "usd",
     scope: "scene",
-    cta: "Get Print Pack — $12",
+    cta: "Get Print Pack · $12",
     purchasedCta: "Download Print File",
   },
   retry_3_scenes: {
@@ -58,7 +58,7 @@ export const PET_UPSELL_OFFERS: Record<PetUpsellKey, PetUpsellDefinition> = {
     priceCents: 900,
     currency: "usd",
     scope: "order",
-    cta: "Retry 3 scenes — $9",
+    cta: "Retry 3 scenes · $9",
     purchasedCta: "Regeneration queued",
   },
 };
@@ -124,7 +124,7 @@ export function printPackEligibility(
     maxHeightInches: null,
     width: w,
     height: h,
-    reason: `This portrait is ${w}×${h}px — too small for a standard print size at ${PRINT_DPI} DPI.`,
+    reason: `This portrait is ${w}×${h}px · too small for a standard print size at ${PRINT_DPI} DPI.`,
   };
 }
 

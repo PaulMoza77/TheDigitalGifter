@@ -77,7 +77,7 @@ type PetEvent = {
 };
 
 function CostBadge({ state }: { state?: string | null }) {
-  if (!state) return <span className="text-xs text-slate-500">—</span>;
+  if (!state) return <span className="text-xs text-slate-500">-</span>;
   const estimated = state === "estimated" || state === "pending";
   return (
     <Badge
@@ -137,7 +137,7 @@ function OrderCostPanel({
         <p className="mt-1 text-[11px] leading-4 text-amber-200/80">
           Promo{revenue.promoCode ? ` ${revenue.promoCode}` : ""}
           {revenue.discountPercent > 0 ? ` · ${revenue.discountPercent}% off` : ""}
-          {revenue.listPriceUsd > 0 ? ` · list ${formatUsd(revenue.listPriceUsd)}` : ""} — not counted as
+          {revenue.listPriceUsd > 0 ? ` · list ${formatUsd(revenue.listPriceUsd)}` : ""} · not counted as
           revenue
         </p>
       ) : null}
@@ -297,7 +297,7 @@ export default function PetOrdersPage() {
               Pet Orders
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              My Pet’s Secret Life — one-time payment, 12 portraits + 2 clips, human QC before delivery.
+              My Pet’s Secret Life · one-time payment, 12 portraits + 2 clips, human QC before delivery.
             </p>
           </div>
           <button
@@ -390,7 +390,7 @@ export default function PetOrdersPage() {
                     </TableCell>
                     <TableCell>{item.paid_at ? "Yes" : "No"}</TableCell>
                     <TableCell className="max-w-[140px] truncate text-xs text-slate-400">
-                      {item.stripe_checkout_session_id || "—"}
+                      {item.stripe_checkout_session_id || "-"}
                     </TableCell>
                   </TableRow>
                 ))}

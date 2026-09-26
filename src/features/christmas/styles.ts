@@ -1,5 +1,5 @@
 /**
- * Christmas Photo styles — language-independent keys + server-owned prompts.
+ * Christmas Photo styles · language-independent keys + server-owned prompts.
  * UI reads display fields only; generation uses promptTemplate from this config / DB.
  */
 

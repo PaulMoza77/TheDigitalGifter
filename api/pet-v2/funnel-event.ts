@@ -249,7 +249,7 @@ async function writePetV2FunnelEvent(
   let response = await post(withGeo);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    // Migration may not be applied yet — retry without geo/diagnostic columns.
+    // Migration may not be applied yet · retry without geo/diagnostic columns.
     if (
       response.status === 404 ||
       /p_country_code|p_client_ip|p_browser_family|p_in_app_browser|p_error_code|Could not find/i.test(text)

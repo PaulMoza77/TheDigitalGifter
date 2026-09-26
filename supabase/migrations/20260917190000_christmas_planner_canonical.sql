@@ -42,7 +42,7 @@ set
   updated_at = now()
 where product_key = 'christmas_planner_2026';
 
--- Do not drop christmas_feature_grants — unused by canonical grant path but safe to retain.
+-- Do not drop christmas_feature_grants · unused by canonical grant path but safe to retain.
 -- Single-arg grant_christmas_planner_entitlements(uuid) remains for emergency/legacy only.
 
 commit;

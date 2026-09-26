@@ -1,4 +1,4 @@
-/** Pure helpers for durable Christmas result share — unit-testable without DOM. */
+/** Pure helpers for durable Christmas result share · unit-testable without DOM. */
 
 export const RESULT_SHARE_ROUTE_PREFIX = "/share";
 export const MIN_SHARE_TOKEN_LENGTH = 32;

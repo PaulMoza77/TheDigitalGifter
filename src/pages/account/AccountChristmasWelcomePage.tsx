@@ -81,7 +81,7 @@ export default function PlannerPurchaseWelcomePage() {
         <>
           <h1>Your Christmas Planner is ready.</h1>
           <ul className="tdg-pl__offer-ticks" style={{ marginTop: 24 }}>
-            <li>Christmas Planner 2026 — Active</li>
+            <li>Christmas Planner 2026 · Active</li>
             <li>One-time purchase confirmed</li>
             <li>+{PLANNER_PURCHASE_BONUS_CREDITS} AI bonus credits added</li>
             <li>Current total credit balance: {Number(credits || 0)}</li>

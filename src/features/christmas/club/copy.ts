@@ -1,5 +1,5 @@
 /**
- * Christmas Club hub UI copy — Wave 1 locale packs (en, ro, de, fr, es, it, pt, nl, pl).
+ * Christmas Club hub UI copy · Wave 1 locale packs (en, ro, de, fr, es, it, pt, nl, pl).
  * Soft Santa only where appropriate: this surface is countdown/join, not spoken Santa.
  * pt = European Portuguese (Portugal). Romanian uses full diacritics.
  */

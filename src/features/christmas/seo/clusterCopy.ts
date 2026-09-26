@@ -213,7 +213,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Christmas gifts for dad that skip the novelty socks: a portrait he will actually hang, a funny card, a Santa cameo for the grandkids, and a Gift Finder that starts with him.",
       h1: "Christmas gift ideas for dad that are not another gadget",
       intro:
-        "Dad will say he does not need anything. That sentence is how families end up with grill tools, flashlight keychains, and a mug that jokes about retirement. The gifts he keeps are quieter: a photo of the people he still drives across town for, a short note that does not embarrass him in public, or a Santa video he can show the grandkids without making a speech. Use this page to pick a lane — pride, humor, or memory — then finish the gift in the finder or the card studio instead of wandering a hardware aisle at 8 p.m. on the 23rd.",
+        "Dad will say he does not need anything. That sentence is how families end up with grill tools, flashlight keychains, and a mug that jokes about retirement. The gifts he keeps are quieter: a photo of the people he still drives across town for, a short note that does not embarrass him in public, or a Santa video he can show the grandkids without making a speech. Use this page to pick a lane · pride, humor, or memory · then finish the gift in the finder or the card studio instead of wandering a hardware aisle at 8 p.m. on the 23rd.",
       imageAlt: "Christmas gift scene styled for a dad-focused digital keepsake",
       ctaText: "Find a gift for dad",
       benefits: [
@@ -276,7 +276,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "What to skip this year",
-          body: "Skip licensed mugs, diet jokes, and anything that comments on his body, job loss, or age unless he started that joke first. Skip “world’s best dad” unless you add a sentence that could only be about him. If you are buying for a stepfather or father-in-law, lead with respect and a memory you actually share — the message generator can stay warm without pretending you grew up in the same house.",
+          body: "Skip licensed mugs, diet jokes, and anything that comments on his body, job loss, or age unless he started that joke first. Skip “world’s best dad” unless you add a sentence that could only be about him. If you are buying for a stepfather or father-in-law, lead with respect and a memory you actually share · the message generator can stay warm without pretending you grew up in the same house.",
         },
         {
           heading: "Finish it on TheDigitalGifter",
@@ -297,7 +297,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Cadouri de Crăciun pentru tata fără șosete-glumă: portret pe care îl pune pe perete, felicitare amuzantă, Moș pentru nepoți și Gift Finder pornit pe el.",
       h1: "Cadouri de Crăciun pentru tata, nu încă un gadget",
       intro:
-        "Tata o să zică că nu are nevoie de nimic. Din propoziția asta ies pensule de grătar, brelocuri-lanternă și o cană despre pensie. Cadourile pe care le ține sunt mai tăcute: o poză cu oamenii pentru care încă pornește mașina, un bilet scurt care nu-l pune în scenă la masă sau un video de la Moș pe care îl poate da nepoților fără discurs. Folosește pagina ca să alegi o direcție — mândrie, umor sau amintire — apoi termină cadoul în finder sau în studio de felicitări, nu pe un culoar de bricolaj pe 23 seara.",
+        "Tata o să zică că nu are nevoie de nimic. Din propoziția asta ies pensule de grătar, brelocuri-lanternă și o cană despre pensie. Cadourile pe care le ține sunt mai tăcute: o poză cu oamenii pentru care încă pornește mașina, un bilet scurt care nu-l pune în scenă la masă sau un video de la Moș pe care îl poate da nepoților fără discurs. Folosește pagina ca să alegi o direcție · mândrie, umor sau amintire · apoi termină cadoul în finder sau în studio de felicitări, nu pe un culoar de bricolaj pe 23 seara.",
       imageAlt: "Scenă de Crăciun gândită pentru un cadou digital pentru tata",
       ctaText: "Găsește un cadou pentru tata",
       benefits: [
@@ -360,7 +360,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Ce sari anul ăsta",
-          body: "Sari peste căni cu licență, glume despre dietă și orice comentariu despre corp, slujbă pierdută sau vârstă, dacă nu a început el gluma. Sari peste „cel mai bun tată” dacă nu adaugi o propoziție care poate fi doar despre el. Dacă e vorba de un tată vitreg sau socru, du-te pe respect și pe o amintire comună reală — generatorul poate rămâne cald fără să pretindă că ați crescut în aceeași casă.",
+          body: "Sari peste căni cu licență, glume despre dietă și orice comentariu despre corp, slujbă pierdută sau vârstă, dacă nu a început el gluma. Sari peste „cel mai bun tată” dacă nu adaugi o propoziție care poate fi doar despre el. Dacă e vorba de un tată vitreg sau socru, du-te pe respect și pe o amintire comună reală · generatorul poate rămâne cald fără să pretindă că ați crescut în aceeași casă.",
         },
         {
           heading: "Termină pe TheDigitalGifter",
@@ -389,7 +389,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Christmas gifts for a partner that feel like a date, not a receipt: couples portraits, romantic cards, private wishlist coordination, and a finder that starts with them.",
       h1: "Christmas gift ideas for your partner",
       intro:
-        "A partner gift fails in two ways: it is so practical it feels like a household errand, or so performative it feels like content. The middle is a keepsake of the year you actually lived — the trip that almost did not happen, the apartment you finally made quiet, the joke only the two of you still tell. A couples Christmas portrait, a romantic card you write after the generator drafts it, or a wishlist you share in private will beat another scented candle. This page is for girlfriends, boyfriends, wives, husbands, and the person who is simply “home.”",
+        "A partner gift fails in two ways: it is so practical it feels like a household errand, or so performative it feels like content. The middle is a keepsake of the year you actually lived · the trip that almost did not happen, the apartment you finally made quiet, the joke only the two of you still tell. A couples Christmas portrait, a romantic card you write after the generator drafts it, or a wishlist you share in private will beat another scented candle. This page is for girlfriends, boyfriends, wives, husbands, and the person who is simply “home.”",
       imageAlt: "Couples Christmas portrait mood for a partner gift guide",
       ctaText: "Find a gift for your partner",
       benefits: [
@@ -403,7 +403,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           title: "Language that matches the relationship",
-          text: "English or Romanian, funny or romantic — the message tools follow the tone you already use at dinner.",
+          text: "English or Romanian, funny or romantic · the message tools follow the tone you already use at dinner.",
         },
       ],
       faq: [
@@ -473,7 +473,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Cadouri de Crăciun pentru partener care par o întâlnire, nu o chitanță: portret de cuplu, felicitare romantică, listă privată și un finder pornit pe voi.",
       h1: "Cadouri de Crăciun pentru partenerul tău",
       intro:
-        "Un cadou pentru partener eșuează în două feluri: e atât de practic încât pare treabă de casă, sau atât de pus în scenă încât pare conținut. Mijlocul e o amintire din anul pe care l-ați trăit — drumul care aproape n-a fost, apartamentul pe care l-ați făcut în sfârșit liniștit, gluma pe care doar voi o mai spuneți. Un portret de cuplu, o felicitare romantică scrisă după ciorna generatorului sau o listă împărtășită în privat bat încă o lumânare parfumată. Pagina e pentru iubite, iubiți, soții, soți și omul care e, pur și simplu, acasă.",
+        "Un cadou pentru partener eșuează în două feluri: e atât de practic încât pare treabă de casă, sau atât de pus în scenă încât pare conținut. Mijlocul e o amintire din anul pe care l-ați trăit · drumul care aproape n-a fost, apartamentul pe care l-ați făcut în sfârșit liniștit, gluma pe care doar voi o mai spuneți. Un portret de cuplu, o felicitare romantică scrisă după ciorna generatorului sau o listă împărtășită în privat bat încă o lumânare parfumată. Pagina e pentru iubite, iubiți, soții, soți și omul care e, pur și simplu, acasă.",
       imageAlt: "Atmosferă de portret de cuplu pentru un ghid de cadouri de partener",
       ctaText: "Găsește un cadou pentru partener",
       benefits: [
@@ -487,7 +487,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           title: "Limba relației voastre",
-          text: "Română sau engleză, amuzant sau romantic — uneltele de mesaje urmează tonul de la cină.",
+          text: "Română sau engleză, amuzant sau romantic · uneltele de mesaje urmează tonul de la cină.",
         },
       ],
       faq: [
@@ -565,7 +565,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Christmas gifts for a friend that do not feel like obligation: inside-joke cards, portraits from a real night out, a shared tree, and a Gift Finder that starts with friend.",
       h1: "Christmas gift ideas for a friend you actually like",
       intro:
-        "Friend gifts die when they try to look expensive. The friendship already has the expensive part: time. What lands is proof you remember the year — the move, the new job, the dog, the joke that got both of you in trouble. A card with an inside joke, a portrait from a photo you already have, or a spot on a shared Christmas tree will beat a candle they will re-gift in March. This page is for the friend who is almost family and the friend you only see twice a year but still text first.",
+        "Friend gifts die when they try to look expensive. The friendship already has the expensive part: time. What lands is proof you remember the year · the move, the new job, the dog, the joke that got both of you in trouble. A card with an inside joke, a portrait from a photo you already have, or a spot on a shared Christmas tree will beat a candle they will re-gift in March. This page is for the friend who is almost family and the friend you only see twice a year but still text first.",
       imageAlt: "Festive table scene for a friend-to-friend Christmas gift guide",
       ctaText: "Find a gift for a friend",
       benefits: [
@@ -591,7 +591,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         {
           question: "What if I do not have a good photo of us?",
           answer:
-            "Write the card. The message generator does not need a photo. If you have any clear picture of them — even a cropped group shot — the portrait tools can still work.",
+            "Write the card. The message generator does not need a photo. If you have any clear picture of them · even a cropped group shot · the portrait tools can still work.",
         },
         {
           question: "Is it weird to give a digital gift to a friend?",
@@ -602,7 +602,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       sections: [
         {
           heading: "Gifts that sound like your thread",
-          body: "If you would not text it, do not print it. Start from a real line you have already said this year, then let the generator clean the grammar. Keep the meanness out unless that is the friendship — and even then, end kind.",
+          body: "If you would not text it, do not print it. Start from a real line you have already said this year, then let the generator clean the grammar. Keep the meanness out unless that is the friendship · and even then, end kind.",
           items: [
             {
               title: "A funny card that only you two understand",
@@ -610,7 +610,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Portrait from a night you survived together",
-              text: "Concert, wedding, hospital waiting room — any photo where you both look alive is enough.",
+              text: "Concert, wedding, hospital waiting room · any photo where you both look alive is enough.",
             },
             {
               title: "A spot on a shared Christmas tree",
@@ -632,7 +632,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Make it in one sitting",
-          body: "Gift Finder with friend selected, or jump to messages if you already know you are writing. Related pages for coworkers exist if this is an office friend — keep the tone one notch more careful there. No checkout on this guide.",
+          body: "Gift Finder with friend selected, or jump to messages if you already know you are writing. Related pages for coworkers exist if this is an office friend · keep the tone one notch more careful there. No checkout on this guide.",
         },
       ],
       relatedPages: [
@@ -649,7 +649,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Cadouri de Crăciun pentru un prieten fără aer de obligație: felicitări cu glume interne, portrete dintr-o noapte reală, brad comun și Gift Finder pe prieten.",
       h1: "Cadouri de Crăciun pentru un prieten pe care chiar îl placi",
       intro:
-        "Cadourile de prietenie mor când încearcă să pară scumpe. Prietenia are deja partea scumpă: timpul. Ce prinde e dovada că ții minte anul — mutarea, slujba nouă, câinele, gluma care v-a băgat pe amândoi în bucluc. O felicitare cu o glumă internă, un portret dintr-o poză pe care o aveți deja sau un loc pe un brad comun bat o lumânare pe care o vor redărui în martie. Pagina e pentru prietenul care e aproape familie și pentru cel pe care-l vezi de două ori pe an, dar îi scrii primul.",
+        "Cadourile de prietenie mor când încearcă să pară scumpe. Prietenia are deja partea scumpă: timpul. Ce prinde e dovada că ții minte anul · mutarea, slujba nouă, câinele, gluma care v-a băgat pe amândoi în bucluc. O felicitare cu o glumă internă, un portret dintr-o poză pe care o aveți deja sau un loc pe un brad comun bat o lumânare pe care o vor redărui în martie. Pagina e pentru prietenul care e aproape familie și pentru cel pe care-l vezi de două ori pe an, dar îi scrii primul.",
       imageAlt: "Masă de sărbători pentru un ghid de cadouri de la prieten la prieten",
       ctaText: "Găsește un cadou pentru un prieten",
       benefits: [
@@ -675,7 +675,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         {
           question: "Nu am o poză bună cu noi. Ce fac?",
           answer:
-            "Scrie felicitarea. Generatorul de mesaje n-are nevoie de foto. Dacă ai orice imagine clară cu ei — chiar un grup decupat — uneltele de portret tot pot merge.",
+            "Scrie felicitarea. Generatorul de mesaje n-are nevoie de foto. Dacă ai orice imagine clară cu ei · chiar un grup decupat · uneltele de portret tot pot merge.",
         },
         {
           question: "E ciudat să dai un cadou digital unui prieten?",
@@ -686,7 +686,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       sections: [
         {
           heading: "Cadouri care sună a conversația voastră",
-          body: "Dacă n-ai scrie asta pe chat, nu o printa. Pornește de la un rând pe care l-ai zis anul ăsta, apoi lasă generatorul să curățe gramatica. Ține răutatea afară dacă asta nu e prietenia — și chiar atunci, închide frumos.",
+          body: "Dacă n-ai scrie asta pe chat, nu o printa. Pornește de la un rând pe care l-ai zis anul ăsta, apoi lasă generatorul să curățe gramatica. Ține răutatea afară dacă asta nu e prietenia · și chiar atunci, închide frumos.",
           items: [
             {
               title: "Felicitare amuzantă pe care doar voi o înțelegeți",
@@ -694,7 +694,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Portret dintr-o noapte pe care ați dus-o împreună",
-              text: "Concert, nuntă, sala de așteptare — orice poză în care arătați vii e de ajuns.",
+              text: "Concert, nuntă, sala de așteptare · orice poză în care arătați vii e de ajuns.",
             },
             {
               title: "Un loc pe un brad de Crăciun comun",
@@ -716,7 +716,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Fă-l dintr-o ședere",
-          body: "Gift Finder cu prieten selectat, sau sari la mesaje dacă știi că scrii. Există și pagina pentru colegi dacă e un prieten de la birou — ține tonul un pic mai atent acolo. Fără checkout pe ghidul ăsta.",
+          body: "Gift Finder cu prieten selectat, sau sari la mesaje dacă știi că scrii. Există și pagina pentru colegi dacă e un prieten de la birou · ține tonul un pic mai atent acolo. Fără checkout pe ghidul ăsta.",
         },
       ],
       relatedPages: [
@@ -778,7 +778,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       sections: [
         {
           heading: "Gifts a parent can finish this week",
-          body: "Stay in adult tools. The child receives the result — a video, a print, a morning at the tree — without needing an account. If you are a relative, ask the parent before you start a Santa video or a wishlist in the child’s name.",
+          body: "Stay in adult tools. The child receives the result · a video, a print, a morning at the tree · without needing an account. If you are a relative, ask the parent before you start a Santa video or a wishlist in the child’s name.",
           items: [
             {
               title: "Santa video with their first name",
@@ -862,7 +862,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
       sections: [
         {
           heading: "Cadouri pe care un părinte le poate termina saptămâna asta",
-          body: "Rămâi în uneltele de adult. Copilul primește rezultatul — un video, un print, o dimineață la brad — fără să aibă nevoie de cont. Dacă ești rudă, întreabă părintele înainte să pornești un video de la Moș sau o listă pe numele copilului.",
+          body: "Rămâi în uneltele de adult. Copilul primește rezultatul · un video, un print, o dimineață la brad · fără să aibă nevoie de cont. Dacă ești rudă, întreabă părintele înainte să pornești un video de la Moș sau o listă pe numele copilului.",
           items: [
             {
               title: "Video de la Moș cu prenumele lor",
@@ -1093,7 +1093,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Christmas gifts for grandma and grandpa: family portraits they can print, Santa videos for the grandchildren, cards in their language, and a finder that starts with them.",
       h1: "Christmas gift ideas for grandparents",
       intro:
-        "Grandparents keep paper. They keep the photo that made it onto the fridge and the card they can reread in January. They do not need another gadget they did not ask for. The strongest gifts this year are a family portrait they can hold, a Santa video starring the grandchild they brag about, and a message in the language they actually speak at the table — including Romanian with real diacritics. This page covers grandma, grandpa, and the pair of them together, without turning either of them into a joke about age.",
+        "Grandparents keep paper. They keep the photo that made it onto the fridge and the card they can reread in January. They do not need another gadget they did not ask for. The strongest gifts this year are a family portrait they can hold, a Santa video starring the grandchild they brag about, and a message in the language they actually speak at the table · including Romanian with real diacritics. This page covers grandma, grandpa, and the pair of them together, without turning either of them into a joke about age.",
       imageAlt: "Printed Christmas portrait mood for a grandparents gift guide",
       ctaText: "Find a gift for grandparents",
       benefits: [
@@ -1156,7 +1156,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Respect over nostalgia cosplay",
-          body: "Do not write as if they are already gone. Do not joke about forgetting names or “being old.” If faith matters at their table, the religious tone exists in the message tool — use it only if it is theirs, not yours performed at them.",
+          body: "Do not write as if they are already gone. Do not joke about forgetting names or “being old.” If faith matters at their table, the religious tone exists in the message tool · use it only if it is theirs, not yours performed at them.",
         },
         {
           heading: "Start the finder on grandparent",
@@ -1177,7 +1177,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Cadouri de Crăciun pentru bunica și bunica: portrete de familie de printat, video de la Moș cu nepoții, felicitări în limba lor și un finder pornit pe ei.",
       h1: "Cadouri de Crăciun pentru bunici",
       intro:
-        "Bunicii păstrează hârtia. Păstrează poza care a ajuns pe frigider și felicitarea pe care o recitesc în ianuarie. N-au nevoie de încă un gadget pe care nu l-au cerut. Cele mai tari cadouri anul ăsta sunt un portret de familie pe care-l pot ține în mână, un video de la Moș cu nepotul de care se laudă și un mesaj în limba pe care o vorbesc la masă — inclusiv română cu diacritice adevărate. Pagina acoperă bunica, bunica și pe amândoi, fără să-i transforme într-o glumă despre vârstă.",
+        "Bunicii păstrează hârtia. Păstrează poza care a ajuns pe frigider și felicitarea pe care o recitesc în ianuarie. N-au nevoie de încă un gadget pe care nu l-au cerut. Cele mai tari cadouri anul ăsta sunt un portret de familie pe care-l pot ține în mână, un video de la Moș cu nepotul de care se laudă și un mesaj în limba pe care o vorbesc la masă · inclusiv română cu diacritice adevărate. Pagina acoperă bunica, bunica și pe amândoi, fără să-i transforme într-o glumă despre vârstă.",
       imageAlt: "Portret de Crăciun tipărit, gândit pentru un ghid de cadouri pentru bunici",
       ctaText: "Găsește un cadou pentru bunici",
       benefits: [
@@ -1240,7 +1240,7 @@ const GIFT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Respect, nu teatru de nostalgie",
-          body: "Nu scrie ca și cum ar fi deja plecați. Nu glumi despre uitarea numelor sau „că sunt bătrâni”. Dacă credința contează la masa lor, tonul religios există în unealta de mesaje — folosește-l doar dacă e al lor, nu al tău jucat pe seama lor.",
+          body: "Nu scrie ca și cum ar fi deja plecați. Nu glumi despre uitarea numelor sau „că sunt bătrâni”. Dacă credința contează la masa lor, tonul religios există în unealta de mesaje · folosește-l doar dacă e al lor, nu al tău jucat pe seama lor.",
         },
         {
           heading: "Pornește finder-ul pe bunic",

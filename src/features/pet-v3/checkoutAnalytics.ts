@@ -12,13 +12,13 @@ export type V3CheckoutResult = {
   amountCents?: number;
 };
 
-/** Embedded payment form became visible and usable — once per session. */
+/** Embedded payment form became visible and usable · once per session. */
 export function trackV3CheckoutViewed(): void {
   trackPetV3Event({ eventName: "v3_checkout_viewed" });
 }
 
 /**
- * First-party V3 initiate checkout — only after meaningful payment interaction
+ * First-party V3 initiate checkout · only after meaningful payment interaction
  * (PaymentElement focus/change or Pay button), not when the form renders.
  */
 export function trackV3BeginCheckoutOnInteraction(input: {

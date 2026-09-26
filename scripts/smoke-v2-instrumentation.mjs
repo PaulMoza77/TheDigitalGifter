@@ -20,7 +20,7 @@ const results = [];
 
 function rec(name, ok, detail) {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` · ${detail}` : ""}`);
 }
 
 async function writeEvent(eventName, extra = {}) {
@@ -89,7 +89,7 @@ if (colErr) {
   rec("column_in_app_browser", "in_app_browser" in row, "present");
 }
 
-// Diagnostics RPC (may fail if caller is not admin — service role usually bypasses RLS but function checks is_admin)
+// Diagnostics RPC (may fail if caller is not admin · service role usually bypasses RLS but function checks is_admin)
 const since = new Date(Date.now() - 3600_000).toISOString();
 const until = new Date(Date.now() + 60_000).toISOString();
 const { data: diag, error: diagErr } = await sb.rpc("admin_pet_v2_checkout_diagnostics", {

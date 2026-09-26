@@ -291,7 +291,7 @@ export function funnelDropoff(
     const sessions = uniqueSessionCount(rows, step.event);
     const dropped = i === 0 ? null : Math.max(0, previous - sessions);
     const fromPreviousPct =
-      i === 0 ? "100%" : previous > 0 ? `${((sessions / previous) * 100).toFixed(1)}%` : "—";
+      i === 0 ? "100%" : previous > 0 ? `${((sessions / previous) * 100).toFixed(1)}%` : "-";
     result.push({
       event: step.event,
       label: step.label,

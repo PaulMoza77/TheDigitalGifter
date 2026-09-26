@@ -58,7 +58,7 @@ function RewardIcon({ id, compact }: { id: string; compact?: boolean }) {
 }
 
 /**
- * Compact floating glass prize previews — no full-height dark columns.
+ * Compact floating glass prize previews · no full-height dark columns.
  * Each rail floats independently over the room.
  */
 export function PrizeRail({

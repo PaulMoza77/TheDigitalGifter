@@ -28,7 +28,7 @@ function partsInZone(ms: number, timeZone: string) {
 
 /**
  * Convert a wall-clock date+time in an IANA zone to UTC ms.
- * Does not hardcode Europe/Bucharest — callers pass the account timezone.
+ * Does not hardcode Europe/Bucharest · callers pass the account timezone.
  */
 export function zonedWallTimeToUtcMs(
   date: string,

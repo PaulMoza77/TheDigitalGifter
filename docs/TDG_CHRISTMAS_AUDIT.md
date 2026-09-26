@@ -1,4 +1,4 @@
-# TDG Christmas Product Suite — Current-State Audit
+# TDG Christmas Product Suite · Current-State Audit
 
 **Task ID:** `tdg-christmas-audit-001`  
 **Audit date:** 2026-09-02  
@@ -21,7 +21,7 @@ The Digital Gifter is a **Vite + React 19 SPA** on the **Mozas VPS**, with **Sup
 
 The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable blueprint for Christmas revenue products: upload → (optional free Replicate preview + client watermark) → offer → embedded Stripe → webhook fulfillment → async Replicate pack generation → tokenized order page + email.
 
-**Critical corrections vs assumed brief:** live pet prices are **$27 / $8 / $12**, not **$2.99**. Preview protection is **watermark**, not Gaussian blur. Species is **route/client-declared**, not ML-validated. `pet_orders.sku` is still **hard-constrained** to `pet-secret-life-12` — a multi-SKU Christmas blocker until schema/fulfillment are generalized.
+**Critical corrections vs assumed brief:** live pet prices are **$27 / $8 / $12**, not **$2.99**. Preview protection is **watermark**, not Gaussian blur. Species is **route/client-declared**, not ML-validated. `pet_orders.sku` is still **hard-constrained** to `pet-secret-life-12` · a multi-SKU Christmas blocker until schema/fulfillment are generalized.
 
 **Recommended first implementation task:** Christmas shared product + route foundation that reuses pet checkout/generation patterns **without** shipping Santa/Tree yet.
 
@@ -38,21 +38,21 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 | Remote | `origin` → `https://github.com/PaulMoza77/TheDigitalGifter.git` |
 | Branch | `main` |
 | HEAD | `b5aef6bc69914d1dbaa36543293d9b5d46627759` |
-| Frontend | React 19 + Vite 6 + react-router-dom 7 + Tailwind — `package.json`, `vite.config.ts`, `src/App.tsx` |
+| Frontend | React 19 + Vite 6 + react-router-dom 7 + Tailwind · `package.json`, `vite.config.ts`, `src/App.tsx` |
 | Backend/runtime | Supabase Edge Functions (Deno) under `supabase/functions/*`; Node routes under `api/*` on the VPS origin |
-| Database | Supabase Postgres — `supabase/migrations/*` |
-| Auth | Supabase Auth — `src/contexts/AuthContext`, `src/pages/AuthCallback.tsx` |
+| Database | Supabase Postgres · `supabase/migrations/*` |
+| Auth | Supabase Auth · `src/contexts/AuthContext`, `src/pages/AuthCallback.tsx` |
 | Storage | Buckets incl. `pet-source-photos`, `pet-generated`, `seo-images` (migrations / constants) |
-| Stripe | `@stripe/react-stripe-js` Checkout Elements — `src/features/pet/components/CustomStripeCheckout.tsx`; Edge: `stripe-webhook`, `pet-funnel`, `_shared/pet/checkout.ts`, `_shared/pet/stripeFulfill.ts` |
-| AI | Replicate — `_shared/pet/replicate.ts`, `pet-generate`, `pet-generate-video`, `pet-v2-preview`, `generate-nano-banana` |
-| LLM (non-image) | OpenAI / Anthropic for support chat, blog draft, style — `support-ai-chat`, `generate-blog-draft`, `generate-style` |
-| Email | Resend — `_shared/pet/email.ts` (`RESEND_API_KEY`); admin templates in `email_templates` |
+| Stripe | `@stripe/react-stripe-js` Checkout Elements · `src/features/pet/components/CustomStripeCheckout.tsx`; Edge: `stripe-webhook`, `pet-funnel`, `_shared/pet/checkout.ts`, `_shared/pet/stripeFulfill.ts` |
+| AI | Replicate · `_shared/pet/replicate.ts`, `pet-generate`, `pet-generate-video`, `pet-v2-preview`, `generate-nano-banana` |
+| LLM (non-image) | OpenAI / Anthropic for support chat, blog draft, style · `support-ai-chat`, `generate-blog-draft`, `generate-style` |
+| Email | Resend · `_shared/pet/email.ts` (`RESEND_API_KEY`); admin templates in `email_templates` |
 | Analytics | GA4 `G-YF2GRM2TL4` (`index.html`); Meta Pixel/CAPI (`lib/metaPixel`, `_shared/pet/meta.ts`); Clarity (`index.html`); pet funnel event tables + hybrid Meta Ads / GA4 sync |
-| Admin | `/admin/*` SPA — `src/pages/admin/*`, `AdminRoute` |
-| iOS / native | No iOS app in this repo. `delete-my-account` comments reference App Store guideline — NOT VERIFIED as shared Christmas backend for a native Christmas rebuild |
-| Deploy | Mozas VPS — `scripts/deploy-vps.sh`, Docker origin, Caddy |
+| Admin | `/admin/*` SPA · `src/pages/admin/*`, `AdminRoute` |
+| iOS / native | No iOS app in this repo. `delete-my-account` comments reference App Store guideline · NOT VERIFIED as shared Christmas backend for a native Christmas rebuild |
+| Deploy | Mozas VPS · `scripts/deploy-vps.sh`, Docker origin, Caddy |
 | Preview/staging | Verify host `tdg-verify.mozas-prod-01` on the VPS |
-| Env structure | `.env.example` — `VITE_SUPABASE_*` client; server `SUPABASE_*`; Stripe / Meta / GA4 as Edge or VPS secrets (never `VITE_` for secrets) |
+| Env structure | `.env.example` · `VITE_SUPABASE_*` client; server `SUPABASE_*`; Stripe / Meta / GA4 as Edge or VPS secrets (never `VITE_` for secrets) |
 
 **README note:** Root `README.md` still describes an obsolete Convex/Chef template and is **not** accurate for the current Supabase architecture.
 
@@ -62,14 +62,14 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 
 **Router:** `BrowserRouter` + declarative `<Routes>` in `src/App.tsx`.  
 **Rendering:** CSR SPA. The VPS origin serves `index.html` for non-API paths.  
-**Indexability without JS:** Homepage static meta/JSON-LD exists in `index.html`. Per-route `PageHead` / `SeoPage` meta are **client-set** after hydration — crawlers that do not execute JS see thin/generic HTML for most routes.
+**Indexability without JS:** Homepage static meta/JSON-LD exists in `index.html`. Per-route `PageHead` / `SeoPage` meta are **client-set** after hydration · crawlers that do not execute JS see thin/generic HTML for most routes.
 
 ### Current page map (relevant)
 
 | Category | Routes | Paths |
 | --- | --- | --- |
 | Homepage | `/` | `src/pages/website/HomePage.tsx` |
-| Occasion marketing | `/christmas`, `/birthday`, … | `src/pages/website/ChristmasPage.tsx` etc. — mostly `MainPage` wrappers |
+| Occasion marketing | `/christmas`, `/birthday`, … | `src/pages/website/ChristmasPage.tsx` etc. · mostly `MainPage` wrappers |
 | Categories | `/categories/occasions|personal|spiritual|pets` | `src/pages/website/*CategoryPage.tsx` |
 | Templates / generator | `/templates`, `/generator` | website pages + `src/domains/generator` |
 | SEO data-driven | `/:pageType/:slug` (`occasion\|recipient\|style\|generator`) | `src/pages/seo/SeoPage.tsx` + `seo_pages` table |
@@ -105,56 +105,56 @@ The **Pet funnel (especially Dog V2 + Cat V3)** is the strongest reusable bluepr
 
 **$2.99 is not configured anywhere in pet constants.** Do not plan Christmas pricing from that figure without a new config decision.
 
-### End-to-end (V2 / V3 pattern — preferred Christmas template)
+### End-to-end (V2 / V3 pattern · preferred Christmas template)
 
-1. **Landing** — `PetV2FunnelPage` / `PetV3FunnelPage` + `LandingScreen`  
+1. **Landing** · `PetV2FunnelPage` / `PetV3FunnelPage` + `LandingScreen`  
    - Analytics: `v2_landing_view` / `v3_landing_view` → `/api/pet-v2|v3/funnel-event`  
    - Attribution: `captureFunnelAttribution` (`src/features/pet/funnelAttribution.ts`)
 
-2. **Upload** — `PhotoScreen` + `validateV2PhotoFile` / HEIC rejection  
+2. **Upload** · `PhotoScreen` + `validateV2PhotoFile` / HEIC rejection  
    - Events: `*_upload_started|completed|failed`  
    - Local draft in `sessionStorage` / draft keys (`PET_V2_DRAFT_STORAGE_KEY`, `PET_V3_DRAFT_STORAGE_KEY`)
 
-3. **Validation** — content-type JPEG/PNG/WebP, size ≤15MB, max edge 768 for preview  
+3. **Validation** · content-type JPEG/PNG/WebP, size ≤15MB, max edge 768 for preview  
    - **Species:** taken from route / body (`resolvePreviewContext`). V3 rejects non-cat. **No CV wrong-species detector found.**
 
-4. **Preview** — `POST` Supabase Edge `pet-v2-preview`  
+4. **Preview** · `POST` Supabase Edge `pet-v2-preview`  
    - Provider: Replicate `black-forest-labs/flux-kontext-pro`  
    - Caps: 2/session, 5/IP/day; idempotent attempt tables `pet_v2_preview_attempts` / `pet_v3_preview_attempts`  
-   - Client: `watermarkPreviewDataUrl` (PREVIEW overlay) — **not blur**  
+   - Client: `watermarkPreviewDataUrl` (PREVIEW overlay) · **not blur**  
    - Failure: mock framed photo / error categories; timeout resume via same attempt id
 
-5. **Offer** — `OfferScreen` / pack UI (`V2PackOffer`, `V3PackOffer`)  
+5. **Offer** · `OfferScreen` / pack UI (`V2PackOffer`, `V3PackOffer`)  
    - Events: `*_offer_viewed`, `*_unlock_clicked`
 
-6. **Checkout session** — `pet-funnel` Edge actions via `petFunnelApi` / `useV3EmbeddedCheckout` / V2 `pay()`  
+6. **Checkout session** · `pet-funnel` Edge actions via `petFunnelApi` / `useV3EmbeddedCheckout` / V2 `pay()`  
    - Creates/reuses Stripe Checkout Session  
    - **V1 + V3:** `ui_mode: custom` (Checkout Elements on-page)  
-   - **V2:** **hosted** Checkout — `window.location.assign(result.checkoutUrl)` (not CustomStripeCheckout)  
+   - **V2:** **hosted** Checkout · `window.location.assign(result.checkoutUrl)` (not CustomStripeCheckout)  
    - Idempotency: `stripeCheckoutIdempotencyKey` in `_shared/pet/checkout.ts`  
    - V3 late contact: `updateOrderContact` before confirm
 
-7. **Payment UI (V1/V3)** — `CustomStripeCheckout.tsx`  
+7. **Payment UI (V1/V3)** · `CustomStripeCheckout.tsx`  
    - `CheckoutElementsProvider` + `PaymentElement` + `ExpressCheckoutElement` (Apple Pay / Google Pay)  
    - Custom `ApplePayButton` fallback UX  
    - Return → `/pet/order?token=…`  
    - **Christmas recommendation:** clone **V3 custom** checkout, not V2 hosted redirect
 
-8. **Webhook fulfillment** — `stripe-webhook` → `handlePetStripeEvent` (`stripeFulfill.ts`)  
+8. **Webhook fulfillment** · `stripe-webhook` → `handlePetStripeEvent` (`stripeFulfill.ts`)  
    - Metadata gate: SKU `pet-secret-life-12` / `product_type` pet  
    - Marks paid, records purchase events / Meta CAPI, **`enqueuePetGenerate`**
 
-9. **Paid generation** — `pet-generate` (+ optional `pet-generate-video`)  
+9. **Paid generation** · `pet-generate` (+ optional `pet-generate-video`)  
    - 12 scenes (`pet_order_scenes`) + up to 2 clips (`pet_order_video_clips`)  
    - Models: Flux Kontext Pro images; Seedance video when enabled  
    - Cost: `ai_cost_ledger`  
    - Retries / rate limits: `_shared/pet/replicateRateLimit.ts`
 
-10. **Result** — `PetOrderPage` polling `orderStatusPolling`  
+10. **Result** · `PetOrderPage` polling `orderStatusPolling`  
     - Tokenized access (no login required for order URL)  
-    - Share/download: Web Share API helpers (`shareDownload.ts`) — **not** durable `/share/[id]` routes
+    - Share/download: Web Share API helpers (`shareDownload.ts`) · **not** durable `/share/[id]` routes
 
-11. **Email** — `sendPetDeliveryEmail` (Resend) when gallery ready / partial failure  
+11. **Email** · `sendPetDeliveryEmail` (Resend) when gallery ready / partial failure  
     - Deduped via `pet_email_deliveries`
 
 ### V1 differences
@@ -201,7 +201,7 @@ Landing → create (name/photo/personality) → checkout page → same Stripe/we
 
 `pet_orders` still has `constraint pet_orders_sku_chk check (sku = 'pet-secret-life-12')` in `20260816160000_pet_funnel.sql` and **no later migration drops it**. Christmas products cannot share that table as-is without migration **or** a parallel `christmas_orders` table.
 
-Main-app credit checkout (`create-checkout-session` / `create-checkout`) is a separate EUR credits path — reusable for credit packs, not ideal as the Christmas portrait SKU path without adaptation.
+Main-app credit checkout (`create-checkout-session` / `create-checkout`) is a separate EUR credits path · reusable for credit packs, not ideal as the Christmas portrait SKU path without adaptation.
 
 ---
 
@@ -223,7 +223,7 @@ Upload (client / signed storage)
 | Capability | Status |
 | --- | --- |
 | Different pet products/styles | Scene keys + personalities; still one SKU pack |
-| Family/couple/person products | Main generator / templates path (`generate-nano-banana`, `generations` table) — **separate** from pet order machine |
+| Family/couple/person products | Main generator / templates path (`generate-nano-banana`, `generations` table) · **separate** from pet order machine |
 | Post-payment-only expensive pack | **Yes** for 12+2 |
 | Free pre-pay AI | **Yes** (V2/V3 preview only; capped) |
 | Video jobs | **Yes** short clips (~5s Seedance); **not** 30–60s personalized Santa speech/lip-sync |
@@ -253,7 +253,7 @@ Reuse: order + Stripe fulfill + job queue + storage + email + cost ledger.
 | `blog_posts` | Blog | YES (content) |
 | `email_templates` / `email_offers` / `email_preferences` | Email | EXTEND |
 | `funnel_leads` | Funnel emails | EXTEND |
-| `affiliate_*` | Affiliate program | YES — preserve attribution |
+| `affiliate_*` | Affiliate program | YES · preserve attribution |
 | `jobs` | Legacy/async jobs | EXTEND or leave |
 | `admin_users` | Admin ACL | YES |
 | `support_tickets*` | Support | YES |
@@ -311,7 +311,7 @@ Tree/Advent need: reward catalog, claim ledger with unique `(user_or_device, rew
 
 | Capability | Exists? |
 | --- | --- |
-| Login / auth | Yes — Supabase Auth + `/auth/callback` |
+| Login / auth | Yes · Supabase Auth + `/auth/callback` |
 | Generations | `AccountDashboard` + `RecentGenerations` + `PetsGenerations` |
 | Purchase history | Partial via orders/credits; pet via order token + admin |
 | Credit balance | Yes |
@@ -319,7 +319,7 @@ Tree/Advent need: reward catalog, claim ledger with unique `(user_or_device, rew
 | Deletion | `delete-my-account` Edge (profiles/affiliate/credits cleanup; **not** full pet media purge evidence) |
 | Affiliate UI | `/account/affiliate` |
 
-**`/account/christmas`:** should be a tab/section under `ClientLayout` / `AccountDashboard`, composing Christmas generations, Santa videos, tree, wishlist, rewards — **new components**, reuse gallery patterns from `PetsGenerations`.
+**`/account/christmas`:** should be a tab/section under `ClientLayout` / `AccountDashboard`, composing Christmas generations, Santa videos, tree, wishlist, rewards · **new components**, reuse gallery patterns from `PetsGenerations`.
 
 ---
 
@@ -335,11 +335,11 @@ Tree/Advent need: reward catalog, claim ledger with unique `(user_or_device, rew
 
 ### Existing event vocabularies
 
-- V1: `landing_view`, `photo_upload_*`, `initiate_checkout`, `purchase`, … — `funnelEventContract.ts`  
-- V2: `v2_landing_view` … `v2_purchase` — `pet-v2/types.ts`  
-- V3: `v3_*` including `v3_checkout_viewed` — `pet-v3/types.ts`  
+- V1: `landing_view`, `photo_upload_*`, `initiate_checkout`, `purchase`, … · `funnelEventContract.ts`  
+- V2: `v2_landing_view` … `v2_purchase` · `pet-v2/types.ts`  
+- V3: `v3_*` including `v3_checkout_viewed` · `pet-v3/types.ts`  
 - Storage: Postgres funnel event tables + Meta CAPI purchase + GA4 pageviews + Clarity  
-- Attribution fields: UTMs, fbclid, campaign/adset/ad ids — first-touch store `tdg.funnel.attribution.v1`
+- Attribution fields: UTMs, fbclid, campaign/adset/ad ids · first-touch store `tdg.funnel.attribution.v1`
 
 ### Christmas target mapping (recommended)
 
@@ -356,7 +356,7 @@ Reuse pet ingest pattern (`/api/christmas/funnel-event` + allowlist + idempotenc
 | `generation_*` | preview + paid job events (extend) |
 | `santa_*`, `tree_*`, `gift_finder_*` | **new** |
 
-Purchase↔acquisition join: pet hybrid analytics already joins funnel sessions + Meta campaign allowlist — **clone for Christmas** with separate allowlists.
+Purchase↔acquisition join: pet hybrid analytics already joins funnel sessions + Meta campaign allowlist · **clone for Christmas** with separate allowlists.
 
 ---
 
@@ -369,7 +369,7 @@ Purchase↔acquisition join: pet hybrid analytics already joins funnel sessions 
 | Sitemap | Dynamic `/sitemap.xml` → `api/sitemap.xml.ts` (static + `seo_pages` + blog) | `/christmas` **not** in static list today |
 | robots.txt | Allow `/`; disallow admin/account/funnel payment/result | `public/robots.txt` |
 | Data-driven SEO | `seo_pages` by page_type+slug | Yes |
-| Googlebot HTML | SPA shell — **weak** for deep Christmas programmatic pages without SSR/prerender | origin SPA fallback |
+| Googlebot HTML | SPA shell · **weak** for deep Christmas programmatic pages without SSR/prerender | origin SPA fallback |
 
 **Christmas SEO factory recommendation:** extend `seo_pages` (or `christmas_seo_pages`) with `cluster` (`gifts-for`, `messages-for`), `locale`, template fields; add SSR/prerender or edge HTML for indexability; register routes under `/christmas/...` **or** map `page_type` carefully to avoid colliding with `/:pageType/:slug`; include in sitemap.
 
@@ -384,11 +384,11 @@ Do **not** mass-create pages in this task.
 | Library | **None** (no i18next/next-intl) |
 | URL locale | **None** (`lang="en"` fixed in `index.html`) |
 | Translation files | **None** |
-| Language list | `src/data/languages.ts` + generator `LanguageSelector` — prompt language hint only |
+| Language list | `src/data/languages.ts` + generator `LanguageSelector` · prompt language hint only |
 | Localized metadata / email / hreflang | **Not implemented** |
 | AI prompts | English hardcoded (pet preview prompts, etc.) |
 
-**Before Christmas EN+RO:** introduce locale routing or subdomain strategy, message catalogs, localized SEO rows, localized emails, localized Santa/scripts, hreflang. Hardcoded English UI is a **refactor prerequisite** for RO launch quality — can ship EN-only hub first if product accepts sequenced i18n.
+**Before Christmas EN+RO:** introduce locale routing or subdomain strategy, message catalogs, localized SEO rows, localized emails, localized Santa/scripts, hreflang. Hardcoded English UI is a **refactor prerequisite** for RO launch quality · can ship EN-only hub first if product accepts sequenced i18n.
 
 **Verdict:** EXTEND / introduce i18n layer; do not pretend RO exists.
 
@@ -416,7 +416,7 @@ Do **not** mass-create pages in this task.
 - `delete-my-account` does not evidence wiping `pet_orders` media / generations comprehensively.  
 - No dedicated child-consent / parental gate found.  
 - Moderation: content policy for intimate templates (`contentPolicy.ts`); not child-safety classifier.  
-- Retention policies for uploads/results: operational defaults unclear in code — **NOT VERIFIED IN PRODUCTION**.  
+- Retention policies for uploads/results: operational defaults unclear in code · **NOT VERIFIED IN PRODUCTION**.  
 - Santa/Kids need: private-by-default ACL, explicit share tokens, retention TTL, deletion covering media, minimized PII, admin access controls.
 
 ---
@@ -443,7 +443,7 @@ Reuse: tokenized public read like pet order tokens; **no** existing wishlist/sha
 
 ## 17. Gift Finder feasibility
 
-LLM already used (OpenAI/Anthropic) in Edge functions — **suitable** for suggestion JSON.  
+LLM already used (OpenAI/Anthropic) in Edge functions · **suitable** for suggestion JSON.  
 Minimal: one Edge function + Zod schema + optional log table + CTA links into Christmas SKUs. No new vector DB required for v1.
 
 ---
@@ -457,7 +457,7 @@ Minimal: one Edge function + Zod schema + optional log table + CTA links into Ch
 | Speech / lip-sync? | **Not present** |
 | Integration seams | New job type beside `pet-generate-video`; Stripe metadata product_type; storage bucket; email; account gallery |
 
-**Proposed (not implemented) providers:** any async video/TTS/avatar vendor — choose in a later task.  
+**Proposed (not implemented) providers:** any async video/TTS/avatar vendor · choose in a later task.  
 Pricing must be DB/config-driven like `pet_offers`, not hardcoded.
 
 ---
@@ -470,16 +470,16 @@ Pricing must be DB/config-driven like `pet_offers`, not hardcoded.
 | `pet_offers` + TS constants + flash sale modules | Pet SKU amounts |
 | Upsells | `pet` upsells module |
 
-Christmas needs a **product catalog abstraction** (product, package, price, sale price, currency, included generations, styles, upsells, active, locale) — prefer extending `pricing_items` / offer tables rather than more hardcoded cents in React.
+Christmas needs a **product catalog abstraction** (product, package, price, sale price, currency, included generations, styles, upsells, active, locale) · prefer extending `pricing_items` / offer tables rather than more hardcoded cents in React.
 
 ---
 
 ## 20. Performance (code-level only)
 
-- Free preview: Replicate poll ~90s budget; client watermark after — **no measured 3–5s prod latency in repo**.  
+- Free preview: Replicate poll ~90s budget; client watermark after · **no measured 3–5s prod latency in repo**.  
 - Paid pack: multi-scene async; user leaves OK with token/email.  
 - SPA landing: Vite bundle; pet routes under FunnelLayout.  
-Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for preview — **NOT VERIFIED IN PRODUCTION**.
+Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for preview · **NOT VERIFIED IN PRODUCTION**.
 
 ---
 
@@ -487,7 +487,7 @@ Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for previe
 
 - Funnel UTMs/fbclid/campaign ids persisted client-side and ingested with events.  
 - Affiliate: `?ref=` → `affiliate_clicks` / conversions on auth (`App.tsx`).  
-- Christmas must pass attribution through checkout metadata like pet — **do not** wipe `affiliate_ref` or funnel attribution store.
+- Christmas must pass attribution through checkout metadata like pet · **do not** wipe `affiliate_ref` or funnel attribution store.
 
 ---
 
@@ -495,13 +495,13 @@ Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for previe
 
 | Layer | Status |
 | --- | --- |
-| Unit | Vitest — **48 files / 360 tests passed** locally on audit machine |
+| Unit | Vitest · **48 files / 360 tests passed** locally on audit machine |
 | E2E | No Playwright/Cypress found |
 | CI | **No `.github/workflows`** in repo |
 | Deploy | Mozas VPS |
 | Rollback | Previous Docker image via `scripts/rollback-tdg-vps.sh` |
 
-**Future Christmas gates:** A generator, B payment browsers, C Santa, D Tree, E SEO — as specified in the brief; automate unit/contract tests first (pet style), then manual GATE checklists.
+**Future Christmas gates:** A generator, B payment browsers, C Santa, D Tree, E SEO · as specified in the brief; automate unit/contract tests first (pet style), then manual GATE checklists.
 
 ---
 
@@ -553,9 +553,9 @@ Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for previe
 
 ## 25. Recommended build order (verified)
 
-1. **P0 foundation** — Christmas product catalog + order/SKU model (fix pet SKU check or parallel tables) + configurable prices  
-2. **P0 Hub + Photo Generator** — routes under `/christmas/*`, reuse pet preview→pay→generate  
-3. **P0 checkout/result/analytics/admin** — metadata, events, dashboards  
+1. **P0 foundation** · Christmas product catalog + order/SKU model (fix pet SKU check or parallel tables) + configurable prices  
+2. **P0 Hub + Photo Generator** · routes under `/christmas/*`, reuse pet preview→pay→generate  
+3. **P0 checkout/result/analytics/admin** · metadata, events, dashboards  
 4. **P0 Family/Couple/Pet route reuse**  
 5. **P1 Santa Video** (+ privacy)  
 6. **P1 Tree/Advent**  
@@ -587,7 +587,7 @@ Bottlenecks likely: Replicate queue, Edge wall-clock, large data URLs for previe
 **Scope:**
 
 1. Design/add Christmas product + price config (DB and/or admin-managed), without enabling paid live generation yet.  
-2. Resolve SKU storage: parallel `christmas_orders` **or** migration widening `pet_orders` product model — pick one with written ADR in docs.  
+2. Resolve SKU storage: parallel `christmas_orders` **or** migration widening `pet_orders` product model · pick one with written ADR in docs.  
 3. Add non-functional route stubs under `/christmas/*` matching the target IA (Hub + photo-generator placeholders) that do not regress `/christmas` marketing CTA until cutover.  
 4. Define Christmas analytics event allowlist contract (mirror pet V3).  
 5. No Santa/Tree/Wishlist implementation; no production price go-live without GATE A plan.

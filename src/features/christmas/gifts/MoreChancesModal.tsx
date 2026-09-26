@@ -11,7 +11,7 @@ type Props = {
 
 /**
  * Paid “Get more chances” sheet after the free gift is used.
- * Higher-value pack (5 chances) is the primary CTA — never present $4.99 as “1 more”.
+ * Higher-value pack (5 chances) is the primary CTA · never present $4.99 as “1 more”.
  */
 export function MoreChancesModal({
   open,
@@ -81,7 +81,7 @@ export function MoreChancesModal({
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-rose-100/70">
             Your free Christmas gift is already open. Unlock five more presents under
-            the tree — rewards apply to your account when you claim them.
+            the tree · rewards apply to your account when you claim them.
           </p>
 
           <div className="mt-6 space-y-3">

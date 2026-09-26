@@ -14,7 +14,7 @@ export type ImageDecodeResult =
 
 const MAX_DATA_URL_CHARS = 2_500_000;
 const MIN_BYTES = 2_048;
-/** Hard ceiling after base64 decode — keeps provider payload bounded. */
+/** Hard ceiling after base64 decode · keeps provider payload bounded. */
 const MAX_BYTES = 4_500_000;
 
 export function maxPreviewDataUrlChars(): number {
@@ -130,7 +130,7 @@ function detectMagic(bytes: Uint8Array): DecodedPreviewImage["magic"] {
   return "unknown";
 }
 
-/** Structured diagnostics only — never includes image bytes, full URLs, or secrets. */
+/** Structured diagnostics only · never includes image bytes, full URLs, or secrets. */
 export function previewDiag(fields: Record<string, unknown>): void {
   try {
     console.info(

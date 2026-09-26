@@ -5,7 +5,7 @@ import {
   resolveFunnelIsTest,
 } from "./petFunnelTrafficExclude";
 
-/** V4 New Sales Campaign ingest — isolated from V1/V2/V3. */
+/** V4 New Sales Campaign ingest · isolated from V1/V2/V3. */
 
 const PET_V4_EVENT_NAMES = [
   "v4_landing_view",

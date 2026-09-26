@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-/** Workshop Santa scene — CSS illustration (no final plate asset required for V1 structure). */
+/** Workshop Santa scene · CSS illustration (no final plate asset required for V1 structure). */
 export const SantaWorkshopScene = memo(function SantaWorkshopScene({
   accentName,
   compact,

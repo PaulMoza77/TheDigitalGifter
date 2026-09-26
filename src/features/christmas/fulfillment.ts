@@ -19,7 +19,7 @@ export type ChristmasFulfillmentHandler = (
 ) => Promise<{ accepted: boolean; reason?: string }>;
 
 /**
- * Client-side registry only — no fake result generators.
+ * Client-side registry only · no fake result generators.
  * christmas_photo post-pay generation is enqueued by stripeFulfill → christmas-generate
  * (edge), not via this in-browser registry.
  */
@@ -53,7 +53,7 @@ export function canEnqueueFulfillment(order: ChristmasFulfillmentOrder): {
 
 /**
  * Enqueue seam: marks intent only when a handler exists.
- * Without a handler, order stays `queued` for ops visibility — no fake output.
+ * Without a handler, order stays `queued` for ops visibility · no fake output.
  */
 export async function enqueueChristmasFulfillment(
   order: ChristmasFulfillmentOrder,

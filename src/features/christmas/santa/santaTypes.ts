@@ -1,5 +1,5 @@
 /**
- * Santa Video V1 — personalization validation, consent, templates, script guards.
+ * Santa Video V1 · personalization validation, consent, templates, script guards.
  * Shared by client tests and mirrored conceptually in Edge (Deno copies key logic).
  */
 
@@ -180,7 +180,7 @@ export function validateSantaPersonalization(
   };
 }
 
-/** Analytics-safe dimensions only — never free-text child details. */
+/** Analytics-safe dimensions only · never free-text child details. */
 export function santaAnalyticsDimensions(input: {
   language: string;
   templateKey: string;
@@ -241,7 +241,7 @@ export function santaProgressCopy(status: SantaJobStatus): string {
     case "completed":
       return "Finishing the magic…";
     case "failed":
-      return "Something went wrong — your payment is safe";
+      return "Something went wrong · your payment is safe";
     default:
       return "Working on your Santa video…";
   }

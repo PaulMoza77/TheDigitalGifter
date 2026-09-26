@@ -15,7 +15,7 @@ export const PET_V3_SPECIES = "cat" as const;
 export const PET_V3_FUNNEL_VERSION = "v3" as const;
 export const PET_V3_FUNNEL_VARIANT = "v3_cat_preview" as const;
 
-/** V3 cat pack price — $2.99 from $27. */
+/** V3 cat pack price · $2.99 from $27. */
 export const PET_V3_PRICE_CENTS = 299 as const;
 export const PET_V3_PRICE_DISPLAY = "$2.99" as const;
 export const PET_V3_COMPARE_PRICE_DISPLAY = "$27" as const;

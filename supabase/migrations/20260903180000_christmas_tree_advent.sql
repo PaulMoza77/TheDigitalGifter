@@ -264,7 +264,7 @@ revoke all on table public.christmas_free_gift_claims from anon, authenticated, 
 grant select on table public.christmas_free_gift_claims to authenticated;
 grant all on table public.christmas_free_gift_claims to service_role;
 
--- Non-cash entitlements (cosmetics etc.) — never confuse with EUR credits_ledger
+-- Non-cash entitlements (cosmetics etc.) · never confuse with EUR credits_ledger
 create table if not exists public.christmas_reward_entitlements (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id) on delete cascade,
@@ -296,7 +296,7 @@ revoke all on table public.christmas_reward_entitlements from anon, authenticate
 grant select on table public.christmas_reward_entitlements to authenticated;
 grant all on table public.christmas_reward_entitlements to service_role;
 
--- Seed inactive Advent 2026 definitions (cosmetic / message only — credits inactive)
+-- Seed inactive Advent 2026 definitions (cosmetic / message only · credits inactive)
 insert into public.christmas_advent_rewards
   (season_year, day, locale, reward_type, reward_value, title, description, active, config)
 select
@@ -337,7 +337,7 @@ where product_key = 'christmas_tree';
 update public.christmas_products
 set
   name = 'Advent Calendar',
-  description = 'Daily Christmas rewards — starts December 1.',
+  description = 'Daily Christmas rewards · starts December 1.',
   metadata = coalesce(metadata, '{}'::jsonb) - 'coming_soon' || '{"advent_v1":true,"starts":"2026-12-01","live_offer":false}'::jsonb
 where product_key = 'christmas_advent';
 

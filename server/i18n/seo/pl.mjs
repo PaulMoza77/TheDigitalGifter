@@ -1,6 +1,6 @@
 /**
  * Polish (pl) SEO content for the Christmas routes.
- * Native vocabulary with full Polish diacritics — Święty Mikołaj,
+ * Native vocabulary with full Polish diacritics · Święty Mikołaj,
  * lista życzeń, kalendarz adwentowy, portrety świąteczne, kartki świąteczne.
  * Santa video and message generation remain EN/RO only; this content never
  * claims a Polish-spoken Święty Mikołaj or Polish message generation.
@@ -13,10 +13,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas": {
     title: "Boże Narodzenie w TheDigitalGifter | Prezenty, Zdjęcia, Święty Mikołaj i Więcej",
     description:
-      "Twórz świąteczne prezenty, portrety AI, filmy od Świętego Mikołaja, listy życzeń, kartki świąteczne i adwentowe niespodzianki — spersonalizowane cyfrowe doświadczenia świąteczne od TheDigitalGifter.",
+      "Twórz świąteczne prezenty, portrety AI, filmy od Świętego Mikołaja, listy życzeń, kartki świąteczne i adwentowe niespodzianki · spersonalizowane cyfrowe doświadczenia świąteczne od TheDigitalGifter.",
     h1: "Stwórz Coś, Co Zapamiętają Na Długo",
     lede:
-      "Odkryj świąteczne prezenty, portrety fotograficzne, filmy od Świętego Mikołaja, cyfrowe choinki, kalendarze adwentowe, kartki świąteczne i życzenia — wszystko w jednym miejscu w TheDigitalGifter.",
+      "Odkryj świąteczne prezenty, portrety fotograficzne, filmy od Świętego Mikołaja, cyfrowe choinki, kalendarze adwentowe, kartki świąteczne i życzenia · wszystko w jednym miejscu w TheDigitalGifter.",
     h2: "Świąteczne doświadczenia",
     h2Body: "Wybierz świąteczny produkt poniżej i stwórz coś osobistego w kilka minut.",
     breadcrumbs: [{ href: "/pl/christmas", label: "Boże Narodzenie" }],
@@ -39,14 +39,14 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Znajdź Idealny Świąteczny Prezent",
         body:
-          "Nie wiesz, co kupić? Świąteczny Gift Finder pyta, dla kogo kupujesz, co ta osoba lubi, jak wygląda jej codzienność i jaki masz budżet. Otrzymujesz przemyślane pomysły na prezenty z krótkim wyjaśnieniem, dlaczego każdy z nich się sprawdzi — również dla kogoś, kto zdaje się mieć już wszystko. Zapisz ulubione w liście życzeń, gdy będziesz gotowy.",
+          "Nie wiesz, co kupić? Świąteczny Gift Finder pyta, dla kogo kupujesz, co ta osoba lubi, jak wygląda jej codzienność i jaki masz budżet. Otrzymujesz przemyślane pomysły na prezenty z krótkim wyjaśnieniem, dlaczego każdy z nich się sprawdzi · również dla kogoś, kto zdaje się mieć już wszystko. Zapisz ulubione w liście życzeń, gdy będziesz gotowy.",
         linkHref: "/pl/christmas/gift-finder",
         linkLabel: "Znajdź świąteczny prezent, który naprawdę pokochają",
       },
       {
         h2: "Twórz Magiczne Świąteczne Zdjęcia",
         body:
-          "Wgraj wyraźne zdjęcie i przekształć je w świąteczny portret. Twórz stylizacje dla rodzin, par i zwierząt — z dedykowanymi ścieżkami dla psów i kotów — a potem pobierz prywatnie lub przenieś portret na kartkę świąteczną.",
+          "Wgraj wyraźne zdjęcie i przekształć je w świąteczny portret. Twórz stylizacje dla rodzin, par i zwierząt · z dedykowanymi ścieżkami dla psów i kotów · a potem pobierz prywatnie lub przenieś portret na kartkę świąteczną.",
         linkHref: "/pl/christmas/photo-generator",
         linkLabel: "Zmień swoje zdjęcie w świąteczną magię",
       },
@@ -60,7 +60,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Stwórz i Udostępnij Świąteczną Listę Życzeń",
         body:
-          "Zbuduj świąteczną listę życzeń z linkami do produktów lub swobodnie zapisanymi życzeniami. Udostępnij jeden prosty link rodzinie i przyjaciołom. Osoby przeglądające listę mogą zarezerwować prezent, aby inni nie kupili tego samego — bez zdradzania właścicielowi listy, kto co kupił.",
+          "Zbuduj świąteczną listę życzeń z linkami do produktów lub swobodnie zapisanymi życzeniami. Udostępnij jeden prosty link rodzinie i przyjaciołom. Osoby przeglądające listę mogą zarezerwować prezent, aby inni nie kupili tego samego · bez zdradzania właścicielowi listy, kto co kupił.",
         linkHref: "/pl/christmas/wishlist",
         linkLabel: "Stwórz świąteczną listę życzeń",
       },
@@ -89,11 +89,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy Święty Mikołaj może powiedzieć imię mojego dziecka?",
-        a: "Możesz zacząć od imienia na stronie świątecznej lub w doświadczeniu ze Świętym Mikołajem i dodać opcjonalne szczegóły. Mówione filmy są dziś dostępne po angielsku i rumuńsku — inne języki wkrótce.",
+        a: "Możesz zacząć od imienia na stronie świątecznej lub w doświadczeniu ze Świętym Mikołajem i dodać opcjonalne szczegóły. Mówione filmy są dziś dostępne po angielsku i rumuńsku · inne języki wkrótce.",
       },
       {
         q: "Czy potrzebuję umiejętności projektowych?",
-        a: "Nie. Każde doświadczenie świąteczne prowadzi Cię krok po kroku — prześlij zdjęcie, odpowiedz na kilka pytań lub zacznij od imienia — a strona robi resztę.",
+        a: "Nie. Każde doświadczenie świąteczne prowadzi Cię krok po kroku · prześlij zdjęcie, odpowiedz na kilka pytań lub zacznij od imienia · a strona robi resztę.",
       },
       {
         q: "Czy to dla prezentów cyfrowych, fizycznych, czy obu?",
@@ -101,11 +101,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy to działa na telefonie?",
-        a: "Tak — hub świąteczny i doświadczenia produktowe są zaprojektowane najpierw na telefon i działają też na komputerze.",
+        a: "Tak · hub świąteczny i doświadczenia produktowe są zaprojektowane najpierw na telefon i działają też na komputerze.",
       },
       {
         q: "Czy zdjęcie mojej rodziny jest prywatne?",
-        a: "Przesłane pliki służą do stworzenia portretu lub kartki. Doświadczenia dla dzieci są privacy-first i zakładają rodzica lub opiekuna. Gdy wynik jest gotowy, pobierasz go prywatnie — nie publikujemy Twoich zdjęć.",
+        a: "Przesłane pliki służą do stworzenia portretu lub kartki. Doświadczenia dla dzieci są privacy-first i zakładają rodzica lub opiekuna. Gdy wynik jest gotowy, pobierasz go prywatnie · nie publikujemy Twoich zdjęć.",
       },
       {
         q: "Ile trwa stworzenie czegoś?",
@@ -138,7 +138,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest Wyszukiwarka Świątecznych Prezentów?",
       body:
-        "Wyszukiwarka Świątecznych Prezentów to narzędzie prowadzące krok po kroku, które poleca pomysły na świąteczne prezenty na podstawie tego, dla kogo kupujesz, jego zainteresowań i osobowości oraz Twojego budżetu. W TheDigitalGifter odpowiadasz na krótki zestaw pytań i otrzymujesz wyselekcjonowane pomysły z jasnymi powodami, dlaczego mogą się sprawdzić — a potem możesz doprecyzować odpowiedzi lub zapisać pomysły w liście życzeń.",
+        "Wyszukiwarka Świątecznych Prezentów to narzędzie prowadzące krok po kroku, które poleca pomysły na świąteczne prezenty na podstawie tego, dla kogo kupujesz, jego zainteresowań i osobowości oraz Twojego budżetu. W TheDigitalGifter odpowiadasz na krótki zestaw pytań i otrzymujesz wyselekcjonowane pomysły z jasnymi powodami, dlaczego mogą się sprawdzić · a potem możesz doprecyzować odpowiedzi lub zapisać pomysły w liście życzeń.",
     },
     sections: [
       {
@@ -150,13 +150,13 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Znajdź Prezenty Według Odbiorcy",
         body:
-          "Wyszukiwarka Prezentów obsługuje najczęstsze relacje świątecznych zakupów, aby rekomendacje pozostały odpowiednie. Skorzystaj z narzędzia dla mamy, taty, żony, męża, dziewczyny, chłopaka, dzieci, nastolatków, dziadków, przyjaciół, współpracowników i innych. Dedykowane strony dla poszczególnych odbiorców nie są jeszcze dostępne — zacznij wyszukiwarkę i wybierz odbiorcę tam.",
+          "Wyszukiwarka Prezentów obsługuje najczęstsze relacje świątecznych zakupów, aby rekomendacje pozostały odpowiednie. Skorzystaj z narzędzia dla mamy, taty, żony, męża, dziewczyny, chłopaka, dzieci, nastolatków, dziadków, przyjaciół, współpracowników i innych. Dedykowane strony dla poszczególnych odbiorców nie są jeszcze dostępne · zacznij wyszukiwarkę i wybierz odbiorcę tam.",
         list: ["Mama", "Tata", "Żona", "Mąż", "Dziewczyna", "Chłopak", "Dzieci", "Nastolatki", "Dziadkowie", "Przyjaciele", "Współpracownicy"],
       },
       {
         h2: "Znajdź Świąteczne Prezenty Według Budżetu",
         body:
-          "Wybierz zakres wydatków, na przykład do 100 zł, 100–200 zł, 200–400 zł, 400–800 zł, 800 zł+, albo bez ustalonego budżetu. Rekomendacje to pomysły na prezenty z typowymi zakresami cenowymi — nie są to dane o dostępności w czasie rzeczywistym u sprzedawców ani gwarancja stanu magazynowego.",
+          "Wybierz zakres wydatków, na przykład do 100 zł, 100–200 zł, 200–400 zł, 400–800 zł, 800 zł+, albo bez ustalonego budżetu. Rekomendacje to pomysły na prezenty z typowymi zakresami cenowymi · nie są to dane o dostępności w czasie rzeczywistym u sprzedawców ani gwarancja stanu magazynowego.",
       },
       {
         h2: "Prezenty Dla Kogoś, Kto Ma Już Wszystko",
@@ -197,7 +197,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy wyświetla realne produkty?",
-        a: "Obecnie wyszukiwarka pokazuje wyselekcjonowane pomysły na prezenty z typowymi zakresami cenowymi. Ceny i dostępność u sprzedawców w czasie rzeczywistym nie są jeszcze podłączone — nie wymyślamy dokładnego stanu magazynowego czy cen sprzedawców.",
+        a: "Obecnie wyszukiwarka pokazuje wyselekcjonowane pomysły na prezenty z typowymi zakresami cenowymi. Ceny i dostępność u sprzedawców w czasie rzeczywistym nie są jeszcze podłączone · nie wymyślamy dokładnego stanu magazynowego czy cen sprzedawców.",
       },
     ],
   },
@@ -265,7 +265,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy mogę dodać życzenia bez linku?",
-        a: "Tak. Napisz dowolne życzenie — doświadczenia, rękodzieło, albo proste „Zaskocz mnie”.",
+        a: "Tak. Napisz dowolne życzenie · doświadczenia, rękodzieło, albo proste „Zaskocz mnie”.",
       },
       {
         q: "Czy mogę udostępnić jeden link do listy?",
@@ -313,7 +313,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest generator świątecznych zdjęć z AI?",
       body:
-        "Generator świątecznych zdjęć z AI zmienia rzeczywiste zdjęcie, które wgrywasz, w świąteczny portret. W TheDigitalGifter wybierasz, kto jest na zdjęciu, wybierasz świąteczny styl i tworzysz portret do pobrania dla rodziny, par, osób lub zwierząt — domyślnie prywatny.",
+        "Generator świątecznych zdjęć z AI zmienia rzeczywiste zdjęcie, które wgrywasz, w świąteczny portret. W TheDigitalGifter wybierasz, kto jest na zdjęciu, wybierasz świąteczny styl i tworzysz portret do pobrania dla rodziny, par, osób lub zwierząt · domyślnie prywatny.",
     },
     sections: [
       {
@@ -325,11 +325,11 @@ export const CHRISTMAS_SEO_CONTENT = {
         h2: "Przykłady Świątecznych Zdjęć",
         body: "Przykłady demonstracyjne pokazują popularne kierunki świątecznych portretów. To próbki inspiracyjne, nie zdjęcia klientów.",
         list: [
-          "Świąteczne Zdjęcie Rodzinne — portret grupowy w przytulnej świątecznej scenerii",
-          "Świąteczny Portret Pary — romantyczny portret dwóch osób",
-          "Świąteczny Portret Psa — portret skupiony na psie",
-          "Świąteczny Portret Kota — portret skupiony na kocie",
-          "Rodzina + Zwierzę — ludzie i zwierzę we wspólnym świątecznym kadrze",
+          "Świąteczne Zdjęcie Rodzinne · portret grupowy w przytulnej świątecznej scenerii",
+          "Świąteczny Portret Pary · romantyczny portret dwóch osób",
+          "Świąteczny Portret Psa · portret skupiony na psie",
+          "Świąteczny Portret Kota · portret skupiony na kocie",
+          "Rodzina + Zwierzę · ludzie i zwierzę we wspólnym świątecznym kadrze",
         ],
       },
       {
@@ -345,7 +345,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Świąteczne Zdjęcia dla Rodzin, Par i Zwierząt",
         body:
-          "Potrzebujesz bardziej konkretnego punktu startowego? Skorzystaj z dedykowanych ścieżek świątecznych portretów dla rodziny, par, zwierząt, psów i kotów — lub kontynuuj tutaj z pełnym generatorem zdjęć.",
+          "Potrzebujesz bardziej konkretnego punktu startowego? Skorzystaj z dedykowanych ścieżek świątecznych portretów dla rodziny, par, zwierząt, psów i kotów · lub kontynuuj tutaj z pełnym generatorem zdjęć.",
         list: [
           "Świąteczne Portrety Rodzinne → /pl/christmas/family",
           "Świąteczne Portrety Par → /pl/christmas/couples",
@@ -415,13 +415,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest generator rodzinnych zdjęć świątecznych?",
       body:
-        "Generator rodzinnych zdjęć świątecznych zmienia wgrane zdjęcie rodzinne w świąteczny portret grupowy. W TheDigitalGifter wgrywasz wyraźne zdjęcie swojej rodziny, wybierasz świąteczny styl przeznaczony dla wielu osób i tworzysz portret do pobrania — domyślnie prywatny, z opcją przejścia dalej do kartki świątecznej.",
+        "Generator rodzinnych zdjęć świątecznych zmienia wgrane zdjęcie rodzinne w świąteczny portret grupowy. W TheDigitalGifter wgrywasz wyraźne zdjęcie swojej rodziny, wybierasz świąteczny styl przeznaczony dla wielu osób i tworzysz portret do pobrania · domyślnie prywatny, z opcją przejścia dalej do kartki świątecznej.",
     },
     sections: [
       {
         h2: "Stwórz Rodzinny Portret Świąteczny",
         body:
-          "To doświadczenie zostało zbudowane specjalnie dla rodzin — nie jest to generyczny wygląd dla jednej osoby. Wgraj zdjęcie grupowe, wybierz świąteczną atmosferę i stwórz portret, który ma za cel uchwycić wszystkich w kadrze.",
+          "To doświadczenie zostało zbudowane specjalnie dla rodzin · nie jest to generyczny wygląd dla jednej osoby. Wgraj zdjęcie grupowe, wybierz świąteczną atmosferę i stwórz portret, który ma za cel uchwycić wszystkich w kadrze.",
       },
       {
         h2: "Przykłady Rodzinnych Zdjęć Świątecznych",
@@ -471,7 +471,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy mogę uwzględnić dziadków?",
-        a: "Tak. Zdjęcia wielogeneracyjne — z dziadkami i niemowlętami — są mile widziane, jeśli twarze są widoczne.",
+        a: "Tak. Zdjęcia wielogeneracyjne · z dziadkami i niemowlętami · są mile widziane, jeśli twarze są widoczne.",
       },
       {
         q: "Czy mogę uwzględnić rodzinne zwierzę?",
@@ -501,7 +501,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     description:
       "Stwórz romantyczny świąteczny portret pary ze swojego zdjęcia. Idealny na pierwsze wspólne Święta lub spersonalizowany prezent dla pary.",
     h1: "Stwórz Magiczny Świąteczny Portret Razem",
-    lede: "Wgraj jedno zdjęcie z Wami obojgiem i stwórz romantyczny świąteczny portret pary — domyślnie prywatny.",
+    lede: "Wgraj jedno zdjęcie z Wami obojgiem i stwórz romantyczny świąteczny portret pary · domyślnie prywatny.",
     h2: "Więcej świątecznych portretów",
     breadcrumbs: [
       { href: "/pl/christmas", label: "Boże Narodzenie" },
@@ -523,11 +523,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Stwórz Świąteczny Portret Razem",
         body:
-          "To doświadczenie jest dla dwóch osób — partnerów, zaręczonych par, męża i żony, albo chłopaka i dziewczyny. Wgraj jedno zdjęcie, na którym Wy oboje jesteście dobrze widoczni, wybierz świąteczny wygląd i stwórz portret stworzony dla Was dwojga.",
+          "To doświadczenie jest dla dwóch osób · partnerów, zaręczonych par, męża i żony, albo chłopaka i dziewczyny. Wgraj jedno zdjęcie, na którym Wy oboje jesteście dobrze widoczni, wybierz świąteczny wygląd i stwórz portret stworzony dla Was dwojga.",
       },
       {
         h2: "Pomysły na Świąteczne Zdjęcia Par",
-        body: "Zastosowania, do których ten portret często się sprawdza — jako inspiracja, nie jako oddzielne warianty produktu:",
+        body: "Zastosowania, do których ten portret często się sprawdza · jako inspiracja, nie jako oddzielne warianty produktu:",
         list: [
           "Pierwsze wspólne Święta",
           "Świąteczny portret zaręczonej pary",
@@ -570,7 +570,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy obie osoby zostaną rozpoznawalne?",
-        a: "To jest cel. Zacznij od wyraźnego zdjęcia obu twarzy — unikaj mocnego rozmycia lub sytuacji, gdy jedna osoba jest w większości poza kadrem.",
+        a: "To jest cel. Zacznij od wyraźnego zdjęcia obu twarzy · unikaj mocnego rozmycia lub sytuacji, gdy jedna osoba jest w większości poza kadrem.",
       },
       {
         q: "Czy mogę stworzyć romantyczny świąteczny portret?",
@@ -597,7 +597,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/pets": {
     title: "Generator Świątecznych Zdjęć Zwierząt | Świąteczne Portrety Zwierząt",
-    description: "Zmień zdjęcie swojego zwierzęcia w świąteczny portret. Psy i koty są mile widziane — domyślnie prywatnie.",
+    description: "Zmień zdjęcie swojego zwierzęcia w świąteczny portret. Psy i koty są mile widziane · domyślnie prywatnie.",
     h1: "Zmień Swoje Zwierzę w Świąteczną Magię",
     lede: "Wgraj wyraźne zdjęcie zwierzęcia i stwórz świąteczny portret zwierzęcia dla psa lub kota.",
     h2: "Świąteczne portrety według gatunku",
@@ -621,12 +621,12 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Zmień Swoje Zwierzę w Świąteczną Magię",
         body:
-          "Wgraj wyraźne zdjęcie zwierzęcia, wybierz świąteczny styl zwierzęcy i stwórz świąteczny portret zwierzęcia, które kochasz. To jest ogólne centrum zwierząt — nie zestaw z komiksem.",
+          "Wgraj wyraźne zdjęcie zwierzęcia, wybierz świąteczny styl zwierzęcy i stwórz świąteczny portret zwierzęcia, które kochasz. To jest ogólne centrum zwierząt · nie zestaw z komiksem.",
       },
       {
         h2: "Świąteczne Portrety dla Psów i Kotów",
         body:
-          "Chcesz jasnego startu dla jednego gatunku? Skorzystaj z dedykowanych ścieżek dla psa lub kota — pomagają zweryfikować zdjęcie i skupiają doświadczenie na psie lub kocie.",
+          "Chcesz jasnego startu dla jednego gatunku? Skorzystaj z dedykowanych ścieżek dla psa lub kota · pomagają zweryfikować zdjęcie i skupiają doświadczenie na psie lub kocie.",
         list: [
           "Generator Świątecznych Zdjęć Psów → /pl/christmas/dogs",
           "Generator Świątecznych Zdjęć Kotów → /pl/christmas/cats",
@@ -711,7 +711,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest generator świątecznych zdjęć psów?",
       body:
-        "Generator świątecznych zdjęć psów tworzy świąteczny portret ze zdjęcia Twojego psa. W TheDigitalGifter wgrywasz wyraźne zdjęcie psa, wybierasz świąteczny styl zwierzęcy i pobierasz świąteczny portret skupiony na psie — z opcjonalną ścieżką do kartki świątecznej.",
+        "Generator świątecznych zdjęć psów tworzy świąteczny portret ze zdjęcia Twojego psa. W TheDigitalGifter wgrywasz wyraźne zdjęcie psa, wybierasz świąteczny styl zwierzęcy i pobierasz świąteczny portret skupiony na psie · z opcjonalną ścieżką do kartki świątecznej.",
     },
     sections: [
       {
@@ -721,7 +721,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Przykłady Świątecznych Portretów Psów",
-        body: "Kierunki demonstracyjne dla świątecznych portretów psów — próbki inspiracyjne, nie zdjęcia klientów.",
+        body: "Kierunki demonstracyjne dla świątecznych portretów psów · próbki inspiracyjne, nie zdjęcia klientów.",
         list: [
           "Pies przy ozdobionej choince",
           "Przytulny świąteczny portret psa przy kominku",
@@ -818,7 +818,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Przykłady Świątecznych Portretów Kotów",
-        body: "Kierunki demonstracyjne z kotami — próbki inspiracyjne, nie zdjęcia klientów.",
+        body: "Kierunki demonstracyjne z kotami · próbki inspiracyjne, nie zdjęcia klientów.",
         list: [
           "Kot przy choince",
           "Przytulny świąteczny portret kota przy kominku",
@@ -905,13 +905,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest spersonalizowany film od Świętego Mikołaja?",
       body:
-        "Spersonalizowany film od Świętego Mikołaja to świąteczny film z wiadomością, który może zawierać imię odbiorcy i inne szczegóły, które podasz. W TheDigitalGifter wypełniasz krótki, prowadzony formularz, sprawdzasz wiadomość, a potem tworzysz film, który możesz pobrać i udostępnić. Wiadomości są tworzone w języku angielskim lub rumuńskim — Święty Mikołaj w tym narzędziu jeszcze nie przemawia po polsku.",
+        "Spersonalizowany film od Świętego Mikołaja to świąteczny film z wiadomością, który może zawierać imię odbiorcy i inne szczegóły, które podasz. W TheDigitalGifter wypełniasz krótki, prowadzony formularz, sprawdzasz wiadomość, a potem tworzysz film, który możesz pobrać i udostępnić. Wiadomości są tworzone w języku angielskim lub rumuńskim · Święty Mikołaj w tym narzędziu jeszcze nie przemawia po polsku.",
     },
     sections: [
       {
         h2: "Spersonalizowana Wiadomość od Świętego Mikołaja",
         body:
-          "Stwórz świąteczny film od Świętego Mikołaja dla dziecka, rodzeństwa, rodziny lub kogoś specjalnego. Święty Mikołaj może powiedzieć imię i uwzględnić opcjonalne szczegóły, które podasz — a potem pobierz lub udostępnij gotowy film. Film jest nagrany w języku angielskim lub rumuńskim.",
+          "Stwórz świąteczny film od Świętego Mikołaja dla dziecka, rodzeństwa, rodziny lub kogoś specjalnego. Święty Mikołaj może powiedzieć imię i uwzględnić opcjonalne szczegóły, które podasz · a potem pobierz lub udostępnij gotowy film. Film jest nagrany w języku angielskim lub rumuńskim.",
       },
       {
         h2: "Co Może Wspomnieć Święty Mikołaj?",
@@ -946,7 +946,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy Święty Mikołaj może wspomnieć świąteczny prezent?",
-        a: "Tak — możesz dodać świąteczne życzenie, a Święty Mikołaj może je wspomnieć, gdy je podasz.",
+        a: "Tak · możesz dodać świąteczne życzenie, a Święty Mikołaj może je wspomnieć, gdy je podasz.",
       },
       {
         q: "Czy mogę stworzyć film dla rodzeństwa?",
@@ -986,7 +986,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest cyfrowa choinka?",
       body:
-        "Cyfrowa choinka to interaktywna, internetowa choinka, którą można dostosować i udostępnić. W TheDigitalGifter wybierasz wygląd choinki, dodajesz ozdoby, umieszczasz pod nią pudełka z prezentami z osobistymi wiadomościami i udostępniasz prywatny link, aby ktoś specjalny mógł otworzyć prezenty na swoim ekranie — bez zmieniania strony udostępniania w publiczny wynik wyszukiwania.",
+        "Cyfrowa choinka to interaktywna, internetowa choinka, którą można dostosować i udostępnić. W TheDigitalGifter wybierasz wygląd choinki, dodajesz ozdoby, umieszczasz pod nią pudełka z prezentami z osobistymi wiadomościami i udostępniasz prywatny link, aby ktoś specjalny mógł otworzyć prezenty na swoim ekranie · bez zmieniania strony udostępniania w publiczny wynik wyszukiwania.",
     },
     sections: [
       {
@@ -997,7 +997,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Co Można Umieścić Pod Choinką?",
         body:
-          "Obecnie możesz dodawać pudełka z prezentami, które zawierają osobiste świąteczne wiadomości. Każdy prezent może mieć świąteczny styl pudełka, taki jak czerwony, złoty, zielony, niebieski lub śnieżny. Dodatkowe typy prezentów mogą zostać dodane w przyszłości — obecny kreator skupia się na prezentach z wiadomością.",
+          "Obecnie możesz dodawać pudełka z prezentami, które zawierają osobiste świąteczne wiadomości. Każdy prezent może mieć świąteczny styl pudełka, taki jak czerwony, złoty, zielony, niebieski lub śnieżny. Dodatkowe typy prezentów mogą zostać dodane w przyszłości · obecny kreator skupia się na prezentach z wiadomością.",
         list: ["Osobiste świąteczne wiadomości w pudełkach z prezentami", "Świąteczne style pudełek (czerwony, złoty, zielony, niebieski, śnieżny)"],
       },
       {
@@ -1008,7 +1008,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Prezent Stworzony, Aby Być Otwarty",
         body:
-          "Odbiorcy mogą stuknąć w prezenty pod choinką, aby odkryć wiadomości, które zostawiłeś — cyfrowa chwila, która ma wywoływać wrażenie czegoś umieszczonego specjalnie dla nich.",
+          "Odbiorcy mogą stuknąć w prezenty pod choinką, aby odkryć wiadomości, które zostawiłeś · cyfrowa chwila, która ma wywoływać wrażenie czegoś umieszczonego specjalnie dla nich.",
       },
       {
         h2: "Jak To Działa",
@@ -1049,7 +1049,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy potrzebuję konta?",
-        a: "Możesz zacząć tworzyć choinkę bez skomplikowanej konfiguracji — własność jest zarządzana przez sesję tworzenia, dzięki czemu możesz kontynuować edycję.",
+        a: "Możesz zacząć tworzyć choinkę bez skomplikowanej konfiguracji · własność jest zarządzana przez sesję tworzenia, dzięki czemu możesz kontynuować edycję.",
       },
       {
         q: "Czy udostępniona choinka jest publiczna?",
@@ -1083,7 +1083,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Odrobina Świątecznej Magii Każdego Dnia",
         body:
-          "Kalendarz adwentowy to doświadczenie odliczania z dwudziestoma czterema okienkami. Każdy dzień grudnia ma swoje własne okienko — mały rytuał otwierania czegoś nowego w miarę zbliżania się Świąt.",
+          "Kalendarz adwentowy to doświadczenie odliczania z dwudziestoma czterema okienkami. Każdy dzień grudnia ma swoje własne okienko · mały rytuał otwierania czegoś nowego w miarę zbliżania się Świąt.",
       },
       {
         h2: "Otwieraj Nowe Okienko Każdego Dnia",
@@ -1093,7 +1093,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Co Może Być za Okienkami?",
         body:
-          "Nagrody za okienkami to świąteczne akcenty skonfigurowane na sezon — takie jak niespodziewany odbiór, gdy produkcyjne odbiory są aktywne. Dostępność może zależeć od ustawień sezonu i tego, czy jesteś zalogowany.",
+          "Nagrody za okienkami to świąteczne akcenty skonfigurowane na sezon · takie jak niespodziewany odbiór, gdy produkcyjne odbiory są aktywne. Dostępność może zależeć od ustawień sezonu i tego, czy jesteś zalogowany.",
       },
       {
         h2: "Przed 1 Grudnia",
@@ -1126,7 +1126,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy mogę otworzyć wcześniejsze okienka?",
-        a: "Nie. Pominięte dni pozostają zamknięte — tylko dzisiejsze okienko jest dostępne.",
+        a: "Nie. Pominięte dni pozostają zamknięte · tylko dzisiejsze okienko jest dostępne.",
       },
       {
         q: "Czy kalendarz jest bezpłatny?",
@@ -1134,7 +1134,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Co mogę znaleźć za okienkiem?",
-        a: "Sezonowe świąteczne niespodzianki skonfigurowane na dany dzień, gdy odbiory są aktywne — nie jest to gwarancja nagród pieniężnych czy kredytów sklepowych każdego dnia.",
+        a: "Sezonowe świąteczne niespodzianki skonfigurowane na dany dzień, gdy odbiory są aktywne · nie jest to gwarancja nagród pieniężnych czy kredytów sklepowych każdego dnia.",
       },
       {
         q: "Czy potrzebuję konta?",
@@ -1153,7 +1153,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/cards": {
     title: "Kreator Kartek Świątecznych | Spersonalizowane Kartki Świąteczne",
-    description: "Stwórz spersonalizowaną kartkę świąteczną, którą będą chcieli zachować — wybierz projekt, dodaj swoją wiadomość i udostępnij lub pobierz.",
+    description: "Stwórz spersonalizowaną kartkę świąteczną, którą będą chcieli zachować · wybierz projekt, dodaj swoją wiadomość i udostępnij lub pobierz.",
     h1: "Stwórz Kartkę Świąteczną, Którą Będą Chcieli Zachować",
     lede: "Zaprojektuj spersonalizowaną kartkę świąteczną z świątecznymi układami i własną wiadomością. Niektóre wiadomości zasługują na więcej niż tekst.",
     h2: "Połącz z Wiadomościami Świątecznymi",
@@ -1176,7 +1176,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Stwórz Spersonalizowaną Kartkę Świąteczną",
         body:
-          "Wybierz styl kartki świątecznej, dodaj swoje zdjęcie, napisz wiadomość i stwórz cyfrową kartkę, którą możesz pobrać lub udostępnić. Niektóre wiadomości zasługują na więcej niż tekst — to jest właśnie dla takich sytuacji.",
+          "Wybierz styl kartki świątecznej, dodaj swoje zdjęcie, napisz wiadomość i stwórz cyfrową kartkę, którą możesz pobrać lub udostępnić. Niektóre wiadomości zasługują na więcej niż tekst · to jest właśnie dla takich sytuacji.",
       },
       {
         h2: "Przykłady Kartek Świątecznych",
@@ -1246,7 +1246,7 @@ export const CHRISTMAS_SEO_CONTENT = {
 
   "/christmas/messages": {
     title: "Generator Wiadomości Świątecznych | Życzenia dla Rodziny i Przyjaciół",
-    description: "Znajdź idealną wiadomość świąteczną dla rodziny, przyjaciół i współpracowników — a potem użyj jej w spersonalizowanej kartce świątecznej.",
+    description: "Znajdź idealną wiadomość świąteczną dla rodziny, przyjaciół i współpracowników · a potem użyj jej w spersonalizowanej kartce świątecznej.",
     h1: "Znajdź Idealną Wiadomość Świąteczną",
     lede: "Generuj ciepłe, zabawne, romantyczne lub profesjonalne życzenia świąteczne, a potem umieść swoją ulubioną wiadomość na kartce świątecznej.",
     h2: "Zmień Słowa w Kartkę",
@@ -1263,7 +1263,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Czym jest generator wiadomości świątecznych?",
       body:
-        "Generator wiadomości świątecznych pomaga napisać życzenia świąteczne, wybierając, dla kogo jest wiadomość, i ton, który chcesz — a potem generuje edytowalne opcje wiadomości. W TheDigitalGifter możesz stworzyć ciepłe, zabawne, romantyczne, serdeczne, krótkie, profesjonalne lub religijne wiadomości świąteczne w języku angielskim lub rumuńskim, a potem je skopiować lub przenieść do kartki świątecznej.",
+        "Generator wiadomości świątecznych pomaga napisać życzenia świąteczne, wybierając, dla kogo jest wiadomość, i ton, który chcesz · a potem generuje edytowalne opcje wiadomości. W TheDigitalGifter możesz stworzyć ciepłe, zabawne, romantyczne, serdeczne, krótkie, profesjonalne lub religijne wiadomości świąteczne w języku angielskim lub rumuńskim, a potem je skopiować lub przenieść do kartki świątecznej.",
     },
     sections: [
       {
@@ -1274,7 +1274,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Wiadomości Świąteczne Według Odbiorcy",
         body:
-          "Generator obsługuje najczęstsze relacje świąteczne. Uruchom narzędzie i wybierz, do kogo piszesz — dedykowane strony dla poszczególnych odbiorców nie są jeszcze dostępne.",
+          "Generator obsługuje najczęstsze relacje świąteczne. Uruchom narzędzie i wybierz, do kogo piszesz · dedykowane strony dla poszczególnych odbiorców nie są jeszcze dostępne.",
         list: ["Mama", "Tata", "Żona", "Mąż", "Dziewczyna", "Chłopak", "Rodzina", "Przyjaciel", "Współpracownik"],
       },
       {
@@ -1283,7 +1283,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         h2: "Przykłady Wiadomości Świątecznych",
-        body: "Kierunki demonstracyjne dla rodzajów życzeń, które narzędzie może pomóc napisać — edytuj cokolwiek, aby zabrzmiało jak Ty.",
+        body: "Kierunki demonstracyjne dla rodzajów życzeń, które narzędzie może pomóc napisać · edytuj cokolwiek, aby zabrzmiało jak Ty.",
         list: [
           "Serdeczna notka do mamy, dziękująca za kolejny rok cichej dobroci",
           "Krótkie, ciepłe życzenie dla przyjaciela, którego nie widujesz wystarczająco często",
@@ -1294,7 +1294,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Jak Napisać Znaczącą Wiadomość Świąteczną",
         body:
-          "Zwróć się do osoby po imieniu lub relacji, wspomnij o jednym wspólnym wspomnieniu lub cesze, gdy to odpowiednie, wyraź jedno jasne uczucie, zachowaj naturalne słownictwo i zakończ osobiście. Generator jest punktem wyjścia — Twoja edycja czyni to prawdziwym.",
+          "Zwróć się do osoby po imieniu lub relacji, wspomnij o jednym wspólnym wspomnieniu lub cesze, gdy to odpowiednie, wyraź jedno jasne uczucie, zachowaj naturalne słownictwo i zakończ osobiście. Generator jest punktem wyjścia · Twoja edycja czyni to prawdziwym.",
       },
       {
         h2: "Użyj Swojej Wiadomości na Kartce Świątecznej",
@@ -1314,7 +1314,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Czy może tworzyć zabawne wiadomości świąteczne?",
-        a: "Tak. Wybierz zabawny ton — zachowaj profesjonalizm w wiadomościach do współpracowników.",
+        a: "Tak. Wybierz zabawny ton · zachowaj profesjonalizm w wiadomościach do współpracowników.",
       },
       {
         q: "Czy mogę edytować wygenerowane wiadomości?",

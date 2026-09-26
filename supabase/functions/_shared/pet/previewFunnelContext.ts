@@ -1,6 +1,6 @@
 /** Shared preview-funnel routing for V2 dog and V3 cat on pet-v2-preview. */
 
-/** Bump when identity prompts/gates change — live smoke verifies this after deploy. */
+/** Bump when identity prompts/gates change · live smoke verifies this after deploy. */
 export const PET_PREVIEW_IDENTITY_BUILD = "pet-preview-identity-2026-08-28h";
 
 export type PreviewFunnelVersion = "v2" | "v3";
@@ -16,20 +16,20 @@ export type PreviewFunnelContext = {
 };
 
 /**
- * Authoritative identity instruction. The uploaded photo is the source of truth —
+ * Authoritative identity instruction. The uploaded photo is the source of truth -
  * never invent a different animal from text alone.
  */
 export const IDENTITY_LOCK =
-  "CRITICAL IDENTITY LOCK: The uploaded pet photo is the only identity source. Keep the SAME individual animal so a customer instantly says “that is my pet.” Preserve breed, coat color/length/texture, markings, facial structure, muzzle length/width, ear shape/size, eye placement/color, neck ruff/mane volume, and body proportions. If the reference is a Chow Chow (dense lion mane, round head, small ears buried in fur, broad short muzzle, cinnamon coat), the result MUST stay that Chow Chow — not a shepherd, collie, husky, lab, retriever, or generic fluffy mix. Apply the requested scene around this pet; do not invent a different animal for the scene.";
+  "CRITICAL IDENTITY LOCK: The uploaded pet photo is the only identity source. Keep the SAME individual animal so a customer instantly says “that is my pet.” Preserve breed, coat color/length/texture, markings, facial structure, muzzle length/width, ear shape/size, eye placement/color, neck ruff/mane volume, and body proportions. If the reference is a Chow Chow (dense lion mane, round head, small ears buried in fur, broad short muzzle, cinnamon coat), the result MUST stay that Chow Chow · not a shepherd, collie, husky, lab, retriever, or generic fluffy mix. Apply the requested scene around this pet; do not invent a different animal for the scene.";
 
 export const IDENTITY_NEGATIVES =
   "FORBIDDEN identity drift: no German Shepherd, Belgian Malinois, husky, collie, Labrador, golden retriever, spitz mix, or generic stock-photo dog face unless that exact look is in the reference. No long pointed snout when the reference muzzle is short/broad. No large upright shepherd ears when the reference has small ears buried in fur. No dark dorsal snout stripe or sable shepherd mask unless in the reference. No short sleek coat when the reference has long/fluffy/dense/mane fur. No thinning a lion mane into a tight collar. No human face/head/hands or second animal. No text, logos, brand marks, watermarks, or trademarks.";
 
 export const F1_DRIVER_EDIT =
-  "SCENE REQUIREMENT (mandatory): photoreal Formula 1 style racing edit — the uploaded pet MUST be alone in a realistic open-wheel race car cockpit on a bright sunlit racetrack or pit lane. Do NOT output a plain studio portrait, indoor floor photo, or unchanged background. Keep the pet’s real head/face/mane identity from the reference (environment/wardrobe edit, not a breed redesign). BARE HEAD ONLY: absolutely no helmet of any kind (closed, open, half, novelty, or tiny) — no helmet resting nearby either; ears and full mane must be fully uncovered. Optional tiny racing scarf at the neck only. If the reference has a dense Chow Chow–style mane, show that full mane volume in the cockpit. Car body may use vivid colors but MUST be blank of emblems — no shields, crests, prancing horse, bulls, or any brand/team mark (including Ferrari, Red Bull, Mercedes, Pirelli) and no readable text. Pet is the sole focal point. No human driver, passenger, hands, or helmeted person. Avoid muddy grading, cartoons, goofy costumes, clutter, and distorted anatomy.";
+  "SCENE REQUIREMENT (mandatory): photoreal Formula 1 style racing edit · the uploaded pet MUST be alone in a realistic open-wheel race car cockpit on a bright sunlit racetrack or pit lane. Do NOT output a plain studio portrait, indoor floor photo, or unchanged background. Keep the pet’s real head/face/mane identity from the reference (environment/wardrobe edit, not a breed redesign). BARE HEAD ONLY: absolutely no helmet of any kind (closed, open, half, novelty, or tiny) · no helmet resting nearby either; ears and full mane must be fully uncovered. Optional tiny racing scarf at the neck only. If the reference has a dense Chow Chow–style mane, show that full mane volume in the cockpit. Car body may use vivid colors but MUST be blank of emblems · no shields, crests, prancing horse, bulls, or any brand/team mark (including Ferrari, Red Bull, Mercedes, Pirelli) and no readable text. Pet is the sole focal point. No human driver, passenger, hands, or helmeted person. Avoid muddy grading, cartoons, goofy costumes, clutter, and distorted anatomy.";
 
 export const ROYAL_CAT_EDIT =
-  "Create a photoreal, vibrant, cinematic transformation of the uploaded cat as a royal ruler. Change only the scene, styling, props, and lighting — never the cat's face, fur, markings, or body identity. Place the same cat wearing an ornate golden crown in a regal throne-room or museum-quality royal portrait setting with rich velvet, gold accents, and flattering portrait lighting. Preserve natural feline anatomy, fur color, markings, and eye color. The cat must remain unmistakably the same individual — no dog features, no extra limbs, no malformed paws, no second animal, no human face or hands. Bright, polished, luxurious royal portrait aesthetic. Avoid cartoonish looks, clutter, text overlays, watermarks, logos, and brand marks.";
+  "Create a photoreal, vibrant, cinematic transformation of the uploaded cat as a royal ruler. Change only the scene, styling, props, and lighting · never the cat's face, fur, markings, or body identity. Place the same cat wearing an ornate golden crown in a regal throne-room or museum-quality royal portrait setting with rich velvet, gold accents, and flattering portrait lighting. Preserve natural feline anatomy, fur color, markings, and eye color. The cat must remain unmistakably the same individual · no dog features, no extra limbs, no malformed paws, no second animal, no human face or hands. Bright, polished, luxurious royal portrait aesthetic. Avoid cartoonish looks, clutter, text overlays, watermarks, logos, and brand marks.";
 
 export function resolvePreviewContext(body: Record<string, unknown>): {
   ok: true;
@@ -115,8 +115,8 @@ export function buildPreviewPrompt(ctx: PreviewFunnelContext, species: string): 
   const subject = ctx.version === "v3" ? "cat" : species === "other" ? "pet" : species;
   const sceneMandatory =
     ctx.version === "v3"
-      ? "MANDATORY SCENE: royal throne-room portrait with crown — not a plain home photo."
-      : "MANDATORY SCENE: open-wheel race car cockpit on a racetrack — not a plain studio or indoor floor portrait.";
+      ? "MANDATORY SCENE: royal throne-room portrait with crown · not a plain home photo."
+      : "MANDATORY SCENE: open-wheel race car cockpit on a racetrack · not a plain studio or indoor floor portrait.";
   return [
     sceneEdit,
     IDENTITY_LOCK,

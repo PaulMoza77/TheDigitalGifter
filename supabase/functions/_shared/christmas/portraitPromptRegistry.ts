@@ -76,7 +76,7 @@ const REGISTRY: Record<string, ChristmasPromptStyle[]> = {
       "styleKey": "classic_family_christmas",
       "displayName": "Classic Family Christmas",
       "enabled": true,
-      "promptTemplate": "Transform this family photo into a photoreal classic Christmas family portrait. Preserve the exact facial identity, approximate age, and likeness of every person. Keep the same number of people — do not add, remove, or clone anyone. Cohesive group posing near a decorated Christmas tree, soft warm lights, natural skin, no text, no watermark, no deformed hands.",
+      "promptTemplate": "Transform this family photo into a photoreal classic Christmas family portrait. Preserve the exact facial identity, approximate age, and likeness of every person. Keep the same number of people · do not add, remove, or clone anyone. Cohesive group posing near a decorated Christmas tree, soft warm lights, natural skin, no text, no watermark, no deformed hands.",
       "negativeHints": "extra people, missing people, cloned faces, cartoon, text, watermark, deformed hands"
     },
     {
@@ -134,7 +134,7 @@ const REGISTRY: Record<string, ChristmasPromptStyle[]> = {
       "styleKey": "romantic_snowfall",
       "displayName": "Romantic Snowfall",
       "enabled": true,
-      "promptTemplate": "Transform this couple photo into a photoreal romantic Christmas snowfall portrait. Preserve both people's exact facial identities. Keep exactly two people — do not merge, clone, or drop either person. Soft falling snow, warm lantern glow, intimate pose, natural skin, no text, no watermark.",
+      "promptTemplate": "Transform this couple photo into a photoreal romantic Christmas snowfall portrait. Preserve both people's exact facial identities. Keep exactly two people · do not merge, clone, or drop either person. Soft falling snow, warm lantern glow, intimate pose, natural skin, no text, no watermark.",
       "negativeHints": "one person, three people, merged faces, cartoon, text, watermark"
     },
     {

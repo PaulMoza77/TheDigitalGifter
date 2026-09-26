@@ -44,7 +44,7 @@ export function usePublicPetOffer() {
     } catch {
       setOfferVerified(false);
       setAmountCents(null);
-      setOfferError("Could not verify the current price. You can still continue — checkout stays locked until the price loads.");
+      setOfferError("Could not verify the current price. You can still continue · checkout stays locked until the price loads.");
     } finally {
       setLoading(false);
     }

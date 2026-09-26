@@ -101,9 +101,9 @@ import {
 
 type Body = Record<string, unknown>;
 
-/** Custom Checkout (`ui_mode: custom`) — Basil API used by V1. */
+/** Custom Checkout (`ui_mode: custom`) · Basil API used by V1. */
 const STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
-/** Elements Checkout (`ui_mode: elements`) — official Stripe Dahlia quickstart version. */
+/** Elements Checkout (`ui_mode: elements`) · official Stripe Dahlia quickstart version. */
 const STRIPE_API_VERSION_ELEMENTS = "2026-07-29.dahlia";
 /** Default for hosted / retrieve / V1 custom paths (backward compatible). */
 const STRIPE_API_VERSION = STRIPE_API_VERSION_CUSTOM;
@@ -1175,7 +1175,7 @@ Deno.serve(async (req) => {
         if (kill === "0" || kill === "false" || kill === "off" || kill === "disabled") {
           return apiError(
             "PROVIDER_UNAVAILABLE",
-            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
             503,
           );
         }
@@ -1188,7 +1188,7 @@ Deno.serve(async (req) => {
         if ((billingHolds || 0) >= 2) {
           return apiError(
             "PROVIDER_UNAVAILABLE",
-            "We’re temporarily unable to create new transformations. Please try again shortly — you haven’t been charged.",
+            "We’re temporarily unable to create new transformations. Please try again shortly · you haven’t been charged.",
             503,
           );
         }
@@ -1417,7 +1417,7 @@ Deno.serve(async (req) => {
       }
 
       const successUrl = `${siteOrigin()}/pet/order?token=${encodeURIComponent(publicToken)}&session_id={CHECKOUT_SESSION_ID}`;
-      // Canonical Session return_url / success_url — Elements/Custom use return_url; hosted uses success_url.
+      // Canonical Session return_url / success_url · Elements/Custom use return_url; hosted uses success_url.
       const cancelUrl = safeReturnUrl(asString(body.cancelUrl), `${siteOrigin()}/pet/checkout`);
       const params = new URLSearchParams();
       params.set("mode", "payment");
@@ -1729,7 +1729,7 @@ Deno.serve(async (req) => {
       params.set(
         "line_items[0][price_data][product_data][description]",
         offer.scope === "scene" && sceneKey
-          ? `${offer.description} — ${sceneByKey(sceneKey)?.title || sceneKey}`
+          ? `${offer.description} · ${sceneByKey(sceneKey)?.title || sceneKey}`
           : offer.description,
       );
       params.set("line_items[0][quantity]", "1");

@@ -1,5 +1,5 @@
 /**
- * Christmas Club campaign configuration — single source of truth.
+ * Christmas Club campaign configuration · single source of truth.
  * Countdown target, copy, analytics product key, and storage keys live here
  * so future years can be switched without hunting through components.
  */
@@ -73,7 +73,7 @@ export const CHRISTMAS_CLUB_ASSETS = {
 
 export type ChristmasClubCountdownUnit = "days" | "hours" | "minutes" | "seconds";
 
-/** One Christmas product sits inside each countdown unit — display-sized WebP thumbs. */
+/** One Christmas product sits inside each countdown unit · display-sized WebP thumbs. */
 export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
   {
     unit: "days" as const,
@@ -112,7 +112,7 @@ export const CHRISTMAS_CLUB_COUNTDOWN_PRODUCTS = [
 export const CHRISTMAS_CLUB_SEO = {
   title: "Christmas at TheDigitalGifter | Gifts, Photos, Santa & More",
   description:
-    "Create Christmas gifts, AI portraits, Santa videos, wishlists, cards, and advent surprises — personalized digital Christmas experiences from TheDigitalGifter.",
+    "Create Christmas gifts, AI portraits, Santa videos, wishlists, cards, and advent surprises · personalized digital Christmas experiences from TheDigitalGifter.",
   canonical: "https://www.thedigitalgifter.com/christmas",
   ogImage: "https://www.thedigitalgifter.com/christmas/og-countdown.jpg",
 } as const;

@@ -1,6 +1,6 @@
 /**
  * Pure sequential cohort math for V4.
- * A later stage NEVER exceeds an earlier stage — impossible funnels are clamped.
+ * A later stage NEVER exceeds an earlier stage · impossible funnels are clamped.
  */
 
 import {

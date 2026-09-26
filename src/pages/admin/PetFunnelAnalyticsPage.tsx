@@ -125,7 +125,7 @@ function TrackingHealth({
   const metaLpv = kpis.metaLpv ?? kpis.lpv;
   const coverage = trackingCoverageSignal(kpis.firstPartyLandings, metaLpv);
   return (
-    <SectionCard title="Tracking health" subtitle="Coverage signal only — not an attribution conversion rate.">
+    <SectionCard title="Tracking health" subtitle="Coverage signal only · not an attribution conversion rate.">
       {coverage.unhealthy ? (
         <p className="mb-3 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
           First-party funnel tracking may be unhealthy.
@@ -145,7 +145,7 @@ function TrackingHealth({
 }
 
 function formatRoas(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return `${value.toFixed(2)}x`;
 }
 
@@ -159,7 +159,7 @@ function DailyBars({ daily }: { daily: Array<{ date: string; spendCents: number 
           <div className="flex items-baseline justify-between gap-2">
             <span className="shrink-0 font-mono text-slate-400">{row.date.slice(5)}</span>
             <span className="min-w-0 truncate text-right text-slate-400">
-              {row.spendCents == null ? "—" : formatUsdFromCents(row.spendCents)} · {row.purchases ?? "—"} sales
+              {row.spendCents == null ? "-" : formatUsdFromCents(row.spendCents)} · {row.purchases ?? "-"} sales
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-slate-800">
@@ -341,7 +341,7 @@ export default function PetFunnelAnalyticsPage() {
 
         {datasetId === "v3" && report && report.metaCampaignConfigured === false ? (
           <p className="text-sm text-amber-200/80">
-            Meta campaign not synced yet — first-party V3 data below. When the Cat campaign exists in Ads Manager,
+            Meta campaign not synced yet · first-party V3 data below. When the Cat campaign exists in Ads Manager,
             run Sync and it will auto-link, or set{" "}
             <code className="rounded bg-slate-800 px-1">FUNNEL_DATASETS.v3.campaignId</code> in{" "}
             <code className="rounded bg-slate-800 px-1">src/features/pet/funnelDatasetConfig.ts</code>.
@@ -389,11 +389,11 @@ export default function PetFunnelAnalyticsPage() {
                 ${(report.v3Trusted.priceCohortCents / 100).toFixed(2)} certified cohort:{" "}
                 {report.v3Trusted.priceCohortCertifiedAt
                   ? new Date(report.v3Trusted.priceCohortCertifiedAt).toLocaleString("en-US")
-                  : "not certified — earlier $2.99 traffic is historical/unverified"}
+                  : "not certified · earlier $2.99 traffic is historical/unverified"}
               </p>
               {report.v3Trusted.priceDeployReferenceAt ? (
                 <p className="text-xs text-slate-500 sm:col-span-2">
-                  Deploy reference (not a KPI cohort): SHA {report.v3Trusted.priceDeployReferenceAt ? "01fde32" : "—"}{" "}
+                  Deploy reference (not a KPI cohort): SHA {report.v3Trusted.priceDeployReferenceAt ? "01fde32" : "-"}{" "}
                   at {new Date(report.v3Trusted.priceDeployReferenceAt).toLocaleString("en-US")}
                 </p>
               ) : null}
@@ -476,7 +476,7 @@ export default function PetFunnelAnalyticsPage() {
         ) : null}
 
         {datasetId === "v3" && report?.v3SessionDrilldown && report.v3SessionDrilldown.length > 0 ? (
-          <SectionCard title="Session drill-down" subtitle="Anonymous session prefixes only — no PII.">
+          <SectionCard title="Session drill-down" subtitle="Anonymous session prefixes only · no PII.">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-xs text-slate-300">
                 <thead className="text-slate-500">
@@ -494,11 +494,11 @@ export default function PetFunnelAnalyticsPage() {
                   {report.v3SessionDrilldown.map((row) => (
                     <tr key={row.session_short} className="border-t border-slate-800">
                       <td className="px-2 py-1 font-mono">{row.session_short}</td>
-                      <td className="px-2 py-1">{row.traffic_class || "—"}</td>
+                      <td className="px-2 py-1">{row.traffic_class || "-"}</td>
                       <td className="px-2 py-1">{row.is_test ? "yes" : "no"}</td>
-                      <td className="px-2 py-1">{row.stripe_checkout_created ? "yes" : "—"}</td>
-                      <td className="px-2 py-1">{row.checkout_button_click ? "yes" : "—"}</td>
-                      <td className="px-2 py-1">{row.paid_purchase ? "yes" : "—"}</td>
+                      <td className="px-2 py-1">{row.stripe_checkout_created ? "yes" : "-"}</td>
+                      <td className="px-2 py-1">{row.checkout_button_click ? "yes" : "-"}</td>
+                      <td className="px-2 py-1">{row.paid_purchase ? "yes" : "-"}</td>
                       <td className="px-2 py-1">
                         {row.events.map((ev) => ev.event_name.replace(/^v3_/, "")).join(" → ")}
                       </td>
@@ -666,7 +666,7 @@ export default function PetFunnelAnalyticsPage() {
                     ? `Biggest drop: ${report.biggestDrop.from} → ${report.biggestDrop.to} (-${report.biggestDrop.dropPct.toFixed(0)}%)`
                     : report.rangeMode === "first_party"
                       ? "Unique first-party funnel sessions"
-                      : "Hybrid funnel — unavailable stages show — (not zero)"
+                      : "Hybrid funnel · unavailable stages show · (not zero)"
               }
             >
               <div className="space-y-4">
@@ -683,7 +683,7 @@ export default function PetFunnelAnalyticsPage() {
                             <SourceBadge label={step.sourceLabel} />
                           </div>
                           <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">
-                            {step.value == null ? "—" : step.value}
+                            {step.value == null ? "-" : step.value}
                           </p>
                         </div>
                         <div className="min-w-0 text-xs leading-snug text-slate-400 sm:shrink-0 sm:text-right">
@@ -721,19 +721,19 @@ export default function PetFunnelAnalyticsPage() {
                 <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
                   <p>
                     Landing (FP raw):{" "}
-                    <span className="font-semibold text-white">{report.steps[0]?.sessions ?? "—"}</span>
+                    <span className="font-semibold text-white">{report.steps[0]?.sessions ?? "-"}</span>
                   </p>
                   <p>
                     Upload (FP raw):{" "}
-                    <span className="font-semibold text-white">{report.steps[1]?.sessions ?? "—"}</span>
+                    <span className="font-semibold text-white">{report.steps[1]?.sessions ?? "-"}</span>
                   </p>
                   <p>
                     Teaser (FP raw):{" "}
-                    <span className="font-semibold text-white">{report.steps[2]?.sessions ?? "—"}</span>
+                    <span className="font-semibold text-white">{report.steps[2]?.sessions ?? "-"}</span>
                   </p>
                   <p>
                     Offer (FP raw):{" "}
-                    <span className="font-semibold text-white">{report.steps[3]?.sessions ?? "—"}</span>
+                    <span className="font-semibold text-white">{report.steps[3]?.sessions ?? "-"}</span>
                   </p>
                   <p>
                     Payment UI viewed (`v2_payment_ui_visible`):{" "}
@@ -748,7 +748,7 @@ export default function PetFunnelAnalyticsPage() {
                     <span className="font-semibold text-white">
                       {report.recent.some((r) => r.eventName === "v2_begin_checkout")
                         ? "see Recent events"
-                        : "—"}
+                        : "-"}
                     </span>
                   </p>
                   <p>
@@ -776,7 +776,7 @@ export default function PetFunnelAnalyticsPage() {
                   <p>
                     Failed ingest writes:{" "}
                     <span className="font-semibold text-white">
-                      {report.trackingHealth?.failedWrites ?? "—"}
+                      {report.trackingHealth?.failedWrites ?? "-"}
                     </span>
                   </p>
                   <p className="sm:col-span-2 lg:col-span-3 text-xs text-slate-500">
@@ -868,7 +868,7 @@ export default function PetFunnelAnalyticsPage() {
                       report.metaAds.map((row) => (
                         <tr key={`${row.adId}-${row.adsetId}`} className="border-t border-slate-800">
                           <td className="px-3 py-2 text-slate-100">{row.adName}</td>
-                          <td className="px-3 py-2 font-mono text-xs text-slate-500">{row.adId || "—"}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-slate-500">{row.adId || "-"}</td>
                           <td className="px-3 py-2">{formatUsdFromCents(row.spendCents)}</td>
                           <td className="px-3 py-2">{row.impressions}</td>
                           <td className="px-3 py-2">{row.linkClicks}</td>
@@ -964,7 +964,7 @@ export default function PetFunnelAnalyticsPage() {
                   report.recent.map((item, index) => (
                     <p key={`${item.createdAt}-${index}`} className="text-sm text-slate-300">
                       {new Date(item.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                      {" — "}
+                      {" · "}
                       {item.species || "pet"} {EVENT_COPY[item.eventName] || item.eventName}
                       {item.eventName === "purchase" && item.amountCents
                         ? ` ${formatUsdFromCents(item.amountCents)}`

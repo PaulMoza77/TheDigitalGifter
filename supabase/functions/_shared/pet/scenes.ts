@@ -7,7 +7,7 @@ export type SceneDefinition = {
   edit: string;
 };
 
-/** Kontext edits the reference photo — identity lock must lead every prompt. */
+/** Kontext edits the reference photo · identity lock must lead every prompt. */
 export const IDENTITY_LOCK =
   "Use the uploaded pet photo as the authoritative identity reference. Create the same individual pet in the requested scene. Preserve its exact species, breed appearance, coat color and markings, facial structure, muzzle, ears, eye placement, fur length and texture, body proportions, and distinctive traits. Change only the environment, clothing/accessories, and pose needed for the scene. The final image must be immediately recognizable to the owner as the same pet. Do not swap breeds. Do not replace the animal with a generic dog or cat. Do not beautify beyond recognition.";
 
@@ -36,7 +36,7 @@ export const PET_SCENE_DEFINITIONS: readonly SceneDefinition[] = [
     number: 4,
     title: "Formula racing driver",
     edit:
-      "Add a racing-inspired suit only — no closed or full-face helmet; leave the head bare so ears, face, and any mane/ruff stay fully visible and identical to the reference. Preserve fluffy or dense coats exactly (never shorten into a sleek coat). Pet alone in the cockpit — no human driver behind the pet. No team names, brand marks, or commercial logos.",
+      "Add a racing-inspired suit only · no closed or full-face helmet; leave the head bare so ears, face, and any mane/ruff stay fully visible and identical to the reference. Preserve fluffy or dense coats exactly (never shorten into a sleek coat). Pet alone in the cockpit · no human driver behind the pet. No team names, brand marks, or commercial logos.",
   },
   {
     key: "spa-bathtub",

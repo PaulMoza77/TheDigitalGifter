@@ -14,7 +14,7 @@ export async function hashIdentifier(value: string): Promise<string | null> {
   return sha256Hex(normalized);
 }
 
-/** V3 bootstrap placeholder — never send to Meta CAPI or GA4 as a real customer email. */
+/** V3 bootstrap placeholder · never send to Meta CAPI or GA4 as a real customer email. */
 export function isCheckoutPlaceholderEmail(email: string | null | undefined): boolean {
   const normalized = String(email || "").trim().toLowerCase();
   if (!normalized) return false;

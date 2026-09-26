@@ -18,7 +18,7 @@ Affiliate infrastructure today is **inbound** (promo codes / referrals), not out
 4. **Safety:** Reject unsafe custom interests; filter weapon/drug/minor-inappropriate ideas; treat user fields as data.
 5. **Rate limit:** 8 sessions / hour / `user:{id}` or `guest:{hash}` bucket.
 6. **Cost:** Insert `ai_cost_ledger` rows with `product_family=christmas_gift_finder`, `media_type=text`, `cost_state=estimated|exact`.
-7. **Affiliate outbound:** DEFERRED — use search_query + TDG preview CTAs (no Buy now / invented prices).
+7. **Affiliate outbound:** DEFERRED · use search_query + TDG preview CTAs (no Buy now / invented prices).
 8. **Persistence:** Session + result tables enable Add-to-Wishlist without regenerating.
 
 ## Consequences

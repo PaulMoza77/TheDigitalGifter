@@ -704,7 +704,7 @@ async function processTarget(
       .from("social_publication_targets")
       .update({
         status: "scheduled",
-        last_error: "IMPLEMENTED — WAITING FOR PROVIDER APPROVAL / SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS. No production post was made.",
+        last_error: "IMPLEMENTED · WAITING FOR PROVIDER APPROVAL / SOCIAL_PUBLISHER_ALLOW_LIVE_POSTS. No production post was made.",
         lease_expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         claimed_by: null,
         updated_at: new Date().toISOString(),

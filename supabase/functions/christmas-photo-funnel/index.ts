@@ -4,8 +4,8 @@ import { validatePetSpecies } from "../_shared/pet/speciesValidate.ts";
 
 /**
  * Christmas portrait funnel APIs: signed upload, order lookup, species check, admin retry.
- * Pre-payment blur preview is client-side only — this function never calls Replicate generation.
- * Species validation may use vision (Moondream/OpenAI) — not image generation.
+ * Pre-payment blur preview is client-side only · this function never calls Replicate generation.
+ * Species validation may use vision (Moondream/OpenAI) · not image generation.
  */
 
 type Body = {

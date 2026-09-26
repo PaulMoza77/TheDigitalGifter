@@ -31,11 +31,11 @@ const COUPLES: VerticalSeo = {
     {
       h2: "Create a Christmas Portrait Together",
       body:
-        "This experience is for two people — partners, engaged couples, husband and wife, or boyfriend and girlfriend. Upload one photo with both of you clearly visible, pick a Christmas look, and create a portrait made for the two of you.",
+        "This experience is for two people · partners, engaged couples, husband and wife, or boyfriend and girlfriend. Upload one photo with both of you clearly visible, pick a Christmas look, and create a portrait made for the two of you.",
     },
     {
       h2: "Christmas Couple Photo Ideas",
-      body: "Use cases this portrait often fits — as inspiration, not separate product modes:",
+      body: "Use cases this portrait often fits · as inspiration, not separate product modes:",
       list: [
         "First Christmas together",
         "Engaged couple Christmas portrait",
@@ -69,7 +69,7 @@ const COUPLES: VerticalSeo = {
     },
     {
       q: "Can both people stay recognizable?",
-      a: "That’s the goal. Start with a clear photo of both faces — avoid extreme blur or one person mostly out of frame.",
+      a: "That’s the goal. Start with a clear photo of both faces · avoid extreme blur or one person mostly out of frame.",
     },
     {
       q: "Can I create a romantic Christmas portrait?",
@@ -104,7 +104,7 @@ const PETS: VerticalSeo = {
     {
       h2: "Turn Your Pet Into Christmas Magic",
       body:
-        "Upload a clear pet photo, choose a Christmas pet style, and create a festive portrait of the animal you love. This is the general pet hub — not a Secret Life comic pack.",
+        "Upload a clear pet photo, choose a Christmas pet style, and create a festive portrait of the animal you love. This is the general pet hub · not a Secret Life comic pack.",
     },
     {
       h2: "Christmas Portraits for Dogs and Cats",
@@ -186,7 +186,7 @@ const DOGS: VerticalSeo = {
     },
     {
       h2: "Christmas Dog Portrait Examples",
-      body: "Demonstration directions for dog Christmas portraits — inspiration samples, not customer photos.",
+      body: "Demonstration directions for dog Christmas portraits · inspiration samples, not customer photos.",
       list: [
         "Dog beside a decorated Christmas tree look",
         "Cozy fireplace dog Christmas portrait",
@@ -257,7 +257,7 @@ const CATS: VerticalSeo = {
     },
     {
       h2: "Christmas Cat Portrait Examples",
-      body: "Demonstration directions featuring cats — inspiration samples, not customer photos.",
+      body: "Demonstration directions featuring cats · inspiration samples, not customer photos.",
       list: [
         "Cat by a Christmas tree look",
         "Fireplace cozy cat Christmas portrait",

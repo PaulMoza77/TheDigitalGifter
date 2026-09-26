@@ -417,7 +417,7 @@ export default function ChristmasFamilyExperience() {
                     <figure key={item.id} className="ff-gallery__item">
                       <img
                         src={item.after}
-                        alt={`${t(item.labelKey)} — ${t("examples.after")}`}
+                        alt={`${t(item.labelKey)} · ${t("examples.after")}`}
                         loading="lazy"
                       />
                       <div className="ff-gallery__meta">

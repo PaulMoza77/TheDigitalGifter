@@ -55,7 +55,7 @@ export function parsePetLocalePath(pathname: string): {
   }
   const rest = normalizePetPath(raw.slice(prefix.length + 1) || "/");
   if (!rest.startsWith("/pet") && rest !== "/pet-v2" && !rest.startsWith("/pet-v2/")) {
-    // Prefix belongs to another product (e.g. /ro/christmas) — not a pet locale path.
+    // Prefix belongs to another product (e.g. /ro/christmas) · not a pet locale path.
     return { locale: PET_DEFAULT_LOCALE, basePath: raw, publicPath: raw, isPrefixed: false };
   }
   return {

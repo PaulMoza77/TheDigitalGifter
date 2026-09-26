@@ -32,7 +32,7 @@ export function detectTdgCaddyMode(activeCaddyfile, modeMarker) {
   const marker = String(modeMarker || "").trim().toLowerCase();
   if (marker === "https" || marker === "http") return marker;
 
-  // Named site block (HTTPS-capable) — not only Host matchers inside :80.
+  // Named site block (HTTPS-capable) · not only Host matchers inside :80.
   const namedTdgSite = hasNamedTdgHttpsSite(text);
   const hasHsts = /Strict-Transport-Security/i.test(text);
   if (namedTdgSite && hasHsts) return "https";

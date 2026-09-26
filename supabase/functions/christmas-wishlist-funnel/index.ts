@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
                 : it.source_type === "tdg_product"
                 ? "tdg_product"
                 : "manual",
-            // Status only — never token / identity
+            // Status only · never token / identity
             reservation_status:
               it.reservation_status === "purchased"
                 ? "purchased"
@@ -649,7 +649,7 @@ Deno.serve(async (req) => {
           ? body.interest_keys.map((x) => asString(x))
           : [],
         customInterest: asString(body.custom_interest),
-        // Used for generation only — never forwarded to analytics.
+        // Used for generation only · never forwarded to analytics.
         personalDetail: asString(body.personal_detail),
         personalityKeys: Array.isArray(body.personality_keys)
           ? body.personality_keys.map((x) => asString(x))
@@ -930,7 +930,7 @@ function publicIdea(r: Record<string, unknown>) {
   };
 }
 
-/** Owner DTO — never leak reservation tokens or spoiler status. */
+/** Owner DTO · never leak reservation tokens or spoiler status. */
 function publicOwnerItem(it: Record<string, unknown>) {
   return {
     id: it.id,

@@ -605,16 +605,16 @@ begin
         else 'unattributed'
       end as source_group,
       coalesce(nullif(e.utm_campaign, ''), nullif(e.campaign_id, ''), nullif(e.utm_source, ''), 'Direct / Organic / Unknown') as campaign_label,
-      coalesce(nullif(e.utm_term, ''), nullif(e.adset_id, ''), '—') as adset_label,
-      coalesce(nullif(e.utm_content, ''), nullif(e.ad_id, ''), '—') as ad_label
+      coalesce(nullif(e.utm_term, ''), nullif(e.adset_id, ''), '-') as adset_label,
+      coalesce(nullif(e.utm_content, ''), nullif(e.ad_id, ''), '-') as ad_label
     from current_v1 e
     inner join v1_resolved r on r.funnel_session_id = e.funnel_session_id
   ),
   campaign_rollups as (
     select
       case when source_group = 'unattributed' then 'Direct / Organic / Unknown' else campaign_label end as campaign,
-      case when source_group = 'unattributed' then '—' else max(adset_label) end as ad_set,
-      case when source_group = 'unattributed' then '—' else max(ad_label) end as ad,
+      case when source_group = 'unattributed' then '-' else max(adset_label) end as ad_set,
+      case when source_group = 'unattributed' then '-' else max(ad_label) end as ad,
       source_group,
       max(resolved_campaign_id) as campaign_id,
       max(adset_id) as adset_id,
@@ -634,7 +634,7 @@ begin
   ad_rollups as (
     select
       case when source_group = 'unattributed' then 'Direct / Organic / Unknown' else campaign_label end as campaign,
-      case when source_group = 'unattributed' then '—' else adset_label end as ad_set,
+      case when source_group = 'unattributed' then '-' else adset_label end as ad_set,
       case when source_group = 'unattributed' then 'Direct / Organic / Unknown' else ad_label end as ad,
       source_group,
       max(resolved_campaign_id) as campaign_id,

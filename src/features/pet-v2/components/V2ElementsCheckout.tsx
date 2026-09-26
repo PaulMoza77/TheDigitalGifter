@@ -1,5 +1,5 @@
 /**
- * Pet V2 Stripe Elements checkout — Express wallets + card fallback.
+ * Pet V2 Stripe Elements checkout · Express wallets + card fallback.
  * Uses official loadStripe() + CheckoutElementsProvider.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -140,7 +140,7 @@ function CheckoutBody({
 
     const isExpress = isExpressCheckoutConfirmEvent(expressCheckoutConfirmEvent);
 
-    // Card-only gate — never block Express; Apple Pay requires immediate checkout.confirm().
+    // Card-only gate · never block Express; Apple Pay requires immediate checkout.confirm().
     if (!isExpress && onBeforeConfirm) {
       try {
         const gate = await onBeforeConfirm();

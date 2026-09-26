@@ -20,7 +20,7 @@ export type V3TrafficClassificationInput = {
   /** Landing carried fbclid (first-party flag only; fbclid itself is not stored). */
   hasMetaClick?: boolean;
   fbc?: string | null;
-  /** Meta browser/pixel cookie — diagnostic only; never proves paid acquisition alone. */
+  /** Meta browser/pixel cookie · diagnostic only; never proves paid acquisition alone. */
   fbp?: string | null;
   referrerHost?: string | null;
 };

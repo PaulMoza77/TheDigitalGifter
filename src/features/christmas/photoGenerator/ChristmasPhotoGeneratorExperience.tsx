@@ -352,8 +352,8 @@ export default function ChristmasPhotoGeneratorExperience() {
                   <figure key={ex.id} className="pg-example">
                     <div className="pg-example__title">{t(ex.labelKey)}</div>
                     <div className="pg-example__pair">
-                      <img src={ex.before} alt={`${t(ex.labelKey)} — ${t("examples.before")}`} loading="lazy" />
-                      <img src={ex.after} alt={`${t(ex.labelKey)} — ${t("examples.after")}`} loading="lazy" />
+                      <img src={ex.before} alt={`${t(ex.labelKey)} · ${t("examples.before")}`} loading="lazy" />
+                      <img src={ex.after} alt={`${t(ex.labelKey)} · ${t("examples.after")}`} loading="lazy" />
                     </div>
                     <figcaption className="pg-example__cap">
                       <span>{t("examples.before")}</span>
@@ -523,7 +523,7 @@ export default function ChristmasPhotoGeneratorExperience() {
           </>
         ) : null}
 
-        {/* Creation studio — always mounted for file input; visible after upload */}
+        {/* Creation studio · always mounted for file input; visible after upload */}
         <div className={showLanding ? "sr-only" : "pg-studio"} aria-hidden={showLanding}>
           <div className="pg-studio__card">
             {funnel.draft.lastError && !showLanding ? (

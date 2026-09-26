@@ -24,8 +24,8 @@ Seed ships checkout off.
 
 ## Migrations (apply in order)
 
-1. `20260917140000_christmas_planner_funnel.sql` — product, packages, `user_entitlements`, claim/grant RPCs
-2. `20260917180000_christmas_planner_workspace.sql` — profiles/tasks/gifts/budget/meals/… + access bridge + refund
+1. `20260917140000_christmas_planner_funnel.sql` · product, packages, `user_entitlements`, claim/grant RPCs
+2. `20260917180000_christmas_planner_workspace.sql` · profiles/tasks/gifts/budget/meals/… + access bridge + refund
 
 ## Free vs paid
 

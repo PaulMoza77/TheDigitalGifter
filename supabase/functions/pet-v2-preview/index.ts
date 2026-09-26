@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     imageMime: decoded.image.mime,
   });
   if (!speciesCheck.ok) {
-    // errorCode is wrong_species | unclear_species — never start Replicate.
+    // errorCode is wrong_species | unclear_species · never start Replicate.
     return jsonResponse(
       {
         ok: false,
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
     );
   }
   // When vision is down, refuse Cat V3 / Dog V2 cross-risk by requiring a clearer verified photo
-  // only for mismatched funnel attempts is impossible without vision — so Cat V3 hard-requires
+  // only for mismatched funnel attempts is impossible without vision · so Cat V3 hard-requires
   // a working classifier (do not generate royal portraits for unverified species).
   if (
     ctx.version === "v3" &&
@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
     clientKey ||
     `preview:${sessionId || "anon"}:${imageHash}${regenerate ? `:regen:${crypto.randomUUID()}` : ""}`;
 
-  // Idempotency must stay tied to this upload/session — refuse keys from another session.
+  // Idempotency must stay tied to this upload/session · refuse keys from another session.
   if (clientKey && sessionId && clientKey.startsWith("preview:") && !clientKey.startsWith(`preview:${sessionId}:`)) {
     previewDiag({
       stage: "idempotency_session_mismatch",
@@ -395,9 +395,9 @@ Deno.serve(async (req) => {
           : "failed";
     const userError =
       errorCode === "timeout"
-        ? "Your preview is still rendering. Tap Try again — we’ll pick up where it left off."
+        ? "Your preview is still rendering. Tap Try again · we’ll pick up where it left off."
         : errorCode === "rate_limit"
-          ? "The preview service is busy. Tap Try again in a moment — this usually clears quickly."
+          ? "The preview service is busy. Tap Try again in a moment · this usually clears quickly."
           : "We couldn't create the preview. Try again.";
     previewDiag({
       stage: "preview_failed",
@@ -414,7 +414,7 @@ Deno.serve(async (req) => {
       failureCategory: errorCode,
       retryable,
       providerStatus,
-      // Short provider hint for ops/smoke only — never includes tokens or image bytes.
+      // Short provider hint for ops/smoke only · never includes tokens or image bytes.
       providerDetail: message.slice(0, 180),
       preview_attempt_id: idempotencyKey,
     });
@@ -463,7 +463,7 @@ async function resumeExistingAttempt(
         return { ok: true, imageDataUrl: image };
       }
     } catch {
-      /* output URL may have expired — allow a replacement generation */
+      /* output URL may have expired · allow a replacement generation */
     }
     await markAttempt(ctx, idempotencyKey, {
       status: "pending",
@@ -507,7 +507,7 @@ async function resumeExistingAttempt(
     } catch (error) {
       const message = error instanceof Error ? error.message : "timeout";
       const errorCode = classifyGenerationError(message);
-      // Still running / timed out waiting — do not create a second prediction.
+      // Still running / timed out waiting · do not create a second prediction.
       return {
         ok: false,
         allowNewPrediction: false,
@@ -559,7 +559,7 @@ async function resumeExistingAttempt(
           };
         }
       }
-      // Terminal provider failure for this prediction — allow one replacement create.
+      // Terminal provider failure for this prediction · allow one replacement create.
       await markAttempt(ctx, idempotencyKey, {
         status: "pending",
         liveGeneration: false,
@@ -632,7 +632,7 @@ async function runKontextPreview(
               preferredError instanceof Error ? preferredError.message : preferredError,
             ).slice(0, 120),
           });
-          // Fall through to Replicate — OpenAI billing/throttle must not hard-block previews.
+          // Fall through to Replicate · OpenAI billing/throttle must not hard-block previews.
         }
       }
     }
@@ -875,7 +875,7 @@ function resolveReplicateRetryWaitMs(retryAfterHeader: string | null, attempt: n
 
 /**
  * Identity-preserving edit via OpenAI Images when Replicate create is rate-limited.
- * Still requires the uploaded reference image — never text-only.
+ * Still requires the uploaded reference image · never text-only.
  */
 async function runOpenAiIdentityEdit(
   imageDataUrl: string,
@@ -985,7 +985,7 @@ function replicateOutputUrl(output: unknown): string | null {
 }
 
 async function downloadAsDataUrl(url: string): Promise<string> {
-  // OpenAI fallback may already return a data URL — do not re-fetch it.
+  // OpenAI fallback may already return a data URL · do not re-fetch it.
   if (url.startsWith("data:image/")) return url;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Could not download the preview.");

@@ -3,9 +3,9 @@
  * HTTPS readiness / post-cutover verification for TDG on Mozas.
  *
  * Modes:
- *   TDG_HTTPS_PHASE=pre   (default) — cert storage, Caddyfile.https.ready, mode logic.
+ *   TDG_HTTPS_PHASE=pre   (default) · cert storage, Caddyfile.https.ready, mode logic.
  *                           Public certs are not required.
- *   TDG_HTTPS_PHASE=post  — both domains, direct VPS (--resolve) AND public (no --resolve):
+ *   TDG_HTTPS_PHASE=post  · both domains, direct VPS (--resolve) AND public (no --resolve):
  *                           A/AAAA, HTTP→HTTPS redirect, valid cert, TDG pages, TheMozas.
  *
  * Never prints secrets or raw origin IPs.
@@ -24,7 +24,7 @@ const HOSTS = ["thedigitalgifter.com", "www.thedigitalgifter.com"];
 
 function record(name, ok, detail) {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` · ${detail}` : ""}`);
 }
 
 function sh(cmd, args, opts = {}) {

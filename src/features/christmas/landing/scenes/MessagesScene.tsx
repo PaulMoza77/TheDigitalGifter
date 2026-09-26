@@ -25,7 +25,7 @@ const LINES: Record<string, string> = {
   "dad:heartfelt": "For the lights you always put up, and the love you never announce.",
   "dad:funny": "The tree is crooked. The love is not. Merry Christmas, Dad.",
   "dad:warm": "Wishing you a fire, a story, and a Christmas that finally slows down.",
-  "partner:heartfelt": "All the quiet of winter, and you — that’s the gift.",
+  "partner:heartfelt": "All the quiet of winter, and you · that’s the gift.",
   "partner:funny": "I wrapped this message myself. Please clap.",
   "partner:warm": "Come closer. The year was long. Christmas is ours.",
   "friend:heartfelt": "Some friends are family we were lucky enough to find.",

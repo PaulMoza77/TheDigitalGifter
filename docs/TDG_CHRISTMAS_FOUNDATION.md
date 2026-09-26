@@ -33,7 +33,7 @@ Assets: `christmas_order_assets` for future image/video/card outputs (optional `
 Payment: `draft | pending | paid | failed | refunded`  
 Fulfillment: `not_started | queued | processing | completed | failed`
 
-RPC: `fulfill_christmas_order_payment` — amount/currency/session checks + idempotent already-paid replay.
+RPC: `fulfill_christmas_order_payment` · amount/currency/session checks + idempotent already-paid replay.
 
 ## Payment seam
 
@@ -61,7 +61,7 @@ Admin: `/admin/christmas-orders`
 ## Future generator integration
 
 Paid order → `fulfillment_status=queued` → webhook enqueues `christmas-generate` for `christmas_photo`.  
-Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) — never Replicate.
+Pre-payment preview is **local blur of the original upload** (see `docs/TDG_CHRISTMAS_PHOTO_GENERATOR.md`) · never Replicate.
 
 `enqueueChristmasFulfillment` registry remains available for non-webhook paths; photo V1 uses Stripe fulfill → generate.
 
@@ -71,8 +71,8 @@ Same order + package rows (`christmas_santa_video`) + long-running fulfillment s
 
 ## Migration
 
-- `supabase/migrations/20260902105000_quarantine_legacy_christmas_v2_schema.sql` — quarantines conflicting remote V2 prototype (`christmas_v2_*`)
-- `supabase/migrations/20260902120000_christmas_commerce_foundation.sql` — additive commerce schema; does not alter Pet schema
+- `supabase/migrations/20260902105000_quarantine_legacy_christmas_v2_schema.sql` · quarantines conflicting remote V2 prototype (`christmas_v2_*`)
+- `supabase/migrations/20260902120000_christmas_commerce_foundation.sql` · additive commerce schema; does not alter Pet schema
 - Applied to linked production `kjlsocejpmnzhhduyumy` on 2026-09-02 (see photo generator docs for evidence)
 
 ## Rollback notes

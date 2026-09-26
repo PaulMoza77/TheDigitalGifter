@@ -1,5 +1,5 @@
 /**
- * Christmas portrait vertical configs — one reusable funnel, many acquisition routes.
+ * Christmas portrait vertical configs · one reusable funnel, many acquisition routes.
  * Dogs/cats share commerce product `christmas_pet` with species metadata.
  */
 
@@ -81,7 +81,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     heroHeadline: "Turn Your Photo Into Christmas Magic",
     heroSupport:
       "Upload a favorite photo and create a magical Christmas portrait for your family, partner or pet.",
-    uploadHint: "Choose a clear photo — faces should be visible. Family, couple, and pet photos are welcome.",
+    uploadHint: "Choose a clear photo · faces should be visible. Family, couple, and pet photos are welcome.",
     deliverableLine: "One high-quality Christmas portrait you can download and share privately.",
     privacyLine: "Your upload and result stay private by default. No public gallery.",
     crossLinks: PHOTO_CROSS,
@@ -103,7 +103,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     heroHeadline: "Turn Your Family Photo Into a Magical Christmas Portrait",
     heroSupport:
       "Upload a family photo, choose a Christmas style, and create a beautiful portrait made for the people you love most.",
-    uploadHint: "Group photos welcome — we aim to keep everyone in the frame.",
+    uploadHint: "Group photos welcome · we aim to keep everyone in the frame.",
     deliverableLine: "One Christmas family portrait optimized for multiple people.",
     privacyLine: "Family photos stay private by default. No public gallery.",
     crossLinks: [
@@ -154,7 +154,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
       "Create a romantic Christmas couple portrait from your photo. Perfect for a first Christmas together or a personalized couple gift.",
     heroHeadline: "Create a Magical Christmas Portrait Together",
     heroSupport:
-      "Perfect for first Christmas together or a personalized couple gift — upload one photo with both of you.",
+      "Perfect for first Christmas together or a personalized couple gift · upload one photo with both of you.",
     uploadHint: "One photo with both people visible works best for V1.",
     deliverableLine: "One Christmas couple portrait that aims to keep both of you recognizable.",
     privacyLine: "Your couple photo stays private by default.",
@@ -176,10 +176,10 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     draftStorageKey: "tdg.christmas.portrait.pets.v1",
     pageTitle: "Christmas Pet Photo Generator | Festive Pet Portraits",
     metaDescription:
-      "Turn your pet photo into a festive Christmas portrait. Dogs and cats welcome — private by default.",
+      "Turn your pet photo into a festive Christmas portrait. Dogs and cats welcome · private by default.",
     heroHeadline: "Turn Your Pet Into Christmas Magic",
     heroSupport:
-      "A Christmas-specific pet portrait — separate from Secret Life packs. Choose dog or cat for a tailored start.",
+      "A Christmas-specific pet portrait · separate from Secret Life packs. Choose dog or cat for a tailored start.",
     uploadHint: "Clear pet face/body photo. Prefer Dog or Cat routes for best species matching.",
     deliverableLine: "One Christmas pet portrait you can download privately.",
     privacyLine: "Pet photos stay private by default.",
@@ -204,7 +204,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     heroHeadline: "Create a Magical Christmas Portrait of Your Dog",
     heroSupport:
       "Upload a clear dog photo, pick a holiday style, preview a blur of your original, then create after checkout.",
-    uploadHint: "Dog photos only on this route — cats will be offered the Cat Christmas path.",
+    uploadHint: "Dog photos only on this route · cats will be offered the Cat Christmas path.",
     deliverableLine: "One Christmas dog portrait.",
     privacyLine: "Your dog photo stays private by default.",
     crossLinks: [
@@ -228,7 +228,7 @@ export const CHRISTMAS_PORTRAIT_VERTICALS: Record<
     heroHeadline: "Create a Magical Christmas Portrait of Your Cat",
     heroSupport:
       "Upload a clear cat photo, pick a holiday style, preview a blur of your original, then create after checkout.",
-    uploadHint: "Cat photos only on this route — dogs will be offered the Dog Christmas path.",
+    uploadHint: "Cat photos only on this route · dogs will be offered the Dog Christmas path.",
     deliverableLine: "One Christmas cat portrait.",
     privacyLine: "Your cat photo stays private by default.",
     crossLinks: [

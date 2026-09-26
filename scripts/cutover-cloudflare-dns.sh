@@ -132,7 +132,7 @@ verify_records() {
       const j=JSON.parse(d||'{}');
       const recs=j.result||[];
       if (recs.length) {
-        console.log('NOTE: AAAA records still present for ${name} (' + recs.length + ') — review if unexpected');
+        console.log('NOTE: AAAA records still present for ${name} (' + recs.length + ') · review if unexpected');
       } else {
         console.log('verified no AAAA for ${name}');
       }

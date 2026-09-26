@@ -1,7 +1,7 @@
 /**
  * HTTP→HTTPS cutover helpers.
  *
- * Never follow an HTTP redirect from a --resolve :80 pin onto public :443 —
+ * Never follow an HTTP redirect from a --resolve :80 pin onto public :443 -
  * that would hit stale public DNS instead of the VPS.
  */
 

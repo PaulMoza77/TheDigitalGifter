@@ -16,17 +16,17 @@ const JOURNEY_FILTERS: Array<{ id: JourneyFilter; label: string }> = [
 ];
 
 function formatRoas(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "—";
+  if (value == null || !Number.isFinite(value)) return "-";
   return `${value.toFixed(2)}x`;
 }
 
 function formatRatioPct(ratio: number | null | undefined): string {
-  if (ratio == null || !Number.isFinite(ratio)) return "—";
+  if (ratio == null || !Number.isFinite(ratio)) return "-";
   return formatPct(ratio * 100);
 }
 
 function formatMs(ms: number | null | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return "—";
+  if (ms == null || !Number.isFinite(ms)) return "-";
   return formatDurationSec(ms / 1000);
 }
 
@@ -62,12 +62,12 @@ function CompactBreakdownTable({
           {rows.map((row) => (
             <tr key={row.key} className="border-t border-slate-800">
               <td className="max-w-[10rem] truncate px-2 py-1 text-slate-100" title={row.key}>
-                {row.key || "—"}
+                {row.key || "-"}
               </td>
               <td className="px-2 py-1 font-mono">{row.landing}</td>
-              <td className="px-2 py-1 font-mono">{row.uploads ?? "—"}</td>
-              <td className="px-2 py-1 font-mono">{row.checkouts ?? "—"}</td>
-              <td className="px-2 py-1 font-mono">{row.purchases ?? "—"}</td>
+              <td className="px-2 py-1 font-mono">{row.uploads ?? "-"}</td>
+              <td className="px-2 py-1 font-mono">{row.checkouts ?? "-"}</td>
+              <td className="px-2 py-1 font-mono">{row.purchases ?? "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -202,7 +202,7 @@ export function PetV4AnalyticsPanels({
           ) : null}
           {metaNeverSynced && metaEmpty ? (
             <p className={noFirstParty ? "mt-2" : undefined}>
-              Meta Ads Insights have never synced for this dashboard — spend stays $0 until you
+              Meta Ads Insights have never synced for this dashboard · spend stays $0 until you
               click <span className="font-medium">Sync historical data</span> above.
             </p>
           ) : null}
@@ -211,7 +211,7 @@ export function PetV4AnalyticsPanels({
 
       <SectionCard
         title="V4 health summary"
-        subtitle="Last 60 minutes — live pulse, not the selected date range."
+        subtitle="Last 60 minutes · live pulse, not the selected date range."
       >
         <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
           <StatCard label="Visitors" value={String(recent.visitors ?? 0)} />
@@ -281,12 +281,12 @@ export function PetV4AnalyticsPanels({
                 {prev ? (
                   <div className="flex flex-wrap items-center justify-center gap-2 py-2 text-sm text-slate-400">
                     <span className="font-mono text-emerald-300/90">
-                      ↓ {prev.toNextPct != null ? `${prev.toNextPct}%` : "—"}
+                      ↓ {prev.toNextPct != null ? `${prev.toNextPct}%` : "-"}
                     </span>
                     <span className="text-slate-500">
                       {prev.dropOffUsers != null
-                        ? `${prev.dropOffUsers} lost · ${prev.dropOffPct ?? "—"}% drop-off`
-                        : "—"}
+                        ? `${prev.dropOffUsers} lost · ${prev.dropOffPct ?? "-"}% drop-off`
+                        : "-"}
                     </span>
                   </div>
                 ) : null}
@@ -395,7 +395,7 @@ export function PetV4AnalyticsPanels({
                     <td className="px-3 py-2 font-mono">{row.exposures}</td>
                     <td className="px-3 py-2 font-mono">{row.clicks}</td>
                     <td className="px-3 py-2 font-mono">
-                      {row.ctr == null ? "—" : formatPct(row.ctr > 1 ? row.ctr : row.ctr * 100)}
+                      {row.ctr == null ? "-" : formatPct(row.ctr > 1 ? row.ctr : row.ctr * 100)}
                     </td>
                   </tr>
                 ))
@@ -409,7 +409,7 @@ export function PetV4AnalyticsPanels({
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Upload</p>
             <ul className="space-y-1 text-sm text-slate-300">
               {Object.entries(behavior.upload || {}).length === 0 ? (
-                <li className="text-slate-500">—</li>
+                <li className="text-slate-500">-</li>
               ) : (
                 Object.entries(behavior.upload || {}).map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
@@ -424,12 +424,12 @@ export function PetV4AnalyticsPanels({
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Generation</p>
             <ul className="space-y-1 text-sm text-slate-300">
               {Object.entries(behavior.generation || {}).length === 0 ? (
-                <li className="text-slate-500">—</li>
+                <li className="text-slate-500">-</li>
               ) : (
                 Object.entries(behavior.generation || {}).map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
                     <span className="truncate text-slate-400">{k}</span>
-                    <span className="font-mono">{v ?? "—"}</span>
+                    <span className="font-mono">{v ?? "-"}</span>
                   </li>
                 ))
               )}
@@ -439,7 +439,7 @@ export function PetV4AnalyticsPanels({
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Checkout</p>
             <ul className="space-y-1 text-sm text-slate-300">
               {Object.entries(behavior.checkout || {}).length === 0 ? (
-                <li className="text-slate-500">—</li>
+                <li className="text-slate-500">-</li>
               ) : (
                 Object.entries(behavior.checkout || {}).map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
@@ -503,15 +503,15 @@ export function PetV4AnalyticsPanels({
                 adRows.map((row, idx) => (
                   <tr key={`${row.ad_id || row.ad_name || idx}`} className="border-t border-slate-800">
                     <td className="max-w-[12rem] truncate px-2 py-1 text-slate-100" title={row.ad_name || row.ad_id}>
-                      {row.ad_name || row.ad_id || "—"}
+                      {row.ad_name || row.ad_id || "-"}
                     </td>
                     <td className="px-2 py-1 font-mono">
-                      {row.spend_cents == null ? "—" : formatUsdFromCents(row.spend_cents)}
+                      {row.spend_cents == null ? "-" : formatUsdFromCents(row.spend_cents)}
                     </td>
-                    <td className="px-2 py-1 font-mono">{row.landing ?? "—"}</td>
-                    <td className="px-2 py-1 font-mono">{row.uploads ?? "—"}</td>
-                    <td className="px-2 py-1 font-mono">{row.checkouts ?? "—"}</td>
-                    <td className="px-2 py-1 font-mono">{row.purchases ?? "—"}</td>
+                    <td className="px-2 py-1 font-mono">{row.landing ?? "-"}</td>
+                    <td className="px-2 py-1 font-mono">{row.uploads ?? "-"}</td>
+                    <td className="px-2 py-1 font-mono">{row.checkouts ?? "-"}</td>
+                    <td className="px-2 py-1 font-mono">{row.purchases ?? "-"}</td>
                     <td className="px-2 py-1 font-mono">
                       {formatMetricOrDash(row.cpa_cents ?? null, formatUsdFromCents)}
                     </td>
@@ -523,7 +523,7 @@ export function PetV4AnalyticsPanels({
         </div>
       </SectionCard>
 
-      <SectionCard title="Recent V4 journeys" subtitle="Anonymized visitor prefixes only — no email, name, or images.">
+      <SectionCard title="Recent V4 journeys" subtitle="Anonymized visitor prefixes only · no email, name, or images.">
         <div className="mb-3 flex flex-wrap gap-2">
           {JOURNEY_FILTERS.map((item) => (
             <button
@@ -563,9 +563,9 @@ export function PetV4AnalyticsPanels({
             First-party freshness:{" "}
             {dq.first_party_freshness
               ? new Date(dq.first_party_freshness).toLocaleString("en-US")
-              : "—"}
+              : "-"}
           </p>
-          <p>Events in range: {dq.events_in_range ?? "—"}</p>
+          <p>Events in range: {dq.events_in_range ?? "-"}</p>
           <p>Unattributed sessions: {dq.unattributed_sessions ?? 0}</p>
           <p>Duplicate events detected: {dq.duplicate_events_detected ?? 0}</p>
           <p>Checkout without click: {dq.checkout_sessions_without_click ?? 0}</p>

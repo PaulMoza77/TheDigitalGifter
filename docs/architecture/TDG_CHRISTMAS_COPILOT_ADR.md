@@ -20,4 +20,4 @@ Private Christmas Planner already had a local “Ask Christmas AI” that answer
 ## Consequences
 
 - Production Copilot is useful immediately and cannot spend model credits or write data.
-- Copilot consumes **Intelligence Engine V1** (`runPlannerIntelligence`) — no second scoring system.
+- Copilot consumes **Intelligence Engine V1** (`runPlannerIntelligence`) · no second scoring system.

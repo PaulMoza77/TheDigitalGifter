@@ -16,7 +16,7 @@ export function trackPetFunnelModeEvent(
   }
   const mapped = mapV2EventToV4(input.eventName);
   if (!mapped) {
-    // Unmapped diagnostic events (e.g. species_confirmed) — skip rather than pollute V2.
+    // Unmapped diagnostic events (e.g. species_confirmed) · skip rather than pollute V2.
     if (input.eventName === "v2_species_confirmed") {
       trackPetV4Event({
         eventName: "v4_cta_clicked",

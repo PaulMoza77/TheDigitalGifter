@@ -18,7 +18,7 @@ const days = Number(process.env.AUDIT_DAYS || 30);
 const since = new Date(Date.now() - days * 86400000).toISOString();
 
 function mask(id, n = 8) {
-  if (!id) return "—";
+  if (!id) return "-";
   const s = String(id);
   return s.length <= n ? s : `${s.slice(0, n)}…`;
 }

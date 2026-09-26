@@ -17,7 +17,7 @@ describe("pet scene prompts", () => {
     expect(scenesSrc).not.toContain("Formal original court portrait of this exact pet");
   });
 
-  it("keeps face and mane visible — no closed F1 helmets", () => {
+  it("keeps face and mane visible · no closed F1 helmets", () => {
     expect(scenesSrc).toContain("helmet visor open"); // astronaut
     expect(scenesSrc).toContain("no closed or full-face helmet");
     expect(scenesSrc).toMatch(/fluffy or dense coats|mane\/ruff/i);

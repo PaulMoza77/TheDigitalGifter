@@ -1,6 +1,6 @@
 /**
  * Resolve Apple product ID → Admin pricing_items credit pack.
- * Credits come from the database — never from the client.
+ * Credits come from the database · never from the client.
  */
 
 export const APPLE_BUNDLE_ID = "com.thedigitalgifter.app";

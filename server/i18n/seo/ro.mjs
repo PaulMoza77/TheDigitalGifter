@@ -1,13 +1,13 @@
 /**
- * Romanian Christmas SEO content — full 14-route pack.
+ * Romanian Christmas SEO content · full 14-route pack.
  * Genuine RO copy written for production quality (not machine-translated filler).
  * Terminology is kept consistent across the whole pack: "Crăciun" and "Moș Crăciun".
  *
  * Product truth constraints reflected in this copy:
  * - Digital Christmas Tree: gift boxes hold personal written messages only (no photos/videos yet).
  * - Advent calendar: doors follow December 1–24, Europe/Bucharest time, with no catch-up for missed days.
- * - Gift Finder: curated gift ideas with typical price ranges — no live retailer inventory or stock.
- * - Santa Video: Romanian is a genuinely supported spoken language — Moș Crăciun can say the name in română.
+ * - Gift Finder: curated gift ideas with typical price ranges · no live retailer inventory or stock.
+ * - Santa Video: Romanian is a genuinely supported spoken language · Moș Crăciun can say the name in română.
  * - Christmas Messages: the generator genuinely supports Romanian wording.
  */
 
@@ -32,10 +32,10 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas": {
     title: "Crăciun la TheDigitalGifter | Cadouri, Foto, Moș Crăciun și Multe Altele",
     description:
-      "Creează cadouri de Crăciun, portrete festive, videoclipuri de la Moș Crăciun, liste de dorințe, felicitări și surprize de Advent — experiențe digitale personalizate, toate la TheDigitalGifter.",
+      "Creează cadouri de Crăciun, portrete festive, videoclipuri de la Moș Crăciun, liste de dorințe, felicitări și surprize de Advent · experiențe digitale personalizate, toate la TheDigitalGifter.",
     h1: "Creează Ceva de Neuitat în Acest Crăciun",
     lede:
-      "Descoperă cadouri de Crăciun, portrete foto, videoclipuri de la Moș Crăciun, brazi digitali, calendare de Advent, felicitări și mesaje — totul într-un singur loc, la TheDigitalGifter.",
+      "Descoperă cadouri de Crăciun, portrete foto, videoclipuri de la Moș Crăciun, brazi digitali, calendare de Advent, felicitări și mesaje · totul într-un singur loc, la TheDigitalGifter.",
     h2: "Experiențe de Crăciun",
     h2Body: "Alege un produs de Crăciun de mai jos și creează ceva personal în doar câteva minute.",
     breadcrumbs: [{ href: "/ro/christmas", label: "Crăciun" }],
@@ -58,14 +58,14 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Găsește Cadoul Perfect de Crăciun",
         body:
-          "Nu știi ce să cumperi? Găsitorul de cadouri de Crăciun te întreabă pentru cine cumperi, ce îi place, cum este ca persoană și cât vrei să cheltui. Primești idei de cadouri cu un motiv scurt pentru fiecare — inclusiv pentru cineva care pare să aibă deja de toate. Salvează ideile care îți plac într-o listă de dorințe când ești gata.",
+          "Nu știi ce să cumperi? Găsitorul de cadouri de Crăciun te întreabă pentru cine cumperi, ce îi place, cum este ca persoană și cât vrei să cheltui. Primești idei de cadouri cu un motiv scurt pentru fiecare · inclusiv pentru cineva care pare să aibă deja de toate. Salvează ideile care îți plac într-o listă de dorințe când ești gata.",
         linkHref: "/ro/christmas/gift-finder",
         linkLabel: "Găsește un cadou pe care chiar îl vor iubi",
       },
       {
         h2: "Creează Fotografii Magice de Crăciun",
         body:
-          "Încarcă o fotografie clară și transform-o într-un portret festiv de Crăciun. Poți crea look-uri pentru familii, cupluri și animale de companie — inclusiv rute dedicate pentru câini și pisici — apoi descarci privat sau continui direct într-o felicitare de Crăciun.",
+          "Încarcă o fotografie clară și transform-o într-un portret festiv de Crăciun. Poți crea look-uri pentru familii, cupluri și animale de companie · inclusiv rute dedicate pentru câini și pisici · apoi descarci privat sau continui direct într-o felicitare de Crăciun.",
         linkHref: "/ro/christmas/photo-generator",
         linkLabel: "Transformă fotografia în magie de Crăciun",
       },
@@ -112,7 +112,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Am nevoie de cunoștințe de design?",
-        a: "Nu ai nevoie de design. Fiecare experiență de Crăciun te ghidează pas cu pas — încarci o fotografie, răspunzi la câteva întrebări sau începi cu un nume — iar pagina face restul.",
+        a: "Nu ai nevoie de design. Fiecare experiență de Crăciun te ghidează pas cu pas · încarci o fotografie, răspunzi la câteva întrebări sau începi cu un nume · iar pagina face restul.",
       },
       {
         q: "Este pentru cadouri digitale, fizice sau ambele?",
@@ -120,11 +120,11 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Funcționează pe telefon?",
-        a: "Da — hub-ul de Crăciun și experiențele de produs sunt făcute întâi pentru telefon și funcționează la fel de bine pe desktop.",
+        a: "Da · hub-ul de Crăciun și experiențele de produs sunt făcute întâi pentru telefon și funcționează la fel de bine pe desktop.",
       },
       {
         q: "Poza familiei mele este privată?",
-        a: "Încărcările sunt folosite ca să creezi portretul sau felicitarea. Experiențele pentru copii sunt privacy-first și presupun un părinte sau tutore. Când rezultatul e gata, îl descarci privat — nu publicăm pozele tale.",
+        a: "Încărcările sunt folosite ca să creezi portretul sau felicitarea. Experiențele pentru copii sunt privacy-first și presupun un părinte sau tutore. Când rezultatul e gata, îl descarci privat · nu publicăm pozele tale.",
       },
       {
         q: "Cât durează să creez ceva?",
@@ -158,7 +158,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un Găsitor de cadouri de Crăciun?",
       body:
-        "Un Găsitor de cadouri de Crăciun este un instrument ghidat care recomandă idei de cadouri pe baza persoanei pentru care cumperi, a intereselor și personalității ei, plus bugetul tău. Pe TheDigitalGifter răspunzi la un set scurt de întrebări și primești idei alese cu grijă, cu motive clare pentru care s-ar potrivi — apoi poți rafina răspunsurile sau salva ideile într-o listă de dorințe.",
+        "Un Găsitor de cadouri de Crăciun este un instrument ghidat care recomandă idei de cadouri pe baza persoanei pentru care cumperi, a intereselor și personalității ei, plus bugetul tău. Pe TheDigitalGifter răspunzi la un set scurt de întrebări și primești idei alese cu grijă, cu motive clare pentru care s-ar potrivi · apoi poți rafina răspunsurile sau salva ideile într-o listă de dorințe.",
     },
     sections: [
       {
@@ -175,7 +175,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Găsește Cadouri După Destinatar",
         body:
-          "Găsitorul acoperă cele mai frecvente relații din cumpărăturile de Crăciun, astfel încât recomandările rămân potrivite. Folosește instrumentul pentru mamă, tată, soție, soț, iubită, iubit, copii, adolescenți, bunici, prieteni, colegi și mulți alții. Paginile dedicate fiecărui destinatar nu sunt încă live — pornește Găsitorul și alege destinatarul direct acolo.",
+          "Găsitorul acoperă cele mai frecvente relații din cumpărăturile de Crăciun, astfel încât recomandările rămân potrivite. Folosește instrumentul pentru mamă, tată, soție, soț, iubită, iubit, copii, adolescenți, bunici, prieteni, colegi și mulți alții. Paginile dedicate fiecărui destinatar nu sunt încă live · pornește Găsitorul și alege destinatarul direct acolo.",
         list: [
           "Mamă",
           "Tată",
@@ -193,7 +193,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Găsește Cadouri de Crăciun După Buget",
         body:
-          "Alege un interval de cheltuială, de exemplu sub 100 lei, 100–250 lei, 250–500 lei, 500–1000 lei, peste 1000 lei sau fără un buget strict. Recomandările sunt idei de cadouri cu intervale de preț tipice — nu stoc live de la retaileri și nu o garanție de disponibilitate.",
+          "Alege un interval de cheltuială, de exemplu sub 100 lei, 100–250 lei, 250–500 lei, 500–1000 lei, peste 1000 lei sau fără un buget strict. Recomandările sunt idei de cadouri cu intervale de preț tipice · nu stoc live de la retaileri și nu o garanție de disponibilitate.",
       },
       {
         h2: "Cadouri Pentru Cineva Care Are Deja de Toate",
@@ -235,7 +235,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Afișează produse reale, din magazine?",
-        a: "În acest moment Găsitorul arată idei de cadouri alese cu grijă, cu intervale de preț tipice. Prețurile live de la retaileri, stocul și fluxurile de la magazine nu sunt încă conectate — nu inventăm prețuri exacte sau stoc real.",
+        a: "În acest moment Găsitorul arată idei de cadouri alese cu grijă, cu intervale de preț tipice. Prețurile live de la retaileri, stocul și fluxurile de la magazine nu sunt încă conectate · nu inventăm prețuri exacte sau stoc real.",
       },
     ],
   },
@@ -304,7 +304,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Pot adăuga urări fără un link?",
-        a: "Da. Scrie orice urare — experiențe, idei făcute manual sau un simplu „Surprinde-mă”.",
+        a: "Da. Scrie orice urare · experiențe, idei făcute manual sau un simplu „Surprinde-mă”.",
       },
       {
         q: "Pot partaja un singur link pentru toată lista?",
@@ -354,7 +354,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un generator foto de Crăciun cu AI?",
       body:
-        "Un generator foto de Crăciun cu AI transformă o fotografie reală, încărcată de tine, într-un portret festiv de Crăciun. Pe TheDigitalGifter alegi cine apare în fotografie, alegi un stil de Crăciun și creezi un portret descărcabil pentru familie, cuplu, o persoană sau un animal de companie — privat, în mod implicit.",
+        "Un generator foto de Crăciun cu AI transformă o fotografie reală, încărcată de tine, într-un portret festiv de Crăciun. Pe TheDigitalGifter alegi cine apare în fotografie, alegi un stil de Crăciun și creezi un portret descărcabil pentru familie, cuplu, o persoană sau un animal de companie · privat, în mod implicit.",
     },
     sections: [
       {
@@ -367,11 +367,11 @@ export const CHRISTMAS_SEO_CONTENT = {
         body:
           "Exemplele demonstrative arată direcții obișnuite pentru portrete de Crăciun. Sunt mostre de inspirație, nu fotografii ale clienților.",
         list: [
-          "Fotografie de familie de Crăciun — un portret de grup într-o scenă caldă și festivă",
-          "Portret de cuplu de Crăciun — un portret romantic pentru două persoane",
-          "Portret de Crăciun pentru câine — un portret festiv centrat pe câine",
-          "Portret de Crăciun pentru pisică — un portret festiv centrat pe pisică",
-          "Familie plus animal — oameni și un animal de companie în același cadru de Crăciun",
+          "Fotografie de familie de Crăciun · un portret de grup într-o scenă caldă și festivă",
+          "Portret de cuplu de Crăciun · un portret romantic pentru două persoane",
+          "Portret de Crăciun pentru câine · un portret festiv centrat pe câine",
+          "Portret de Crăciun pentru pisică · un portret festiv centrat pe pisică",
+          "Familie plus animal · oameni și un animal de companie în același cadru de Crăciun",
         ],
       },
       {
@@ -387,7 +387,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Fotografii de Crăciun Pentru Familii, Cupluri și Animale",
         body:
-          "Ai nevoie de un punct de plecare mai specific? Folosește rutele dedicate pentru familie, cupluri, animale, câini și pisici — sau continuă aici, în generatorul complet.",
+          "Ai nevoie de un punct de plecare mai specific? Folosește rutele dedicate pentru familie, cupluri, animale, câini și pisici · sau continuă aici, în generatorul complet.",
         list: [
           "Portrete de Crăciun pentru familie → /ro/christmas/family",
           "Portrete de Crăciun pentru cuplu → /ro/christmas/couples",
@@ -457,7 +457,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un generator foto de Crăciun pentru familie?",
       body:
-        "Un generator foto de Crăciun pentru familie transformă o singură fotografie de familie încărcată într-un portret festiv de grup. Pe TheDigitalGifter încarci o fotografie clară a familiei tale, alegi un stil de Crăciun gândit pentru mai multe persoane și creezi un portret descărcabil — privat, în mod implicit, cu posibilitatea de a continua direct într-o felicitare.",
+        "Un generator foto de Crăciun pentru familie transformă o singură fotografie de familie încărcată într-un portret festiv de grup. Pe TheDigitalGifter încarci o fotografie clară a familiei tale, alegi un stil de Crăciun gândit pentru mai multe persoane și creezi un portret descărcabil · privat, în mod implicit, cu posibilitatea de a continua direct într-o felicitare.",
     },
     sections: [
       {
@@ -516,7 +516,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Pot include bunicii?",
-        a: "Da. Fotografiile multi-generaționale — inclusiv bunici și bebeluși — sunt binevenite, atât timp cât fețele sunt vizibile.",
+        a: "Da. Fotografiile multi-generaționale · inclusiv bunici și bebeluși · sunt binevenite, atât timp cât fețele sunt vizibile.",
       },
       {
         q: "Pot include un animal de companie din familie?",
@@ -547,7 +547,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       "Creează un portret romantic de cuplu de Crăciun din fotografia voastră. Perfect pentru primul Crăciun împreună sau ca cadou personalizat pentru cuplu.",
     h1: "Creează un Portret Magic de Crăciun Împreună",
     lede:
-      "Încarcă o singură fotografie cu voi doi și creează un portret romantic de cuplu de Crăciun — privat, în mod implicit.",
+      "Încarcă o singură fotografie cu voi doi și creează un portret romantic de cuplu de Crăciun · privat, în mod implicit.",
     h2: "Mai multe portrete de Crăciun",
     breadcrumbs: [
       { href: "/ro/christmas", label: "Crăciun" },
@@ -569,12 +569,12 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Creează un Portret de Crăciun Împreună",
         body:
-          "Această experiență este pentru două persoane — parteneri, cupluri logodite, soț și soție sau iubit și iubită. Încarcă o singură fotografie cu voi doi clar vizibili, alege un look de Crăciun și creează un portret gândit exact pentru voi doi.",
+          "Această experiență este pentru două persoane · parteneri, cupluri logodite, soț și soție sau iubit și iubită. Încarcă o singură fotografie cu voi doi clar vizibili, alege un look de Crăciun și creează un portret gândit exact pentru voi doi.",
       },
       {
         h2: "Idei de Fotografii de Cuplu de Crăciun",
         body:
-          "Situații în care acest portret se potrivește de obicei — ca sursă de inspirație, nu ca moduri separate ale produsului:",
+          "Situații în care acest portret se potrivește de obicei · ca sursă de inspirație, nu ca moduri separate ale produsului:",
         list: [
           "Primul Crăciun împreună",
           "Portret de Crăciun pentru un cuplu logodit",
@@ -619,7 +619,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Rămân ambele persoane recunoscute?",
-        a: "Acesta este scopul. Pornește de la o fotografie clară cu ambele fețe — evită blur-ul puternic sau situația în care una dintre persoane iese aproape din cadru.",
+        a: "Acesta este scopul. Pornește de la o fotografie clară cu ambele fețe · evită blur-ul puternic sau situația în care una dintre persoane iese aproape din cadru.",
       },
       {
         q: "Pot crea un portret romantic de Crăciun?",
@@ -647,7 +647,7 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas/pets": {
     title: "Generator Foto de Crăciun pentru Animale | Portrete Festive",
     description:
-      "Transformă fotografia animalului tău de companie într-un portret festiv de Crăciun. Câini și pisici sunt binevenite — privat, în mod implicit.",
+      "Transformă fotografia animalului tău de companie într-un portret festiv de Crăciun. Câini și pisici sunt binevenite · privat, în mod implicit.",
     h1: "Transformă Animalul Tău în Magie de Crăciun",
     lede:
       "Încarcă o fotografie clară a animalului tău de companie și creează un portret festiv de Crăciun pentru câini sau pisici.",
@@ -677,7 +677,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Portrete de Crăciun Pentru Câini și Pisici",
         body:
-          "Ai nevoie de un start mai clar pentru o singură specie? Folosește rutele specializate pentru câini sau pisici — te ajută să validezi fotografia și păstrează experiența centrată pe câine sau pe pisică.",
+          "Ai nevoie de un start mai clar pentru o singură specie? Folosește rutele specializate pentru câini sau pisici · te ajută să validezi fotografia și păstrează experiența centrată pe câine sau pe pisică.",
         list: [
           "Generator foto de Crăciun pentru câini → /ro/christmas/dogs",
           "Generator foto de Crăciun pentru pisici → /ro/christmas/cats",
@@ -766,7 +766,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un generator foto de Crăciun pentru câini?",
       body:
-        "Un generator foto de Crăciun pentru câini creează un portret festiv de sărbătoare dintr-o fotografie a câinelui tău. Pe TheDigitalGifter încarci o fotografie clară, alegi un stil de Crăciun pentru animale și descarci un portret centrat pe câine — cu posibilitatea de a continua într-o felicitare de Crăciun.",
+        "Un generator foto de Crăciun pentru câini creează un portret festiv de sărbătoare dintr-o fotografie a câinelui tău. Pe TheDigitalGifter încarci o fotografie clară, alegi un stil de Crăciun pentru animale și descarci un portret centrat pe câine · cu posibilitatea de a continua într-o felicitare de Crăciun.",
     },
     sections: [
       {
@@ -777,7 +777,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Exemple de Portrete de Crăciun cu Câini",
         body:
-          "Direcții demonstrative pentru portrete de Crăciun cu câini — mostre de inspirație, nu fotografii ale clienților.",
+          "Direcții demonstrative pentru portrete de Crăciun cu câini · mostre de inspirație, nu fotografii ale clienților.",
         list: [
           "Câine lângă un brad de Crăciun decorat",
           "Portret cald, lângă șemineu, cu câinele de Crăciun",
@@ -879,7 +879,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Exemple de Portrete de Crăciun cu Pisici",
         body:
-          "Direcții demonstrative cu pisici — mostre de inspirație, nu fotografii ale clienților.",
+          "Direcții demonstrative cu pisici · mostre de inspirație, nu fotografii ale clienților.",
         list: [
           "Pisică lângă un brad de Crăciun",
           "Portret cald, lângă șemineu, cu pisica de Crăciun",
@@ -953,7 +953,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       "Creează un video personalizat de Crăciun de la Moș Crăciun care poate include numele destinatarului și alte detalii personale susținute, în engleză sau română.",
     h1: "Creează un Video Personalizat de la Moș Crăciun",
     lede:
-      "Creează un video personalizat de Crăciun de la Moș Crăciun care poate include numele destinatarului și alte detalii personale susținute — în engleză sau în română.",
+      "Creează un video personalizat de Crăciun de la Moș Crăciun care poate include numele destinatarului și alte detalii personale susținute · în engleză sau în română.",
     h2: "Cum funcționează videoclipurile de la Moș Crăciun",
     h2Body: "Spune-i Moșului pentru cine este, adaugă câteva detalii, apoi creează un videoclip cu mesaj personalizat de Crăciun.",
     breadcrumbs: [
@@ -969,13 +969,13 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un video personalizat de la Moș Crăciun?",
       body:
-        "Un video personalizat de la Moș Crăciun este un mesaj video de Crăciun în care Moș Crăciun poate include numele destinatarului și alte detalii oferite de tine. Pe TheDigitalGifter completezi un formular scurt și ghidat, revizuiești mesajul, apoi creezi un video pe care îl poți descărca și partaja — inclusiv cu Moș Crăciun vorbind în limba română.",
+        "Un video personalizat de la Moș Crăciun este un mesaj video de Crăciun în care Moș Crăciun poate include numele destinatarului și alte detalii oferite de tine. Pe TheDigitalGifter completezi un formular scurt și ghidat, revizuiești mesajul, apoi creezi un video pe care îl poți descărca și partaja · inclusiv cu Moș Crăciun vorbind în limba română.",
     },
     sections: [
       {
         h2: "Un Mesaj Personalizat de la Moș Crăciun, în Română",
         body:
-          "Creează un video de Crăciun de la Moș Crăciun pentru un copil, frați, familie sau pentru cineva drag. Moș Crăciun poate spune numele lor și poate include detaliile opționale pe care le adaugi — iar mesajul poate fi vorbit în limba română, nu doar în engleză.",
+          "Creează un video de Crăciun de la Moș Crăciun pentru un copil, frați, familie sau pentru cineva drag. Moș Crăciun poate spune numele lor și poate include detaliile opționale pe care le adaugi · iar mesajul poate fi vorbit în limba română, nu doar în engleză.",
       },
       {
         h2: "Ce Poate Menționa Moș Crăciun?",
@@ -1015,7 +1015,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Poate Moș Crăciun să spună numele copilului meu, în română?",
-        a: "Da. Numele destinatarului este un câmp principal de personalizare, iar Moș Crăciun îl spune în video — inclusiv atunci când alegi limba română pentru mesaj.",
+        a: "Da. Numele destinatarului este un câmp principal de personalizare, iar Moș Crăciun îl spune în video · inclusiv atunci când alegi limba română pentru mesaj.",
       },
       {
         q: "Ce pot personaliza?",
@@ -1027,7 +1027,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Poate Moș Crăciun să menționeze un cadou de Crăciun?",
-        a: "Da — poți include o dorință de Crăciun, iar Moș Crăciun o poate menționa atunci când o adaugi.",
+        a: "Da · poți include o dorință de Crăciun, iar Moș Crăciun o poate menționa atunci când o adaugi.",
       },
       {
         q: "Pot face un video pentru frați?",
@@ -1065,7 +1065,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     geo: {
       h2: "Ce este un brad digital de Crăciun?",
       body:
-        "Un brad digital de Crăciun este un brad interactiv, online, pe care îl poți personaliza și partaja. Pe TheDigitalGifter alegi un look pentru brad, adaugi decorațiuni, așezi cutii cadou cu mesaje personale sub el și partajezi un link privat, astfel încât cineva drag să poată deschide cadourile pe ecranul propriu — fără ca pagina partajată să ajungă în rezultatele motoarelor de căutare.",
+        "Un brad digital de Crăciun este un brad interactiv, online, pe care îl poți personaliza și partaja. Pe TheDigitalGifter alegi un look pentru brad, adaugi decorațiuni, așezi cutii cadou cu mesaje personale sub el și partajezi un link privat, astfel încât cineva drag să poată deschide cadourile pe ecranul propriu · fără ca pagina partajată să ajungă în rezultatele motoarelor de căutare.",
     },
     sections: [
       {
@@ -1076,7 +1076,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Ce Poți Pune Sub Bradul Tău?",
         body:
-          "Astăzi poți adăuga cutii cadou care conțin mesaje personale de Crăciun. Fiecare cadou poate folosi un stil de cutie festiv, precum roșu, auriu, verde, albastru sau alb ca zăpada. Alte tipuri de cadou se pot adăuga în viitor — creatorul actual se concentrează pe cadouri cu mesaj.",
+          "Astăzi poți adăuga cutii cadou care conțin mesaje personale de Crăciun. Fiecare cadou poate folosi un stil de cutie festiv, precum roșu, auriu, verde, albastru sau alb ca zăpada. Alte tipuri de cadou se pot adăuga în viitor · creatorul actual se concentrează pe cadouri cu mesaj.",
         list: [
           "Mesaje personale de Crăciun, în cutii cadou",
           "Stiluri festive de cutii (roșu, auriu, verde, albastru, alb ca zăpada)",
@@ -1090,7 +1090,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Un Cadou de Crăciun Gândit să Fie Deschis",
         body:
-          "Destinatarii pot atinge cadourile de sub brad pentru a descoperi mesajele pe care le-ai lăsat — un moment digital gândit să semene cu deschiderea unui cadou lăsat special pentru ei.",
+          "Destinatarii pot atinge cadourile de sub brad pentru a descoperi mesajele pe care le-ai lăsat · un moment digital gândit să semene cu deschiderea unui cadou lăsat special pentru ei.",
       },
       {
         h2: "Cum Funcționează",
@@ -1137,7 +1137,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Am nevoie de un cont?",
-        a: "Poți începe să creezi un brad fără o configurare complicată — proprietatea este gestionată la nivelul sesiunii de creare, ca să poți continua să editezi.",
+        a: "Poți începe să creezi un brad fără o configurare complicată · proprietatea este gestionată la nivelul sesiunii de creare, ca să poți continua să editezi.",
       },
       {
         q: "Bradul partajat este public?",
@@ -1173,7 +1173,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Puțină Magie de Crăciun, În Fiecare Zi",
         body:
-          "Calendarul de Advent este o experiență de numărătoare inversă, cu douăzeci și patru de ușițe. Fiecare zi din decembrie are propria ușiță — un mic ritual de a deschide ceva nou, pe măsură ce Crăciunul se apropie.",
+          "Calendarul de Advent este o experiență de numărătoare inversă, cu douăzeci și patru de ușițe. Fiecare zi din decembrie are propria ușiță · un mic ritual de a deschide ceva nou, pe măsură ce Crăciunul se apropie.",
       },
       {
         h2: "Deschide o Nouă Ușiță În Fiecare Zi",
@@ -1222,7 +1222,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Pot deschide ușițe mai vechi, pe care le-am ratat?",
-        a: "Nu. Zilele ratate rămân închise — doar ușița zilei curente este disponibilă.",
+        a: "Nu. Zilele ratate rămân închise · doar ușița zilei curente este disponibilă.",
       },
       {
         q: "Calendarul este gratuit?",
@@ -1230,7 +1230,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Ce pot găsi în spatele unei ușițe?",
-        a: "Surprize de sezon, configurate pentru ziua respectivă, atunci când revendicările sunt active — nu o garanție de premii în bani sau credite de magazin în fiecare zi.",
+        a: "Surprize de sezon, configurate pentru ziua respectivă, atunci când revendicările sunt active · nu o garanție de premii în bani sau credite de magazin în fiecare zi.",
       },
       {
         q: "Am nevoie de un cont?",
@@ -1250,7 +1250,7 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas/cards": {
     title: "Creator de Felicitări de Crăciun | Felicitări Personalizate",
     description:
-      "Creează o felicitare de Crăciun personalizată pe care vor vrea să o păstreze — alege un design, adaugă mesajul tău și descarcă sau partajează.",
+      "Creează o felicitare de Crăciun personalizată pe care vor vrea să o păstreze · alege un design, adaugă mesajul tău și descarcă sau partajează.",
     h1: "Creează o Felicitare de Crăciun pe Care Vor Vrea Să o Păstreze",
     lede:
       "Proiectează o felicitare personalizată de Crăciun, cu layout-uri festive și mesajul tău. Unele gânduri merită mai mult decât un simplu SMS.",
@@ -1275,7 +1275,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Creează o Felicitare Personalizată de Crăciun",
         body:
-          "Alege un stil de felicitare, adaugă fotografia, scrie un mesaj și creează o felicitare digitală pe care o poți descărca sau partaja. Unele gânduri merită mai mult decât un simplu mesaj text — asta e menit pentru ele.",
+          "Alege un stil de felicitare, adaugă fotografia, scrie un mesaj și creează o felicitare digitală pe care o poți descărca sau partaja. Unele gânduri merită mai mult decât un simplu mesaj text · asta e menit pentru ele.",
       },
       {
         h2: "Exemple de Felicitări de Crăciun",
@@ -1348,7 +1348,7 @@ export const CHRISTMAS_SEO_CONTENT = {
   "/christmas/messages": {
     title: "Generator de Mesaje de Crăciun | Urări Pentru Familie și Prieteni",
     description:
-      "Găsește mesajul perfect de Crăciun pentru familie, prieteni și colegi — apoi folosește-l într-o felicitare personalizată de Crăciun.",
+      "Găsește mesajul perfect de Crăciun pentru familie, prieteni și colegi · apoi folosește-l într-o felicitare personalizată de Crăciun.",
     h1: "Găsește Mesajul Perfect de Crăciun",
     lede:
       "Generează urări de Crăciun calde, amuzante, romantice sau profesionale, în limba română, apoi adaugă-ți preferata pe o felicitare de Crăciun.",
@@ -1377,7 +1377,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Mesaje de Crăciun După Destinatar",
         body:
-          "Generatorul acoperă cele mai frecvente relații de Crăciun. Pornește instrumentul și alege pentru cine scrii — paginile dedicate fiecărui destinatar nu sunt încă live.",
+          "Generatorul acoperă cele mai frecvente relații de Crăciun. Pornește instrumentul și alege pentru cine scrii · paginile dedicate fiecărui destinatar nu sunt încă live.",
         list: [
           "Mamă",
           "Tată",
@@ -1398,7 +1398,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Exemple de Mesaje de Crăciun",
         body:
-          "Direcții demonstrative pentru tipul de urări pe care instrumentul te poate ajuta să le scrii — editează orice, ca să sune ca tine.",
+          "Direcții demonstrative pentru tipul de urări pe care instrumentul te poate ajuta să le scrii · editează orice, ca să sune ca tine.",
         list: [
           "Notă sinceră către mamă, mulțumindu-i pentru încă un an de bunătate discretă",
           "Urare scurtă și caldă pentru un prieten pe care nu îl vezi suficient de des",
@@ -1409,7 +1409,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       {
         h2: "Cum Scrii un Mesaj de Crăciun Cu Adevărat Sincer",
         body:
-          "Adresează-te persoanei pe nume sau prin relația voastră, menționează o amintire sau o calitate comună atunci când se potrivește, exprimă un sentiment clar, păstrează formularea naturală și încheie personal. Generatorul este un punct de plecare — editarea ta îl face autentic.",
+          "Adresează-te persoanei pe nume sau prin relația voastră, menționează o amintire sau o calitate comună atunci când se potrivește, exprimă un sentiment clar, păstrează formularea naturală și încheie personal. Generatorul este un punct de plecare · editarea ta îl face autentic.",
       },
       {
         h2: "Folosește Mesajul Tău Într-o Felicitare de Crăciun",
@@ -1422,7 +1422,7 @@ export const CHRISTMAS_SEO_CONTENT = {
     faqs: [
       {
         q: "Cum funcționează generatorul de mesaje de Crăciun?",
-        a: "Alegi destinatarul, tonul și lungimea, adaugi opțional un detaliu, apoi generezi variante de mesaj pe care le poți copia sau edita — inclusiv în limba română.",
+        a: "Alegi destinatarul, tonul și lungimea, adaugi opțional un detaliu, apoi generezi variante de mesaj pe care le poți copia sau edita · inclusiv în limba română.",
       },
       {
         q: "Pot scrie un mesaj pentru partenerul meu?",
@@ -1430,7 +1430,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Poate crea mesaje amuzante de Crăciun?",
-        a: "Da. Selectează tonul amuzant — păstrează mesajele pentru colegi într-un registru profesional.",
+        a: "Da. Selectează tonul amuzant · păstrează mesajele pentru colegi într-un registru profesional.",
       },
       {
         q: "Pot edita mesajele generate?",
@@ -1446,7 +1446,7 @@ export const CHRISTMAS_SEO_CONTENT = {
       },
       {
         q: "Ce limbi sunt suportate?",
-        a: "Engleza și română sunt suportate astăzi — generatorul creează mesaje autentice în limba română, nu doar traduceri.",
+        a: "Engleza și română sunt suportate astăzi · generatorul creează mesaje autentice în limba română, nu doar traduceri.",
       },
     ],
   },

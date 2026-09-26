@@ -156,7 +156,7 @@ export function RewardRevealModal({
                 Your free gift is already yours
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-rose-100/75">
-                Unlock five more presents under the tree — or grab one more if you prefer.
+                Unlock five more presents under the tree · or grab one more if you prefer.
               </p>
             </>
           ) : null}
@@ -307,8 +307,8 @@ export function RewardRevealModal({
                     payButtonLabel={(pay) => {
                       const offer = GIFT_TREE_PAID_OFFERS.find((o) => o.packageKey === checkout.packageKey);
                       const opens = offer?.opensGranted ?? 0;
-                      if (opens > 1) return `Pay ${pay} — ${opens} more chances`;
-                      if (opens === 1) return `Pay ${pay} — 1 more chance`;
+                      if (opens > 1) return `Pay ${pay} · ${opens} more chances`;
+                      if (opens === 1) return `Pay ${pay} · 1 more chance`;
                       return `Pay ${pay}`;
                     }}
                   />

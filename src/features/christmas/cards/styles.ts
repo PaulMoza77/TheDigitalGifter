@@ -1,4 +1,4 @@
-/** Card style/layout registry — preferred import path for the canvas renderer. */
+/** Card style/layout registry · preferred import path for the canvas renderer. */
 
 export {
   CARD_LAYOUTS,

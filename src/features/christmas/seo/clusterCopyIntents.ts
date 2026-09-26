@@ -22,7 +22,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Funny Christmas messages that still land: for dad, friends, and partners, with a last sincere line and a generator that starts on the funny tone.",
       h1: "Funny Christmas messages that still mean it",
       intro:
-        "Funny Christmas messages fail when they only roast. The ones people keep have a last line that tells the truth. Tease the wrapping, the remote, the burnt rolls — then say you are glad they are at the table. This page is a lane, not a roast book. It sits next to recipient pages so you can aim the joke at dad, a friend, or a partner without using coworker or customer humor by mistake. Generate three options on the funny tone, keep the one you would actually say, and put it on a card before the group chat ruins the timing.",
+        "Funny Christmas messages fail when they only roast. The ones people keep have a last line that tells the truth. Tease the wrapping, the remote, the burnt rolls · then say you are glad they are at the table. This page is a lane, not a roast book. It sits next to recipient pages so you can aim the joke at dad, a friend, or a partner without using coworker or customer humor by mistake. Generate three options on the funny tone, keep the one you would actually say, and put it on a card before the group chat ruins the timing.",
       imageAlt: "Playful Christmas card with space for a funny holiday note",
       ctaText: "Write a funny Christmas message",
       benefits: [
@@ -106,7 +106,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Mesaje amuzante de Crăciun care tot ajung la masă: pentru tata, prieteni și partener, cu un ultim rând sincer și un generator pornit pe tonul amuzant.",
       h1: "Mesaje amuzante de Crăciun care tot înseamnă ceva",
       intro:
-        "Mesajele amuzante de Crăciun eșuează când doar ciomăgesc. Cele pe care oamenii le păstrează au un ultim rând care spune adevărul. Tachinează împachetatul, telecomanda, chiflele arse — apoi spune că te bucuri că sunt la masă. Pagina e o bandă, nu o carte de roast. Stă lângă paginile de destinatar ca să îndrepți gluma către tata, un prieten sau un partener, fără să folosești din greșeală umor de coleg sau de client. Generează trei variante pe ton amuzant, păstreaz-o pe cea pe care ai zice-o și pune-o pe felicitare înainte ca grupul să strice timing-ul.",
+        "Mesajele amuzante de Crăciun eșuează când doar ciomăgesc. Cele pe care oamenii le păstrează au un ultim rând care spune adevărul. Tachinează împachetatul, telecomanda, chiflele arse · apoi spune că te bucuri că sunt la masă. Pagina e o bandă, nu o carte de roast. Stă lângă paginile de destinatar ca să îndrepți gluma către tata, un prieten sau un partener, fără să folosești din greșeală umor de coleg sau de client. Generează trei variante pe ton amuzant, păstreaz-o pe cea pe care ai zice-o și pune-o pe felicitare înainte ca grupul să strice timing-ul.",
       imageAlt: "Felicitare jucăușă de Crăciun cu loc pentru un bilet amuzant",
       ctaText: "Scrie un mesaj amuzant de Crăciun",
       benefits: [
@@ -223,7 +223,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         {
           question: "Can I be romantic and funny?",
           answer:
-            "Yes — last line affectionate, first line a shared joke. If the joke needs explaining to their parents, keep it off the public card.",
+            "Yes · last line affectionate, first line a shared joke. If the joke needs explaining to their parents, keep it off the public card.",
         },
         {
           question: "What if we are long distance?",
@@ -307,7 +307,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         {
           question: "Pot fi romantic și amuzant?",
           answer:
-            "Da — ultimul rând afectuos, primul o glumă comună. Dacă gluma trebuie explicată părinților, ține-o departe de felicitarea publică.",
+            "Da · ultimul rând afectuos, primul o glumă comună. Dacă gluma trebuie explicată părinților, ține-o departe de felicitarea publică.",
         },
         {
           question: "Dacă suntem la distanță?",
@@ -417,7 +417,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Client",
-              text: "Thank you for the trust this year. Wishing you rest and a steady January — no asks attached.",
+              text: "Thank you for the trust this year. Wishing you rest and a steady January · no asks attached.",
             },
             {
               title: "Vendor",
@@ -501,7 +501,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "Client",
-              text: "Mulțumim pentru încrederea din anul ăsta. Odihnă și un ianuarie așezat — fără cereri atașate.",
+              text: "Mulțumim pentru încrederea din anul ăsta. Odihnă și un ianuarie așezat · fără cereri atașate.",
             },
             {
               title: "Furnizor",
@@ -547,7 +547,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Short Christmas wishes for cards, tags, and large lists: one or two sentences, still specific, with a generator on short length and links into mom, dad, and work pages.",
       h1: "Short Christmas wishes that still sound like you",
       intro:
-        "Short Christmas wishes are not lazy if they name a person. They are the right length for a gift tag, a group email, a kid learning to sign a card, and a dad who will not read a paragraph. This intent page is the cluster hub for the short length. Steal a line, swap in a name, and stop. If you owe someone a letter, do not hide on this page — go to mom, family, or romantic and write the longer thing. If you owe thirty people a note, stay here and keep it even.",
+        "Short Christmas wishes are not lazy if they name a person. They are the right length for a gift tag, a group email, a kid learning to sign a card, and a dad who will not read a paragraph. This intent page is the cluster hub for the short length. Steal a line, swap in a name, and stop. If you owe someone a letter, do not hide on this page · go to mom, family, or romantic and write the longer thing. If you owe thirty people a note, stay here and keep it even.",
       imageAlt: "Gift tag and small card for short Christmas wishes",
       ctaText: "Write a short Christmas wish",
       benefits: [
@@ -610,7 +610,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "When to leave this page",
-          body: "Grief, a repair, a first Christmas after a birth or a death — those usually need more than a tag. Use family or heartfelt and take the space. Short is a craft, not a way to dodge the year.",
+          body: "Grief, a repair, a first Christmas after a birth or a death · those usually need more than a tag. Use family or heartfelt and take the space. Short is a craft, not a way to dodge the year.",
         },
         {
           heading: "Generate on short",
@@ -631,7 +631,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         "Urări scurte de Crăciun pentru felicitări, etichete și liste mari: una-două propoziții, tot precise, cu generator pe lungime scurtă și legături către mama, tata și birou.",
       h1: "Urări scurte de Crăciun care tot sună a tine",
       intro:
-        "Urările scurte de Crăciun nu sunt lene dacă numesc un om. Sunt lungimea potrivită pentru o etichetă, un email de grup, un copil care învață să semneze și un tată care nu citește un paragraf. Pagina de intent e hub-ul de cluster pentru lungimea scurtă. Fură un rând, pune un nume, oprește-te. Dacă datorezi cuiva o scrisoare, nu te ascunde aici — du-te la mama, familie sau romantic și scrie varianta lungă. Dacă datorezi un bilet la treizeci de oameni, rămâi aici și ține-l egal.",
+        "Urările scurte de Crăciun nu sunt lene dacă numesc un om. Sunt lungimea potrivită pentru o etichetă, un email de grup, un copil care învață să semneze și un tată care nu citește un paragraf. Pagina de intent e hub-ul de cluster pentru lungimea scurtă. Fură un rând, pune un nume, oprește-te. Dacă datorezi cuiva o scrisoare, nu te ascunde aici · du-te la mama, familie sau romantic și scrie varianta lungă. Dacă datorezi un bilet la treizeci de oameni, rămâi aici și ține-l egal.",
       imageAlt: "Etichetă de cadou și felicitare mică pentru urări scurte de Crăciun",
       ctaText: "Scrie o urare scurtă de Crăciun",
       benefits: [
@@ -694,7 +694,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
         },
         {
           heading: "Când pleci de pe pagina asta",
-          body: "Doliul, o reparație, primul Crăciun după o naștere sau o moarte — de obicei au nevoie de mai mult decât o etichetă. Folosește familia sau din suflet și ia-ți spațiul. Scurtul e o meserie, nu o evadare din an.",
+          body: "Doliul, o reparație, primul Crăciun după o naștere sau o moarte · de obicei au nevoie de mai mult decât o etichetă. Folosește familia sau din suflet și ia-ți spațiul. Scurtul e o meserie, nu o evadare din an.",
         },
         {
           heading: "Generează pe scurt",
@@ -767,7 +767,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "After travel",
-              text: "The trains, the cars, the late arrivals — you still made it. That is the gift. Eat first. Talk after.",
+              text: "The trains, the cars, the late arrivals · you still made it. That is the gift. Eat first. Talk after.",
             },
             {
               title: "Blended family",
@@ -851,7 +851,7 @@ export const INTENT_CLUSTER_SPECS: ChristmasSeoSpec[] = [
             },
             {
               title: "După drum",
-              text: "Trenurile, mașinile, întârzierile — tot ați ajuns. Ăsta e cadoul. Mâncați întâi. Vorbiți după.",
+              text: "Trenurile, mașinile, întârzierile · tot ați ajuns. Ăsta e cadoul. Mâncați întâi. Vorbiți după.",
             },
             {
               title: "Familie amestecată",

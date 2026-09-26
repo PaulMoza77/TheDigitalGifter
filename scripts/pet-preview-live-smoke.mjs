@@ -110,7 +110,7 @@ async function main() {
     fail(`Generation failed: ${json.errorCode || json.error || res.status}`);
   }
   if (!String(json.identityBuild || "").startsWith(EXPECTED_BUILD_PREFIX)) {
-    fail("Generation succeeded but identityBuild missing — wrong/old edge revision");
+    fail("Generation succeeded but identityBuild missing · wrong/old edge revision");
   }
 
   const outFile = join(outDir, "prod-after-chow.jpg");

@@ -65,11 +65,11 @@ export function ChristmasPresent({
           ? `Open Christmas gift ${present.id.replace("_", " ")}`
           : opened
             ? "Already opened gift"
-            : "Gift locked — get more chances to open another"
+            : "Gift locked · get more chances to open another"
       }
       aria-pressed={selected}
       aria-disabled={!canPress || opened}
-      // IMPORTANT: do not use disabled for locked — desktop clicks were swallowed.
+      // IMPORTANT: do not use disabled for locked · desktop clicks were swallowed.
       disabled={opening}
       onClick={activate}
       onKeyDown={onKeyDown}

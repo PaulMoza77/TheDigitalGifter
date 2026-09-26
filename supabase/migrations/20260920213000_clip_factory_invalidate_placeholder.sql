@@ -23,7 +23,7 @@ set
   failed_stage = 'importing',
   error_code = 'synthetic_or_empty',
   error_message = 'Imported file was a 12.6s placeholder, not the YouTube original. Upload the original MP4 or retry after a real import.',
-  progress_label = 'Invalid source — not the YouTube video',
+  progress_label = 'Invalid source · not the YouTube video',
   clips_generated = 0,
   lease_expires_at = null,
   updated_at = now()

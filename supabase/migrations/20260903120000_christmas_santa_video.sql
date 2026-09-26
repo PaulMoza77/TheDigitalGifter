@@ -40,7 +40,7 @@ select
   p.id,
   pkg.package_key,
   pkg.package_name,
-  'Draft package — not a live public offer.',
+  'Draft package · not a live public offer.',
   'usd',
   0,
   null,
@@ -52,9 +52,9 @@ select
 from public.christmas_products p
 cross join (
   values
-    ('basic', 'Santa Video — Basic', '["1 personalized Santa video","English or Romanian"]', 10),
-    ('premium', 'Santa Video — Premium', '["1 personalized Santa video","Priority rendering (when enabled)"]', 20),
-    ('deluxe', 'Santa Video — Deluxe', '["1 personalized Santa video","Future extras reserved"]', 30)
+    ('basic', 'Santa Video · Basic', '["1 personalized Santa video","English or Romanian"]', 10),
+    ('premium', 'Santa Video · Premium', '["1 personalized Santa video","Priority rendering (when enabled)"]', 20),
+    ('deluxe', 'Santa Video · Deluxe', '["1 personalized Santa video","Future extras reserved"]', 30)
 ) as pkg(package_key, package_name, features, sort_order)
 where p.product_key = 'christmas_santa_video'
   and not exists (

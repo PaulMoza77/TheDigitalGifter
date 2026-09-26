@@ -20,7 +20,7 @@ import {
 } from "@/components/funnelVersion/occasions";
 
 /**
- * TDG — AliveMoment-inspired landing
+ * TDG · AliveMoment-inspired landing
  * Route:
  *   /funnel/homepage/:occasion
  *
@@ -29,7 +29,7 @@ import {
  *   /funnel/uploadPhoto?occasion=<occasion>&slug=<occasion>
  */
 
-const DEFAULT_CTA_LABEL = "Try now — Bring your photos to life";
+const DEFAULT_CTA_LABEL = "Try now · Bring your photos to life";
 
 type Point = { x: number; y: number };
 type AnchorSide = "left" | "right" | "top" | "bottom";
@@ -542,7 +542,7 @@ function Hero({
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
                 ✓
               </span>
-              100% private — your memories are yours
+              100% private · your memories are yours
             </div>
           </div>
 
@@ -588,7 +588,7 @@ function Hero({
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-emerald-950/60">
                   {cfg.heroCaption ||
-                    "Gentle motion, warm emotion — made to be shared."}
+                    "Gentle motion, warm emotion · made to be shared."}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-emerald-950/60">
                   <span className="inline-flex items-center gap-2">
@@ -681,7 +681,7 @@ function HowItWorks({
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Choose a photo that fits this occasion — one clear moment is enough.
+                    Choose a photo that fits this occasion · one clear moment is enough.
                   </p>
 
                   <div className="mt-5">
@@ -706,7 +706,7 @@ function HowItWorks({
                   </div>
 
                   <p className="mt-2 text-sm leading-relaxed text-emerald-950/70">
-                    Pick a style made for this occasion — soft motion, premium finish.
+                    Pick a style made for this occasion · soft motion, premium finish.
                   </p>
 
                   <div className="mt-5">
@@ -788,7 +788,7 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
       name: "Emily R.",
       location: "Portland, OR",
       quote:
-        "Watching our old photo feel alive again gave me chills — it was like stepping back into that day.",
+        "Watching our old photo feel alive again gave me chills · it was like stepping back into that day.",
       beforeVariant: cfg.heroBeforeVariant,
       afterVariant: cfg.heroAfterVariant,
     },
@@ -804,7 +804,7 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
       name: "Anna K.",
       location: "Omaha, NE",
       quote:
-        "It feels personal, not like a template — perfect for sharing.",
+        "It feels personal, not like a template · perfect for sharing.",
       beforeVariant: cfg.heroBeforeVariant,
       afterVariant: cfg.heroAfterVariant,
     },
@@ -923,7 +923,7 @@ function ValueTrio({
     },
     {
       title: "Preserve your story for tomorrow",
-      desc: "Create animated gifts from your photos — moving and vibrant for years to come.",
+      desc: "Create animated gifts from your photos · moving and vibrant for years to come.",
       variant: cfg.heroAfterVariant,
     },
   ];
@@ -1053,7 +1053,7 @@ function FAQ({
           subtitle={
             <>
               If you’re unsure about anything, the flow is intentionally
-              straightforward — and support is always within reach.
+              straightforward · and support is always within reach.
             </>
           }
         />

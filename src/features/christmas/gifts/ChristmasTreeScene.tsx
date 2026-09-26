@@ -28,7 +28,7 @@ const SCENE_TOP_INSET_PX = 18;
 /**
  * Photoreal chalet scene.
  * ONE network owner for the hero MP4: the <video> element itself.
- * Do not add <link rel=preload as=video> or fetch(mp4) — those duplicate the ~3.8MB transfer.
+ * Do not add <link rel=preload as=video> or fetch(mp4) · those duplicate the ~3.8MB transfer.
  *
  * Video mounts only after matchMedia resolves so we never start a desktop download
  * then remount mobile on hydration (that previously caused a second full MP4 transfer).
@@ -147,7 +147,7 @@ export function ChristmasTreeScene({
         >
           {/*
             CSS media-driven posters so the correct asset paints before JS resolves.
-            Do not also set video[poster] — that forced a second JPG download.
+            Do not also set video[poster] · that forced a second JPG download.
           */}
           <picture>
             <source

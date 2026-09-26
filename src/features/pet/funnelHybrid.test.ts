@@ -492,7 +492,7 @@ describe("pet hybrid funnel analytics", () => {
     expect(envExample).toContain("GA4_PROPERTY_ID");
     const ga4 = readSrc("supabase/functions/_shared/pet/ga4Data.ts");
     expect(ga4).not.toMatch(/name:\s*"sessions"[\s\S]{0,120}name:\s*"sessions"/);
-    // Documented names only — no live token values.
+    // Documented names only · no live token values.
     expect(envExample).not.toMatch(/^META_ADS_ACCESS_TOKEN=[A-Za-z0-9]/m);
   });
 

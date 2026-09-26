@@ -13,7 +13,7 @@ function demoPad(partial: {
   const track: MusicTrack = {
     ...partial,
     source: "generated_demo",
-    licenseType: "FFmpeg aevalsrc demo pad — not a commercial master",
+    licenseType: "FFmpeg aevalsrc demo pad · not a commercial master",
     commercialUseAllowed: null,
     youtubeMonetizationAllowed: "unknown",
     attributionRequired: false,

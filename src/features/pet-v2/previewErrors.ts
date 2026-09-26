@@ -1,7 +1,7 @@
 import type { PetV2FailureCategory, PetV2PreviewResponse } from "./types";
 import { petT, type PetUiLocale } from "../pet/i18n";
 
-/** Safe, actionable copy — never expose provider tokens or raw stack traces. */
+/** Safe, actionable copy · never expose provider tokens or raw stack traces. */
 export function previewErrorMessage(
   response: Pick<PetV2PreviewResponse, "error" | "errorCode" | "failureCategory">,
   locale: PetUiLocale = "en",

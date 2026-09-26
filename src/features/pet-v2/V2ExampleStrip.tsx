@@ -28,7 +28,7 @@ function HeroTile({ children }: { children: ReactNode }) {
   return <figure className="relative overflow-hidden rounded-2xl">{children}</figure>;
 }
 
-/** Photos and autoplaying clips first — what you get, before the copy. */
+/** Photos and autoplaying clips first · what you get, before the copy. */
 export function V2HeroProof({ species }: { species: PetV2Species }) {
   const locale = usePetLocale();
   const t = usePetT(locale);

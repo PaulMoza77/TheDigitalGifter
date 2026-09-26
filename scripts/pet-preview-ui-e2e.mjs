@@ -140,7 +140,7 @@ async function runFunnel(browser, {
     }
     row.steps.push("landing");
 
-    // Prefer direct file input — avoids GTK dialogs.
+    // Prefer direct file input · avoids GTK dialogs.
     const fileInput = page.locator('input[type="file"]').first();
     await fileInput.waitFor({ state: "attached", timeout: 15000 });
     if (!existsSync(photo)) throw new Error(`Missing photo ${photo}`);
@@ -220,7 +220,7 @@ async function runFunnel(browser, {
     await unlock.click();
     row.steps.push("unlock");
 
-    // Offer / checkout load — Stripe fields or hosted checkout CTA
+    // Offer / checkout load · Stripe fields or hosted checkout CTA
     await page.waitForTimeout(2500);
     const offerText = await page.locator("body").innerText();
     row.offerHas299 =

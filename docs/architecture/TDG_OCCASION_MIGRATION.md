@@ -1,4 +1,4 @@
-# Occasion tables — migration path
+# Occasion tables · migration path
 
 Christmas 2026 ships on existing `christmas_*` tables. Do **not** rename them in a launch window.
 
