@@ -76,6 +76,9 @@ function normalizeOccasion(raw: string) {
   if (x === "fathers-day") return "fathers_day";
   if (x === "new-years-eve") return "new_years_eve";
   if (x === "baby-reveal") return "baby_reveal";
+  if (x === "thank-you" || x === "thankyou") return "thank_you";
+  if (x === "name-cards" || x === "namecards") return "name_cards";
+  if (x === "bible-verses" || x === "bibleverses") return "bible_verses";
 
   return x.replace(/-/g, "_");
 }
