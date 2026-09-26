@@ -62,6 +62,23 @@ export function resolveAspectRatio(value: unknown): HiggsfieldAspectRatio | null
   return null;
 }
 
+/** Live /generator rows stored the Replicate placeholder. Map only that value. */
+export function aspectRatioForStoredGeneration(value: unknown): HiggsfieldAspectRatio | null {
+  if (String(value ?? "").trim() === "match_input_image") return "9:16";
+  return resolveAspectRatio(value);
+}
+
+const TDG_PUBLIC_UPLOAD_PREFIX =
+  "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/uploads/";
+
+/** Public upload URL from the generator that is still live during the backend cutover. */
+export function legacyGeneratorSourceUrl(value: unknown): string | null {
+  const url = String(value ?? "").trim();
+  if (!url.startsWith(TDG_PUBLIC_UPLOAD_PREFIX)) return null;
+  if (url.includes("..") || url.includes("\\") || /\s/.test(url)) return null;
+  return url;
+}
+
 export function isPrimaryAspectRatio(value: string): boolean {
   return (PRIMARY_ASPECT_RATIOS as readonly string[]).includes(value);
 }

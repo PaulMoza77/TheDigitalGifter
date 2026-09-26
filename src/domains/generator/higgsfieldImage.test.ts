@@ -4,8 +4,10 @@ import {
   GENERATION_UNAVAILABLE_MESSAGE,
   HIGGSFIELD_IMAGE_MODEL,
   HIGGSFIELD_PROVIDER,
+  aspectRatioForStoredGeneration,
   authoritativeCreditCost,
   buildGeneratorPrompt,
+  legacyGeneratorSourceUrl,
   completionDebit,
   downloadNameForResult,
   extractHiggsfieldImageUrl,
@@ -55,6 +57,21 @@ describe("public generator higgsfield request", () => {
     expect(resolveAspectRatio("9:16")).toBe("9:16");
     expect(resolveAspectRatio("match_input_image")).toBeNull();
     expect(resolveAspectRatio("9:21")).toBeNull();
+    expect(aspectRatioForStoredGeneration("match_input_image")).toBe("9:16");
+    expect(aspectRatioForStoredGeneration("16:9")).toBe("16:9");
+    expect(aspectRatioForStoredGeneration("9:21")).toBeNull();
+  });
+
+  it("accepts only the current public uploads bucket as a legacy source photo", () => {
+    const ok =
+      "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/uploads/uploads/photo.jpg";
+    expect(legacyGeneratorSourceUrl(ok)).toBe(ok);
+    expect(legacyGeneratorSourceUrl("https://example.com/photo.jpg")).toBeNull();
+    expect(
+      legacyGeneratorSourceUrl(
+        "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/generated-images/x.jpg",
+      ),
+    ).toBeNull();
   });
 
   it("stores the template credit cost and debits only once on completion", () => {

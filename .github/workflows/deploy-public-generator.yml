@@ -5,6 +5,16 @@ name: deploy-public-generator
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/generate-nano-banana/**"
+      - "supabase/functions/_shared/higgsfieldImage.ts"
+      - "supabase/functions/_shared/higgsfieldClient.ts"
+      - "supabase/migrations/20260926120000_public_generator_higgsfield.sql"
+      - "scripts/deploy-public-generator.sh"
+      - ".github/workflows/deploy-public-generator.yml"
 
 jobs:
   deploy:

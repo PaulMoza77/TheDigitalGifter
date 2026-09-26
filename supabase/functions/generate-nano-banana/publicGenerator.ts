@@ -16,12 +16,13 @@ import {
   HIGGSFIELD_IMAGE_RESOLUTION,
   HIGGSFIELD_PROVIDER,
   MAX_GENERATOR_SOURCE_IMAGES,
+  aspectRatioForStoredGeneration,
   authoritativeCreditCost,
   buildGeneratorPrompt,
   higgsfieldImageRequest,
+  legacyGeneratorSourceUrl,
   providerAction,
   readHiggsfieldAuthorization,
-  resolveAspectRatio,
   sniffStoredImage,
   templateImageUrl,
 } from "../_shared/higgsfieldImage.ts";
@@ -146,7 +147,7 @@ export async function handlePublicGenerator(input: {
     return jsonResponse({ error: TEMPLATE_UNAVAILABLE_MESSAGE }, 403);
   }
 
-  const aspectRatio = resolveAspectRatio(metadata.aspect_ratio);
+  const aspectRatio = aspectRatioForStoredGeneration(metadata.aspect_ratio);
   if (!aspectRatio) {
     await markFailed(service, generationId, "Choose a supported image size.");
     return jsonResponse({ error: "Choose a supported image size." }, 400);
@@ -163,8 +164,9 @@ export async function handlePublicGenerator(input: {
   }
 
   const paths = sourcePaths(generation);
+  const legacySourceUrl = paths.length === 0 ? legacyGeneratorSourceUrl(generation.source_image_url) : null;
   const templateUrl = templateImageUrl(templateRow as Record<string, unknown>);
-  if (paths.length === 0) {
+  if (paths.length === 0 && !legacySourceUrl) {
     await markFailed(service, generationId, "Upload a photo before creating.");
     return jsonResponse({ error: "Upload a photo before creating." }, 400);
   }
@@ -176,7 +178,7 @@ export async function handlePublicGenerator(input: {
   const personalizedName = String(metadata.personalized_name || "").trim();
   const userInstructions = String(metadata.user_instructions || "").trim().slice(0, 2000);
   const prompt = buildGeneratorPrompt({
-    sourceCount: paths.length,
+    sourceCount: paths.length || 1,
     templateTitle: templateRow.title,
     occasion: templateRow.occasion,
     templatePrompt: templateRow.prompt,
@@ -272,6 +274,12 @@ export async function handlePublicGenerator(input: {
         const contentType = sniffStoredImage(bytes).contentType;
         hosted.push(await uploadBytesToHiggsfield(authorization, bytes, contentType));
       }
+      if (hosted.length === 0 && legacySourceUrl) {
+        const legacyImage = await downloadRemoteImage(legacySourceUrl);
+        hosted.push(
+          await uploadBytesToHiggsfield(authorization, legacyImage.bytes, legacyImage.contentType),
+        );
+      }
       const templateImage = await downloadRemoteImage(templateUrl);
       hosted.push(
         await uploadBytesToHiggsfield(authorization, templateImage.bytes, templateImage.contentType),
@@ -289,7 +297,7 @@ export async function handlePublicGenerator(input: {
         provider_request_id: requestId,
         aspect_ratio: aspectRatio,
         resolution: HIGGSFIELD_IMAGE_RESOLUTION,
-        source_reference_count: paths.length,
+        source_reference_count: paths.length || 1,
         template_reference_included: true,
         reference_count: hosted.length,
       };

@@ -136,3 +136,15 @@ $$;
 
 revoke all on function public.claim_public_generator_submit(uuid, text) from public, anon, authenticated;
 grant execute on function public.claim_public_generator_submit(uuid, text) to service_role;
+
+-- Deploy-time handoff only. The deploy script copies this into the edge secret and deletes the row.
+-- Not granted to the API roles.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+create table if not exists private.generator_higgsfield_handoff (
+  id int primary key,
+  credential text not null
+);
+revoke all on table private.generator_higgsfield_handoff from public, anon, authenticated;
+alter table private.generator_higgsfield_handoff enable row level security;
