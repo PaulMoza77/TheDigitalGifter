@@ -37,9 +37,9 @@ interface HeaderProps {
 
 const desktopNavItems = [
   { label: "Home", to: "/" },
-  { label: "Templates", to: "/templates" },
-  { label: "Generator", to: "/generator" },
+  { label: "Create", to: "/generator" },
   { label: "Christmas Planner", to: "/christmas/planner" },
+  { label: "Templates", to: "/templates" },
 ];
 
 export default function Header({ onBuyCredits }: HeaderProps) {
@@ -91,23 +91,28 @@ export default function Header({ onBuyCredits }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[rgba(4,8,18,0.72)] backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[var(--tdg-home-border)] bg-[rgba(9,9,9,0.85)] backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:h-[4.5rem] sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-8">
           <div className="shrink-0" onClick={() => setMobileOpen(false)}>
             <Logo />
           </div>
 
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav
+            className="hidden items-center gap-1 lg:flex"
+            aria-label="Main navigation"
+          >
             {desktopNavItems.map((item) => (
               <NavLink key={item.to} to={item.to}>
                 {({ isActive }) => (
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-white/10 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                      "inline-flex items-center rounded-full px-3.5 py-2 text-sm font-medium transition-all duration-200",
+                      item.to === "/generator" && !isActive
+                        ? "text-[var(--tdg-home-accent)] hover:bg-[var(--tdg-home-surface)]"
+                        : isActive
+                          ? "bg-[var(--tdg-home-surface)] text-[var(--tdg-home-text)] shadow-[0_0_0_1px_var(--tdg-home-border)]"
+                          : "text-[var(--tdg-home-text-muted)] hover:bg-white/5 hover:text-[var(--tdg-home-text)]"
                     )}
                   >
                     {item.label}
@@ -269,14 +274,28 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                   </>
                 ) : (
                   <>
-                    <nav className="space-y-2">
+                    <nav className="space-y-2" aria-label="Explore">
+                      <button
+                        type="button"
+                        onClick={() => goTo("/")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        Home
+                      </button>
                       <button
                         type="button"
                         onClick={() => goTo("/generator")}
-                        className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-4 text-base font-semibold text-white"
+                        className="flex w-full items-center gap-3 rounded-2xl bg-[var(--tdg-home-accent)] px-4 py-4 text-base font-semibold text-[#1a1208]"
                       >
                         <Wand2 className="h-5 w-5 shrink-0" />
-                        Generator
+                        Create
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goTo("/templates")}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-base font-semibold text-zinc-200 transition hover:bg-white/[0.06]"
+                      >
+                        Templates
                       </button>
                       <button
                         type="button"

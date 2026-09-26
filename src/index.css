@@ -598,6 +598,31 @@ body {
   }
 }
 
+/* === The Digital Gifter — public homepage brand === */
+:root {
+  --tdg-home-bg: #090909;
+  --tdg-home-surface: #15110f;
+  --tdg-home-text: #fff6e8;
+  --tdg-home-text-muted: rgba(255, 246, 232, 0.62);
+  --tdg-home-accent: #e8c675;
+  --tdg-home-accent-hover: #f0d59a;
+  --tdg-home-border: rgba(255, 246, 232, 0.12);
+  --tdg-home-cranberry: #8b2942;
+  --tdg-home-evergreen: #1e4d3a;
+}
+
+.tdg-home-page {
+  background-color: var(--tdg-home-bg);
+  color: var(--tdg-home-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tdg-home-page .motion-safe-animate {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .tdg-apple-pay {
   display: flex;
   align-items: center;

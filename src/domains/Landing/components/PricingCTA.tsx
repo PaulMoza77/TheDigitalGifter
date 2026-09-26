@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Check, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import {
+  landingBodyClass,
+  landingEyebrowClass,
+  landingPrimaryCtaClass,
+  landingSectionClass,
+  landingSectionHeadingClass,
+  landingSecondaryCtaClass,
+} from "@/domains/Landing/landingStyles";
 
 const plans = [
   {
@@ -185,7 +193,7 @@ export const PricingCTA = () => {
   };
 
   return (
-    <section className="w-full bg-gradient-to-b from-black via-slate-950/70 to-black px-4 py-24 sm:px-6 lg:px-8">
+    <section className={landingSectionClass} aria-labelledby="pricing-heading">
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="mx-auto mb-20 max-w-3xl text-center"
@@ -194,19 +202,19 @@ export const PricingCTA = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.55 }}
         >
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-yellow-400/25 bg-yellow-400/10 px-4 py-2 text-sm font-bold text-yellow-200">
-            <Sparkles className="h-4 w-4" />
+          <p className={`${landingEyebrowClass} gap-2`}>
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
             Simple credit packs
-          </div>
+          </p>
 
-          <h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Choose the plan that fits{" "}
-            <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 bg-clip-text text-transparent">
-              your moments.
-            </span>
+          <h2
+            id="pricing-heading"
+            className={`mt-4 ${landingSectionHeadingClass}`}
+          >
+            Choose the pack that fits your moments.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/60">
+          <p className={`mx-auto mt-4 max-w-2xl ${landingBodyClass}`}>
             Buy credits once and use them whenever you want to create something
             personal, beautiful, and meaningful.
           </p>
@@ -219,10 +227,10 @@ export const PricingCTA = () => {
             return (
               <motion.div
                 key={plan.pack}
-                className={`relative flex h-full flex-col rounded-3xl border bg-white/[0.04] p-8 shadow-xl ${
+                className={`relative flex h-full flex-col rounded-2xl border bg-[var(--tdg-home-surface)] p-8 ${
                   plan.popular
-                    ? "scale-[1.02] border-yellow-300/45 shadow-yellow-500/10"
-                    : "border-white/10"
+                    ? "scale-[1.02] border-[var(--tdg-home-accent)]/50"
+                    : "border-[var(--tdg-home-border)]"
                 }`}
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -230,25 +238,23 @@ export const PricingCTA = () => {
                 transition={{ delay: index * 0.08, duration: 0.45 }}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 px-4 py-1 text-sm font-black text-black">
-                    <Sparkles className="h-4 w-4" />
+                  <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[var(--tdg-home-accent)] px-4 py-1 text-sm font-bold text-[#1a1208]">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
                     Most Popular
                   </div>
                 )}
 
                 <div className="mb-8 text-center">
-                  <h3 className="mb-2 text-2xl font-black text-white">
+                  <h3 className="mb-2 text-2xl font-semibold text-[var(--tdg-home-text)]">
                     {plan.name}
                   </h3>
 
-                  <div className="mb-4 text-sm text-white/45">
+                  <div className="mb-4 text-sm text-[var(--tdg-home-text-muted)]">
                     {plan.credits}
                   </div>
 
-                  <div className="text-5xl font-black">
-                    <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 bg-clip-text text-transparent">
-                      {plan.price}
-                    </span>
+                  <div className="text-4xl font-bold text-[var(--tdg-home-accent)]">
+                    {plan.price}
                   </div>
                 </div>
 
@@ -256,7 +262,9 @@ export const PricingCTA = () => {
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
                       <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-400" />
-                      <span className="text-sm text-white/70">{feature}</span>
+                      <span className="text-sm text-[var(--tdg-home-text-muted)]">
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -265,10 +273,10 @@ export const PricingCTA = () => {
                   type="button"
                   onClick={() => void openEmailModal(plan.pack)}
                   disabled={Boolean(loadingPack)}
-                  className={`mt-auto w-full rounded-2xl py-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`mt-auto w-full disabled:cursor-not-allowed disabled:opacity-60 ${
                     plan.popular
-                      ? "bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 text-black shadow-2xl shadow-yellow-500/20 hover:scale-[1.02]"
-                      : "bg-white/10 text-white hover:bg-white/15"
+                      ? landingPrimaryCtaClass
+                      : `${landingSecondaryCtaClass} w-full`
                   }`}
                 >
                   {isLoading ? "Opening checkout..." : "Get Started"}
@@ -278,7 +286,7 @@ export const PricingCTA = () => {
           })}
         </div>
 
-        <p className="mt-8 text-center text-sm text-white/40">
+        <p className="mt-8 text-center text-sm text-[var(--tdg-home-text-muted)]">
           High-resolution downloads included • Credits never expire
         </p>
       </div>
@@ -340,7 +348,7 @@ export const PricingCTA = () => {
               type="button"
               onClick={() => void handleCheckout()}
               disabled={Boolean(loadingPack)}
-              className="mt-6 w-full rounded-2xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-400 py-4 font-black text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+              className={`mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60 ${landingPrimaryCtaClass}`}
             >
               {loadingPack ? "Opening checkout..." : "Continue to Stripe"}
             </button>
