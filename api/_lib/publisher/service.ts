@@ -15,8 +15,8 @@ import { getServiceClient } from "../christmas/supabaseClient";
 import { tickSocialPublisher } from "../social-publisher/invoke";
 import { loadAutopilotSettings, loadPlatformConnectionLabels, reflectSocialTargetStatus, syncPublisherSocialBridge } from "./bridge";
 import { loadPublisherAssets } from "./library";
-import type { PlatformMetadata } from "./_lib/christmas-reel-pipeline/types";
-import { autopilotCaption } from "./_lib/christmas-reel-pipeline/metadata";
+import type { PlatformMetadata } from "../christmas-reel-pipeline/types";
+import { autopilotCaption } from "../christmas-reel-pipeline/metadata";
 
 type DbClient = ReturnType<typeof getServiceClient>;
 
