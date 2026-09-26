@@ -270,10 +270,11 @@ async function processVideos(row: Record<string, unknown>, settings: Awaited<Ret
       spend += estimate;
       await updateConcept(conceptId, { clips, generation_cost_usd: spend });
     }
-    const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 80, sleepMs: 4000 });
+      const polled = await pollHiggsfieldRequest(auth, requestId, { maxAttempts: 80, sleepMs: 4000 });
       if (!polled.done || polled.failed || !polled.body) {
         await bumpUsage({ video_retries: 1 });
-        await failConcept(conceptId, `video_generation_failed_clip_${clip.index}`);
+        clip.higgsfieldVideoRequestId = null;
+        await updateConcept(conceptId, { clips, pipeline_status: "qc_review" });
         return;
       }
       const videoUrl = extractHiggsfieldVideoUrl(polled.body);
