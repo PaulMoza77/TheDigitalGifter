@@ -72,7 +72,32 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def try_load_hf_from_mozas_vps() -> None:
+    if (os.environ.get("HF_CREDENTIALS") or os.environ.get("HF_KEY") or "").strip():
+        return
+    if not (os.environ.get("MOZAS_SSH_HOST") and os.environ.get("MOZAS_SSH_PRIVATE_KEY")):
+        return
+    loader = ROOT / "scripts" / "_load_hf_credentials.sh"
+    if not loader.exists():
+        return
+    print("Loading Higgsfield credentials from Mozas VPS app.env (value not printed).", flush=True)
+    proc = subprocess.run(
+        ["bash", str(loader)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=os.environ.copy(),
+    )
+    if proc.returncode != 0:
+        print(f"HF load failed: {proc.stderr[:200]}", flush=True)
+        return
+    val = (proc.stdout or "").strip()
+    if val and ":" in val:
+        os.environ["HF_CREDENTIALS"] = val
+
+
 def read_credentials() -> tuple[str, str]:
+    try_load_hf_from_mozas_vps()
     combined = (os.environ.get("HF_CREDENTIALS") or os.environ.get("HF_KEY") or "").strip()
     if ":" in combined:
         key_id, secret = combined.split(":", 1)
@@ -377,7 +402,7 @@ def phase_estimate(manifest: dict) -> int:
         per_clip = max(e["usd"] for e in new_clips)
     max_retry = per_clip * 20
     max_possible = base + max_retry
-    budget_cap = float(os.environ.get("TDG_BUDGET_USD", "14.0"))
+    budget_cap = float(os.environ.get("TDG_BUDGET_USD", "22.0"))
     reference_5s = 0.28
     reference_8s_linear = reference_5s * (8 / 5)
 
