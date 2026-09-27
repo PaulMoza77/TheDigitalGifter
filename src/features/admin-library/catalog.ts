@@ -1148,6 +1148,35 @@ const TALKING_SANTA_DANIEL_CANARY: LibraryVideo = {
   costUsd: 0.86,
 };
 
+/** Daniel-golden batch names — same Santa master + TTS + MiniMax H3 session. */
+const TALKING_SANTA_NAME_CANARIES: LibraryVideo[] = (
+  [
+    { slug: "emma", titleName: "Emma", fileSizeBytes: 5_124_553 },
+    { slug: "olivia", titleName: "Olivia", fileSizeBytes: 4_716_950 },
+    { slug: "sophia", titleName: "Sophia", fileSizeBytes: 5_223_009 },
+    { slug: "liam", titleName: "Liam", fileSizeBytes: 4_777_126 },
+    { slug: "noah", titleName: "Noah", fileSizeBytes: 5_223_127 },
+  ] as const
+).map(({ slug, titleName, fileSizeBytes }) => ({
+  id: `short-talking-santa-${slug}-canary`,
+  title: `TEST · Talking Santa · ${titleName} (5s)`,
+  description: `5.2s 1440×2560 talking-head. Dialogue: “Ho, ho, ho! Merry Christmas, ${titleName}!” Same Daniel Santa master + OpenAI TTS + MiniMax H3 reference-to-video.`,
+  src: `/assets/library/test/talking-santa-canary-daniel/talking_santa_${slug}_final.mp4`,
+  filename: `talking_santa_${slug}_final.mp4`,
+  category: "christmas_reels",
+  kind: "reel",
+  durationSeconds: 5.17,
+  poster: `/assets/library/test/talking-santa-canary-daniel/qc/talking_santa_${slug}_attempt1_mid.jpg`,
+  width: 1440,
+  height: 2560,
+  fileSizeBytes,
+  createdAt: "2026-09-27T09:16:22Z",
+  tags: ["christmas", "santa", "talking-santa", "personalized", "test", "canary", "higgsfield", "lip-sync"],
+  model: "minimax/h3/reference-to-video",
+  sourceImage: "santa_master_9x16.png",
+  costUsd: 0.66,
+}));
+
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
   {
     id: "short-cx-01-night-viaduct",
@@ -3304,6 +3333,7 @@ const CHRISTMAS_MARKETING: LibraryVideo[] = [
 
 export const LIBRARY_VIDEOS: LibraryVideo[] = [
   TALKING_SANTA_DANIEL_CANARY,
+  ...TALKING_SANTA_NAME_CANARIES,
   ...CHRISTMAS_REELS,
   ...CHRISTMAS_SHORTS,
   ...CHRISTMAS_PHOTOS,

@@ -52,6 +52,13 @@ describe("admin video library", () => {
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
     expect(LIBRARY_VIDEOS[0]?.id).toBe("short-talking-santa-daniel-canary");
+    expect(LIBRARY_VIDEOS.slice(1, 6).map((video) => video.id)).toEqual([
+      "short-talking-santa-emma-canary",
+      "short-talking-santa-olivia-canary",
+      "short-talking-santa-sophia-canary",
+      "short-talking-santa-liam-canary",
+      "short-talking-santa-noah-canary",
+    ]);
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -284,6 +291,13 @@ describe("admin video library", () => {
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
     expect(LIBRARY_VIDEOS[0]?.id).toBe("short-talking-santa-daniel-canary");
+    expect(LIBRARY_VIDEOS.slice(1, 6).map((video) => video.id)).toEqual([
+      "short-talking-santa-emma-canary",
+      "short-talking-santa-olivia-canary",
+      "short-talking-santa-sophia-canary",
+      "short-talking-santa-liam-canary",
+      "short-talking-santa-noah-canary",
+    ]);
     const cxShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-cx-"));
     expect(cxShorts).toHaveLength(5);
     expect(cxShorts.every((item) => item.kind === "short")).toBe(true);
