@@ -1126,6 +1126,28 @@ const COUNTDOWN_SHORT_TAGS = [
   "silent",
 ];
 
+/** Higgsfield talking-Santa canary (Daniel) — Library / Test assets. */
+const TALKING_SANTA_DANIEL_CANARY: LibraryVideo = {
+  id: "short-talking-santa-daniel-canary",
+  title: "TEST · Talking Santa · Daniel (5s)",
+  description:
+    "5.2s 1440×2560 talking-head canary. Dialogue: “Ho, ho, ho! Merry Christmas, Daniel!” Recraft Santa master + OpenAI TTS + MiniMax H3 reference-to-video. Lip-sync QC pass. Not for publish pipeline.",
+  src: "/assets/library/test/talking-santa-canary-daniel/talking_santa_daniel_final.mp4",
+  filename: "talking_santa_daniel_final.mp4",
+  category: "christmas_reels",
+  kind: "reel",
+  durationSeconds: 5.17,
+  poster: "/assets/library/test/talking-santa-canary-daniel/qc/talking_santa_daniel_attempt1_mid.jpg",
+  width: 1440,
+  height: 2560,
+  fileSizeBytes: 4420484,
+  createdAt: "2026-09-26T22:29:00Z",
+  tags: ["christmas", "santa", "talking-santa", "personalized", "test", "canary", "higgsfield", "lip-sync"],
+  model: "minimax/h3/reference-to-video",
+  sourceImage: "santa_master_9x16.png",
+  costUsd: 0.86,
+};
+
 const CHRISTMAS_SHORTS: LibraryVideo[] = [
   {
     id: "short-cx-01-night-viaduct",
@@ -3281,6 +3303,7 @@ const CHRISTMAS_MARKETING: LibraryVideo[] = [
 ];
 
 export const LIBRARY_VIDEOS: LibraryVideo[] = [
+  TALKING_SANTA_DANIEL_CANARY,
   ...CHRISTMAS_REELS,
   ...CHRISTMAS_SHORTS,
   ...CHRISTMAS_PHOTOS,
