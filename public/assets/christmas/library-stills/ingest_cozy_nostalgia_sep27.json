@@ -1,0 +1,336 @@
+{
+  "status": "INGESTED",
+  "count": 10,
+  "assets": [
+    {
+      "id": "photo-christmas-mansion-gate-nyc",
+      "title": "Photo \u00b7 Christmas mansion gate NYC",
+      "description": "Lit stone mansion behind iron gates with Range Rover and twilight NYC skyline.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_mansion_gate_nyc_twilight.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/11_christmas_mansion_gate_nyc_1080x1920.png",
+      "original_bytes": 880410,
+      "upload_id": "01a0e352-0009-7ba7-ae09-2b2f19c7dbf9.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5465311,
+      "created_at": "2026-09-27T14:49:09.839151+00:00"
+    },
+    {
+      "id": "photo-alpine-cabin-tom-jerry-fireplace",
+      "title": "Photo \u00b7 Alpine cabin Tom & Jerry fireplace",
+      "description": "Mountain cabin with fireplace, Tom & Jerry on TV, golden retriever, snowy peaks.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/alpine_cabin_tom_jerry_fireplace.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/12_alpine_cabin_tom_jerry_1080x1920.png",
+      "original_bytes": 724644,
+      "upload_id": "01a0e352-0028-79ae-9812-90f18d836d42.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4813743,
+      "created_at": "2026-09-27T14:49:10.175364+00:00"
+    },
+    {
+      "id": "photo-home-alone-kevin-tv-christmas",
+      "title": "Photo \u00b7 Home Alone Kevin TV Christmas",
+      "description": "Living room with Kevin McCallister on CRT TV, tree, fireplace, and gift pile.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/home_alone_kevin_tv_christmas.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/13_home_alone_kevin_tv_1080x1920.png",
+      "original_bytes": 729957,
+      "upload_id": "01a0e352-0044-7999-9fb7-82107f29eea5.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4766725,
+      "created_at": "2026-09-27T14:49:10.514275+00:00"
+    },
+    {
+      "id": "photo-christmas-morning-stairs-child",
+      "title": "Photo \u00b7 Christmas morning stairs child",
+      "description": "Child in pajamas on the stairs with dog, glowing tree and presents below.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_morning_stairs_child.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/14_christmas_morning_stairs_1080x1920.png",
+      "original_bytes": 738021,
+      "upload_id": "01a0e352-005e-716f-81eb-40c9ec426053.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4844400,
+      "created_at": "2026-09-27T14:49:10.849829+00:00"
+    },
+    {
+      "id": "photo-family-christmas-dinner-charlie-brown",
+      "title": "Photo \u00b7 Family Christmas dinner Charlie Brown",
+      "description": "Multi-generational Christmas dinner with Charlie Brown on TV and roaring fire.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/family_christmas_dinner_charlie_brown.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/15_family_dinner_charlie_brown_1080x1920.png",
+      "original_bytes": 621844,
+      "upload_id": "01a0e352-0079-70e4-8332-2ee3def5f785.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4448778,
+      "created_at": "2026-09-27T14:49:11.191417+00:00"
+    },
+    {
+      "id": "photo-library-christmas-golden-retriever",
+      "title": "Photo \u00b7 Library Christmas golden retriever",
+      "description": "Two-story library with tree, fireplace, sleeping golden retriever, snowy window.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/library_christmas_golden_retriever_fireplace.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/16_library_golden_retriever_1080x1920.png",
+      "original_bytes": 729864,
+      "upload_id": "01a0e352-0090-788c-a435-1010e8df5781.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4739487,
+      "created_at": "2026-09-27T14:49:11.538711+00:00"
+    },
+    {
+      "id": "photo-nyc-saks-rockefeller-snow",
+      "title": "Photo \u00b7 Saks Fifth Rockefeller tree snow",
+      "description": "Saks Fifth Avenue corner, yellow cab, Rockefeller tree and crowds in snowfall.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_saks_rockefeller_tree_snow.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/17_nyc_saks_rockefeller_1080x1920.png",
+      "original_bytes": 955625,
+      "upload_id": "01a0e352-00aa-742e-8cb5-9ca63e62f272.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5425971,
+      "created_at": "2026-09-27T14:49:11.876854+00:00"
+    },
+    {
+      "id": "photo-train-carriage-viaduct-window",
+      "title": "Photo \u00b7 Train carriage viaduct window",
+      "description": "Luxury Christmas train car interior with viaduct and lit locomotive through the window.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/train_carriage_viaduct_window.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/18_train_carriage_viaduct_1080x1920.png",
+      "original_bytes": 691795,
+      "upload_id": "01a0e352-00c4-779a-b0e3-fcdb7678f9f6.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4629174,
+      "created_at": "2026-09-27T14:49:12.229428+00:00"
+    },
+    {
+      "id": "photo-nyc-brownstone-empire-vintage",
+      "title": "Photo \u00b7 NYC brownstone Empire vintage",
+      "description": "Snowy brownstone steps, vintage red cars, lit trees, Empire State in distance.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_brownstone_empire_vintage_cars.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/19_nyc_brownstone_empire_1080x1920.png",
+      "original_bytes": 880309,
+      "upload_id": "01a0e352-00dc-79ee-a932-1b6d4fdbf0b7.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5406388,
+      "created_at": "2026-09-27T14:49:12.564671+00:00"
+    },
+    {
+      "id": "photo-magical-bedroom-santa-moon",
+      "title": "Photo \u00b7 Magical bedroom Santa moon",
+      "description": "Christmas bedroom with puppy on bed, tree, cocoa, Santa sleigh crossing full moon.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "cozy",
+        "nostalgia",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/magical_bedroom_santa_moon_window.jpg",
+      "generation_still": "source/batch-cozy-nostalgia-sep27/20_magical_bedroom_santa_moon_1080x1920.png",
+      "original_bytes": 708693,
+      "upload_id": "01a0e352-00f1-73d0-b227-61cc87a89613.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4889620,
+      "created_at": "2026-09-27T14:49:12.901100+00:00"
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "pipeline_version": "v1-kling8-higgsfield",
+  "duration_seconds": 8,
+  "negative_suffix": " Do not morph faces, buildings, furniture, animals, or text. No invented people, no duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins. Subtle premium cinematic motion only. Preserve composition and visual identity.",
+  "clips": [
+    {
+      "id": "short-c20-01-ny-awning",
+      "photo_id": "photo-nyc-new-york-awning-snow",
+      "theme": "nyc",
+      "music_mood": "calm",
+      "hook": "Christmas in New York just hits different.",
+      "prompt": "Photoreal cinematic 9:16 snowy Manhattan night. This exact photograph comes alive for eight seconds. Preserve the NEW YORK awning, garlands, yellow taxis, wet reflective street, Christmas tree, and Empire State Building exactly. Realistic falling snowflakes. Taxi headlights and taillights shimmer on wet pavement. Holiday lights twinkle gently. Extremely slow cinematic push toward the street and skyline."
+    },
+    {
+      "id": "short-c20-02-train-nyc-clock",
+      "photo_id": "photo-christmas-train-nyc-station-clock",
+      "theme": "train-nyc",
+      "music_mood": "magical",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "prompt": "Photoreal cinematic 9:16 Christmas steam train at a snowy NYC station. Eight seconds. Preserve wreath-lit locomotive, platform clock, Manhattan skyline, and falling snow exactly. Soft steam puffs from the stack. Station lights flicker warmly. Sparse snow falls. Very slow cinematic dolly along the platform toward the train headlight."
+    },
+    {
+      "id": "short-c20-03-train-grand-central",
+      "photo_id": "photo-christmas-train-grand-central-chrysler",
+      "theme": "train-nyc",
+      "music_mood": "cinematic",
+      "hook": "All aboard for the coziest arrival in the city.",
+      "prompt": "Photoreal cinematic 9:16 festive train at a grand arched terminal with Chrysler Building visible. Eight seconds. Preserve locomotive wreath, red bow, arched windows, and snow exactly. Steam drifts upward. Interior warm lights glow. Gentle snowfall. Slow cinematic push toward the train nose and headlight."
+    },
+    {
+      "id": "short-c20-04-viaduct-sunset-peaks",
+      "photo_id": "photo-christmas-train-viaduct-sunset-peaks",
+      "theme": "train-alpine",
+      "music_mood": "cinematic",
+      "hook": "Christmas Train Journey through the peaks.",
+      "prompt": "Photoreal cinematic 9:16 Polar-style train on a lit stone viaduct at sunset. Eight seconds. Train moves forward along the rails believably. White steam billows. Viaduct lights shimmer. Snow on arches stays rigid. Slow tracking shot following the train. Sunset sky holds steady gradient."
+    },
+    {
+      "id": "short-c20-05-mansion-gwagon",
+      "photo_id": "photo-christmas-mansion-nyc-skyline-gwagon",
+      "theme": "nyc-luxury",
+      "music_mood": "warm",
+      "hook": "Would you spend Christmas here?",
+      "prompt": "Photoreal cinematic 9:16 lit stone mansion with G-Wagon and Empire State twilight skyline. Eight seconds. Preserve architecture, wreaths, trees, and vehicle exactly. Window lights glow softly. Fairy lights twinkle on garlands. Very slow push toward the front door. Subtle snowfall."
+    },
+    {
+      "id": "short-c20-06-viaduct-village",
+      "photo_id": "photo-christmas-train-viaduct-alpine-village",
+      "theme": "train-alpine",
+      "music_mood": "magical",
+      "hook": "Which Christmas would you choose — alpine edition.",
+      "prompt": "Photoreal cinematic 9:16 wreath train crossing a decorated viaduct above a lit alpine village at sunset. Eight seconds. Train advances along tracks. Steam rises. Village lights twinkle below. Viaduct garland lights shimmer. Slow cinematic pan following the train."
+    },
+    {
+      "id": "short-c20-07-station-traveler",
+      "photo_id": "photo-christmas-train-station-traveler",
+      "theme": "train-cozy",
+      "music_mood": "nostalgic",
+      "hook": "POV: you're catching the Christmas express.",
+      "prompt": "Photoreal cinematic 9:16 garland-lit train station. Eight seconds. Woman in red coat with suitcase has subtle natural breathing and slight weight shift only — no face morphing. Wreath train approaches slowly with soft steam. Chandeliers flicker warmly. Slow dolly past the traveler toward the arriving locomotive."
+    },
+    {
+      "id": "short-c20-08-radio-city",
+      "photo_id": "photo-nyc-radio-city-snow",
+      "theme": "nyc",
+      "music_mood": "upbeat",
+      "hook": "Radio City nights in the snow hit different.",
+      "prompt": "Photoreal cinematic 9:16 Radio City Music Hall snowy night. Eight seconds. Preserve marquee, garlands, yellow cabs, Empire State, and wet street reflections. Pedestrians move naturally at walking pace in background. Heavy realistic snowfall. Holiday lights twinkle. Slow push down the avenue."
+    },
+    {
+      "id": "short-c20-09-penthouse-tom-jerry",
+      "photo_id": "photo-nyc-penthouse-tom-jerry-pets",
+      "theme": "cozy-nyc",
+      "music_mood": "cozy",
+      "hook": "Imagine waking up here on Christmas morning.",
+      "prompt": "Photoreal cinematic 9:16 NYC Christmas penthouse. Eight seconds. Preserve fireplace flames, tree lights, Tom and Jerry on TV screen with subtle cartoon motion only, sleeping dog and cat with gentle breathing. Snow falls outside skyline windows. Candle flames flicker. Very slow push toward tree and window."
+    },
+    {
+      "id": "short-c20-10-penthouse-empire",
+      "photo_id": "photo-nyc-penthouse-christmas-empire",
+      "theme": "cozy-nyc",
+      "music_mood": "calm",
+      "hook": "The coziest Christmas imaginable — city edition.",
+      "prompt": "Photoreal cinematic 9:16 luxury penthouse with lit tree, fireplace, candles, Central Park snow view. Eight seconds. Fire flickers naturally. Tree lights twinkle. Snow drifts outside floor-to-ceiling windows. Slow cinematic dolly toward the tree and park view. No people added."
+    },
+    {
+      "id": "short-c20-11-mansion-gate",
+      "photo_id": "photo-christmas-mansion-gate-nyc",
+      "theme": "nyc-luxury",
+      "music_mood": "warm",
+      "hook": "Would you spend Christmas behind these gates?",
+      "prompt": "Photoreal cinematic 9:16 mansion behind iron gates at twilight with NYC skyline. Eight seconds. Preserve gate lanterns, wreaths, Range Rover, and facade lighting. Wet drive reflections shift slightly with light. Fairy lights twinkle. Slow push through the open gate toward the house."
+    },
+    {
+      "id": "short-c20-12-alpine-cabin",
+      "photo_id": "photo-alpine-cabin-tom-jerry-fireplace",
+      "theme": "cozy-alpine",
+      "music_mood": "cozy",
+      "hook": "The coziest Christmas imaginable — mountain edition.",
+      "prompt": "Photoreal cinematic 9:16 alpine cabin interior with fireplace and mountain view. Eight seconds. Fire flames move naturally. Tom and Jerry on TV with minimal screen motion. Golden retriever breathes softly while sleeping. Tree lights shimmer. Snow falls outside peaks. Slow push toward fireplace."
+    },
+    {
+      "id": "short-c20-13-home-alone-tv",
+      "photo_id": "photo-home-alone-kevin-tv-christmas",
+      "theme": "nostalgia",
+      "music_mood": "nostalgic",
+      "hook": "POV: Christmas morning and you're 8 again.",
+      "prompt": "Photoreal cinematic 9:16 nostalgic Christmas living room with CRT TV. Eight seconds. Preserve Kevin on screen with tiny natural motion only. Fireplace flames flicker. Tree lights twinkle. Presents and teddy bear stay stable. Slow dolly toward TV and tree. Warm cozy lighting."
+    },
+    {
+      "id": "short-c20-14-stairs-morning",
+      "photo_id": "photo-christmas-morning-stairs-child",
+      "theme": "nostalgia",
+      "music_mood": "emotional",
+      "hook": "Take me back to Christmas in the 90s.",
+      "prompt": "Photoreal cinematic 9:16 child on stairs overlooking Christmas morning room. Eight seconds. Child and dog have subtle breathing only — no face changes. Tree and fire glow below. Garland lights twinkle on banister. Slow cinematic push down the stairs toward the tree. Window snow glow outside."
+    },
+    {
+      "id": "short-c20-15-family-dinner",
+      "photo_id": "photo-family-christmas-dinner-charlie-brown",
+      "theme": "nostalgia",
+      "music_mood": "warm",
+      "hook": "This is what Christmas felt like growing up.",
+      "prompt": "Photoreal cinematic 9:16 family Christmas dinner scene. Eight seconds. Preserve turkey table, grandmother and boy with micro-movements only. Charlie Brown on TV with subtle animation. Fireplace flickers. Ceiling garland lights shimmer. Slow push toward the table and TV."
+    },
+    {
+      "id": "short-c20-16-library-dog",
+      "photo_id": "photo-library-christmas-golden-retriever",
+      "theme": "cozy-traditional",
+      "music_mood": "calm",
+      "hook": "Imagine waking up here on Christmas morning.",
+      "prompt": "Photoreal cinematic 9:16 two-story library at Christmas. Eight seconds. Fireplace flames move. Sleeping golden retriever breathes gently. Tree and candle flames flicker. Snow falls outside tall windows. Slow dolly toward the dog and fireplace. Books and architecture stay rigid."
+    },
+    {
+      "id": "short-c20-17-saks-rockefeller",
+      "photo_id": "photo-nyc-saks-rockefeller-snow",
+      "theme": "nyc",
+      "music_mood": "upbeat",
+      "hook": "Christmas in New York just hits different.",
+      "prompt": "Photoreal cinematic 9:16 Saks Fifth and Rockefeller tree in heavy snow. Eight seconds. Crowds and shoppers move naturally in background. Yellow cab creeps slowly. Snow falls steadily. Store and tree lights twinkle on wet pavement reflections. Slow push toward Rockefeller tree."
+    },
+    {
+      "id": "short-c20-18-train-carriage",
+      "photo_id": "photo-train-carriage-viaduct-window",
+      "theme": "train-cozy",
+      "music_mood": "magical",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "prompt": "Photoreal cinematic 9:16 luxury Christmas train car interior. Eight seconds. Preserve red booths, table lamp, cocoa mug, and window view. Train carriage subtle vibration. Outside locomotive crosses viaduct slowly with steam. Snow in mountains drifts. Slow push toward the window view."
+    },
+    {
+      "id": "short-c20-19-brownstone-vintage",
+      "photo_id": "photo-nyc-brownstone-empire-vintage",
+      "theme": "nyc-nostalgia",
+      "music_mood": "nostalgic",
+      "hook": "Take me back to Christmas in the 90s.",
+      "prompt": "Photoreal cinematic 9:16 snowy NYC brownstone street with vintage red cars and Empire State. Eight seconds. Realistic snowfall. Lantern candles flicker on steps. Light-wrapped trees twinkle. Slow cinematic push toward Empire State down the street. Car taillights glow steady."
+    },
+    {
+      "id": "short-c20-20-bedroom-santa-moon",
+      "photo_id": "photo-magical-bedroom-santa-moon",
+      "theme": "magical-cozy",
+      "music_mood": "magical",
+      "hook": "POV: you still believe on Christmas Eve.",
+      "prompt": "Photoreal cinematic 9:16 magical Christmas bedroom with moon window. Eight seconds. Puppy on bed breathes softly. Tree lights twinkle. Candle and lantern flames flicker. Santa sleigh moves slowly across moon in window. Village snow falls outside. Slow push toward window and moon."
+    }
+  ],
+  "reels_16s": [
+    {"id": "reel-c20-16s-01-nyc-streets", "title": "Christmas in New York", "clips": ["short-c20-01-ny-awning", "short-c20-08-radio-city"], "hook": "Christmas in New York just hits different."},
+    {"id": "reel-c20-16s-02-nyc-luxury", "title": "NYC luxury Christmas", "clips": ["short-c20-05-mansion-gwagon", "short-c20-11-mansion-gate"], "hook": "Would you spend Christmas here?"},
+    {"id": "reel-c20-16s-03-trains-nyc", "title": "NYC Christmas trains", "clips": ["short-c20-02-train-nyc-clock", "short-c20-03-train-grand-central"], "hook": "Your train leaves for Christmas at midnight."},
+    {"id": "reel-c20-16s-04-alpine-trains", "title": "Alpine train journey", "clips": ["short-c20-04-viaduct-sunset-peaks", "short-c20-06-viaduct-village"], "hook": "Christmas Train Journey through the Alps."},
+    {"id": "reel-c20-16s-05-train-cozy", "title": "Christmas express cozy", "clips": ["short-c20-07-station-traveler", "short-c20-18-train-carriage"], "hook": "All aboard for the coziest ride home."},
+    {"id": "reel-c20-16s-06-penthouse", "title": "NYC penthouse cozy", "clips": ["short-c20-09-penthouse-tom-jerry", "short-c20-10-penthouse-empire"], "hook": "Imagine waking up here on Christmas morning."},
+    {"id": "reel-c20-16s-07-nostalgia-morning", "title": "Christmas morning POV", "clips": ["short-c20-13-home-alone-tv", "short-c20-14-stairs-morning"], "hook": "POV: Christmas morning and you're 8 again."},
+    {"id": "reel-c20-16s-08-family-home", "title": "Family Christmas home", "clips": ["short-c20-15-family-dinner", "short-c20-16-library-dog"], "hook": "This is what Christmas felt like growing up."},
+    {"id": "reel-c20-16s-09-nyc-classic", "title": "Classic NYC Christmas", "clips": ["short-c20-17-saks-rockefeller", "short-c20-19-brownstone-vintage"], "hook": "Take me back to Christmas in New York."},
+    {"id": "reel-c20-16s-10-magical-cozy", "title": "Magical cozy Christmas", "clips": ["short-c20-12-alpine-cabin", "short-c20-20-bedroom-santa-moon"], "hook": "The coziest Christmas imaginable."}
+  ],
+  "reels_32s": [
+    {"id": "reel-c20-32s-01-nyc", "title": "Christmas in New York", "clips": ["short-c20-01-ny-awning", "short-c20-08-radio-city", "short-c20-17-saks-rockefeller", "short-c20-19-brownstone-vintage"], "hook": "Christmas in New York just hits different."},
+    {"id": "reel-c20-32s-02-train-journey", "title": "Christmas Train Journey", "clips": ["short-c20-02-train-nyc-clock", "short-c20-07-station-traveler", "short-c20-04-viaduct-sunset-peaks", "short-c20-18-train-carriage"], "hook": "Your train leaves for Christmas at midnight."},
+    {"id": "reel-c20-32s-03-kid-nostalgia", "title": "POV: Christmas when you were a kid", "clips": ["short-c20-13-home-alone-tv", "short-c20-14-stairs-morning", "short-c20-15-family-dinner", "short-c20-16-library-dog"], "hook": "POV: Christmas morning and you're 8 again."},
+    {"id": "reel-c20-32s-04-coziest", "title": "The coziest Christmas imaginable", "clips": ["short-c20-09-penthouse-tom-jerry", "short-c20-10-penthouse-empire", "short-c20-12-alpine-cabin", "short-c20-20-bedroom-santa-moon"], "hook": "The coziest Christmas imaginable."},
+    {"id": "reel-c20-32s-05-pick-one", "title": "Which Christmas would you choose?", "clips": ["short-c20-05-mansion-gwagon", "short-c20-11-mansion-gate", "short-c20-06-viaduct-village", "short-c20-03-train-grand-central"], "hook": "Which Christmas would you choose?"}
+  ]
+}
