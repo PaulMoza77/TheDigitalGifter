@@ -1,0 +1,96 @@
+{
+  "reels_16s": [
+    {
+      "id": "reel-c20-16s-01-nyc-streets",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-01-nyc-streets.mp4",
+      "hook": "Christmas in New York just hits different.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-02-nyc-luxury",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-02-nyc-luxury.mp4",
+      "hook": "Would you spend Christmas here?",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-03-trains-nyc",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-03-trains-nyc.mp4",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-04-alpine-trains",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-04-alpine-trains.mp4",
+      "hook": "Christmas Train Journey through the Alps.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-05-train-cozy",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-05-train-cozy.mp4",
+      "hook": "All aboard for the coziest ride home.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-06-penthouse",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-06-penthouse.mp4",
+      "hook": "Imagine waking up here on Christmas morning.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-07-nostalgia-morning",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-07-nostalgia-morning.mp4",
+      "hook": "POV: Christmas morning and you're 8 again.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-08-family-home",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-08-family-home.mp4",
+      "hook": "This is what Christmas felt like growing up.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-09-nyc-classic",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-09-nyc-classic.mp4",
+      "hook": "Take me back to Christmas in New York.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-16s-10-magical-cozy",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-16s/reel-c20-16s-10-magical-cozy.mp4",
+      "hook": "The coziest Christmas imaginable.",
+      "publish_status": "ready_to_publish"
+    }
+  ],
+  "reels_32s": [
+    {
+      "id": "reel-c20-32s-01-nyc",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-32s/reel-c20-32s-01-nyc.mp4",
+      "hook": "Christmas in New York just hits different.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-32s-02-train-journey",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-32s/reel-c20-32s-02-train-journey.mp4",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-32s-03-kid-nostalgia",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-32s/reel-c20-32s-03-kid-nostalgia.mp4",
+      "hook": "POV: Christmas morning and you're 8 again.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-32s-04-coziest",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-32s/reel-c20-32s-04-coziest.mp4",
+      "hook": "The coziest Christmas imaginable.",
+      "publish_status": "ready_to_publish"
+    },
+    {
+      "id": "reel-c20-32s-05-pick-one",
+      "path": "public/assets/christmas/christmas-20-batch/finished/reels-32s/reel-c20-32s-05-pick-one.mp4",
+      "hook": "Which Christmas would you choose?",
+      "publish_status": "ready_to_publish"
+    }
+  ]
+}
