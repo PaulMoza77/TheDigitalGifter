@@ -51,15 +51,22 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-nyc-winter-1990");
-    expect(LIBRARY_VIDEOS[12]?.id).toBe("short-talking-santa-daniel-canary");
-    expect(LIBRARY_VIDEOS.slice(13, 18).map((video) => video.id)).toEqual([
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-c20-16s-01-nyc-streets");
+    const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
+    expect(christmasReels.slice(0, 5).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    const c20MusicShorts = LIBRARY_VIDEOS.filter(
+      (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
+    );
+    expect(c20MusicShorts[0]?.id).toBe("short-c20-01-ny-awning-finished");
+    expect(LIBRARY_VIDEOS.find((v) => v.id === "short-talking-santa-daniel-canary")?.kind).toBe("reel");
+    const nameCanaries = [
       "short-talking-santa-emma-canary",
       "short-talking-santa-olivia-canary",
       "short-talking-santa-sophia-canary",
       "short-talking-santa-liam-canary",
       "short-talking-santa-noah-canary",
-    ]);
+    ];
+    expect(nameCanaries.map((id) => LIBRARY_VIDEOS.find((v) => v.id === id)?.id)).toEqual(nameCanaries);
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -291,15 +298,22 @@ describe("admin video library", () => {
     const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-nyc-winter-1990");
-    expect(LIBRARY_VIDEOS[12]?.id).toBe("short-talking-santa-daniel-canary");
-    expect(LIBRARY_VIDEOS.slice(13, 18).map((video) => video.id)).toEqual([
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-c20-16s-01-nyc-streets");
+    const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
+    expect(christmasReels.slice(0, 5).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    const c20MusicShorts = LIBRARY_VIDEOS.filter(
+      (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
+    );
+    expect(c20MusicShorts[0]?.id).toBe("short-c20-01-ny-awning-finished");
+    expect(LIBRARY_VIDEOS.find((v) => v.id === "short-talking-santa-daniel-canary")?.kind).toBe("reel");
+    const nameCanaries = [
       "short-talking-santa-emma-canary",
       "short-talking-santa-olivia-canary",
       "short-talking-santa-sophia-canary",
       "short-talking-santa-liam-canary",
       "short-talking-santa-noah-canary",
-    ]);
+    ];
+    expect(nameCanaries.map((id) => LIBRARY_VIDEOS.find((v) => v.id === id)?.id)).toEqual(nameCanaries);
     expect(LIBRARY_VIDEOS.find((item) => item.id === "reel-swiss-alpine-chalet-dawn")?.kind).toBe("reel");
     expect(LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-nyc-winter-1990-"))).toHaveLength(5);
     expect(LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-swiss-alpine-"))).toHaveLength(5);

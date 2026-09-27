@@ -658,3 +658,9 @@ export const CHRISTMAS_20_FINISHED: LibraryVideo[] = [
     tags: [...C20_TAGS, "reel-32s", "has-music"],
   },
 ];
+
+/** Finished batch reels (16s + 32s) — listed first in Christmas Reels · Reels. */
+export const CHRISTMAS_20_REELS: LibraryVideo[] = CHRISTMAS_20_FINISHED.filter((v) => v.kind === "reel");
+
+/** Finished micro-shorts with music — listed first in Christmas Reels · Shorts. */
+export const CHRISTMAS_20_PUBLISH_SHORTS: LibraryVideo[] = CHRISTMAS_20_FINISHED.filter((v) => v.kind === "short");
