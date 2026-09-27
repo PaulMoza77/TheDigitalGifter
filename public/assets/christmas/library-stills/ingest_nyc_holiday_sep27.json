@@ -1,0 +1,336 @@
+{
+  "status": "INGESTED",
+  "count": 10,
+  "assets": [
+    {
+      "id": "photo-nyc-new-york-awning-snow",
+      "title": "Photo \u00b7 New York awning snowy Fifth Avenue",
+      "description": "NEW YORK canopy, garlands, yellow taxis, and Empire State Building in falling snow.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_new_york_awning_snow_taxis.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/01_nyc_new_york_awning_snow_1080x1920.png",
+      "original_bytes": 852207,
+      "upload_id": "01a0e349-e7a7-7a28-a541-f6b90445d583.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5312152,
+      "created_at": "2026-09-27T14:41:02.434349+00:00"
+    },
+    {
+      "id": "photo-christmas-train-nyc-station-clock",
+      "title": "Photo \u00b7 Christmas train NYC station clock",
+      "description": "Wreath-lit steam locomotive at a snowy platform with station clock and Manhattan skyline.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_train_nyc_station_clock.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/02_christmas_train_nyc_station_clock_1080x1920.png",
+      "original_bytes": 838442,
+      "upload_id": "01a0e349-e7c2-7bae-bf8f-22003b54df47.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5230036,
+      "created_at": "2026-09-27T14:41:02.789549+00:00"
+    },
+    {
+      "id": "photo-christmas-train-grand-central-chrysler",
+      "title": "Photo \u00b7 Christmas train Grand Central skyline",
+      "description": "Festive steam train at a grand arched terminal with Chrysler Building and falling snow.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_train_grand_central_chrysler.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/03_christmas_train_grand_central_chrysler_1080x1920.png",
+      "original_bytes": 766906,
+      "upload_id": "01a0e349-e7de-7b9f-849c-8ebd499774c7.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5067234,
+      "created_at": "2026-09-27T14:41:03.146904+00:00"
+    },
+    {
+      "id": "photo-christmas-train-viaduct-sunset-peaks",
+      "title": "Photo \u00b7 Christmas train viaduct sunset peaks",
+      "description": "Polar-style locomotive on a lit stone viaduct at sunset above a snowy alpine valley.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_train_viaduct_sunset_peaks.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/04_christmas_train_viaduct_sunset_peaks_1080x1920.png",
+      "original_bytes": 807443,
+      "upload_id": "01a0e349-e7fb-7024-8e1b-07d7fdd15338.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5132900,
+      "created_at": "2026-09-27T14:41:03.478474+00:00"
+    },
+    {
+      "id": "photo-christmas-mansion-nyc-skyline-gwagon",
+      "title": "Photo \u00b7 Christmas mansion NYC skyline",
+      "description": "Lit stone mansion with G-Wagon in the drive and Empire State Building at twilight.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_mansion_nyc_skyline_gwagon.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/05_christmas_mansion_nyc_skyline_gwagon_1080x1920.png",
+      "original_bytes": 848719,
+      "upload_id": "01a0e349-e812-796c-a09f-096cf6c8120e.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5224738,
+      "created_at": "2026-09-27T14:41:03.813444+00:00"
+    },
+    {
+      "id": "photo-christmas-train-viaduct-alpine-village",
+      "title": "Photo \u00b7 Christmas train viaduct alpine village",
+      "description": "Wreath-lit train crossing a decorated viaduct at sunset with village and lake below.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_train_viaduct_alpine_village.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/06_christmas_train_viaduct_alpine_village_1080x1920.png",
+      "original_bytes": 798841,
+      "upload_id": "01a0e349-e829-76d7-909a-16c461fd595c.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5122481,
+      "created_at": "2026-09-27T14:41:04.155682+00:00"
+    },
+    {
+      "id": "photo-christmas-train-station-traveler",
+      "title": "Photo \u00b7 Christmas train station traveler",
+      "description": "Woman in a red coat with a suitcase on a garland-lit platform as a wreath train arrives.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/christmas_train_station_traveler_suitcase.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/07_christmas_train_station_traveler_1080x1920.png",
+      "original_bytes": 773083,
+      "upload_id": "01a0e349-e842-74cf-88da-405f9b6d8263.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5101020,
+      "created_at": "2026-09-27T14:41:04.499077+00:00"
+    },
+    {
+      "id": "photo-nyc-radio-city-snow",
+      "title": "Photo \u00b7 Radio City Music Hall snowy night",
+      "description": "Radio City marquee, garlands, yellow cabs, and Empire State Building in heavy snowfall.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_radio_city_music_hall_snow.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/08_nyc_radio_city_music_hall_snow_1080x1920.png",
+      "original_bytes": 954306,
+      "upload_id": "01a0e349-e856-7cd8-9bd8-79041d059826.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 5535235,
+      "created_at": "2026-09-27T14:41:04.848705+00:00"
+    },
+    {
+      "id": "photo-nyc-penthouse-tom-jerry-pets",
+      "title": "Photo \u00b7 NYC penthouse Tom & Jerry cozy pets",
+      "description": "Christmas penthouse with fireplace, tree, snowy skyline, Tom & Jerry on TV, dog and cat on sofa.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_penthouse_tom_jerry_cozy_pets.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/09_nyc_penthouse_tom_jerry_cozy_pets_1080x1920.png",
+      "original_bytes": 679877,
+      "upload_id": "01a0e349-e86d-7378-a663-022fa7394c24.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4520737,
+      "created_at": "2026-09-27T14:41:05.214782+00:00"
+    },
+    {
+      "id": "photo-nyc-penthouse-christmas-empire",
+      "title": "Photo \u00b7 NYC penthouse Christmas Empire State",
+      "description": "Luxury living room with lit tree, fireplace, candles, and Central Park snow through floor-to-ceiling windows.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated"
+      ],
+      "original": "public/assets/christmas/library-stills/nyc_penthouse_christmas_empire_state.jpg",
+      "generation_still": "source/batch-nyc-holiday-sep27/10_nyc_penthouse_christmas_empire_state_1080x1920.png",
+      "original_bytes": 738458,
+      "upload_id": "01a0e349-e883-7ccf-aa2e-d86639577669.jpg",
+      "source_wh": [
+        941,
+        1672
+      ],
+      "crop": [
+        940,
+        1672,
+        0,
+        0
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4644241,
+      "created_at": "2026-09-27T14:41:05.575955+00:00"
+    }
+  ]
+}
