@@ -1,0 +1,300 @@
+{
+  "status": "COMPLETE",
+  "golden_reference": "/app/dist/assets/library/test/talking-santa-canary-daniel/talking_santa_daniel_final.mp4",
+  "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+  "workflow": {
+    "video_model": "minimax/h3/reference-to-video",
+    "image_model": "REUSE_DANIEL_MASTER",
+    "tts_provider": "openai",
+    "tts_model": "gpt-4o-mini-tts",
+    "tts_voice": "onyx"
+  },
+  "videos": [
+    {
+      "name": "Emma",
+      "dialogue": "Ho, ho, ho! Merry Christmas, Emma!",
+      "tts": {
+        "model": "gpt-4o-mini-tts",
+        "voice": "onyx",
+        "file": "/tmp/talking-santa-batch-names/speech_emma.mp3",
+        "duration": 4.656,
+        "dialogue": "Ho, ho, ho! Merry Christmas, Emma!",
+        "estimated_usd": 0.01,
+        "latency_ms": 1776,
+        "provider": "openai"
+      },
+      "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+      "video_model": "minimax/h3/reference-to-video",
+      "video_prompt": "Photoreal chest-up Santa Claus from the reference image speaks directly to camera. Preserve exact face, beard, suit, and room from the reference. Accurate lip sync and mouth movement matching the provided audio. Natural blinking, subtle head motion, warm expression, steady eye contact. Minimal body motion. No morphing, no identity change, no camera cuts, no text.",
+      "duration_requested": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "job_id": "3c2ab356-e01a-408f-b794-808d6b014b51",
+          "generation_cost_usd": 0.65,
+          "probe": {
+            "path": "/tmp/talking-santa-batch-names/talking_santa_emma_attempt1.mp4",
+            "duration": 5.167,
+            "width": 1440,
+            "height": 2560,
+            "fps": 24.0,
+            "has_audio": true,
+            "audio_codec": null,
+            "size": 5124553
+          },
+          "qc_frames": [
+            "/tmp/talking-santa-batch-names/qc/talking_santa_emma_attempt1_first.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_emma_attempt1_mid.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_emma_attempt1_last.jpg"
+          ]
+        }
+      ],
+      "status": "GENERATED",
+      "final_mp4": "/tmp/talking-santa-batch-names/talking_santa_emma_final.mp4",
+      "probe": {
+        "path": "/tmp/talking-santa-batch-names/talking_santa_emma_attempt1.mp4",
+        "duration": 5.167,
+        "width": 1440,
+        "height": 2560,
+        "fps": 24.0,
+        "has_audio": true,
+        "audio_codec": null,
+        "size": 5124553
+      },
+      "cost_usd": 0.66
+    },
+    {
+      "name": "Olivia",
+      "dialogue": "Ho, ho, ho! Merry Christmas, Olivia!",
+      "tts": {
+        "model": "gpt-4o-mini-tts",
+        "voice": "onyx",
+        "file": "/tmp/talking-santa-batch-names/speech_olivia.mp3",
+        "duration": 5.856,
+        "dialogue": "Ho, ho, ho! Merry Christmas, Olivia!",
+        "estimated_usd": 0.01,
+        "latency_ms": 5127,
+        "provider": "openai"
+      },
+      "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+      "video_model": "minimax/h3/reference-to-video",
+      "video_prompt": "Photoreal chest-up Santa Claus from the reference image speaks directly to camera. Preserve exact face, beard, suit, and room from the reference. Accurate lip sync and mouth movement matching the provided audio. Natural blinking, subtle head motion, warm expression, steady eye contact. Minimal body motion. No morphing, no identity change, no camera cuts, no text.",
+      "duration_requested": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "job_id": "cdb70e6c-6290-4368-b5ae-cad150d12678",
+          "generation_cost_usd": 0.65,
+          "probe": {
+            "path": "/tmp/talking-santa-batch-names/talking_santa_olivia_attempt1.mp4",
+            "duration": 5.167,
+            "width": 1440,
+            "height": 2560,
+            "fps": 24.0,
+            "has_audio": true,
+            "audio_codec": null,
+            "size": 4716950
+          },
+          "qc_frames": [
+            "/tmp/talking-santa-batch-names/qc/talking_santa_olivia_attempt1_first.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_olivia_attempt1_mid.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_olivia_attempt1_last.jpg"
+          ]
+        }
+      ],
+      "status": "GENERATED",
+      "final_mp4": "/tmp/talking-santa-batch-names/talking_santa_olivia_final.mp4",
+      "probe": {
+        "path": "/tmp/talking-santa-batch-names/talking_santa_olivia_attempt1.mp4",
+        "duration": 5.167,
+        "width": 1440,
+        "height": 2560,
+        "fps": 24.0,
+        "has_audio": true,
+        "audio_codec": null,
+        "size": 4716950
+      },
+      "cost_usd": 0.66
+    },
+    {
+      "name": "Sophia",
+      "dialogue": "Ho, ho, ho! Merry Christmas, Sophia!",
+      "tts": {
+        "model": "gpt-4o-mini-tts",
+        "voice": "onyx",
+        "file": "/tmp/talking-santa-batch-names/speech_sophia.mp3",
+        "duration": 4.32,
+        "dialogue": "Ho, ho, ho! Merry Christmas, Sophia!",
+        "estimated_usd": 0.01,
+        "latency_ms": 1829,
+        "provider": "openai"
+      },
+      "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+      "video_model": "minimax/h3/reference-to-video",
+      "video_prompt": "Photoreal chest-up Santa Claus from the reference image speaks directly to camera. Preserve exact face, beard, suit, and room from the reference. Accurate lip sync and mouth movement matching the provided audio. Natural blinking, subtle head motion, warm expression, steady eye contact. Minimal body motion. No morphing, no identity change, no camera cuts, no text.",
+      "duration_requested": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "job_id": "0f817344-d915-4b34-b9ed-acb49d96d049",
+          "generation_cost_usd": 0.65,
+          "probe": {
+            "path": "/tmp/talking-santa-batch-names/talking_santa_sophia_attempt1.mp4",
+            "duration": 5.167,
+            "width": 1440,
+            "height": 2560,
+            "fps": 24.0,
+            "has_audio": true,
+            "audio_codec": null,
+            "size": 5223009
+          },
+          "qc_frames": [
+            "/tmp/talking-santa-batch-names/qc/talking_santa_sophia_attempt1_first.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_sophia_attempt1_mid.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_sophia_attempt1_last.jpg"
+          ]
+        }
+      ],
+      "status": "GENERATED",
+      "final_mp4": "/tmp/talking-santa-batch-names/talking_santa_sophia_final.mp4",
+      "probe": {
+        "path": "/tmp/talking-santa-batch-names/talking_santa_sophia_attempt1.mp4",
+        "duration": 5.167,
+        "width": 1440,
+        "height": 2560,
+        "fps": 24.0,
+        "has_audio": true,
+        "audio_codec": null,
+        "size": 5223009
+      },
+      "cost_usd": 0.66
+    },
+    {
+      "name": "Liam",
+      "dialogue": "Ho, ho, ho! Merry Christmas, Liam!",
+      "tts": {
+        "model": "gpt-4o-mini-tts",
+        "voice": "onyx",
+        "file": "/tmp/talking-santa-batch-names/speech_liam.mp3",
+        "duration": 4.92,
+        "dialogue": "Ho, ho, ho! Merry Christmas, Liam!",
+        "estimated_usd": 0.01,
+        "latency_ms": 1572,
+        "provider": "openai"
+      },
+      "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+      "video_model": "minimax/h3/reference-to-video",
+      "video_prompt": "Photoreal chest-up Santa Claus from the reference image speaks directly to camera. Preserve exact face, beard, suit, and room from the reference. Accurate lip sync and mouth movement matching the provided audio. Natural blinking, subtle head motion, warm expression, steady eye contact. Minimal body motion. No morphing, no identity change, no camera cuts, no text.",
+      "duration_requested": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "job_id": "8a61cf1b-31d0-409b-b6cd-8f5c3fbc18aa",
+          "generation_cost_usd": 0.65,
+          "probe": {
+            "path": "/tmp/talking-santa-batch-names/talking_santa_liam_attempt1.mp4",
+            "duration": 5.167,
+            "width": 1440,
+            "height": 2560,
+            "fps": 24.0,
+            "has_audio": true,
+            "audio_codec": null,
+            "size": 4777126
+          },
+          "qc_frames": [
+            "/tmp/talking-santa-batch-names/qc/talking_santa_liam_attempt1_first.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_liam_attempt1_mid.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_liam_attempt1_last.jpg"
+          ]
+        }
+      ],
+      "status": "GENERATED",
+      "final_mp4": "/tmp/talking-santa-batch-names/talking_santa_liam_final.mp4",
+      "probe": {
+        "path": "/tmp/talking-santa-batch-names/talking_santa_liam_attempt1.mp4",
+        "duration": 5.167,
+        "width": 1440,
+        "height": 2560,
+        "fps": 24.0,
+        "has_audio": true,
+        "audio_codec": null,
+        "size": 4777126
+      },
+      "cost_usd": 0.66
+    },
+    {
+      "name": "Noah",
+      "dialogue": "Ho, ho, ho! Merry Christmas, Noah!",
+      "tts": {
+        "model": "gpt-4o-mini-tts",
+        "voice": "onyx",
+        "file": "/tmp/talking-santa-batch-names/speech_noah.mp3",
+        "duration": 3.96,
+        "dialogue": "Ho, ho, ho! Merry Christmas, Noah!",
+        "estimated_usd": 0.01,
+        "latency_ms": 1680,
+        "provider": "openai"
+      },
+      "golden_image_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/c8cb0e56-1f19-4935-9a49-29f12a478abe.png",
+      "video_model": "minimax/h3/reference-to-video",
+      "video_prompt": "Photoreal chest-up Santa Claus from the reference image speaks directly to camera. Preserve exact face, beard, suit, and room from the reference. Accurate lip sync and mouth movement matching the provided audio. Natural blinking, subtle head motion, warm expression, steady eye contact. Minimal body motion. No morphing, no identity change, no camera cuts, no text.",
+      "duration_requested": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "job_id": "d2a2745d-6042-49f5-95bf-81dc777e51ff",
+          "generation_cost_usd": 0.65,
+          "probe": {
+            "path": "/tmp/talking-santa-batch-names/talking_santa_noah_attempt1.mp4",
+            "duration": 5.167,
+            "width": 1440,
+            "height": 2560,
+            "fps": 24.0,
+            "has_audio": true,
+            "audio_codec": null,
+            "size": 5223127
+          },
+          "qc_frames": [
+            "/tmp/talking-santa-batch-names/qc/talking_santa_noah_attempt1_first.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_noah_attempt1_mid.jpg",
+            "/tmp/talking-santa-batch-names/qc/talking_santa_noah_attempt1_last.jpg"
+          ]
+        }
+      ],
+      "status": "GENERATED",
+      "final_mp4": "/tmp/talking-santa-batch-names/talking_santa_noah_final.mp4",
+      "probe": {
+        "path": "/tmp/talking-santa-batch-names/talking_santa_noah_attempt1.mp4",
+        "duration": 5.167,
+        "width": 1440,
+        "height": 2560,
+        "fps": 24.0,
+        "has_audio": true,
+        "audio_codec": null,
+        "size": 5223127
+      },
+      "cost_usd": 0.66
+    }
+  ],
+  "total_cost_usd": 3.3,
+  "created_at": "2026-09-27T09:16:22.857416+00:00",
+  "qc_summary": {
+    "inspected_at": "2026-09-27T09:20:00+00:00",
+    "whisper_transcripts": {
+      "emma": "Ho! Ho! Ho! Merry Christmas, Emma.",
+      "olivia": "Ho! Ho! Ho! Merry Christmas, Olivia!",
+      "sophia": "Ho! Ho! Ho! Merry Christmas, Sophia!",
+      "liam": "Ho! Ho! Ho! Merry Christmas, Liam!",
+      "noah": "Ho! Ho! Ho! Merry Christmas, Noah!"
+    },
+    "per_video": {
+      "emma": {"name_spoken": "PASS", "santa_consistency": "PASS", "voice_consistency": "PASS", "lip_sync": "PASS", "overall": "PASS"},
+      "olivia": {"name_spoken": "PASS", "santa_consistency": "PASS", "voice_consistency": "PASS", "lip_sync": "PASS", "overall": "PASS"},
+      "sophia": {"name_spoken": "PASS", "santa_consistency": "PASS", "voice_consistency": "PASS", "lip_sync": "PASS", "overall": "PASS"},
+      "liam": {"name_spoken": "PASS", "santa_consistency": "PASS", "voice_consistency": "PASS", "lip_sync": "PASS", "overall": "PASS"},
+      "noah": {"name_spoken": "PASS", "santa_consistency": "PASS", "voice_consistency": "PASS", "lip_sync": "PASS", "overall": "PASS"}
+    },
+    "retries": 0,
+    "notes": "First-frame QC frames match Daniel golden session (same mole, suit, tree/fireplace). All 1440x2560, 5.167s, AAC. No clipping (max_volume worst -1.1 dB Liam)."
+  }
+}
