@@ -51,7 +51,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-express");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("short-talking-santa-daniel-canary");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -283,7 +283,7 @@ describe("admin video library", () => {
     const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-christmas-express");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("short-talking-santa-daniel-canary");
     const cxShorts = LIBRARY_VIDEOS.filter((item) => item.id.startsWith("short-cx-"));
     expect(cxShorts).toHaveLength(5);
     expect(cxShorts.every((item) => item.kind === "short")).toBe(true);
