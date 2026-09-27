@@ -443,104 +443,194 @@ def phase_estimate(manifest: dict) -> int:
     return 0
 
 
+def _sync_existing_master(row: dict, generations: list[dict]) -> list[dict]:
+    sid = row["source_image_id"]
+    master = MASTERS / row["master_filename"]
+    if not master.exists():
+        return generations
+    ok, _ = validate_master(master)
+    if not ok:
+        return generations
+    prior = next((g for g in generations if g.get("source_image_id") == sid), {})
+    entry = {
+        "source_image_id": sid,
+        "idempotency_key": idempotency_key(sid),
+        "generation_job_id": prior.get("generation_job_id", "existing-file"),
+        "provider": "higgsfield",
+        "model": MODEL_ID,
+        "duration": DURATION,
+        "prompt": row["motion_prompt"],
+        "status": "qc_pass",
+        "qc_status": "qc_pass",
+        "output_path": str(master.relative_to(ROOT)),
+        "actual_cost": float(prior.get("actual_cost") or 0),
+        "created_at": prior.get("created_at") or datetime.now(timezone.utc).isoformat(),
+    }
+    print(f"SKIP generate {sid} — master exists", flush=True)
+    return [g for g in generations if g.get("source_image_id") != sid] + [entry]
+
+
 def phase_generate(manifest: dict) -> int:
     read_credentials()
+    MASTERS.mkdir(parents=True, exist_ok=True)
     prev = load_genlog()
     generations = list(prev.get("generations") or [])
-    by_id = {g["source_image_id"]: g for g in generations}
+    pending_jobs: dict[str, dict] = {
+        str(row.get("source_image_id")): row for row in (prev.get("pending_jobs") or []) if row.get("source_image_id")
+    }
+    est_by_id: dict[str, float] = {
+        str(row.get("id")): float(row.get("usd") or 0) for row in ((prev.get("estimate") or {}).get("estimates") or [])
+    }
 
+    work_rows: list[dict] = []
     for row in manifest["sources"]:
+        generations = _sync_existing_master(row, generations)
         sid = row["source_image_id"]
-        master = MASTERS / row["master_filename"]
-        ok, reason = validate_master(master) if master.exists() else (False, "missing")
-        if ok:
-            if sid not in by_id or by_id[sid].get("status") != "qc_pass":
-                generations = [g for g in generations if g.get("source_image_id") != sid]
-                generations.append(
-                    {
-                        "source_image_id": sid,
-                        "idempotency_key": idempotency_key(sid),
-                        "generation_job_id": by_id.get(sid, {}).get("generation_job_id", "existing-file"),
-                        "provider": "higgsfield",
-                        "model": MODEL_ID,
-                        "duration": DURATION,
-                        "prompt": row["motion_prompt"],
-                        "status": "qc_pass",
-                        "qc_status": "qc_pass",
-                        "output_path": str(master.relative_to(ROOT)),
-                        "actual_cost": by_id.get(sid, {}).get("actual_cost", 0),
-                        "created_at": datetime.now(timezone.utc).isoformat(),
-                    }
-                )
-            print(f"SKIP generate {sid} — master exists", flush=True)
+        if any(g.get("source_image_id") == sid and g.get("status") == "qc_pass" for g in generations):
             continue
+        if any(g.get("source_image_id") == sid and g.get("status") == "needs_manual_review" for g in generations):
+            continue
+        work_rows.append(row)
 
-        pending = by_id.get(sid, {})
-        job_id = pending.get("generation_job_id") if pending.get("status") == "pending" else None
+    uploads: dict[str, str] = {}
+    for row in work_rows:
+        sid = row["source_image_id"]
+        if sid in pending_jobs and pending_jobs[sid].get("job_id"):
+            continue
         still = ROOT / row["generation_still"]
-        image_url = upload_image(still)
-        est_body = hf_request("POST", ESTIMATE_PATH, clip_payload(image_url, row["motion_prompt"]))
-        est = parse_estimate(est_body)
+        print(f"Uploading {sid}...", flush=True)
+        uploads[sid] = upload_image(still)
+        if sid not in est_by_id:
+            est = parse_estimate(
+                hf_request("POST", ESTIMATE_PATH, clip_payload(uploads[sid], row["motion_prompt"]))
+            )
+            est_by_id[sid] = est["usd"]
 
-        attempts = int(pending.get("attempts") or 0)
-        while attempts < 2:
-            attempts += 1
-            try:
-                if job_id:
-                    done = poll_job(job_id)
-                else:
-                    submitted = hf_request("POST", SUBMIT_PATH, clip_payload(image_url, row["motion_prompt"]))
-                    job_id = str(submitted.get("request_id") or "")
-                    if not job_id:
-                        raise RuntimeError(f"no request_id: {submitted}")
-                    write_genlog({**prev, "generations": generations, "pending_job": job_id})
-                    done = poll_job(job_id)
-                st = str(done.get("status") or "").lower()
-                if st not in {"completed", "succeeded"}:
-                    raise RuntimeError(f"status={done.get('status')} err={done.get('error')}")
-                url = video_url_from_status(done)
+    for row in work_rows:
+        sid = row["source_image_id"]
+        if sid in pending_jobs and pending_jobs[sid].get("job_id"):
+            continue
+        image_url = uploads.get(sid)
+        if not image_url:
+            still = ROOT / row["generation_still"]
+            image_url = upload_image(still)
+        print(f"Submitting {sid}...", flush=True)
+        submitted = hf_request("POST", SUBMIT_PATH, clip_payload(image_url, row["motion_prompt"]))
+        job_id = str(submitted.get("request_id") or "")
+        if not job_id:
+            raise RuntimeError(f"no request_id for {sid}")
+        pending_jobs[sid] = {
+            "source_image_id": sid,
+            "job_id": job_id,
+            "attempts": int(pending_jobs.get(sid, {}).get("attempts") or 0) + 1,
+            "est_usd": est_by_id.get(sid, 0.493),
+            "master_filename": row["master_filename"],
+            "motion_prompt": row["motion_prompt"],
+        }
+        write_genlog({**load_genlog(), "generations": generations, "pending_jobs": list(pending_jobs.values())})
+        time.sleep(0.35)
+
+    terminal = {"completed", "succeeded", "failed", "nsfw", "canceled", "cancelled", "error"}
+    while pending_jobs:
+        finished: list[str] = []
+        for sid, job in list(pending_jobs.items()):
+            job_id = job["job_id"]
+            body = hf_request("GET", f"/requests/{job_id}/status")
+            status = str(body.get("status") or "").lower()
+            print(f"  {sid} {job_id} {status}", flush=True)
+            if status not in terminal:
+                continue
+            finished.append(sid)
+            row = next(r for r in manifest["sources"] if r["source_image_id"] == sid)
+            master = MASTERS / row["master_filename"]
+            if status in {"completed", "succeeded"}:
+                url = video_url_from_status(body)
                 if not url:
-                    raise RuntimeError("missing video url")
-                download(url, master)
-                ok, reason = validate_master(master)
-                if not ok:
-                    raise RuntimeError(f"qc_fail:{reason}")
-                entry = {
-                    "source_image_id": sid,
-                    "idempotency_key": idempotency_key(sid),
-                    "generation_job_id": job_id,
-                    "provider": "higgsfield",
-                    "model": MODEL_ID,
-                    "duration": DURATION,
-                    "prompt": row["motion_prompt"],
-                    "status": "qc_pass",
-                    "qc_status": "qc_pass",
-                    "output_path": str(master.relative_to(ROOT)),
-                    "actual_cost": est["usd"],
-                    "attempts": attempts,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                }
-                generations = [g for g in generations if g.get("source_image_id") != sid] + [entry]
-                write_genlog({**load_genlog(), "generations": generations, "actual_kling_cost": round(sum(float(g.get("actual_cost") or 0) for g in generations), 4)})
-                print(f"PASS {sid} -> {master.name}", flush=True)
-                job_id = None
-                break
-            except Exception as err:
-                print(f"FAIL {sid} attempt {attempts}: {err}", flush=True)
-                job_id = None
-                if attempts >= 2:
+                    err = "missing video url"
+                else:
+                    try:
+                        download(url, master)
+                        ok, reason = validate_master(master)
+                        if not ok:
+                            raise RuntimeError(reason)
+                        generations = [g for g in generations if g.get("source_image_id") != sid] + [
+                            {
+                                "source_image_id": sid,
+                                "idempotency_key": idempotency_key(sid),
+                                "generation_job_id": job_id,
+                                "provider": "higgsfield",
+                                "model": MODEL_ID,
+                                "duration": DURATION,
+                                "prompt": row["motion_prompt"],
+                                "status": "qc_pass",
+                                "qc_status": "qc_pass",
+                                "output_path": str(master.relative_to(ROOT)),
+                                "actual_cost": float(job.get("est_usd") or 0),
+                                "attempts": job.get("attempts") or 1,
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                        ]
+                        print(f"PASS {sid}", flush=True)
+                        err = None
+                    except Exception as exc:
+                        err = str(exc)
+                if err:
+                    attempts = int(job.get("attempts") or 1)
+                    if attempts < 2:
+                        print(f"RETRY {sid}: {err}", flush=True)
+                        still = ROOT / row["generation_still"]
+                        image_url = upload_image(still)
+                        submitted = hf_request("POST", SUBMIT_PATH, clip_payload(image_url, row["motion_prompt"]))
+                        retry_id = str(submitted.get("request_id") or "")
+                        pending_jobs[sid] = {**job, "job_id": retry_id, "attempts": attempts + 1}
+                        finished.pop()
+                    else:
+                        generations = [g for g in generations if g.get("source_image_id") != sid] + [
+                            {
+                                "source_image_id": sid,
+                                "idempotency_key": idempotency_key(sid),
+                                "status": "needs_manual_review",
+                                "qc_status": f"fail:{err}",
+                                "attempts": attempts,
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                        ]
+            else:
+                attempts = int(job.get("attempts") or 1)
+                if attempts < 2:
+                    print(f"RETRY {sid} after {status}", flush=True)
+                    still = ROOT / row["generation_still"]
+                    image_url = upload_image(still)
+                    submitted = hf_request("POST", SUBMIT_PATH, clip_payload(image_url, row["motion_prompt"]))
+                    retry_id = str(submitted.get("request_id") or "")
+                    pending_jobs[sid] = {**job, "job_id": retry_id, "attempts": attempts + 1}
+                    finished.pop()
+                else:
                     generations = [g for g in generations if g.get("source_image_id") != sid] + [
                         {
                             "source_image_id": sid,
                             "idempotency_key": idempotency_key(sid),
                             "status": "needs_manual_review",
-                            "qc_status": f"fail:{err}",
+                            "qc_status": f"fail:{status}",
                             "attempts": attempts,
                             "created_at": datetime.now(timezone.utc).isoformat(),
                         }
                     ]
-                    write_genlog({**load_genlog(), "generations": generations})
-        time.sleep(0.5)
+        for sid in finished:
+            pending_jobs.pop(sid, None)
+        write_genlog(
+            {
+                **load_genlog(),
+                "generations": generations,
+                "pending_jobs": list(pending_jobs.values()),
+                "actual_kling_cost": round(
+                    sum(float(g.get("actual_cost") or 0) for g in generations if g.get("status") == "qc_pass"),
+                    4,
+                ),
+            }
+        )
+        if pending_jobs:
+            time.sleep(8)
 
     passed = sum(1 for g in generations if g.get("status") == "qc_pass")
     print(f"Generations qc_pass={passed}/20", flush=True)

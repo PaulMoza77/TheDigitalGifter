@@ -1,0 +1,185 @@
+{
+  "finished_8s": [
+    {
+      "id": "short-c20-01-ny-awning",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-01-ny-awning.mp4",
+      "music": "silent-night-lofi.mp3",
+      "hook": "Christmas in New York just hits different.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-02-train-nyc-clock",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-02-train-nyc-clock.mp4",
+      "music": "the-first-noel-synthwave.mp3",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-03-train-grand-central",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-03-train-grand-central.mp4",
+      "music": "we-three-kings-synthwave.mp3",
+      "hook": "All aboard for the coziest arrival in the city.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-04-viaduct-sunset-peaks",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-04-viaduct-sunset-peaks.mp4",
+      "music": "silent-night-lofi.mp3",
+      "hook": "Christmas Train Journey through the peaks.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-05-mansion-gwagon",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-05-mansion-gwagon.mp4",
+      "music": "angels-we-have-heard-lofi.mp3",
+      "hook": "Would you spend Christmas here?",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-06-viaduct-village",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-06-viaduct-village.mp4",
+      "music": "the-first-noel-synthwave.mp3",
+      "hook": "Which Christmas would you choose \u2014 alpine edition.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-07-station-traveler",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-07-station-traveler.mp4",
+      "music": "auld-lang-syne-lofi.mp3",
+      "hook": "POV: you're catching the Christmas express.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-08-radio-city",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-08-radio-city.mp4",
+      "music": "joy-to-the-world-synthwave.mp3",
+      "hook": "Radio City nights in the snow hit different.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-09-penthouse-tom-jerry",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-09-penthouse-tom-jerry.mp4",
+      "music": "god-rest-ye-merry-gentlemen-synthwave.mp3",
+      "hook": "Imagine waking up here on Christmas morning.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-10-penthouse-empire",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-10-penthouse-empire.mp4",
+      "music": "silent-night-lofi.mp3",
+      "hook": "The coziest Christmas imaginable \u2014 city edition.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-11-mansion-gate",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-11-mansion-gate.mp4",
+      "music": "angels-we-have-heard-lofi.mp3",
+      "hook": "Would you spend Christmas behind these gates?",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-12-alpine-cabin",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-12-alpine-cabin.mp4",
+      "music": "god-rest-ye-merry-gentlemen-synthwave.mp3",
+      "hook": "The coziest Christmas imaginable \u2014 mountain edition.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-13-home-alone-tv",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-13-home-alone-tv.mp4",
+      "music": "auld-lang-syne-lofi.mp3",
+      "hook": "POV: Christmas morning and you're 8 again.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-14-stairs-morning",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-14-stairs-morning.mp4",
+      "music": "o-holy-night-lofi.mp3",
+      "hook": "Take me back to Christmas in the 90s.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-15-family-dinner",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-15-family-dinner.mp4",
+      "music": "angels-we-have-heard-lofi.mp3",
+      "hook": "This is what Christmas felt like growing up.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-16-library-dog",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-16-library-dog.mp4",
+      "music": "silent-night-lofi.mp3",
+      "hook": "Imagine waking up here on Christmas morning.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-17-saks-rockefeller",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-17-saks-rockefeller.mp4",
+      "music": "joy-to-the-world-synthwave.mp3",
+      "hook": "Christmas in New York just hits different.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-18-train-carriage",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-18-train-carriage.mp4",
+      "music": "the-first-noel-synthwave.mp3",
+      "hook": "Your train leaves for Christmas at midnight.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-19-brownstone-vintage",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-19-brownstone-vintage.mp4",
+      "music": "auld-lang-syne-lofi.mp3",
+      "hook": "Take me back to Christmas in the 90s.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    },
+    {
+      "id": "short-c20-20-bedroom-santa-moon",
+      "type": "micro_short",
+      "path": "public/assets/christmas/christmas-20-batch/finished/micro-8s/short-c20-20-bedroom-santa-moon.mp4",
+      "music": "silent-night-lofi.mp3",
+      "hook": "POV: you still believe on Christmas Eve.",
+      "publish_status": "ready_to_publish",
+      "duration": 7.833333
+    }
+  ],
+  "count": 20
+}

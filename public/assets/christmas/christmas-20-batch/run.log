@@ -1,0 +1,743 @@
+Uploading still for estimate short-c20-01-ny-awning...
+Uploading still for estimate short-c20-02-train-nyc-clock...
+Uploading still for estimate short-c20-03-train-grand-central...
+Uploading still for estimate short-c20-04-viaduct-sunset-peaks...
+Uploading still for estimate short-c20-05-mansion-gwagon...
+Uploading still for estimate short-c20-06-viaduct-village...
+Uploading still for estimate short-c20-07-station-traveler...
+Uploading still for estimate short-c20-08-radio-city...
+Uploading still for estimate short-c20-09-penthouse-tom-jerry...
+Uploading still for estimate short-c20-10-penthouse-empire...
+Uploading still for estimate short-c20-11-mansion-gate...
+Uploading still for estimate short-c20-12-alpine-cabin...
+Uploading still for estimate short-c20-13-home-alone-tv...
+Uploading still for estimate short-c20-14-stairs-morning...
+Uploading still for estimate short-c20-15-family-dinner...
+Uploading still for estimate short-c20-16-library-dog...
+Uploading still for estimate short-c20-17-saks-rockefeller...
+Uploading still for estimate short-c20-18-train-carriage...
+Uploading still for estimate short-c20-19-brownstone-vintage...
+Uploading still for estimate short-c20-20-bedroom-santa-moon...
+========================================================================
+COST GUARD (live Higgsfield estimate)
+MODEL: kling-video/v3.0/pro/image-to-video
+DURATION: 8s x 20 new clips
+ESTIMATED_BASE_COST: $9.8600
+COST_PER_CLIP: $0.4930
+MAX_RETRY_EXPOSURE: $9.8600 (1 retry each)
+MAX_POSSIBLE_COST: $19.7200
+REFERENCE_5S_RATE: $0.2800 -> linear 8s ref $0.4480/clip
+========================================================================
+  poll d367af79-7568-4fcf-9923-401ab13004cd queued
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd in_progress
+  poll d367af79-7568-4fcf-9923-401ab13004cd completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-01-ny-awning -> short-c20-01-ny-awning.mp4
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 queued
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 in_progress
+  poll ce1580fb-1aed-41c6-8234-8fe58738fa49 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-02-train-nyc-clock -> short-c20-02-train-nyc-clock.mp4
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 queued
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+  poll 36378057-e1bc-4fd3-94ea-c78cc8ca3c93 in_progress
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+SKIP generate short-c20-01-ny-awning — master exists
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+SKIP generate short-c20-02-train-nyc-clock — master exists
+Uploading short-c20-03-train-grand-central...
+Uploading short-c20-04-viaduct-sunset-peaks...
+Uploading short-c20-05-mansion-gwagon...
+Uploading short-c20-06-viaduct-village...
+Uploading short-c20-07-station-traveler...
+Uploading short-c20-08-radio-city...
+Uploading short-c20-09-penthouse-tom-jerry...
+Uploading short-c20-10-penthouse-empire...
+Uploading short-c20-11-mansion-gate...
+Uploading short-c20-12-alpine-cabin...
+Uploading short-c20-13-home-alone-tv...
+Uploading short-c20-14-stairs-morning...
+Uploading short-c20-15-family-dinner...
+Uploading short-c20-16-library-dog...
+Uploading short-c20-17-saks-rockefeller...
+Uploading short-c20-18-train-carriage...
+Uploading short-c20-19-brownstone-vintage...
+Uploading short-c20-20-bedroom-santa-moon...
+Submitting short-c20-03-train-grand-central...
+Submitting short-c20-04-viaduct-sunset-peaks...
+Submitting short-c20-05-mansion-gwagon...
+Submitting short-c20-06-viaduct-village...
+Submitting short-c20-07-station-traveler...
+Submitting short-c20-08-radio-city...
+Submitting short-c20-09-penthouse-tom-jerry...
+Submitting short-c20-10-penthouse-empire...
+Submitting short-c20-11-mansion-gate...
+Submitting short-c20-12-alpine-cabin...
+Submitting short-c20-13-home-alone-tv...
+Submitting short-c20-14-stairs-morning...
+Submitting short-c20-15-family-dinner...
+Submitting short-c20-16-library-dog...
+Submitting short-c20-17-saks-rockefeller...
+Submitting short-c20-18-train-carriage...
+Submitting short-c20-19-brownstone-vintage...
+Submitting short-c20-20-bedroom-santa-moon...
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d in_progress
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d in_progress
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 in_progress
+  short-c20-06-viaduct-village 9745d1e1-5403-4eed-8e8a-14909b98b58d completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-06-viaduct-village
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 in_progress
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 in_progress
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a in_progress
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b in_progress
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 in_progress
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 in_progress
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 in_progress
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce in_progress
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be in_progress
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e in_progress
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 in_progress
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c in_progress
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 in_progress
+  short-c20-04-viaduct-sunset-peaks 8524553b-f1cb-449b-a784-9e3a348a373d completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-04-viaduct-sunset-peaks
+  short-c20-05-mansion-gwagon 694b03b7-8f9f-48e1-b7ff-8e3a0b9c8341 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-05-mansion-gwagon
+  short-c20-07-station-traveler 84779e26-b23f-46da-bc12-23b30ffec505 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-07-station-traveler
+  short-c20-08-radio-city b5dd2739-3e50-4761-9b18-21304682b8b9 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-08-radio-city
+  short-c20-09-penthouse-tom-jerry 3170087a-6a07-4d92-b2ab-85b02f16df5a completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-09-penthouse-tom-jerry
+  short-c20-10-penthouse-empire 3646e379-57a3-4500-b1b6-25309d86c24b completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-10-penthouse-empire
+  short-c20-11-mansion-gate a81228b9-f081-4106-9074-6b157df46c74 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-11-mansion-gate
+  short-c20-12-alpine-cabin 960fa437-e03b-4e53-b26c-94f676ffdb47 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-12-alpine-cabin
+  short-c20-13-home-alone-tv fc5aa248-4f16-494e-8a19-db8371105839 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-13-home-alone-tv
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-16-library-dog b026f8cc-564b-4cd8-9b0b-e7b9b1fb44ce completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-16-library-dog
+  short-c20-17-saks-rockefeller 54fdc9ec-ccd7-4a43-ae3f-59790fb8f6be completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-17-saks-rockefeller
+  short-c20-18-train-carriage dde803dc-eff6-425f-baab-2f9140ec7e9e completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-18-train-carriage
+  short-c20-19-brownstone-vintage 1ba7cf30-fd6c-4f39-80d8-707ce34b2fe8 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-19-brownstone-vintage
+  short-c20-20-bedroom-santa-moon b5d78126-ea46-49d6-a16e-bfeb6c53a33c completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-20-bedroom-santa-moon
+  short-c20-03-train-grand-central 805b6c59-60a3-4736-a424-dd551b2b7e06 completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-03-train-grand-central
+  short-c20-14-stairs-morning 81c8daa2-bd9f-4ca0-90f6-1f3db5a673ef completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-14-stairs-morning
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c in_progress
+  short-c20-15-family-dinner cbff7813-a055-4969-b308-e20f32f1685c completed
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+PASS short-c20-15-family-dinner
+Generations qc_pass=20/20
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+Finished 8s shorts: 20/20
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+Assembled 16s=10 32s=5
+FINAL REPORT
+SOURCE_IMAGES: 20/20
+KLING_GENERATIONS PASS: 20 FAILED: 0 MANUAL_REVIEW: 0
+MASTER_CLIPS: 20/20
+8S SHORTS: 20/20
+16S REELS: 10/10
+32S REELS: 5/5
+TOTAL_READY_TO_PUBLISH: 35/35
+AUDIO_VERIFIED: YES
+ACTUAL_KLING_COST: $9.86
+ESTIMATED_VS_ACTUAL: $9.86 vs $9.86
+LIBRARY_PATHS: public/assets/christmas/christmas-20-batch

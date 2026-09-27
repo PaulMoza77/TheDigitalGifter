@@ -1,3 +1,5 @@
+import { CHRISTMAS_20_FINISHED, CHRISTMAS_20_MASTERS } from "./christmas20BatchCatalog";
+
 export type LibraryCategoryId =
   | "clip_factory"
   | "long_form"
@@ -3798,6 +3800,8 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...CHRISTMAS_REELS.slice(PREMIUM_SEP26_REELS.length),
   ...CHRISTMAS_SHORTS.slice(PREMIUM_SEP26_SHORTS.length),
   ...CHRISTMAS_PHOTOS,
+  ...CHRISTMAS_20_MASTERS,
+  ...CHRISTMAS_20_FINISHED,
   ...CHRISTMAS_MARKETING,
   ...petClips("dog", "pet_dog"),
   ...petClips("cat", "pet_cat"),
