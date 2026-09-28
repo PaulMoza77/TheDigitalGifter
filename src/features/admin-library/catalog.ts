@@ -3,6 +3,7 @@ import {
   CHRISTMAS_20_PUBLISH_SHORTS,
   CHRISTMAS_20_REELS,
 } from "./christmas20BatchCatalog";
+import { LIBRARY_MONTAGE_SEP28_REELS } from "./libraryMontageSep28Catalog";
 
 export type LibraryCategoryId =
   | "clip_factory"
@@ -3797,6 +3798,7 @@ const CHRISTMAS_MARKETING: LibraryVideo[] = [
 ];
 
 export const LIBRARY_VIDEOS: LibraryVideo[] = [
+  ...LIBRARY_MONTAGE_SEP28_REELS,
   ...CHRISTMAS_20_REELS,
   ...PREMIUM_SEP26_REELS,
   ...CHRISTMAS_20_PUBLISH_SHORTS,

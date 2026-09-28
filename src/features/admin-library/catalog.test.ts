@@ -51,9 +51,10 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-c20-16s-01-nyc-streets");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-01-express-rush");
+    expect(LIBRARY_VIDEOS.slice(0, 10).every((v) => v.id.startsWith("reel-lib-montage-"))).toBe(true);
     const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
-    expect(christmasReels.slice(0, 5).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    expect(christmasReels.slice(10, 15).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -298,9 +299,10 @@ describe("admin video library", () => {
     const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-c20-16s-01-nyc-streets");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-01-express-rush");
+    expect(LIBRARY_VIDEOS.slice(0, 10).every((v) => v.id.startsWith("reel-lib-montage-"))).toBe(true);
     const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
-    expect(christmasReels.slice(0, 5).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    expect(christmasReels.slice(10, 15).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
