@@ -72,6 +72,7 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(1);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -352,6 +353,7 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(1);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
