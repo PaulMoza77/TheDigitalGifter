@@ -47,9 +47,11 @@ describe("admin video library", () => {
       }
     }
     const volocar = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_dubai_moments");
-    expect(volocar).toHaveLength(6);
-    expect(volocar.every((v) => v.kind === "photo")).toBe(true);
-    expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments")).toHaveLength(6);
+    expect(volocar).toHaveLength(13);
+    expect(volocar.filter((v) => v.kind === "photo")).toHaveLength(6);
+    expect(volocar.filter((v) => v.kind === "short")).toHaveLength(6);
+    expect(volocar.filter((v) => v.kind === "reel")).toHaveLength(1);
+    expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments").length).toBeGreaterThanOrEqual(13);
     const volocarPm = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_product_motion");
     expect(volocarPm).toHaveLength(8);
     expect(volocarPm.filter((v) => v.kind === "photo")).toHaveLength(4);
@@ -308,6 +310,14 @@ describe("admin video library", () => {
       "public/assets/volocar/dubai-moments/masters/05_volocar_dubai_moments_marina_night.jpg",
       "public/assets/volocar/dubai-moments/masters/06_volocar_dubai_moments_arrival_dubai.jpg",
       "public/assets/volocar/dubai-moments/generation_manifest.json",
+      "public/assets/volocar/dubai-moments/clips/01_volocar_dubai_moments_supercar_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/02_volocar_dubai_moments_girls_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/03_volocar_dubai_moments_the_arrival_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/04_volocar_dubai_moments_morning_escape_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/05_volocar_dubai_moments_marina_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/06_volocar_dubai_moments_arrival_dubai_5s.mp4",
+      "public/assets/volocar/dubai-moments/final/volocar_dubai_moments_reel_v1_master.mp4",
+      "public/assets/volocar/dubai-moments/i2v_generation_manifest.json",
       "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg",
       "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4",
       "public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg",
