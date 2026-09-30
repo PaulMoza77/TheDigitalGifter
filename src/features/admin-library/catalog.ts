@@ -14,6 +14,7 @@ import {
   VOLOCAR_DUBAI_MOMENTS_PHOTOS,
   VOLOCAR_DUBAI_MOMENTS_REEL,
 } from "./volocarDubaiMomentsCatalog";
+import { FLAVOURS_BISTRO_VIDEOS } from "./flavoursBistroCatalog";
 import { VOLOCAR_PRODUCT_MOTION_LIBRARY } from "./volocarProductMotionCatalog";
 import { CHRISTMAS_FACTORY_200_PHOTOS, CHRISTMAS_FACTORY_200_SHORTS } from "./christmasFactory200Catalog";
 
@@ -26,7 +27,8 @@ export type LibraryCategoryId =
   | "pet_cat"
   | "pet_other"
   | "volocar_dubai_moments"
-  | "volocar_product_motion";
+  | "volocar_product_motion"
+  | "flavours_bistro";
 
 export type LibraryKind = "reel" | "short" | "photo" | "long_form";
 
@@ -113,6 +115,12 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "volocar_product_motion",
     label: "VoloCar · Product Motion",
     description: "16:9 silent 5s product UI motion masters and source stills (zero-text overlays).",
+  },
+  {
+    id: "flavours_bistro",
+    label: "Flavours Bistro",
+    description:
+      "Premium food Meta ad masters for Flavours Bistro — faithful product I2V, silent exports for Stories and Feed crops.",
   },
 ];
 
@@ -3846,6 +3854,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...VOLOCAR_PRODUCT_MOTION_LIBRARY,
   ...CHRISTMAS_FACTORY_200_SHORTS,
   ...CHRISTMAS_FACTORY_200_PHOTOS,
+  ...FLAVOURS_BISTRO_VIDEOS,
 ];
 
 /**
