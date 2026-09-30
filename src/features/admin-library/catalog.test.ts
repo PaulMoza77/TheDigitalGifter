@@ -33,6 +33,7 @@ describe("admin video library", () => {
       "pet_cat",
       "pet_other",
       "volocar_dubai_moments",
+      "volocar_product_motion",
     ]);
     expect(CHRISTMAS_LIBRARY_KINDS.map((item) => item.id)).toEqual(["reel", "short", "photo"]);
     for (const video of LIBRARY_VIDEOS) {
@@ -49,6 +50,11 @@ describe("admin video library", () => {
     expect(volocar).toHaveLength(6);
     expect(volocar.every((v) => v.kind === "photo")).toBe(true);
     expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments")).toHaveLength(6);
+    const volocarPm = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_product_motion");
+    expect(volocarPm).toHaveLength(8);
+    expect(volocarPm.filter((v) => v.kind === "photo")).toHaveLength(4);
+    expect(volocarPm.filter((v) => v.kind === "short")).toHaveLength(4);
+    expect(searchLibraryVideos("product motion", "volocar_product_motion")).toHaveLength(8);
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
     expect(
       searchLibraryVideos("Kling 1080p", "christmas_reels").some((video) => video.id === "reel-kling-1080p-final"),
@@ -302,6 +308,19 @@ describe("admin video library", () => {
       "public/assets/volocar/dubai-moments/masters/05_volocar_dubai_moments_marina_night.jpg",
       "public/assets/volocar/dubai-moments/masters/06_volocar_dubai_moments_arrival_dubai.jpg",
       "public/assets/volocar/dubai-moments/generation_manifest.json",
+      "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg",
+      "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4",
+      "public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg",
+      "public/assets/volocar/product-motion/masters/02_volocar_monthly_5s.mp4",
+      "public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_source.jpg",
+      "public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_5s.mp4",
+      "public/assets/volocar/product-motion/masters/04_volocar_supercars_source.jpg",
+      "public/assets/volocar/product-motion/masters/04_volocar_supercars_5s.mp4",
+      "public/assets/volocar/product-motion/posters/01_volocar_zero_deposit_5s.jpg",
+      "public/assets/volocar/product-motion/posters/02_volocar_monthly_5s.jpg",
+      "public/assets/volocar/product-motion/posters/03_volocar_airport_delivery_5s.jpg",
+      "public/assets/volocar/product-motion/posters/04_volocar_supercars_5s.jpg",
+      "public/assets/volocar/product-motion/generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
