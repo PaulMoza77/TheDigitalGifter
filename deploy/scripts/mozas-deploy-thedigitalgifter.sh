@@ -28,7 +28,9 @@ fi
 mkdir -p "${TDG_RELEASES}"
 CLIP_FACTORY_MEDIA="${TDG_DIR}/media"
 LONG_FORM_DATA="${TDG_DIR}/data/long-form"
-mkdir -p "${CLIP_FACTORY_MEDIA}" "${LONG_FORM_DATA}/productions"
+FACTORY_200_MEDIA="${TDG_REPO}/generated/christmas-factory-200"
+mkdir -p "${CLIP_FACTORY_MEDIA}" "${LONG_FORM_DATA}/productions" \
+  "${FACTORY_200_MEDIA}/masters" "${FACTORY_200_MEDIA}/stills" "${FACTORY_200_MEDIA}/posters"
 chmod 0775 "${TDG_DIR}/data" "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" "${CLIP_FACTORY_MEDIA}" || true
 chown -R 100:101 "${LONG_FORM_DATA}" "${CLIP_FACTORY_MEDIA}" 2>/dev/null || chmod 0777 "${LONG_FORM_DATA}" "${LONG_FORM_DATA}/productions" "${CLIP_FACTORY_MEDIA}" || true
 [[ -d "${LONG_FORM_DATA}" ]] || die "missing persistent long-form data directory ${LONG_FORM_DATA}"
