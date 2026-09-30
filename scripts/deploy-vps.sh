@@ -32,10 +32,13 @@ REMOTE_REPO="/opt/mozas/projects/thedigitalgifter/repo"
 mozas_ssh "mkdir -p ${REMOTE_REPO} /opt/mozas/projects/thedigitalgifter/releases /opt/mozas/bin"
 
 echo "Syncing application source → ${REMOTE_REPO} (secrets directory is not touched)"
+# generated/ stays on the VPS (bind-mounted media). Never --delete it through
+# this sync — a missing local tree previously left the origin with no container.
 mozas_rsync \
   --exclude '.git/' \
   --exclude 'node_modules/' \
   --exclude 'dist/' \
+  --exclude 'generated/' \
   --exclude '.env' \
   --exclude '.env.*' \
   --exclude 'secrets/' \
@@ -44,6 +47,7 @@ mozas_rsync \
   "${MOZAS_EXPECTED_USER}@${MOZAS_EXPECTED_HOST}:${REMOTE_REPO}/"
 
 mozas_ssh "set -euo pipefail
+  mkdir -p /opt/mozas/projects/thedigitalgifter/repo/generated/christmas-factory-200/{masters,stills,posters}
   cp /opt/mozas/projects/thedigitalgifter/repo/deploy/docker-compose.yml /opt/mozas/projects/thedigitalgifter/docker-compose.yml
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-deploy-thedigitalgifter.sh /opt/mozas/bin/mozas-deploy-thedigitalgifter
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-rollback-thedigitalgifter.sh /opt/mozas/bin/mozas-rollback-thedigitalgifter

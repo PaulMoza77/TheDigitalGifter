@@ -33,6 +33,7 @@ describe("admin video library", () => {
       "pet_cat",
       "pet_other",
       "volocar_dubai_moments",
+      "volocar_product_motion",
     ]);
     expect(CHRISTMAS_LIBRARY_KINDS.map((item) => item.id)).toEqual(["reel", "short", "photo"]);
     for (const video of LIBRARY_VIDEOS) {
@@ -51,6 +52,11 @@ describe("admin video library", () => {
     expect(volocar.filter((v) => v.kind === "short")).toHaveLength(6);
     expect(volocar.filter((v) => v.kind === "reel")).toHaveLength(1);
     expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments").length).toBeGreaterThanOrEqual(13);
+    const volocarPm = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_product_motion");
+    expect(volocarPm).toHaveLength(8);
+    expect(volocarPm.filter((v) => v.kind === "photo")).toHaveLength(4);
+    expect(volocarPm.filter((v) => v.kind === "short")).toHaveLength(4);
+    expect(searchLibraryVideos("product motion", "volocar_product_motion")).toHaveLength(8);
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
     expect(
       searchLibraryVideos("Kling 1080p", "christmas_reels").some((video) => video.id === "reel-kling-1080p-final"),
@@ -66,6 +72,8 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(50);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cf200-")).length).toBeGreaterThanOrEqual(50);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -312,6 +320,19 @@ describe("admin video library", () => {
       "public/assets/volocar/dubai-moments/clips/06_volocar_dubai_moments_arrival_dubai_5s.mp4",
       "public/assets/volocar/dubai-moments/final/volocar_dubai_moments_reel_v1_master.mp4",
       "public/assets/volocar/dubai-moments/i2v_generation_manifest.json",
+      "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg",
+      "public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4",
+      "public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg",
+      "public/assets/volocar/product-motion/masters/02_volocar_monthly_5s.mp4",
+      "public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_source.jpg",
+      "public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_5s.mp4",
+      "public/assets/volocar/product-motion/masters/04_volocar_supercars_source.jpg",
+      "public/assets/volocar/product-motion/masters/04_volocar_supercars_5s.mp4",
+      "public/assets/volocar/product-motion/posters/01_volocar_zero_deposit_5s.jpg",
+      "public/assets/volocar/product-motion/posters/02_volocar_monthly_5s.jpg",
+      "public/assets/volocar/product-motion/posters/03_volocar_airport_delivery_5s.jpg",
+      "public/assets/volocar/product-motion/posters/04_volocar_supercars_5s.jpg",
+      "public/assets/volocar/product-motion/generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
@@ -333,6 +354,8 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(50);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cf200-")).length).toBeGreaterThanOrEqual(50);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -405,11 +428,15 @@ describe("admin video library", () => {
 
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
+    expect(readSrc("src/App.tsx")).toContain('path="library/christmas-factory"');
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library/christmas-factory");
+    expect(readSrc("src/pages/admin/ChristmasFactoryReviewPage.tsx")).toContain("Christmas Factory RAW");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
+    expect(page).toContain("/admin/library/christmas-factory");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
     expect(page).toContain("onShare");

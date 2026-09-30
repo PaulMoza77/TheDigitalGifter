@@ -15,6 +15,8 @@ import {
   VOLOCAR_DUBAI_MOMENTS_REEL,
 } from "./volocarDubaiMomentsCatalog";
 import { FLAVOURS_BISTRO_VIDEOS } from "./flavoursBistroCatalog";
+import { VOLOCAR_PRODUCT_MOTION_LIBRARY } from "./volocarProductMotionCatalog";
+import { CHRISTMAS_FACTORY_200_PHOTOS, CHRISTMAS_FACTORY_200_SHORTS } from "./christmasFactory200Catalog";
 
 export type LibraryCategoryId =
   | "clip_factory"
@@ -25,6 +27,7 @@ export type LibraryCategoryId =
   | "pet_cat"
   | "pet_other"
   | "volocar_dubai_moments"
+  | "volocar_product_motion"
   | "flavours_bistro";
 
 export type LibraryKind = "reel" | "short" | "photo" | "long_form";
@@ -107,6 +110,11 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "volocar_dubai_moments",
     label: "VoloCar · Dubai Moments",
     description: "16:9 experience-first stills for VoloCar Dubai Moments (masters, download originals).",
+  },
+  {
+    id: "volocar_product_motion",
+    label: "VoloCar · Product Motion",
+    description: "16:9 silent 5s product UI motion masters and source stills (zero-text overlays).",
   },
   {
     id: "flavours_bistro",
@@ -3843,6 +3851,9 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...VOLOCAR_DUBAI_MOMENTS_PHOTOS,
   ...VOLOCAR_DUBAI_MOMENTS_CLIPS,
   VOLOCAR_DUBAI_MOMENTS_REEL,
+  ...VOLOCAR_PRODUCT_MOTION_LIBRARY,
+  ...CHRISTMAS_FACTORY_200_SHORTS,
+  ...CHRISTMAS_FACTORY_200_PHOTOS,
   ...FLAVOURS_BISTRO_VIDEOS,
 ];
 

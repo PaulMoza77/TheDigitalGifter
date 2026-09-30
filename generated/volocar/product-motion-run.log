@@ -1,0 +1,37 @@
+STILL 01_volocar_zero_deposit
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  STILL OK /workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg
+I2V submit 01_volocar_zero_deposit
+  job=312be202-52f9-4a37-977f-3a6841dacf1a est=$0.3080 attempt=1
+STILL 02_volocar_monthly
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  STILL OK /workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg
+I2V submit 02_volocar_monthly
+  job=93c6449c-4e21-48cf-904c-07b449b9818c est=$0.3080 attempt=1
+STILL 03_volocar_airport_delivery
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  STILL OK /workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_source.jpg
+I2V submit 03_volocar_airport_delivery
+  job=24e3e56b-53e2-47b6-90f2-b6ac6a8250ea est=$0.3080 attempt=1
+STILL 04_volocar_supercars
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  STILL OK /workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_source.jpg
+I2V submit 04_volocar_supercars
+  job=4dd0d0b2-58dd-427a-a1ef-21d7385acefa est=$0.3080 attempt=1
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  VIDEO OK /workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  VIDEO OK /workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_5s.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  VIDEO OK /workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_5s.mp4
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+ffprobe: /exec-daemon/tmux-root/lib/libncursesw.so.6: no version information available (required by /lib/x86_64-linux-gnu/libcaca.so.0)
+  VIDEO OK /workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_5s.mp4
+DONE image=$0.8400 video=$1.2320 total=$2.0720 manifest=/workspace/public/assets/volocar/product-motion/generation_manifest.json
