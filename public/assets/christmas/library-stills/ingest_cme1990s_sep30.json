@@ -1,0 +1,298 @@
+{
+  "status": "INGESTED",
+  "batch_id": "christmas-memories-europe-1990s-20260930",
+  "campaign": "christmas_memories_europe_1990s",
+  "count": 10,
+  "assets": [
+    {
+      "id": "photo-cme1990s-01-london",
+      "title": "Photo \u00b7 London Christmas 1994",
+      "description": "Magical snowy Christmas evening in central London in 1994. Street-level cinematic view. Classic black London taxi passing slowly through a wet snowy street. Warm Christmas lights suspended above the street. Beautiful decorated shop windows.",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "london_1994"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_london_christmas_1994.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/01_london_christmas_1994_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "b292115d-c65b-488e-b3a4-5af8c67f1717",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:23.891608+00:00"
+    },
+    {
+      "id": "photo-cme1990s-02-paris-cafe",
+      "title": "Photo \u00b7 Paris Christmas caf\u00e9 1996",
+      "description": "Paris, December 1996. Exterior of an intimate Parisian caf\u00e9 on a snowy Christmas evening. Warm amber light through windows, small decorated Christmas tree inside, traditional red caf\u00e9 awning. Fresh snow on tables and pavement. A couple near",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "paris_cafe_1996"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_paris_cafe_christmas_1996.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/02_paris_cafe_christmas_1996_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "9582bd22-f4ec-4ec4-8738-79e2c7ba635d",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:23.970672+00:00"
+    },
+    {
+      "id": "photo-cme1990s-03-alpine-chalet",
+      "title": "Photo \u00b7 Alpine Christmas chalet 1992",
+      "description": "Swiss/Austrian Alps, Christmas Eve 1992. Beautiful wooden chalet in deep fresh snow. Warm yellow light from windows, large Christmas tree visible through a window. Smoke gently from chimney. Heavy snow-covered pines. Mountains through soft ",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "alpine_chalet_1992"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_alpine_chalet_1992.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/03_alpine_chalet_1992_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "4c307646-e6ba-4158-80f9-145df6ca36e1",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.049061+00:00"
+    },
+    {
+      "id": "photo-cme1990s-04-christmas-morning",
+      "title": "Photo \u00b7 Christmas morning 1998",
+      "description": "European family home, Christmas morning 1998. View from slightly behind the Christmas tree toward a cozy living room. Natural Christmas tree, warm incandescent lights, wrapped presents, fireplace, soft winter daylight through window. Child ",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "christmas_morning_1998"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_christmas_morning_1998.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/04_christmas_morning_1998_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "9bbc7602-1fb0-4cc8-8d4e-36e9b3ae0829",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.130399+00:00"
+    },
+    {
+      "id": "photo-cme1990s-05-christmas-train",
+      "title": "Photo \u00b7 Christmas train 1993",
+      "description": "European railway station during Christmas 1993. Old passenger train at a snowy platform at blue hour. Warm yellow light from carriage windows. Families with suitcases and wrapped gifts. Steam and cold breath in air. Christmas decorations at",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "christmas_train_1993"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_christmas_train_1993.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/05_christmas_train_1993_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "d05f89df-d3dc-42f3-89e8-7dcec6aa9404",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.211188+00:00"
+    },
+    {
+      "id": "photo-cme1990s-06-christmas-market",
+      "title": "Photo \u00b7 Christmas market 1995",
+      "description": "Traditional European Christmas market, December 1995. Narrow historic town square, wooden stalls, warm incandescent Christmas lights, snow, people in authentic 1990s winter clothing, hot drinks, roasted chestnuts, handmade decorations, larg",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "christmas_market_1995"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_christmas_market_1995.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/06_christmas_market_1995_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "0e982ea3-d81b-407e-bcbd-8d104e2aa596",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.290433+00:00"
+    },
+    {
+      "id": "photo-cme1990s-07-nyc-apartment",
+      "title": "Photo \u00b7 NYC Christmas apartment 1997",
+      "description": "Manhattan apartment, Christmas Eve 1997. Through a slightly frosted window into an extremely cozy apartment. Natural Christmas tree, warm lamps, old CRT television subtly visible, wrapped gifts, snow falling outside over Manhattan buildings",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "nyc_apartment_1997"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_nyc_apartment_1997.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/07_nyc_apartment_1997_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "1f0e210a-1cfa-4335-aa9b-ac8ea6fb5fef",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.371221+00:00"
+    },
+    {
+      "id": "photo-cme1990s-08-toy-shop",
+      "title": "Photo \u00b7 Christmas toy shop 1994",
+      "description": "Beautiful European toy shop window at Christmas 1994, view from outside. Snow-covered pavement, warm golden interior, wooden toys, teddy bears, model train, wrapped presents behind glass, garlands and incandescent lights. Child in winter cl",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "toy_shop_1994"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_toy_shop_1994.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/08_toy_shop_1994_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "04ca0c38-6010-4902-9a84-48b5791e16de",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.451466+00:00"
+    },
+    {
+      "id": "photo-cme1990s-09-road-trip",
+      "title": "Photo \u00b7 Christmas road trip 1996",
+      "description": "Snowy European countryside at dusk, Christmas 1996. Classic 1990s European family car driving toward a small illuminated village. Christmas tree tied securely to roof. Snow-covered road and pine forest, warm village lights in distance, soft",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "road_trip_1996"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_road_trip_1996.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/09_road_trip_1996_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "5da139a4-0e92-4feb-b34d-936817b0e40a",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.533929+00:00"
+    },
+    {
+      "id": "photo-cme1990s-10-eve-window",
+      "title": "Photo \u00b7 Christmas Eve window 1995",
+      "description": "Intimate European Christmas Eve 1995. Outside a snow-covered house looking through a large window. Inside: family around a decorated Christmas tree, warm incandescent lighting, fireplace, wrapped gifts, dinner table partially visible. Outsi",
+      "tags": [
+        "christmas",
+        "reel-source",
+        "cinematic",
+        "viral",
+        "recognizable-scene",
+        "AI-generated",
+        "europe-1990s",
+        "nostalgia",
+        "christmas_memories_europe_1990s",
+        "christmas_eve_window_1995"
+      ],
+      "original": "public/assets/christmas/library-stills/cme1990s_christmas_eve_window_1995.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/10_christmas_eve_window_1995_1080x1920.png",
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "campaign": "christmas_memories_europe_1990s",
+      "batch_id": "christmas-memories-europe-1990s-20260930",
+      "image_model": "recraft/v4.1/pro/text-to-image",
+      "image_job_id": "0dbd6a46-eef2-4821-8da8-79e76de83772",
+      "qc_status": "PASS",
+      "created_at": "2026-09-30T18:00:24.609412+00:00"
+    }
+  ]
+}
