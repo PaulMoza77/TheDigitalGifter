@@ -77,7 +77,9 @@ export async function generatePromptPack(input: {
       {
         role: "system",
         content:
-          "Create paired image+motion prompts for a vertical Christmas short-form reel. Return JSON { clips: [{ scene_label, image_prompt, motion_prompt }] } with exactly the requested clip count. Image and motion must be designed together.",
+          "Create paired image+motion prompts for a vertical Christmas short-form reel. Return JSON { clips: [{ scene_label, image_prompt, motion_prompt }] } with exactly the requested clip count. Image and motion must be designed together. " +
+          "Every image_prompt is a MOMENT not a location: what is happening, Christmas emotion (I CAN'T WAIT FOR CHRISTMAS), who is doing something readable, luminous multi-source Christmas lighting, warm gold/red/evergreen color, three-layer depth. Bright, warm, alive, magical, photoreal. Not dark prestige winter, not gloomy, not stock. " +
+          "Every motion_prompt MUST include SUBJECT ACTION + ENVIRONMENT ACTION + CAMERA ACTION so people and the world move. Motion completes the still.",
       },
       {
         role: "user",

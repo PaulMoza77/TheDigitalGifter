@@ -46,4 +46,16 @@ describe("visual standard prompts", () => {
     expect(buildImagePrompt("Snowy cabin at dusk")).toContain("9:16");
     expect(buildMotionPrompt("Slow push-in")).toContain("No morphing");
   });
+
+  it("encodes bright alive Christmas factory art direction", () => {
+    const image = buildImagePrompt("Two children rush toward presents");
+    expect(image).toContain("I CAN'T WAIT FOR CHRISTMAS");
+    expect(image).toContain("luminous");
+    expect(image).toContain("warm gold");
+    expect(image).toContain("MOMENT");
+    const motion = buildMotionPrompt("Child opens a present");
+    expect(motion).toContain("SUBJECT ACTION");
+    expect(motion).toContain("ENVIRONMENT ACTION");
+    expect(motion).toContain("Complete the moment");
+  });
 });

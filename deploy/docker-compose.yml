@@ -58,6 +58,7 @@ services:
       YOUTUBE_LIVE_MAX_CONCURRENT: ${YOUTUBE_LIVE_MAX_CONCURRENT:-1}
     volumes:
       - /opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory
+      - /opt/mozas/projects/thedigitalgifter/media/christmas-factory-200:/app/dist/assets/christmas/christmas-factory-200
       - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
     expose:
       - "8080"
