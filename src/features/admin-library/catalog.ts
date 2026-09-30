@@ -14,6 +14,7 @@ import {
   VOLOCAR_DUBAI_MOMENTS_PHOTOS,
   VOLOCAR_DUBAI_MOMENTS_REEL,
 } from "./volocarDubaiMomentsCatalog";
+import { FLAVOURS_BISTRO_VIDEOS } from "./flavoursBistroCatalog";
 
 export type LibraryCategoryId =
   | "clip_factory"
@@ -23,7 +24,8 @@ export type LibraryCategoryId =
   | "pet_dog"
   | "pet_cat"
   | "pet_other"
-  | "volocar_dubai_moments";
+  | "volocar_dubai_moments"
+  | "flavours_bistro";
 
 export type LibraryKind = "reel" | "short" | "photo" | "long_form";
 
@@ -105,6 +107,12 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "volocar_dubai_moments",
     label: "VoloCar · Dubai Moments",
     description: "16:9 experience-first stills for VoloCar Dubai Moments (masters, download originals).",
+  },
+  {
+    id: "flavours_bistro",
+    label: "Flavours Bistro",
+    description:
+      "Premium food Meta ad masters for Flavours Bistro — faithful product I2V, silent exports for Stories and Feed crops.",
   },
 ];
 
@@ -3835,6 +3843,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...VOLOCAR_DUBAI_MOMENTS_PHOTOS,
   ...VOLOCAR_DUBAI_MOMENTS_CLIPS,
   VOLOCAR_DUBAI_MOMENTS_REEL,
+  ...FLAVOURS_BISTRO_VIDEOS,
 ];
 
 /**

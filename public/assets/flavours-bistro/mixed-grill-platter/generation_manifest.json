@@ -1,0 +1,119 @@
+{
+  "concept": "Flavours Bistro \u00b7 The Impossible Platter \u00b7 Meta ad master",
+  "client": "Flavours Bistro",
+  "created_at": "2026-09-30T20:36:29.828778+00:00",
+  "provider": "higgsfield",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "duration_seconds": 8,
+  "sound": "off",
+  "source_original": "public/assets/flavours-bistro/mixed-grill-platter/flavours_bistro_mixed_grill_platter_original.jpg",
+  "i2v_still": "source/flavours-bistro/mixed-grill-platter/flavours_bistro_mixed_grill_platter_1080x1920.png",
+  "i2v_still_crop": {
+    "source_wh": [
+      1600,
+      1600
+    ],
+    "crop": [
+      900,
+      1600,
+      350,
+      0
+    ],
+    "output_wh": [
+      1080,
+      1920
+    ]
+  },
+  "prompt": "Photoreal cinematic vertical 9:16 premium food commercial. This exact photograph of a real mixed grill platter on a FLAT SHALLOW circular brushed stainless steel SERVING PLATTER with a wide low rim is the ground truth \u2014 the container must NEVER become a deep bowl, mixing bowl, or high-walled pot. Preserve every meat type, mititei roll, thin sausage, chicken piece, fanned pickle garnish, red pepper slice, and tray geometry exactly; pickles must stay pickles and never morph into meat; do not redesign, duplicate, remove, or morph food. Eight seconds, one continuous impossible camera take, smooth stabilized motion only, shallow depth of field, 100mm macro food photography look, warm directional studio-restaurant lighting, subtle steam and heat shimmer, natural oil highlights, high dynamic range, not oversaturated, not plastic, not AI glossy meat. 0.0\u20131.5s: extreme macro across charred grilled meat surfaces, fast smooth glide, abstract grilled landscape. 1.5\u20133.0s: rapid smooth pull back and slightly up to reveal the full mixed grill platter at ~40\u00b0 hero angle; background transitions to clean dark neutral premium studio while food stays photoreal and identical. 3.0\u20135.5s: smooth orbital move ~140\u00b0 around the platter; at the peak only 2\u20134 small existing pepper pieces or tiny crumbs lift slightly above the platter then settle \u2014 restrained phantom-camera gravity moment, not explosion, not VFX particles; main meats stay on tray. 5.5\u20137.0s: floating bits return to original positions; orbit slows; gentle steam. 7.0\u20138.0s: calm premium hero shot of entire centered platter on the SAME flat tray, subtle push-in, ALL food resting on the platter with ZERO floating pieces, crop-safe center composition. No text, logos, captions, typography, watermarks, hands, people, cutlery, flames, smoke clouds, or restaurant interior. No scene cuts, no handheld shake, no aggressive zoom, no melting or morphing geometry.",
+  "video": {
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "job_id": "7207e1e1-0e31-4845-9978-f4f33d7bd6f8",
+    "source_image": "source/flavours-bistro/mixed-grill-platter/flavours_bistro_mixed_grill_platter_1080x1920.png",
+    "hf_upload_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/71637664-a7fe-4501-a1f1-accd095a65ad.png",
+    "raw_path": "generated/flavours-bistro/mixed-grill-platter/flavours_bistro_impossible_platter_hf_raw.mp4",
+    "generation_cost_usd": 0.493,
+    "credits": "7.885",
+    "raw_probe": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 8.041667,
+      "codec": "h264",
+      "fps": 24.0,
+      "size": 22845749,
+      "bitrate": 22727376
+    },
+    "master_path": "public/assets/flavours-bistro/mixed-grill-platter/final/flavours_bistro_impossible_platter_master_9x16_1080x1920.mp4",
+    "master_probe": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 8.041667,
+      "codec": "h264",
+      "fps": 24.0,
+      "size": 11206007,
+      "bitrate": 11147944
+    }
+  },
+  "deliverables": {
+    "hf_raw": "generated/flavours-bistro/mixed-grill-platter/flavours_bistro_impossible_platter_hf_raw.mp4",
+    "master_9x16": "public/assets/flavours-bistro/mixed-grill-platter/final/flavours_bistro_impossible_platter_master_9x16_1080x1920.mp4",
+    "meta_4x5": "public/assets/flavours-bistro/mixed-grill-platter/final/flavours_bistro_impossible_platter_meta_4x5_1080x1350.mp4",
+    "meta_1x1": "public/assets/flavours-bistro/mixed-grill-platter/final/flavours_bistro_impossible_platter_meta_1x1_1080x1080.mp4",
+    "poster": "public/assets/flavours-bistro/mixed-grill-platter/posters/flavours_bistro_impossible_platter_hero.jpg"
+  },
+  "probes": {
+    "master": {
+      "width": 1080,
+      "height": 1920,
+      "duration": 8.041667,
+      "codec": "h264",
+      "fps": 24.0,
+      "size": 11206007,
+      "bitrate": 11147944
+    },
+    "meta_4x5": {
+      "width": 1080,
+      "height": 1350,
+      "duration": 8.041667,
+      "codec": "h264",
+      "fps": 24.0,
+      "size": 9100251,
+      "bitrate": 9053099
+    },
+    "meta_1x1": {
+      "width": 1080,
+      "height": 1080,
+      "duration": 8.041667,
+      "codec": "h264",
+      "fps": 24.0,
+      "size": 8060865,
+      "bitrate": 8019098
+    }
+  },
+  "qc_frames": [
+    "public/assets/flavours-bistro/mixed-grill-platter/qc/flavours_bistro_impossible_platter_master_9x16_1080x1920_t0_macro.jpg",
+    "public/assets/flavours-bistro/mixed-grill-platter/qc/flavours_bistro_impossible_platter_master_9x16_1080x1920_t1_reveal.jpg",
+    "public/assets/flavours-bistro/mixed-grill-platter/qc/flavours_bistro_impossible_platter_master_9x16_1080x1920_t2_orbit.jpg",
+    "public/assets/flavours-bistro/mixed-grill-platter/qc/flavours_bistro_impossible_platter_master_9x16_1080x1920_t3_settle.jpg",
+    "public/assets/flavours-bistro/mixed-grill-platter/qc/flavours_bistro_impossible_platter_master_9x16_1080x1920_t4_hero.jpg"
+  ],
+  "quality_gate": {
+    "automated": "PASS",
+    "notes": [],
+    "human_visual": "FAIL",
+    "overall": "FAIL",
+    "failure_reasons": [
+      "Serving tray morphs from flat shallow platter into a deep bowl during camera reveal",
+      "Pickle garnishes morph into meat/sausages mid-shot",
+      "Levitating red pepper pieces remain unnaturally suspended in the hero frame",
+      "Final hero does not match source platter identity closely enough for product-safe Meta delivery"
+    ],
+    "regeneration": {
+      "attempt_02_job_id": "e73e7ede-cad5-4ab9-9c54-7f03725e2918",
+      "attempt_02_status": "failed",
+      "attempt_02_error": "Higgsfield credit balance too low — regeneration blocked"
+    },
+    "accepted_generation": "attempt_01_only_for_archive_not_for_paid_media"
+  },
+  "total_usd": 0.493,
+  "job_id": "7207e1e1-0e31-4845-9978-f4f33d7bd6f8"
+}
