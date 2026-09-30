@@ -9,7 +9,11 @@ import {
   CHRISTMAS_MEMORIES_EUROPE_1990S_REELS,
   CHRISTMAS_MEMORIES_EUROPE_1990S_SHORTS,
 } from "./christmasMemoriesEurope1990sCatalog";
-import { VOLOCAR_DUBAI_MOMENTS_PHOTOS } from "./volocarDubaiMomentsCatalog";
+import {
+  VOLOCAR_DUBAI_MOMENTS_CLIPS,
+  VOLOCAR_DUBAI_MOMENTS_PHOTOS,
+  VOLOCAR_DUBAI_MOMENTS_REEL,
+} from "./volocarDubaiMomentsCatalog";
 import { VOLOCAR_PRODUCT_MOTION_LIBRARY } from "./volocarProductMotionCatalog";
 
 export type LibraryCategoryId =
@@ -3836,6 +3840,8 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...petClips("cat", "pet_cat"),
   ...petClips("other", "pet_other"),
   ...VOLOCAR_DUBAI_MOMENTS_PHOTOS,
+  ...VOLOCAR_DUBAI_MOMENTS_CLIPS,
+  VOLOCAR_DUBAI_MOMENTS_REEL,
   ...VOLOCAR_PRODUCT_MOTION_LIBRARY,
 ];
 

@@ -1,0 +1,23 @@
+{
+  "id": "volocar_dubai_moments_reel_v1_master",
+  "created_at": "2026-09-30T19:52:48.167053+00:00",
+  "path": "/workspace/public/assets/volocar/dubai-moments/final/volocar_dubai_moments_reel_v1_master.mp4",
+  "poster": "/workspace/public/assets/volocar/dubai-moments/posters/volocar_dubai_moments_reel_v1_master.jpg",
+  "probe": {
+    "width": 1920,
+    "height": 1080,
+    "duration": 21.6,
+    "size": 22733395,
+    "codec": "h264"
+  },
+  "clips_used": [
+    "01_volocar_dubai_moments_supercar_night_5s",
+    "02_volocar_dubai_moments_girls_night_5s",
+    "03_volocar_dubai_moments_the_arrival_5s",
+    "04_volocar_dubai_moments_morning_escape_5s",
+    "05_volocar_dubai_moments_marina_night_5s",
+    "06_volocar_dubai_moments_arrival_dubai_5s"
+  ],
+  "method": "ffmpeg_trim_concat_hardcut_16x9_silent",
+  "audio": "none"
+}
