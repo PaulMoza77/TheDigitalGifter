@@ -32,6 +32,7 @@ describe("admin video library", () => {
       "pet_dog",
       "pet_cat",
       "pet_other",
+      "volocar_dubai_moments",
     ]);
     expect(CHRISTMAS_LIBRARY_KINDS.map((item) => item.id)).toEqual(["reel", "short", "photo"]);
     for (const video of LIBRARY_VIDEOS) {
@@ -44,6 +45,10 @@ describe("admin video library", () => {
         expect(video.filename.endsWith(".mp4")).toBe(true);
       }
     }
+    const volocar = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_dubai_moments");
+    expect(volocar).toHaveLength(6);
+    expect(volocar.every((v) => v.kind === "photo")).toBe(true);
+    expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments")).toHaveLength(6);
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
     expect(
       searchLibraryVideos("Kling 1080p", "christmas_reels").some((video) => video.id === "reel-kling-1080p-final"),
@@ -290,6 +295,13 @@ describe("admin video library", () => {
       "public/assets/christmas/christmas-express/final/all-aboard-for-christmas-30s.mp4",
       "public/assets/christmas/christmas-express/generation_manifest.json",
       "public/assets/christmas/christmas-express/reels_manifest.json",
+      "public/assets/volocar/dubai-moments/masters/01_volocar_dubai_moments_supercar_night.jpg",
+      "public/assets/volocar/dubai-moments/masters/02_volocar_dubai_moments_girls_night.jpg",
+      "public/assets/volocar/dubai-moments/masters/03_volocar_dubai_moments_the_arrival.jpg",
+      "public/assets/volocar/dubai-moments/masters/04_volocar_dubai_moments_morning_escape.jpg",
+      "public/assets/volocar/dubai-moments/masters/05_volocar_dubai_moments_marina_night.jpg",
+      "public/assets/volocar/dubai-moments/masters/06_volocar_dubai_moments_arrival_dubai.jpg",
+      "public/assets/volocar/dubai-moments/generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
