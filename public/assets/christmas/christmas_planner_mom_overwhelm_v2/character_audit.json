@@ -1,0 +1,41 @@
+{
+  "inspected_visually": true,
+  "stills_regenerated": false,
+  "same_household": true,
+  "lauren": {
+    "consistent": true,
+    "notes": "Same woman in all 7 stills: messy honey bun, cream cardigan, gold necklace, same face. Close-up (ref_04) shows more flyaways and a slightly more exhausted expression — same person, tighter lens. Cookie stills (ref_06/07) add a red snowflake apron over the same cardigan. Do not regenerate."
+  },
+  "daughter": {
+    "consistent": true,
+    "notes": "Same girl, white red-snowflake pajamas, small braid. Teddy in table scenes; no teddy once hands are on cookies (wardrobe still matches)."
+  },
+  "son": {
+    "consistent": true,
+    "absent_in": ["ref_04_breaking", "ref_03_husband"],
+    "notes": "Same boy, dark green Christmas pajamas. Missing from husband dinner still and overwhelm close-up — coverage, not a different child. Nutcracker only in early table frames."
+  },
+  "husband": {
+    "consistent": true,
+    "absent_in": ["ref_04_breaking", "ref_05_phone", "ref_06_cookies"],
+    "notes": "Same man, grey henley, beard. Concerned in 01–03, smiling in 07. Joins baking only in ref_07."
+  },
+  "dog": {
+    "consistent": true,
+    "absent_in": ["ref_04_breaking"]
+  },
+  "environment": {
+    "consistent": true,
+    "notes": "Same kitchen/tree/pendants/mug language. Table resets from wrapping chaos to baking — story, not a new house. ref_07 chalkboard ‘Cookies Make Everything Better’ is already in the still."
+  },
+  "expression_risks": [
+    "ref_05 phone still is already a small smile with happy kids — too bright if used as the first exhausted glance. Use only after the notification, as curious, and do not animate a bigger grin.",
+    "ref_06/07 are fully happy. They belong after the table ask, not during it."
+  ],
+  "voices": {
+    "auditioned": false,
+    "validated": false,
+    "required_before_video": true,
+    "note": "OpenAI labels nova/ash/coral/onyx are not proof they sound like this family. Child voices especially must be auditioned after audio approval. Do not treat them as realistic yet."
+  }
+}

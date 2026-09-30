@@ -1,0 +1,44 @@
+{
+  "id": "christmas_planner_mom_overwhelm_v2",
+  "same_face": true,
+  "do_not_regenerate_stills": true,
+  "lock": "Photoreal UGC. Keep the same four people, same dog, same Christmas kitchen. Do not redesign faces, ages, hair, clothes, or the house.",
+  "lauren": {
+    "name": "Lauren",
+    "age": "about 32–38",
+    "face": "warm fair skin, light freckles, brown-green eyes, tired but human",
+    "hair": "messy honey-brown bun, loose wisps, center part visible in close-up",
+    "wardrobe": "cream oversized knit cardigan, white tank, delicate gold necklace, small gold rings",
+    "performance": "warm, tired, conversational, understated; no crying; no sales energy"
+  },
+  "daughter": {
+    "name": "Daughter",
+    "age": "about 7–8",
+    "hair": "long wavy light-brown hair, small side braid / pigtail",
+    "wardrobe": "white pajamas with red snowflakes, brown teddy bear",
+    "voice_note": "natural child, not cartoon, not commercial"
+  },
+  "son": {
+    "name": "Son",
+    "age": "about 5–6",
+    "hair": "short brown hair",
+    "wardrobe": "dark green Christmas pajamas, sometimes a nutcracker toy",
+    "voice_note": "natural child, overlapping, messy"
+  },
+  "husband": {
+    "name": "Husband",
+    "age": "about 30–42",
+    "face": "dark hair, short beard",
+    "wardrobe": "dark grey long-sleeve henley, casual",
+    "performance": "in the room, not a presenter; prefer off-camera or background"
+  },
+  "dog": {
+    "name": "Dog",
+    "breed": "golden retriever"
+  },
+  "environment": {
+    "place": "same open Christmas kitchen / dining table",
+    "lighting": "warm practicals, pendant lamps, candle, tree lights",
+    "props": "Christmas-tree mug, wrapping rolls, ornaments bowl, cookies, gifts, laptop, phone face-down until shot 5"
+  }
+}

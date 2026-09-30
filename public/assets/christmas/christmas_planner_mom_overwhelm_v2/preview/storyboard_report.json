@@ -1,0 +1,63 @@
+{
+  "kind": "STATIC_PREVIEW_NO_AUDIO",
+  "file": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/preview/storyboard_static_preview.mp4",
+  "duration_s": 40.92,
+  "planned_s": 40.0,
+  "beats": [
+    {
+      "src": "ref_01_chaos_family_table.jpg",
+      "dur": 4.5,
+      "label": "01 CHAOS  0.0\u20134.5s"
+    },
+    {
+      "src": "ref_02_pressure_lists_son.jpg",
+      "dur": 4.5,
+      "label": "02 PRESSURE  4.5\u20139.0s"
+    },
+    {
+      "src": "ref_03_husband_dinner.jpg",
+      "dur": 4.5,
+      "label": "03 HUSBAND  9.0\u201313.5s"
+    },
+    {
+      "src": "ref_04_breaking_point_closeup.jpg",
+      "dur": 5.5,
+      "label": "04 BREAKING  13.5\u201319.0s"
+    },
+    {
+      "src": "ref_05_friend_message_phone.jpg",
+      "dur": 4.5,
+      "label": "05 MESSAGE  19.0\u201323.5s"
+    },
+    {
+      "src": "UI:today.png",
+      "dur": 2.5,
+      "label": "06 PLANNER  23.5\u201326.0s"
+    },
+    {
+      "src": "UI:gifts.png",
+      "dur": 2.5,
+      "label": "06 PLANNER  26.0\u201328.5s"
+    },
+    {
+      "src": "UI:budget.png",
+      "dur": 2.0,
+      "label": "06 PLANNER  28.5\u201330.5s"
+    },
+    {
+      "src": "ref_03_husband_dinner.jpg",
+      "dur": 2.5,
+      "label": "07 ASK  30.5\u201333.0s"
+    },
+    {
+      "src": "ref_06_cookies_lauren_kids.jpg",
+      "dur": 4.5,
+      "label": "07 PAYOFF  33.0\u201337.5s"
+    },
+    {
+      "src": "END",
+      "dur": 2.5,
+      "label": "END  37.5\u201340.0s"
+    }
+  ]
+}

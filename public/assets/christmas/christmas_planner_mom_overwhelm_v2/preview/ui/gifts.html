@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=390, initial-scale=1"/>
+<title>Gifts</title>
+<link rel="stylesheet" href="/src/features/christmas/planner/plannerApp.css"/>
+<style>
+  html,body { margin:0; background:#f6efe4; }
+  .tdg-planner-side { display:none !important; }
+  .capture-banner {
+    position: sticky; top:0; z-index:80;
+    background:#7a2430; color:#f7f0e4;
+    font: 600 11px/1.3 "Source Sans 3", sans-serif;
+    letter-spacing:.04em; text-transform:uppercase;
+    padding:6px 10px;
+  }
+  .tdg-planner-check {
+    width:22px; height:22px; border-radius:6px;
+    border:1.5px solid #143328; background:#fffdf8;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .tdg-planner-check.is-on { background:#143328; color:#f7f0e4; }
+</style>
+</head>
+<body>
+<div class="tdg-planner-app">
+<p class="capture-banner">Static source render · fictional data · not a signed-in session</p>
+<div class="tdg-planner-frame">
+<header class="tdg-planner-header">
+  <a class="tdg-planner-logo" href="#"><span>The Digital Gifter</span></a>
+  <div class="tdg-planner-header-meta"><span class="tdg-planner-ready-mini">38% ready</span></div>
+</header>
+<main class="tdg-planner-main">
+
+<div class="tdg-planner-page">
+  <header class="tdg-planner-page-head">
+    <h1>Gifts</h1>
+    <p>Plan everyone you’re buying for - privately, in one place.</p>
+  </header>
+  <div class="tdg-planner-summary">
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">People</span><strong>3</strong><span>on your list</span></div>
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">Ideas</span><strong>1</strong><span>still deciding</span></div>
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">Ordered</span><strong>1</strong><span>in motion</span></div>
+  </div>
+  <div class="tdg-planner-people">
+    <button type="button" class="tdg-planner-person on">
+      <strong>Emma</strong>
+      <div class="tdg-planner-muted">Daughter</div>
+      <div class="tdg-planner-gift-meta"><span>1 gift</span><span>1 in motion</span></div>
+    </button>
+    <button type="button" class="tdg-planner-person">
+      <strong>Noah</strong>
+      <div class="tdg-planner-muted">Son</div>
+      <div class="tdg-planner-gift-meta"><span>1 gift</span><span>still deciding</span></div>
+    </button>
+  </div>
+  <div class="tdg-planner-panel">
+    <h2>Emma</h2>
+    <p class="tdg-planner-muted">Daughter</p>
+    <div class="tdg-planner-task is-done">
+      <button class="tdg-planner-check is-on" type="button">✓</button>
+      <div class="tdg-planner-task-body">
+        <div class="tdg-planner-task-title">Art set</div>
+        <div class="tdg-planner-task-meta">Ordered</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<nav class="tdg-planner-nav" aria-label="Christmas planner">
+  <a class="" href="#today"><span>Today</span></a>
+  <a class="active" href="#gifts"><span>Gifts</span></a>
+  <a class="" href="#meals"><span>Meals</span></a>
+  <a class="" href="#more"><span>More</span></a>
+</nav>
+
+</div>
+</div>
+</body>
+</html>
