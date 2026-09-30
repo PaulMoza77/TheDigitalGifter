@@ -1,0 +1,164 @@
+{
+  "concepts": [
+    {
+      "id": "01_volocar_zero_deposit",
+      "sequence": 1,
+      "name": "Zero Deposit",
+      "collection": "product_motion",
+      "project": "volocar",
+      "source": {
+        "step": "source",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "d429ba06-b92b-4935-aeb7-bc081e025fb7",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg",
+        "generation_cost_usd": 0.21,
+        "width": 2688,
+        "height": 1536,
+        "attempt": 1,
+        "created_at": "2026-09-30T20:14:13.613893+00:00"
+      },
+      "cost_usd": 0.518,
+      "video": {
+        "step": "video",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "312be202-52f9-4a37-977f-3a6841dacf1a",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4",
+        "poster": "/workspace/public/assets/volocar/product-motion/posters/01_volocar_zero_deposit_5s.jpg",
+        "generation_cost_usd": 0.308,
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "codec": "h264",
+          "size": 5059223
+        },
+        "attempt": 1,
+        "created_at": "2026-09-30T20:16:33.745105+00:00"
+      }
+    },
+    {
+      "id": "02_volocar_monthly",
+      "sequence": 2,
+      "name": "Monthly",
+      "collection": "product_motion",
+      "project": "volocar",
+      "source": {
+        "step": "source",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "5d540dca-1f24-476e-aaf3-7d05c77e6d48",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg",
+        "generation_cost_usd": 0.21,
+        "width": 2688,
+        "height": 1536,
+        "attempt": 1,
+        "created_at": "2026-09-30T20:14:32.938870+00:00"
+      },
+      "cost_usd": 0.518,
+      "video": {
+        "step": "video",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "93c6449c-4e21-48cf-904c-07b449b9818c",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_5s.mp4",
+        "poster": "/workspace/public/assets/volocar/product-motion/posters/02_volocar_monthly_5s.jpg",
+        "generation_cost_usd": 0.308,
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "codec": "h264",
+          "size": 6831511
+        },
+        "attempt": 1,
+        "created_at": "2026-09-30T20:16:54.752270+00:00"
+      }
+    },
+    {
+      "id": "03_volocar_airport_delivery",
+      "sequence": 3,
+      "name": "Airport Delivery",
+      "collection": "product_motion",
+      "project": "volocar",
+      "source": {
+        "step": "source",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "ba6884cf-2238-4029-bf35-37ef0e575cea",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_source.jpg",
+        "generation_cost_usd": 0.21,
+        "width": 2688,
+        "height": 1536,
+        "attempt": 1,
+        "created_at": "2026-09-30T20:14:52.463614+00:00"
+      },
+      "cost_usd": 0.518,
+      "video": {
+        "step": "video",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "24e3e56b-53e2-47b6-90f2-b6ac6a8250ea",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_5s.mp4",
+        "poster": "/workspace/public/assets/volocar/product-motion/posters/03_volocar_airport_delivery_5s.jpg",
+        "generation_cost_usd": 0.308,
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "codec": "h264",
+          "size": 14635038
+        },
+        "attempt": 1,
+        "created_at": "2026-09-30T20:17:26.608682+00:00"
+      }
+    },
+    {
+      "id": "04_volocar_supercars",
+      "sequence": 4,
+      "name": "Supercars",
+      "collection": "product_motion",
+      "project": "volocar",
+      "source": {
+        "step": "source",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "28a79ff5-f735-4a3b-a457-1b230dc270c4",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_source.jpg",
+        "generation_cost_usd": 0.21,
+        "width": 2688,
+        "height": 1536,
+        "attempt": 1,
+        "created_at": "2026-09-30T20:15:11.986354+00:00"
+      },
+      "cost_usd": 0.518,
+      "video": {
+        "step": "video",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "4dd0d0b2-58dd-427a-a1ef-21d7385acefa",
+        "path": "/workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_5s.mp4",
+        "poster": "/workspace/public/assets/volocar/product-motion/posters/04_volocar_supercars_5s.jpg",
+        "generation_cost_usd": 0.308,
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "codec": "h264",
+          "size": 12869433
+        },
+        "attempt": 1,
+        "created_at": "2026-09-30T20:17:36.474550+00:00"
+      }
+    }
+  ],
+  "provider": "higgsfield",
+  "batch": "volocar_product_motion",
+  "updated_at": "2026-09-30T20:17:36.475847+00:00",
+  "total_image_usd": 0.84,
+  "total_video_usd": 1.232,
+  "total_usd": 2.072,
+  "image_retries": 0,
+  "video_retries": 0
+}
