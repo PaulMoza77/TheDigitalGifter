@@ -90,6 +90,7 @@ const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
+const ChristmasFactoryReviewPage = lazy(() => import("@/pages/admin/ChristmasFactoryReviewPage"));
 const AdminClipFactoryPage = lazy(() => import("@/pages/admin/AdminClipFactoryPage"));
 const AdminLongFormStudioPage = lazy(() => import("@/pages/admin/AdminLongFormStudioPage"));
 const AdminStudioPage = lazy(() => import("@/pages/admin/AdminStudioPage"));
@@ -647,7 +648,10 @@ function AppInner() {
       <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
           {import.meta.env.DEV ? (
-            <Route path="/dev/library" element={<AdminLibraryPage />} />
+            <>
+              <Route path="/dev/library" element={<AdminLibraryPage />} />
+              <Route path="/dev/library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
+            </>
           ) : null}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -1048,6 +1052,7 @@ function AppInner() {
               element={<Navigate to="/admin/christmas/analytics" replace />}
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
+            <Route path="library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
             <Route path="long-form-studio" element={<AdminLongFormStudioPage />} />
             <Route path="music-library" element={<AdminMusicLibraryPage />} />

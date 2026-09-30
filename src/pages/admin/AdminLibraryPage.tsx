@@ -132,6 +132,7 @@ export default function AdminLibraryPage() {
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
             <div className="flex flex-wrap gap-2">
+              <LibraryNavBadge to="/admin/library/christmas-factory" icon={Library} label="Factory RAW" />
               <LibraryNavBadge to="/admin/music-library" icon={Music2} label="Music Library" />
               <LibraryNavBadge to="/admin/social-accounts" icon={Share2} label="Social Accounts" />
               <LibraryNavBadge to="/admin/publishing" icon={CalendarClock} label="Publishing" />

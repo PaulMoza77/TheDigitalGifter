@@ -15,6 +15,7 @@ import {
   VOLOCAR_DUBAI_MOMENTS_REEL,
 } from "./volocarDubaiMomentsCatalog";
 import { VOLOCAR_PRODUCT_MOTION_LIBRARY } from "./volocarProductMotionCatalog";
+import { CHRISTMAS_FACTORY_200_PHOTOS, CHRISTMAS_FACTORY_200_SHORTS } from "./christmasFactory200Catalog";
 
 export type LibraryCategoryId =
   | "clip_factory"
@@ -3843,6 +3844,8 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...VOLOCAR_DUBAI_MOMENTS_CLIPS,
   VOLOCAR_DUBAI_MOMENTS_REEL,
   ...VOLOCAR_PRODUCT_MOTION_LIBRARY,
+  ...CHRISTMAS_FACTORY_200_SHORTS,
+  ...CHRISTMAS_FACTORY_200_PHOTOS,
 ];
 
 /**
