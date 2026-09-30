@@ -9,6 +9,7 @@ import {
   CHRISTMAS_MEMORIES_EUROPE_1990S_REELS,
   CHRISTMAS_MEMORIES_EUROPE_1990S_SHORTS,
 } from "./christmasMemoriesEurope1990sCatalog";
+import { VOLOCAR_DUBAI_MOMENTS_PHOTOS } from "./volocarDubaiMomentsCatalog";
 
 export type LibraryCategoryId =
   | "clip_factory"
@@ -17,7 +18,8 @@ export type LibraryCategoryId =
   | "christmas_marketing"
   | "pet_dog"
   | "pet_cat"
-  | "pet_other";
+  | "pet_other"
+  | "volocar_dubai_moments";
 
 export type LibraryKind = "reel" | "short" | "photo" | "long_form";
 
@@ -94,6 +96,11 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
     id: "pet_other",
     label: "Pet · Other",
     description: "Public other-pet teaser clips.",
+  },
+  {
+    id: "volocar_dubai_moments",
+    label: "VoloCar · Dubai Moments",
+    description: "16:9 experience-first stills for VoloCar Dubai Moments (masters, download originals).",
   },
 ];
 
@@ -3821,6 +3828,7 @@ export const LIBRARY_VIDEOS: LibraryVideo[] = [
   ...petClips("dog", "pet_dog"),
   ...petClips("cat", "pet_cat"),
   ...petClips("other", "pet_other"),
+  ...VOLOCAR_DUBAI_MOMENTS_PHOTOS,
 ];
 
 /**
