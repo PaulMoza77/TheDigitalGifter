@@ -650,6 +650,8 @@ def phase_ingest(m: dict) -> None:
 
 
 def main() -> int:
+    for d in (BATCH, SOURCE, MASTERS, POSTERS, QC, STILLS):
+        d.mkdir(parents=True, exist_ok=True)
     phase = sys.argv[1] if len(sys.argv) > 1 else "all"
     m = load_manifest()
     if phase in {"estimate", "all"}:

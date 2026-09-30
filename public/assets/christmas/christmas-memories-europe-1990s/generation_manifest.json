@@ -1,0 +1,363 @@
+{
+  "batch_id": "christmas-memories-europe-1990s-20260930",
+  "campaign": "christmas_memories_europe_1990s",
+  "created_at": "2026-09-30T17:22:18.618294+00:00",
+  "models": {
+    "image": "recraft/v4.1/pro/text-to-image",
+    "video": "kling-video/v3.0/pro/image-to-video"
+  },
+  "costs": {
+    "image_usd": 3.15,
+    "video_usd": 3.0799999999999996,
+    "total_usd": 6.2299999999999995
+  },
+  "images": [
+    {
+      "id": "cme1990s_01_london",
+      "scene": "london_1994",
+      "title": "Photo \u00b7 London Christmas 1994",
+      "still": "public/assets/christmas/library-stills/cme1990s_london_christmas_1994.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/01_london_christmas_1994_1080x1920.png",
+      "image_prompt": "Magical snowy Christmas evening in central London in 1994. Street-level cinematic view. Classic black London taxi passing slowly through a wet snowy street. Warm Christmas lights suspended above the street. Beautiful decorated shop windows. People in elegant 1990s winter coats carrying wrapped Christmas gifts. Light snowfall against the dark evening. Wet pavement reflecting warm golden Christmas lights. Small atmospheric mist. Strong depth, realistic lighting. No modern cars, no smartphones. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "b292115d-c65b-488e-b3a4-5af8c67f1717",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a magical snowy Christmas evening in central London in 1994, featuring classic elements such as a black London taxi, warm Christmas lights, elegantly dressed people, and a nostalgic atmosphere. The lighting, reflections, and overall composition align well with the prompt's requirements, creating an authentic and cozy Christmas scene.",
+      "attempt": 2
+    },
+    {
+      "id": "cme1990s_02_paris_cafe",
+      "scene": "paris_cafe_1996",
+      "title": "Photo \u00b7 Paris Christmas caf\u00e9 1996",
+      "still": "public/assets/christmas/library-stills/cme1990s_paris_cafe_christmas_1996.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/02_paris_cafe_christmas_1996_1080x1920.png",
+      "image_prompt": "Paris, December 1996. Exterior of an intimate Parisian caf\u00e9 on a snowy Christmas evening. Warm amber light through windows, small decorated Christmas tree inside, traditional red caf\u00e9 awning. Fresh snow on tables and pavement. A couple near the window drinking hot chocolate with wrapped gifts beside them, steam from drinks. Elegant Paris street architecture, subtle Christmas lights. Rich shadows, natural warm highlights, extremely photorealistic 35mm. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "9582bd22-f4ec-4ec4-8738-79e2c7ba635d",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a cozy, nostalgic Christmas atmosphere typical of 1990s Europe. It features warm lighting, snow, and traditional elements like a decorated Christmas tree and caf\u00e9 awning. The human figures exhibit realistic anatomy and proportions, and the overall composition aligns with the prompt's requirements for a photorealistic cinematic photograph.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_03_alpine_chalet",
+      "scene": "alpine_chalet_1992",
+      "title": "Photo \u00b7 Alpine Christmas chalet 1992",
+      "still": "public/assets/christmas/library-stills/cme1990s_alpine_chalet_1992.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/03_alpine_chalet_1992_1080x1920.png",
+      "image_prompt": "Swiss/Austrian Alps, Christmas Eve 1992. Beautiful wooden chalet in deep fresh snow. Warm yellow light from windows, large Christmas tree visible through a window. Smoke gently from chimney. Heavy snow-covered pines. Mountains through soft evening snowfall. Old European station wagon parked outside with snow on roof. Silence, warmth, family, nostalgia. Ultra realistic cinematic wide vertical composition. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "4c307646-e6ba-4158-80f9-145df6ca36e1",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a nostalgic Christmas atmosphere in a 1990s European setting, featuring a wooden chalet, snow-covered landscape, and warm lighting. The composition aligns with the prompt's requirements, showcasing realistic elements without modern distractions.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_04_christmas_morning",
+      "scene": "christmas_morning_1998",
+      "title": "Photo \u00b7 Christmas morning 1998",
+      "still": "public/assets/christmas/library-stills/cme1990s_christmas_morning_1998.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/04_christmas_morning_1998_1080x1920.png",
+      "image_prompt": "European family home, Christmas morning 1998. View from slightly behind the Christmas tree toward a cozy living room. Natural Christmas tree, warm incandescent lights, wrapped presents, fireplace, soft winter daylight through window. Child in pajamas on the floor opening a present while parents watch naturally in background. Authentic late-1990s interior details. Premium cinematic composition, emotional unstaged family memory on film. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "9bbc7602-1fb0-4cc8-8d4e-36e9b3ae0829",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a warm, nostalgic Christmas atmosphere typical of the late 1990s. The composition is cinematic, with natural lighting and authentic details that evoke emotion. The human anatomy appears realistic, and the overall scene aligns well with the prompt's requirements.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_05_christmas_train",
+      "scene": "christmas_train_1993",
+      "title": "Photo \u00b7 Christmas train 1993",
+      "still": "public/assets/christmas/library-stills/cme1990s_christmas_train_1993.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/05_christmas_train_1993_1080x1920.png",
+      "image_prompt": "European railway station during Christmas 1993. Old passenger train at a snowy platform at blue hour. Warm yellow light from carriage windows. Families with suitcases and wrapped gifts. Steam and cold breath in air. Christmas decorations at the historic station. Snow falling gently. One person looking through a train window. Premium European Christmas movie atmosphere, not fantasy. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "d05f89df-d3dc-42f3-89e8-7dcec6aa9404",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a nostalgic Christmas atmosphere typical of the 1990s, featuring a snowy railway station, warm lighting, and appropriate human interactions. The details align well with the prompt, evoking a cozy and emotional feel without modern elements.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_06_christmas_market",
+      "scene": "christmas_market_1995",
+      "title": "Photo \u00b7 Christmas market 1995",
+      "still": "public/assets/christmas/library-stills/cme1990s_christmas_market_1995.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/06_christmas_market_1995_1080x1920.png",
+      "image_prompt": "Traditional European Christmas market, December 1995. Narrow historic town square, wooden stalls, warm incandescent Christmas lights, snow, people in authentic 1990s winter clothing, hot drinks, roasted chestnuts, handmade decorations, large natural Christmas tree in distance. Camera among the crowd, immersive warm/cold contrast, photoreal documentary cinematic photography. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "0e982ea3-d81b-407e-bcbd-8d104e2aa596",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a traditional European Christmas market atmosphere from the 1990s, featuring wooden stalls, warm lights, snow, and people in authentic winter clothing. The overall aesthetic is nostalgic and cozy, with a photorealistic quality that aligns with the prompt's requirements. The composition and details evoke an immersive Christmas atmosphere without modern elements.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_07_nyc_apartment",
+      "scene": "nyc_apartment_1997",
+      "title": "Photo \u00b7 NYC Christmas apartment 1997",
+      "still": "public/assets/christmas/library-stills/cme1990s_nyc_apartment_1997.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/07_nyc_apartment_1997_1080x1920.png",
+      "image_prompt": "Manhattan apartment, Christmas Eve 1997. Through a slightly frosted window into an extremely cozy apartment. Natural Christmas tree, warm lamps, old CRT television subtly visible, wrapped gifts, snow falling outside over Manhattan buildings. Person near window holding a warm drink. No modern electronics. Premium 1990s Christmas film atmosphere, intimate and emotional. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "1f0e210a-1cfa-4335-aa9b-ac8ea6fb5fef",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a cozy, nostalgic Christmas atmosphere typical of the 1990s, with appropriate elements such as a natural Christmas tree, warm lighting, and an old CRT television. The scene evokes intimacy and emotion, aligning well with the prompt's requirements. The human anatomy appears realistic, and the overall composition fits the desired aesthetic.",
+      "attempt": 4
+    },
+    {
+      "id": "cme1990s_08_toy_shop",
+      "scene": "toy_shop_1994",
+      "title": "Photo \u00b7 Christmas toy shop 1994",
+      "still": "public/assets/christmas/library-stills/cme1990s_toy_shop_1994.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/08_toy_shop_1994_1080x1920.png",
+      "image_prompt": "Beautiful European toy shop window at Christmas 1994, view from outside. Snow-covered pavement, warm golden interior, wooden toys, teddy bears, model train, wrapped presents behind glass, garlands and incandescent lights. Child in winter clothing outside looking through the glass. Natural reflection of Christmas street lights in window. Emotional nostalgic cinematic. Absolutely no readable text. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "04ca0c38-6010-4902-9a84-48b5791e16de",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a nostalgic Christmas atmosphere with a warm golden interior, wooden toys, and a child in winter clothing looking through the window. The snow-covered pavement and natural reflections enhance the emotional and cozy feel, aligning well with the prompt's requirements for a premium 1990s European Christmas scene.",
+      "attempt": 1
+    },
+    {
+      "id": "cme1990s_09_road_trip",
+      "scene": "road_trip_1996",
+      "title": "Photo \u00b7 Christmas road trip 1996",
+      "still": "public/assets/christmas/library-stills/cme1990s_road_trip_1996.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/09_road_trip_1996_1080x1920.png",
+      "image_prompt": "Snowy European countryside at dusk, Christmas 1996. Classic 1990s European family car driving toward a small illuminated village. Christmas tree tied securely to roof. Snow-covered road and pine forest, warm village lights in distance, soft snowfall, blue winter twilight. Low camera slightly behind the car. Driving home for Christmas. Premium automotive cinematography, realistic tire and road interaction. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "5da139a4-0e92-4feb-b34d-936817b0e40a",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a nostalgic Christmas atmosphere with a snowy European countryside setting, a classic car, and warm village lights in the distance. The composition aligns with the prompt's requirements, showcasing realistic details and a cozy, emotional feel characteristic of the 1990s.",
+      "attempt": 2
+    },
+    {
+      "id": "cme1990s_10_eve_window",
+      "scene": "christmas_eve_window_1995",
+      "title": "Photo \u00b7 Christmas Eve window 1995",
+      "still": "public/assets/christmas/library-stills/cme1990s_christmas_eve_window_1995.jpg",
+      "generation_still": "source/batch-christmas-memories-europe-1990s-sep30/10_christmas_eve_window_1995_1080x1920.png",
+      "image_prompt": "Intimate European Christmas Eve 1995. Outside a snow-covered house looking through a large window. Inside: family around a decorated Christmas tree, warm incandescent lighting, fireplace, wrapped gifts, dinner table partially visible. Outside: soft snow, dark blue winter night, snow on window ledge. Strong contrast cold exterior and warm interior. Hero frame believable as premium Christmas advertising photography. Vertical 9:16 photorealistic cinematic photograph, 35mm film character, natural grain. Premium 1990s European Christmas \u2014 warm, nostalgic, emotional, cozy, authentic. Realistic human anatomy, hands, faces, skin, proportions. Immediate Christmas atmosphere. NOT illustration, cartoon, AI plastic skin, excessive bokeh, orange grading, fake snow overload, readable text, logos, watermarks, modern 2026 objects, smartphones, modern LED billboards.",
+      "image_job_id": "0dbd6a46-eef2-4821-8da8-79e76de83772",
+      "image_cost_usd": 0.21,
+      "qc_verdict": "PASS",
+      "qc_reason": "The image captures a warm, nostalgic Christmas atmosphere typical of the 1990s, with a clear contrast between the cold exterior and warm interior. The composition, lighting, and details align well with the prompt's requirements for a premium Christmas advertising photograph.",
+      "attempt": 1
+    }
+  ],
+  "clips": [
+    {
+      "id": "cme1990s_01_london",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_01_london.mp4",
+      "source_still": "cme1990s_london_christmas_1994.jpg",
+      "video_job_id": "7e76cf24-b2f4-4b68-b203-3f9677c3692b",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 15187252
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 London Christmas 1994 night. This exact photograph comes alive for five seconds. Preserve the black taxi, wet snowy street, Christmas lights, shop windows, pedestrians, and reflections exactly as framed. The taxi rolls forward slowly with natural wheel rotation. Gentle snowfall with depth. Christmas lights twinkle subtly. Pedestrians make tiny natural steps \u2014 no face morphing. Very slow street-level dolly. Wet pavement reflections slide naturally. Architecture stays rigid. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_02_paris_cafe",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_02_paris_cafe.mp4",
+      "source_still": "cme1990s_paris_cafe_christmas_1996.jpg",
+      "video_job_id": "0a658601-58b0-458c-ae23-963f1e5110d7",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 11817677
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Paris caf\u00e9 Christmas 1996. This exact photograph comes alive for five seconds. Preserve the caf\u00e9 awning, windows, couple, steam, gifts, snow, and street exactly as framed. Steam rises naturally from hot drinks. Sparse snowfall. Warm interior light flickers subtly through glass. The couple makes tiny natural movements \u2014 sipping, no face morph. Very slow gentle push-in. Awning and architecture stay rigid. Reflections in windows stay stable. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_03_alpine_chalet",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_03_alpine_chalet.mp4",
+      "source_still": "cme1990s_alpine_chalet_1992.jpg",
+      "video_job_id": "d1c9fe14-cae2-410b-bf24-59733734e16f",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 12975270
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 alpine chalet Christmas Eve 1992. This exact photograph comes alive for five seconds. Preserve the chalet, wagon, pines, mountains, and window glow exactly as framed. Smoke drifts gently from chimney. Soft snowfall with parallax. Window light flickers very subtly. Very slow cinematic push toward the chalet. No warped timber or melting snow. Station wagon stays parked \u2014 no impossible motion. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_04_christmas_morning",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_04_christmas_morning.mp4",
+      "source_still": "cme1990s_christmas_morning_1998.jpg",
+      "video_job_id": "ae1649ae-ba62-4352-9326-e0196102e77f",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 9831811
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Christmas morning 1998 interior. This exact photograph comes alive for five seconds. Preserve tree, child, parents, presents, fireplace, and window light exactly as framed. Child makes small natural movements opening a gift. Parents shift subtly. Tree lights twinkle softly. Fireplace embers glow. Daylight stays consistent. Very slow gentle push-in. No face morph or extra people. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_05_christmas_train",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_05_christmas_train.mp4",
+      "source_still": "cme1990s_christmas_train_1993.jpg",
+      "video_job_id": "29c50f5f-e7f0-4e9d-8724-4ef96479f9ca",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 12390954
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Christmas train station 1993 blue hour. This exact photograph comes alive for five seconds. Preserve locomotive, carriages, platform, travelers, station architecture, and window figure exactly as framed. Train eases forward slightly with believable wheel motion. Steam and breath drift. Sparse snowfall. Warm window light steady. Travelers make tiny steps. Very slow platform-level dolly. No warped train geometry. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_06_christmas_market",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_06_christmas_market.mp4",
+      "source_still": "cme1990s_christmas_market_1995.jpg",
+      "video_job_id": "b26e6a96-5687-439f-9019-453eaf356c54",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 13305793
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Christmas market 1995. This exact photograph comes alive for five seconds. Preserve stalls, tree, crowd, lights, and square exactly as framed. Gentle snowfall. Market lights shimmer. Crowd makes natural small movements \u2014 no duplicated faces. Steam from drinks. Very slow handheld-style drift through the market. Architecture and stall structures stay rigid. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_07_nyc_apartment",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_07_nyc_apartment.mp4",
+      "source_still": "cme1990s_nyc_apartment_1997.jpg",
+      "video_job_id": "956e2281-8199-4fb3-9cc7-9f9466471e62",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 10176961
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 NYC apartment Christmas Eve 1997. This exact photograph comes alive for five seconds. Preserve window frost, interior tree, lamps, CRT TV silhouette, person, gifts, and skyline snow exactly as framed. Snow falls outside with depth. Person makes a tiny natural shift with mug steam rising. Interior lights flicker subtly. Very slow push through the window glass. No modern devices appear. No face morph. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_08_toy_shop",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_08_toy_shop.mp4",
+      "source_still": "cme1990s_toy_shop_1994.jpg",
+      "video_job_id": "42986960-171f-423e-9526-0dcbebb379dc",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 13441384
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 toy shop window Christmas 1994. This exact photograph comes alive for five seconds. Preserve toys, train, child, window reflections, and street lights exactly as framed. Child makes a small natural shift looking at toys \u2014 no face morph. Sparse snowfall. Interior lights twinkle. Reflections slide subtly with micro camera movement. Very slow push-in. No text appears on glass. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_09_road_trip",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_09_road_trip.mp4",
+      "source_still": "cme1990s_road_trip_1996.jpg",
+      "video_job_id": "d729dcbb-a5e6-43ed-879c-a44500f09609",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 13335009
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Christmas road trip dusk 1996. This exact photograph comes alive for five seconds. Preserve the car, roof tree, road, forest, and village lights exactly as framed. Car moves forward naturally with believable wheel rotation and tire-snow interaction. Snowfall with parallax. Village lights steady. Very slow tracking from low rear angle. No impossible snow physics or warped car body. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    },
+    {
+      "id": "cme1990s_10_eve_window",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/masters/cme1990s_10_eve_window.mp4",
+      "source_still": "cme1990s_christmas_eve_window_1995.jpg",
+      "video_job_id": "6b85ad96-e456-4395-9c29-667ea8ab1b92",
+      "video_cost_usd": 0.308,
+      "probe": {
+        "duration": 5.041667,
+        "width": 1080,
+        "height": 1920,
+        "size": 12313880
+      },
+      "motion_prompt": "Photoreal cinematic 9:16 Christmas Eve window 1995. This exact photograph comes alive for five seconds. Preserve exterior snow, window frame, family, tree, fireplace, and interior warmth exactly as framed. Gentle snowfall outside. Family makes tiny natural movements inside \u2014 no face morph. Firelight flickers. Tree lights twinkle. Very slow push toward the window. Strong interior/exterior contrast maintained. Do not morph faces, buildings, vehicles, or text. No duplicated people, no extra limbs, no melting objects, no random text or logos. No wild camera spins or aggressive zoom. Subtle cinematic motion only. Preserve composition from the first frame."
+    }
+  ],
+  "status": "COMPLETE",
+  "ingest_json": "public/assets/christmas/library-stills/ingest_cme1990s_sep30.json",
+  "reels": [
+    {
+      "id": "reel-cme1990s-cinematic-memory",
+      "title": "Christmas Memories \u00b7 Cinematic Memory",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_cinematic_memory_reel_01.mp4",
+      "probe": {
+        "duration": 17.766667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 16353531,
+        "size": 36318469,
+        "poster": "public/assets/christmas/christmas-memories-europe-1990s/posters/reel-cme1990s-cinematic-memory.jpg",
+        "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_cinematic_memory_reel_01.mp4"
+      },
+      "clips_used": [
+        "cme1990s_10_eve_window",
+        "cme1990s_04_christmas_morning",
+        "cme1990s_03_alpine_chalet",
+        "cme1990s_02_paris_cafe",
+        "cme1990s_08_toy_shop"
+      ],
+      "audio": "none"
+    },
+    {
+      "id": "reel-cme1990s-dynamic-christmas",
+      "title": "Christmas Memories \u00b7 Dynamic Christmas",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_dynamic_christmas_reel_02.mp4",
+      "probe": {
+        "duration": 12.2,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15191330,
+        "size": 23166779,
+        "poster": "public/assets/christmas/christmas-memories-europe-1990s/posters/reel-cme1990s-dynamic-christmas.jpg",
+        "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_dynamic_christmas_reel_02.mp4"
+      },
+      "clips_used": [
+        "cme1990s_01_london",
+        "cme1990s_06_christmas_market",
+        "cme1990s_05_christmas_train",
+        "cme1990s_09_road_trip",
+        "cme1990s_07_nyc_apartment",
+        "cme1990s_02_paris_cafe",
+        "cme1990s_10_eve_window",
+        "cme1990s_04_christmas_morning"
+      ],
+      "audio": "none"
+    },
+    {
+      "id": "reel-cme1990s-coming-home",
+      "title": "Christmas Memories \u00b7 Coming Home",
+      "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_coming_home_reel_03.mp4",
+      "probe": {
+        "duration": 18.366667,
+        "width": 1080,
+        "height": 1920,
+        "bitrate": 15664769,
+        "size": 35963700,
+        "poster": "public/assets/christmas/christmas-memories-europe-1990s/posters/reel-cme1990s-coming-home.jpg",
+        "file": "public/assets/christmas/christmas-memories-europe-1990s/final/christmas_memories_coming_home_reel_03.mp4"
+      },
+      "clips_used": [
+        "cme1990s_03_alpine_chalet",
+        "cme1990s_09_road_trip",
+        "cme1990s_05_christmas_train",
+        "cme1990s_06_christmas_market",
+        "cme1990s_01_london",
+        "cme1990s_10_eve_window"
+      ],
+      "audio": "none"
+    }
+  ],
+  "reels_assembled_at": "2026-09-30T18:01:45.913536+00:00"
+}

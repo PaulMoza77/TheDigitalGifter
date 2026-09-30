@@ -1,0 +1,10 @@
+{
+  "batch_id": "christmas-memories-europe-1990s-20260930",
+  "campaign": "christmas_memories_europe_1990s",
+  "lineage": "image → short → reel",
+  "scenes": 10,
+  "shorts": 10,
+  "reels": 3,
+  "generation_manifest": "public/assets/christmas/christmas-memories-europe-1990s/generation_manifest.json",
+  "ingest": "public/assets/christmas/library-stills/ingest_cme1990s_sep30.json"
+}
