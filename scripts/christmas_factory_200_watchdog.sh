@@ -6,6 +6,11 @@ TMUX_CONF="/exec-daemon/tmux.portal.conf"
 while true; do
   n=$(ls "${ROOT}/generated/christmas-factory-200/masters/"*.mp4 2>/dev/null | wc -l | tr -d ' ')
   echo "$(date -u +%H:%M:%S) masters=${n}"
+  if [[ -f "${ROOT}/generated/christmas-factory-200/FACTORY_FROZEN" ]]; then
+    echo FACTORY_FROZEN
+    sleep 90
+    continue
+  fi
   if ! pgrep -f "python3 ${ROOT}/scripts/christmas_factory_200.py" >/dev/null 2>&1 && \
      ! pgrep -f "python3 scripts/christmas_factory_200.py" >/dev/null 2>&1; then
     echo RESTART_FACTORY

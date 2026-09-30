@@ -174,6 +174,11 @@ const SidebarNavigation: React.FC<{
             icon: Library,
           },
           {
+            label: "Factory RAW",
+            path: "/admin/library/christmas-factory",
+            icon: Clapperboard,
+          },
+          {
             label: "Long-Form Studio",
             path: "/admin/long-form-studio",
             icon: Clapperboard,

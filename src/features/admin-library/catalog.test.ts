@@ -72,7 +72,8 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
-    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(1);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(50);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cf200-")).length).toBeGreaterThanOrEqual(50);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -353,7 +354,8 @@ describe("admin video library", () => {
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
-    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(1);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cf200-")).length).toBeGreaterThanOrEqual(50);
+    expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cf200-")).length).toBeGreaterThanOrEqual(50);
     const c20MusicShorts = LIBRARY_VIDEOS.filter(
       (v) => v.category === "christmas_reels" && v.kind === "short" && v.tags?.includes("has-music"),
     );
@@ -426,11 +428,15 @@ describe("admin video library", () => {
 
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
+    expect(readSrc("src/App.tsx")).toContain('path="library/christmas-factory"');
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
+    expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library/christmas-factory");
+    expect(readSrc("src/pages/admin/ChristmasFactoryReviewPage.tsx")).toContain("Christmas Factory RAW");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
+    expect(page).toContain("/admin/library/christmas-factory");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
     expect(page).toContain("onShare");

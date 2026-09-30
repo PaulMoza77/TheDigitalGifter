@@ -1,10 +1,62 @@
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
+import fs from "fs";
 import path from "path";
+import { defineConfig, loadEnv, type Plugin } from "vite";
+import react from "@vitejs/plugin-react";
 import { petFunnelEventDevPlugin } from "./vite.petFunnelEventPlugin";
 import { petV2DevPlugin } from "./vite.petV2Plugin";
 import { christmasV2DevPlugin } from "./vite.christmasPlugin";
 import { christmasSeoPrerenderPlugin } from "./vite.christmasSeoPlugin";
+
+function christmasFactory200DevPlugin(): Plugin {
+  const root = path.resolve(__dirname, "generated/christmas-factory-200");
+  const prefix = "/assets/christmas/christmas-factory-200/";
+  const types: Record<string, string> = {
+    ".mp4": "video/mp4",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".json": "application/json",
+    ".txt": "text/plain; charset=utf-8",
+  };
+  return {
+    name: "christmas-factory-200-dev",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || "").split("?")[0];
+        if (!url.startsWith(prefix)) return next();
+        const rel = decodeURIComponent(url.slice(prefix.length));
+        const file = path.resolve(root, rel);
+        if (!file.startsWith(root) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+          res.statusCode = 404;
+          res.end("not found");
+          return;
+        }
+        const stat = fs.statSync(file);
+        const mime = types[path.extname(file).toLowerCase()] || "application/octet-stream";
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Content-Type", mime);
+        const range = req.headers.range;
+        if (range) {
+          const match = /bytes=(\d*)-(\d*)/.exec(range);
+          const start = match && match[1] ? Number(match[1]) : 0;
+          const end = match && match[2] ? Number(match[2]) : stat.size - 1;
+          if (start >= stat.size || end >= stat.size || start > end) {
+            res.statusCode = 416;
+            res.setHeader("Content-Range", `bytes */${stat.size}`);
+            res.end();
+            return;
+          }
+          res.statusCode = 206;
+          res.setHeader("Content-Range", `bytes ${start}-${end}/${stat.size}`);
+          res.setHeader("Content-Length", String(end - start + 1));
+          fs.createReadStream(file, { start, end }).pipe(res);
+          return;
+        }
+        res.setHeader("Content-Length", String(stat.size));
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -20,6 +72,7 @@ export default defineConfig(({ mode }) => {
       petV2DevPlugin(),
       christmasV2DevPlugin(),
       christmasSeoPrerenderPlugin(),
+      christmasFactory200DevPlugin(),
     ],
   resolve: {
     alias: {

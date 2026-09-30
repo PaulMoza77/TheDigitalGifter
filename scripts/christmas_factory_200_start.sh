@@ -10,4 +10,8 @@ fi
 export TDG_FACTORY_VIDEO_CONCURRENCY="${TDG_FACTORY_VIDEO_CONCURRENCY:-8}"
 export TDG_FACTORY_IMAGE_WORKERS="${TDG_FACTORY_IMAGE_WORKERS:-2}"
 cd "$ROOT"
+if [[ -f "${ROOT}/generated/christmas-factory-200/FACTORY_FROZEN" ]]; then
+  echo "FACTORY_FROZEN — refusing to start paid generation"
+  exit 0
+fi
 exec python3 "${ROOT}/scripts/christmas_factory_200.py"

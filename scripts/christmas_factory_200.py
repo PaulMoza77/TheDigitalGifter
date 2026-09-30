@@ -1025,6 +1025,10 @@ def sync_existing_files(m: dict) -> None:
 
 
 def main() -> int:
+    freeze = OUT / "FACTORY_FROZEN"
+    if freeze.exists() or (os.environ.get("TDG_FACTORY_FROZEN") or "").strip() in {"1", "true", "yes"}:
+        print("FACTORY_FROZEN — no new paid Higgsfield jobs", flush=True)
+        return 0
     for d in (OUT, STILLS, MASTERS, POSTERS, OUT / "qc"):
         d.mkdir(parents=True, exist_ok=True)
     scenes = build_scenes()
