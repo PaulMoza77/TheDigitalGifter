@@ -1,0 +1,156 @@
+{
+  "collection": "VoloCar / Product Motion",
+  "project": "volocar",
+  "created_at": "2026-09-30T20:05:30.300702+00:00",
+  "concepts": [
+    {
+      "id": "01_volocar_zero_deposit",
+      "source": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_source.jpg",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "996cfa8c-0ba6-438b-8ff7-9f24b4e2fe37",
+        "image_cost_usd": 0.21,
+        "attempt": 1,
+        "width": 2688,
+        "height": 1536
+      },
+      "video": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/01_volocar_zero_deposit_5s.mp4",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "6daed2b2-6268-4b77-a3a6-c0295b52a792",
+        "video_cost_usd": 0.308,
+        "hf_upload_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/d6f5ef5f-a900-45ea-9eba-d1beaf4ec2b3.jpeg",
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "size": 3529037,
+          "codec": "h264"
+        },
+        "qc_frames": [
+          "/workspace/generated/volocar/product-motion/qc/01_volocar_zero_deposit_5s_first.jpg",
+          "/workspace/generated/volocar/product-motion/qc/01_volocar_zero_deposit_5s_mid.jpg",
+          "/workspace/generated/volocar/product-motion/qc/01_volocar_zero_deposit_5s_last.jpg"
+        ],
+        "attempt": 1,
+        "conservative": false,
+        "credits": null
+      }
+    },
+    {
+      "id": "02_volocar_monthly",
+      "source": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_source.jpg",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "84997e27-f593-4b54-9d2d-06f8a6829cbf",
+        "image_cost_usd": 0.21,
+        "attempt": 1,
+        "width": 2688,
+        "height": 1536
+      },
+      "video": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/02_volocar_monthly_5s.mp4",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "65d21a19-6424-4766-9f1a-8f93a8308338",
+        "video_cost_usd": 0.308,
+        "hf_upload_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/d6a89d2e-2b8b-4080-8c93-8fce3c8eb89d.jpeg",
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "size": 9443589,
+          "codec": "h264"
+        },
+        "qc_frames": [
+          "/workspace/generated/volocar/product-motion/qc/02_volocar_monthly_5s_first.jpg",
+          "/workspace/generated/volocar/product-motion/qc/02_volocar_monthly_5s_mid.jpg",
+          "/workspace/generated/volocar/product-motion/qc/02_volocar_monthly_5s_last.jpg"
+        ],
+        "attempt": 1,
+        "conservative": false,
+        "credits": null
+      }
+    },
+    {
+      "id": "03_volocar_airport_delivery",
+      "source": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_source.jpg",
+        "qc": "PASS",
+        "reused_from": "/workspace/public/assets/volocar/dubai-moments/masters/06_volocar_dubai_moments_arrival_dubai.jpg",
+        "image_cost_usd": 0.0,
+        "width": 2688,
+        "height": 1536
+      },
+      "video": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/03_volocar_airport_delivery_5s.mp4",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "801313a3-98d2-4d03-b804-14a2fd87ef45",
+        "video_cost_usd": 0.308,
+        "hf_upload_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/2b9d9bea-595e-4716-ad80-29397156e515.jpeg",
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "size": 11557677,
+          "codec": "h264"
+        },
+        "qc_frames": [
+          "/workspace/generated/volocar/product-motion/qc/03_volocar_airport_delivery_5s_first.jpg",
+          "/workspace/generated/volocar/product-motion/qc/03_volocar_airport_delivery_5s_mid.jpg",
+          "/workspace/generated/volocar/product-motion/qc/03_volocar_airport_delivery_5s_last.jpg"
+        ],
+        "attempt": 1,
+        "conservative": false,
+        "credits": null
+      }
+    },
+    {
+      "id": "04_volocar_supercars",
+      "source": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_source.jpg",
+        "qc": "PASS",
+        "model": "recraft/v4.1/pro/text-to-image",
+        "job_id": "9449a3a1-ba07-46ea-add9-d26eb09e7d8e",
+        "image_cost_usd": 0.21,
+        "attempt": 1,
+        "width": 2688,
+        "height": 1536
+      },
+      "video": {
+        "path": "/workspace/public/assets/volocar/product-motion/masters/04_volocar_supercars_5s.mp4",
+        "qc": "PASS",
+        "model": "kling-video/v3.0/pro/image-to-video",
+        "job_id": "16303c7f-276e-4422-8372-0d047f519d07",
+        "video_cost_usd": 0.308,
+        "hf_upload_url": "https://d3snorpfx4xhv8.cloudfront.net/eac55040-2e53-4622-bd70-3989fb648809/5b21d02c-3205-4596-9718-e6ae903d9183.jpeg",
+        "probe": {
+          "width": 1920,
+          "height": 1080,
+          "duration": 5.041667,
+          "size": 13248371,
+          "codec": "h264"
+        },
+        "qc_frames": [
+          "/workspace/generated/volocar/product-motion/qc/04_volocar_supercars_5s_first.jpg",
+          "/workspace/generated/volocar/product-motion/qc/04_volocar_supercars_5s_mid.jpg",
+          "/workspace/generated/volocar/product-motion/qc/04_volocar_supercars_5s_last.jpg"
+        ],
+        "attempt": 1,
+        "conservative": false,
+        "credits": null
+      }
+    }
+  ],
+  "total_image_usd": 0.63,
+  "total_video_usd": 1.232,
+  "retries": 0,
+  "total_usd": 1.862,
+  "finished_at": "2026-09-30T20:14:36.010973+00:00",
+  "run_spent_image_usd": 0.63,
+  "run_spent_video_usd": 1.232
+}
