@@ -46,9 +46,11 @@ describe("admin video library", () => {
       }
     }
     const volocar = LIBRARY_VIDEOS.filter((v) => v.category === "volocar_dubai_moments");
-    expect(volocar).toHaveLength(6);
-    expect(volocar.every((v) => v.kind === "photo")).toBe(true);
-    expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments")).toHaveLength(6);
+    expect(volocar).toHaveLength(13);
+    expect(volocar.filter((v) => v.kind === "photo")).toHaveLength(6);
+    expect(volocar.filter((v) => v.kind === "short")).toHaveLength(6);
+    expect(volocar.filter((v) => v.kind === "reel")).toHaveLength(1);
+    expect(searchLibraryVideos("dubai moments", "volocar_dubai_moments").length).toBeGreaterThanOrEqual(13);
     expect(searchLibraryVideos("final", "christmas_reels").some((video) => video.id === "reel-final")).toBe(true);
     expect(
       searchLibraryVideos("Kling 1080p", "christmas_reels").some((video) => video.id === "reel-kling-1080p-final"),
@@ -302,6 +304,14 @@ describe("admin video library", () => {
       "public/assets/volocar/dubai-moments/masters/05_volocar_dubai_moments_marina_night.jpg",
       "public/assets/volocar/dubai-moments/masters/06_volocar_dubai_moments_arrival_dubai.jpg",
       "public/assets/volocar/dubai-moments/generation_manifest.json",
+      "public/assets/volocar/dubai-moments/clips/01_volocar_dubai_moments_supercar_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/02_volocar_dubai_moments_girls_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/03_volocar_dubai_moments_the_arrival_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/04_volocar_dubai_moments_morning_escape_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/05_volocar_dubai_moments_marina_night_5s.mp4",
+      "public/assets/volocar/dubai-moments/clips/06_volocar_dubai_moments_arrival_dubai_5s.mp4",
+      "public/assets/volocar/dubai-moments/final/volocar_dubai_moments_reel_v1_master.mp4",
+      "public/assets/volocar/dubai-moments/i2v_generation_manifest.json",
     ];
     for (const relative of publicFiles) {
       expect(existsSync(resolve(root, relative))).toBe(true);
