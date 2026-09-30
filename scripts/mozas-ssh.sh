@@ -11,6 +11,12 @@ MOZAS_EXPECTED_FINGERPRINT="SHA256:cygpYZwFgfu0Us7v2ekcfQdUwSzCAwc6XRFHrPWy+B4"
 mozas_die() { printf 'BLOCKED: %s\n' "$*" >&2; exit 2; }
 
 mozas_require_identity_env() {
+  if [[ -z "${MOZAS_SSH_HOST:-}" && -n "${VPS_HOST:-}" ]]; then
+    MOZAS_SSH_HOST="${VPS_HOST}"
+  fi
+  if [[ -z "${MOZAS_SSH_PRIVATE_KEY:-}" && -n "${VPS_SSH_PRIVATE_KEY:-}" ]]; then
+    MOZAS_SSH_PRIVATE_KEY="${VPS_SSH_PRIVATE_KEY}"
+  fi
   local host="${MOZAS_SSH_HOST:-}"
   local key="${MOZAS_SSH_PRIVATE_KEY:-}"
   [[ -n "${host}" ]] || mozas_die "MOZAS_SSH_HOST is missing"
