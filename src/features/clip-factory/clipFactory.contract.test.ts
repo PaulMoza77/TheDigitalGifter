@@ -58,5 +58,10 @@ describe("clip factory production wiring", () => {
     expect(read("supabase/migrations/20260920213000_clip_factory_invalidate_placeholder.sql")).toContain("1035c4690f0871aab131142f8b39fb055b82eaea8fe38706519dcc377d0b2c33");
     expect(read("server/origin.mjs")).toContain("tickClipFactory");
     expect(read("supabase/functions/social-publisher/index.ts")).toContain("/api/clip-factory");
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain('prefer: "auto" | "vps" = "vps"');
+    expect(read("api/_lib/clip-factory/worker.ts")).toContain('CLIP_FACTORY_STORAGE === "supabase"');
+    const purge = read("scripts/purge-unreferenced-template-previews.py");
+    expect(purge).toContain('BUCKET = "templates"');
+    expect(purge).toContain("Never touches library, clip-factory, pet, or christmas buckets.");
   });
 });
