@@ -15,6 +15,14 @@ describe("TDG origin path classification", () => {
     expect(classifyPath("/api/pet-v3/internal-test-status").kind).toBe("api");
     expect(classifyPath("/api/pet-provider-status").kind).toBe("api");
     expect(classifyPath("/api/christmas-funnel").kind).toBe("api");
+    expect(classifyPath("/api/christmas-generate")).toEqual({
+      kind: "api",
+      module: "christmas-generate.ts",
+    });
+    expect(classifyPath("/api/christmas-generate-video")).toEqual({
+      kind: "api",
+      module: "christmas-generate-video.ts",
+    });
     expect(classifyPath("/api/christmas-santa-compose").kind).toBe("api");
     expect(classifyPath("/api/clip-factory").kind).toBe("api");
     expect(classifyPath("/api/clip-factory-import").kind).toBe("api");

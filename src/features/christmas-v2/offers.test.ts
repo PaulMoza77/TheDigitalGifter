@@ -181,6 +181,12 @@ describe("christmas-v2 EUR offer contract", () => {
     );
   });
 
+  it("registers Node generate workers on the VPS origin route table", () => {
+    const routes = read("server/routes.mjs");
+    expect(routes).toContain('"/api/christmas-generate": "christmas-generate.ts"');
+    expect(routes).toContain('"/api/christmas-generate-video": "christmas-generate-video.ts"');
+  });
+
   it("finalizes only after paid videos and treats completed jobs as non-claimable", () => {
     const migration = read(
       "supabase/migrations/20261011140000_christmas_v2_eur_offers_and_finalize.sql",
