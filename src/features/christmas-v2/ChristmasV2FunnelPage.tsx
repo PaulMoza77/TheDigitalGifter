@@ -13,6 +13,7 @@ import {
   CHRISTMAS_PACKS,
   CHRISTMAS_V2_ORDER_ROUTE,
   CHRISTMAS_V2_ROUTE,
+  type ChristmasPackKey,
   type ChristmasSceneKey,
 } from "./config";
 import { createChristmasLocalPreview, validateChristmasPhotoFile } from "./photo";
@@ -29,6 +30,12 @@ import {
   saveChristmasDraft,
   setChristmasPhotoFile,
 } from "./storage";
+import {
+  CHRISTMAS_V2_FIXTURE_BANNER,
+  fixtureSceneResults,
+  fixtureVideoResults,
+  parseChristmasV2OrderFixture,
+} from "./testFixture";
 import type { ChristmasV2Draft, ChristmasV2Step } from "./types";
 import { useChristmasEmbeddedCheckout } from "./useChristmasEmbeddedCheckout";
 
@@ -43,6 +50,7 @@ export function ChristmasV2FunnelPage() {
   const [draft, setDraft] = useState<ChristmasV2Draft>(() => loadChristmasDraft());
   const [photoError, setPhotoError] = useState<string | undefined>();
   const previewUrl = getChristmasPhotoObjectUrl() ?? draft.photoPreviewDataUrl;
+  const packKey = draft.packKey || "starter";
 
   const checkoutActive = draft.step === "checkout";
   const checkout = useChristmasEmbeddedCheckout({
@@ -51,7 +59,7 @@ export function ChristmasV2FunnelPage() {
     file: getChristmasPhotoFile(),
     email: draft.email,
     customerName: draft.customerName,
-    packKey: "starter",
+    packKey,
   });
 
   useEffect(() => {
@@ -126,8 +134,8 @@ export function ChristmasV2FunnelPage() {
       });
       trackChristmasV2Event({
         eventName: "christmas_v2_offer_viewed",
-        amountCents: CHRISTMAS_PACKS.starter.priceCents,
-        product: CHRISTMAS_PACKS.starter.sku,
+        amountCents: CHRISTMAS_PACKS[packKey].priceCents,
+        product: CHRISTMAS_PACKS[packKey].sku,
       });
     } catch (err) {
       setPhotoError(err instanceof Error ? err.message : "Could not read that photo.");
@@ -173,6 +181,8 @@ export function ChristmasV2FunnelPage() {
         {draft.step === "offer" ? (
           <ChristmasOfferScreen
             previewUrl={previewUrl}
+            selectedPackKey={packKey}
+            onSelectPack={(next) => setDraft((current) => ({ ...current, packKey: next }))}
             onContinue={() => go("checkout")}
             onChangePhoto={() => {
               setChristmasPhotoFile(null);
@@ -182,46 +192,77 @@ export function ChristmasV2FunnelPage() {
         ) : null}
 
         {draft.step === "checkout" ? (
-          <ChristmasCheckoutScreen
-            clientSecret={checkout.clientSecret}
-            publishableKey={checkout.publishableKey}
-            publicToken={checkout.publicToken}
-            sessionId={checkout.sessionId}
-            email={draft.email}
-            onEmail={(email) => setDraft((c) => ({ ...c, email }))}
-            customerName={draft.customerName}
-            onCustomerName={(customerName) => setDraft((c) => ({ ...c, customerName }))}
-            loading={checkout.loading}
-            initError={checkout.initError}
-            onRetry={checkout.retry}
-            hostedFallbackUrl={checkout.checkoutUrl}
-            onReady={() =>
-              trackChristmasV2Event({
-                eventName: "christmas_v2_checkout_rendered",
-                amountCents: checkout.amountCents,
-                product: CHRISTMAS_PACKS.starter.sku,
-              })
-            }
-            onPaymentInteraction={() => {
-              trackMetaInitiateCheckout({
-                eventId: checkout.sessionId || checkout.orderId || `cv2_${Date.now()}`,
-                valueCents: checkout.amountCents,
-                orderId: checkout.orderId || undefined,
-                currency: "EUR",
-                sku: CHRISTMAS_PACKS.starter.sku,
-              });
-            }}
-            onSubmit={() =>
-              trackChristmasV2Event({
-                eventName: "christmas_v2_payment_submitted",
-                amountCents: checkout.amountCents,
-                product: CHRISTMAS_PACKS.starter.sku,
-              })
-            }
-            onExpressCancel={() =>
-              trackChristmasV2Event({ eventName: "christmas_v2_checkout_canceled" })
-            }
-          />
+          getChristmasPhotoFile() ? (
+            <ChristmasCheckoutScreen
+              packKey={packKey}
+              clientSecret={checkout.clientSecret}
+              publishableKey={checkout.publishableKey}
+              publicToken={checkout.publicToken}
+              sessionId={checkout.sessionId}
+              email={draft.email}
+              onEmail={(email) => setDraft((c) => ({ ...c, email }))}
+              customerName={draft.customerName}
+              onCustomerName={(customerName) => setDraft((c) => ({ ...c, customerName }))}
+              loading={checkout.loading}
+              initError={checkout.initError}
+              onRetry={checkout.retry}
+              hostedFallbackUrl={checkout.checkoutUrl}
+              onReady={() =>
+                trackChristmasV2Event({
+                  eventName: "christmas_v2_checkout_rendered",
+                  amountCents: checkout.amountCents,
+                  product: CHRISTMAS_PACKS[packKey].sku,
+                })
+              }
+              onPaymentInteraction={() => {
+                trackMetaInitiateCheckout({
+                  eventId: checkout.sessionId || checkout.orderId || `cv2_${Date.now()}`,
+                  valueCents: checkout.amountCents,
+                  orderId: checkout.orderId || undefined,
+                  currency: "EUR",
+                  sku: CHRISTMAS_PACKS[packKey].sku,
+                });
+              }}
+              onSubmit={() =>
+                trackChristmasV2Event({
+                  eventName: "christmas_v2_payment_submitted",
+                  amountCents: checkout.amountCents,
+                  product: CHRISTMAS_PACKS[packKey].sku,
+                })
+              }
+              onExpressCancel={() =>
+                trackChristmasV2Event({ eventName: "christmas_v2_checkout_canceled" })
+              }
+            />
+          ) : (
+            <div className="space-y-4" data-testid="cv2-checkout-reupload">
+              <h1 className="cv2-display text-3xl font-semibold text-[#F7F0E4]">
+                Continue your {CHRISTMAS_PACKS[packKey].name}
+              </h1>
+              <p className="text-sm text-[#F7F0E4]/70">
+                Your pack selection was saved ({CHRISTMAS_PACKS[packKey].priceDisplay}), but this
+                browser session no longer has the photo file. Re-upload the same photo to resume
+                secure checkout — you have not been charged.
+              </p>
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Saved local photo preview"
+                  className="h-24 w-24 rounded-xl object-cover"
+                />
+              ) : null}
+              <button
+                type="button"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#C9A227] text-base font-semibold text-[#3b0610]"
+                onClick={() => {
+                  setChristmasPhotoFile(null);
+                  go("landing", { photo: null, photoPreviewDataUrl: null, uploadId: null });
+                }}
+              >
+                Re-upload photo to continue
+              </button>
+            </div>
+          )
         ) : null}
 
         {draft.step === "generating" ? <ChristmasGeneratingScreen /> : null}
@@ -231,14 +272,35 @@ export function ChristmasV2FunnelPage() {
 }
 
 export function ChristmasV2OrderPage() {
+  const fixture = parseChristmasV2OrderFixture(window.location.search);
   const [status, setStatus] = useState<"loading" | "generating" | "results" | "upsell" | "error">(
-    "loading",
+    fixture?.mode === "generating"
+      ? "generating"
+      : fixture?.mode === "upsell"
+        ? "upsell"
+        : fixture?.mode === "error"
+          ? "error"
+          : fixture?.mode === "results"
+            ? "results"
+            : "loading",
   );
-  const [error, setError] = useState<string | null>(null);
-  const [scenes, setScenes] = useState<ChristmasSceneResult[]>([]);
-  const [videos, setVideos] = useState<ChristmasVideoResult[]>([]);
-  const [progress, setProgress] = useState(10);
-  const [publicToken, setPublicToken] = useState("");
+  const [error, setError] = useState<string | null>(
+    fixture?.mode === "error" ? "TEST FIXTURE error state — not a real order failure." : null,
+  );
+  const [scenes, setScenes] = useState<ChristmasSceneResult[]>(() =>
+    fixture && (fixture.mode === "results" || fixture.mode === "upsell")
+      ? fixtureSceneResults(CHRISTMAS_PACKS[fixture.packKey].imageCount)
+      : [],
+  );
+  const [videos, setVideos] = useState<ChristmasVideoResult[]>(() =>
+    fixture && (fixture.mode === "results" || fixture.mode === "upsell")
+      ? fixtureVideoResults(CHRISTMAS_PACKS[fixture.packKey].videoCount)
+      : [],
+  );
+  const [progress, setProgress] = useState(fixture?.mode === "generating" ? 42 : 10);
+  const [publicToken, setPublicToken] = useState(fixture ? "fixture-token" : "");
+  const [orderPackKey, setOrderPackKey] = useState<ChristmasPackKey>(fixture?.packKey || "starter");
+  const [orderEmail, setOrderEmail] = useState<string | null>(null);
   const [busyPack, setBusyPack] = useState<"magic" | "ultimate" | null>(null);
   const purchaseTracked = useRef(false);
   const resultsTracked = useRef(false);
@@ -256,6 +318,7 @@ export function ChristmasV2OrderPage() {
   }, []);
 
   useEffect(() => {
+    if (fixture) return;
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token") || "";
     if (!token) {
@@ -273,6 +336,8 @@ export function ChristmasV2OrderPage() {
         setScenes(data.scenes);
         setVideos(data.videos);
         setProgress(data.progressPercent || 10);
+        setOrderPackKey(data.order.packKey || "starter");
+        setOrderEmail(data.order.email || null);
 
         if (
           !purchaseTracked.current &&
@@ -335,7 +400,7 @@ export function ChristmasV2OrderPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fixture]);
 
   async function handleUpsellCheckout(input: {
     packKey: "magic" | "ultimate";
@@ -343,7 +408,7 @@ export function ChristmasV2OrderPage() {
     videoSourceSceneKeys: ChristmasSceneKey[];
     surpriseMe: boolean;
   }) {
-    if (!publicToken) return;
+    if (!publicToken || fixture) return;
     setBusyPack(input.packKey);
     try {
       trackChristmasV2Event({
@@ -388,6 +453,14 @@ export function ChristmasV2OrderPage() {
         url="https://www.thedigitalgifter.com/christmas-ai-photos"
       />
       <ChristmasV2Shell>
+        {fixture ? (
+          <p
+            className="mb-4 rounded-xl border border-dashed border-[#C9A227]/60 bg-[#C9A227]/15 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-[#F3D98A]"
+            data-testid="cv2-fixture-banner"
+          >
+            {CHRISTMAS_V2_FIXTURE_BANNER}
+          </p>
+        ) : null}
         {status === "loading" || status === "generating" ? (
           <ChristmasGeneratingScreen progressPercent={progress} />
         ) : null}
@@ -395,6 +468,7 @@ export function ChristmasV2OrderPage() {
           <ChristmasResultsScreen
             scenes={scenes}
             videos={videos}
+            emailHint={orderEmail}
             onContinueUpsell={() => {
               trackChristmasV2Event({ eventName: "christmas_v2_upsell_viewed" });
               setStatus("upsell");
@@ -403,19 +477,21 @@ export function ChristmasV2OrderPage() {
         ) : null}
         {status === "upsell" ? (
           <div className="space-y-8">
-            <ChristmasResultsScreen scenes={scenes} videos={videos} />
+            <ChristmasResultsScreen scenes={scenes} videos={videos} emailHint={orderEmail} />
             <ChristmasUpsellScreen
+              purchasedPackKey={orderPackKey}
               starterScenes={scenes}
               busyPack={busyPack}
               onCheckout={(input) => void handleUpsellCheckout(input)}
+              onSkip={() => setStatus("results")}
             />
           </div>
         ) : null}
         {status === "error" ? (
-          <div className="space-y-3 text-center">
+          <div className="space-y-3 text-center" data-testid="cv2-order-error">
             <h1 className="cv2-display text-3xl font-semibold text-[#F7F0E4]">Something went wrong</h1>
             <p className="text-sm text-[#F7F0E4]/70">{error}</p>
-            <a className="text-[#C9A227] underline" href={CHRISTMAS_V2_ROUTE}>
+            <a className="inline-flex min-h-11 items-center text-[#C9A227] underline" href={CHRISTMAS_V2_ROUTE}>
               Back to Christmas offer
             </a>
           </div>
