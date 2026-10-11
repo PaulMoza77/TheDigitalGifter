@@ -114,7 +114,6 @@ create trigger profiles_prevent_role_escalation
 
 -- ---------------------------------------------------------------------------
 -- Explicit column privileges (defense in depth alongside trigger)
--- Table-level grants first, THEN revoke privilege columns (order matters).
 -- ---------------------------------------------------------------------------
 -- Keep INSERT (incl. role='user') so signup/upsert paths work; trigger blocks
 -- privilege values on INSERT. For UPDATE: PostgreSQL ignores column-level REVOKE
