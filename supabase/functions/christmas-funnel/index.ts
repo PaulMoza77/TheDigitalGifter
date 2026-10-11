@@ -7,11 +7,14 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   CHRISTMAS_SIGNED_UPLOAD_SECONDS,
   CHRISTMAS_SOURCE_BUCKET,
-  STARTER_SCENE_KEYS,
+  CHRISTMAS_V2_CURRENCY,
+  CHRISTMAS_V2_OFFER_CATALOG_VERSION,
+  defaultSceneKeysForPack,
   sceneByKey,
   siteOrigin,
   type ChristmasPackKey,
 } from "../_shared/christmas/constants.ts";
+import { snapshotOffer } from "../_shared/christmas/offers.ts";
 import {
   asInt,
   asString,
@@ -64,10 +67,17 @@ function resolveSceneKeys(packKey: ChristmasPackKey, requested: unknown): string
     ? requested.map((k) => asString(k)).filter((k) => Boolean(sceneByKey(k)))
     : [];
   const pack = CHRISTMAS_PACKS[packKey];
+  const defaults = defaultSceneKeysForPack(packKey);
   if (fromBody.length >= pack.imageCount) return fromBody.slice(0, pack.imageCount);
-  if (packKey === "starter") return [...STARTER_SCENE_KEYS];
-  if (fromBody.length) return fromBody;
-  return [...STARTER_SCENE_KEYS];
+  if (fromBody.length) {
+    const merged = [...fromBody];
+    for (const key of defaults) {
+      if (merged.length >= pack.imageCount) break;
+      if (!merged.includes(key)) merged.push(key);
+    }
+    return merged.slice(0, pack.imageCount);
+  }
+  return defaults.slice(0, pack.imageCount);
 }
 
 function decryptStoredToken(ciphertext: string | null | undefined): string | null {
@@ -296,7 +306,7 @@ Deno.serve(async (req) => {
         product_type: CHRISTMAS_PRODUCT_TYPE,
         amount_cents: pack.amountCents,
         charged_amount_cents: pack.amountCents,
-        currency: "usd",
+        currency: CHRISTMAS_V2_CURRENCY,
         status: "awaiting_upload",
         image_count: pack.imageCount,
         video_count: pack.videoCount,
@@ -308,6 +318,8 @@ Deno.serve(async (req) => {
         scene_keys: sceneKeys,
         video_source_scene_keys: [],
         surprise_me: false,
+        offer_catalog_version: CHRISTMAS_V2_OFFER_CATALOG_VERSION,
+        offer_snapshot: snapshotOffer(packKey),
       };
       const { data, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
       if (error) throw error;
@@ -451,7 +463,7 @@ Deno.serve(async (req) => {
       }
       params.set("customer_email", asString(order.email));
       params.set("client_reference_id", asString(order.id));
-      params.set("line_items[0][price_data][currency]", "usd");
+      params.set("line_items[0][price_data][currency]", CHRISTMAS_V2_CURRENCY);
       params.set("line_items[0][price_data][unit_amount]", String(amountCents));
       params.set("line_items[0][price_data][product_data][name]", pack.name);
       params.set(
@@ -563,7 +575,7 @@ Deno.serve(async (req) => {
         product_type: CHRISTMAS_PRODUCT_TYPE,
         amount_cents: pack.amountCents,
         charged_amount_cents: pack.amountCents,
-        currency: "usd",
+        currency: CHRISTMAS_V2_CURRENCY,
         status: "awaiting_payment",
         image_count: pack.imageCount,
         video_count: pack.videoCount,
@@ -579,6 +591,8 @@ Deno.serve(async (req) => {
         scene_keys: sceneKeys,
         video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: surpriseMe,
+        offer_catalog_version: CHRISTMAS_V2_OFFER_CATALOG_VERSION,
+        offer_snapshot: snapshotOffer(packKey),
       };
       const { data: child, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
       if (error) throw error;
@@ -612,7 +626,7 @@ Deno.serve(async (req) => {
       }
       params.set("customer_email", asString(child.email));
       params.set("client_reference_id", asString(child.id));
-      params.set("line_items[0][price_data][currency]", "usd");
+      params.set("line_items[0][price_data][currency]", CHRISTMAS_V2_CURRENCY);
       params.set("line_items[0][price_data][unit_amount]", String(pack.amountCents));
       params.set("line_items[0][price_data][product_data][name]", pack.name);
       params.set(
@@ -719,7 +733,7 @@ Deno.serve(async (req) => {
         p_payment_status: paymentStatus,
         p_payment_intent_id: asString(session?.payment_intent),
         p_amount_cents: amountTotal,
-        p_currency: asString(session?.currency) || "usd",
+        p_currency: asString(session?.currency) || CHRISTMAS_V2_CURRENCY,
         p_order_id: asString(order.id),
       });
       if (error) throw error;
