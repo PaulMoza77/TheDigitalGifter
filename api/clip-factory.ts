@@ -13,6 +13,11 @@ import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
 import { importDeviceOnline } from "../src/features/clip-factory/importDevice";
 import { isKnownInvalidMediaHash } from "../src/features/clip-factory/mediaQuality";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
+import {
+  mapLibraryAssetCategory,
+  mapLibraryAssetKind,
+  resolveLibraryAssetSrc,
+} from "../src/features/admin-library/mapLibraryAsset";
 import { streamLocalFile } from "./_lib/clip-factory/vpsMedia";
 
 const BUCKET = "clip-factory";
@@ -292,23 +297,35 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
 
     if (postAction === "list_library_assets") {
-      const { data, error } = await service.from("library_assets").select("*").order("created_at", { ascending: false }).limit(80);
+      const { data, error } = await service.from("library_assets").select("*").order("created_at", { ascending: false }).limit(500);
       if (error) throw error;
       const videos = (data || [])
         .filter((row) => !row.provenance?.invalid)
-        .map((row) => ({
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        src: signedPlaybackPath("render", row.provenance?.candidate_id ? String(row.id) : row.id),
-        filename: row.filename,
-        category: "clip_factory",
-        kind: row.kind,
-        durationSeconds: row.duration_seconds,
-        poster: row.thumbnail_path ? signedPlaybackPath("thumb", row.id) : undefined,
-        width: row.width,
-        height: row.height,
-      }));
+        .map((row) => {
+          const filename = String(row.filename || "clip.mp4");
+          const title = String(row.title || "Library asset");
+          const durationSeconds =
+            typeof row.duration_seconds === "number" ? row.duration_seconds : Number(row.duration_seconds || 0) || undefined;
+          const fallbackSignedSrc = signedPlaybackPath(
+            "render",
+            row.provenance?.candidate_id ? String(row.id) : String(row.id),
+          );
+          return {
+            id: String(row.id),
+            title,
+            description: String(row.description || ""),
+            src: resolveLibraryAssetSrc({ src: row.src, fallbackSignedSrc }),
+            filename,
+            category: mapLibraryAssetCategory(row.category, filename, title),
+            kind: mapLibraryAssetKind(row.kind, filename, durationSeconds),
+            durationSeconds,
+            poster: row.thumbnail_path ? signedPlaybackPath("thumb", String(row.id)) : undefined,
+            width: row.width,
+            height: row.height,
+            catalogId:
+              typeof row.provenance?.catalog_id === "string" ? String(row.provenance.catalog_id) : undefined,
+          };
+        });
       const { data: renders } = videos.length
         ? await service
             .from("clip_factory_renders")
