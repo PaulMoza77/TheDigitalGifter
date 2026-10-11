@@ -7,9 +7,8 @@ import { supabase } from "@/lib/supabase";
  * Custom hook to check if the current user has admin privileges
  * @param redirectIfNotAdmin - If true, automatically redirects to home page when user is not an admin
  *
- * Priority:
- *  1) profiles.role === "admin" (if exists)
- *  2) admin_users allowlist by email (fallback, recommended)
+ * Authority: public.admin_users allowlist by email ONLY.
+ * profiles.role is intentionally ignored (client-writable → privilege escalation).
  */
 export function useAdminAuth(redirectIfNotAdmin = true) {
   const navigate = useNavigate();
@@ -39,29 +38,6 @@ export function useAdminAuth(redirectIfNotAdmin = true) {
         return;
       }
 
-      // ---- 1) Try profiles.role (if you have it) ----
-      try {
-        const { data: prof, error: profErr } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        // If row exists and is admin -> done
-        if (!profErr && prof?.role) {
-          const admin = prof.role === "admin";
-          if (mounted) {
-            setIsAdminRaw(admin);
-            setIsLoading(false);
-            if (redirectIfNotAdmin && !admin) navigate("/");
-          }
-          return;
-        }
-      } catch (e) {
-        console.error("[useAdminAuth] profiles check failed:", e);
-      }
-
-      // ---- 2) Fallback: admin_users allowlist by email ----
       try {
         const email = user.email ?? null;
 
@@ -90,7 +66,7 @@ export function useAdminAuth(redirectIfNotAdmin = true) {
           if (redirectIfNotAdmin && !admin) navigate("/");
         }
       } catch (e) {
-        console.error("[useAdminAuth] admin_users fallback failed:", e);
+        console.error("[useAdminAuth] admin_users check failed:", e);
         if (mounted) {
           setIsAdminRaw(false);
           setIsLoading(false);

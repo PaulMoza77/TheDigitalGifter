@@ -14,6 +14,7 @@
     "test:long-form-hour": "LONG_FORM_HOUR=1 vitest run api/_lib/long-form-studio/hour.e2e.test.ts",
     "test:christmas-seo": "node scripts/christmas-seo-smoke.mjs",
     "test:christmas-v2-funnel-e2e": "node scripts/christmas-v2-funnel-e2e.mjs",
+    "test:platform-customer-e2e": "node scripts/platform-customer-e2e.mjs",
     "test:pet-preview-identity": "vitest run src/features/pet-preview-identity.test.ts && node scripts/pet-preview-identity-qa.mjs",
     "deploy:pet-preview": "bash scripts/deploy-pet-preview.sh",
     "smoke:pet-preview": "PET_PREVIEW_SMOKE=1 node scripts/pet-preview-live-smoke.mjs",

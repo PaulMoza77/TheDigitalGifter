@@ -182,7 +182,11 @@ export default function CustomerAccountHome() {
             : "No Founding Pass bonus on this account yet."}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link className="rounded-full border border-white/15 px-4 py-2 text-sm" to="/pricing">
+          <Link
+            className="rounded-full border border-white/15 px-4 py-2 text-sm"
+            to="/pricing"
+            data-testid="account-buy-credits"
+          >
             Buy more credits
           </Link>
           <Link className="rounded-full border border-white/15 px-4 py-2 text-sm" to="/generator?category=image">

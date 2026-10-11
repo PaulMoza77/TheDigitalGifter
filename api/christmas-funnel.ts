@@ -763,7 +763,8 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
       const sessionMetadata = (session?.metadata || {}) as Record<string, unknown>;
       const sessionOrderId = asString(sessionMetadata.christmas_order_id) || asString(session?.client_reference_id);
-      if (sessionOrderId && sessionOrderId !== asString(order.id)) {
+      // Require explicit binding — never fulfill an order from an unbound/foreign session.
+      if (!sessionOrderId || sessionOrderId !== asString(order.id)) {
         return apiError(res, "INVALID_REQUEST", "This payment session does not match the order.", 400);
       }
 
