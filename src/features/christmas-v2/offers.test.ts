@@ -136,14 +136,16 @@ describe("christmas-v2 EUR offer contract", () => {
     expect(nodeFunnel).not.toMatch(/rpc\("fulfill_christmas_order_payment"/);
 
     const image = read("supabase/functions/christmas-generate/index.ts");
-    expect(image).toContain("generateSoulV2Image");
+    expect(image).toContain("submitSoulV2Image");
+    expect(image).toContain("pollHiggsfieldRequest");
     expect(image).toContain("christmas_v2_finalize_generation_if_done");
     expect(image).toContain("claim_christmas_v2_generation_job");
     expect(image).toContain('from("christmas_v2_orders")');
     expect(image).not.toContain("api.replicate.com");
 
     const nodeImage = read("api/christmas-generate.ts");
-    expect(nodeImage).toContain("generateSoulV2Image");
+    expect(nodeImage).toContain("submitSoulV2Image");
+    expect(nodeImage).toContain("pollHiggsfieldRequest");
     expect(nodeImage).toContain("claim_christmas_v2_generation_job");
     expect(nodeImage).toContain('from("christmas_v2_orders")');
     expect(nodeImage).toContain('from("christmas_v2_order_scenes")');
@@ -154,13 +156,14 @@ describe("christmas-v2 EUR offer contract", () => {
     expect(video).toContain('from("christmas_v2_orders")');
     expect(video).toContain('from("christmas_v2_order_scenes")');
     expect(video).toContain('from("christmas_v2_order_videos")');
-    expect(video).toContain("generateKling3ProVideo");
+    expect(video).toContain("submitKling3ProVideo");
+    expect(video).toContain("pollHiggsfieldRequest");
     expect(video).toContain("christmas_v2_finalize_generation_if_done");
     expect(video).not.toContain('from("christmas_orders")');
     expect(video).not.toContain("api.replicate.com");
 
     const nodeVideo = read("api/christmas-generate-video.ts");
-    expect(nodeVideo).toContain("generateKling3ProVideo");
+    expect(nodeVideo).toContain("submitKling3ProVideo");
     expect(nodeVideo).toContain("christmas_v2_finalize_generation_if_done");
     expect(nodeVideo).not.toContain("api.replicate.com");
 

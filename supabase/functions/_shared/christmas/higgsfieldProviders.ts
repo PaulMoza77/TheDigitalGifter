@@ -1,6 +1,9 @@
 /**
  * Christmas V2 paid generation providers (Higgsfield only).
- * Official model IDs verified from Higgsfield docs + existing TDG content-autopilot usage.
+ * Official contracts (open.higgsfield.ai):
+ *  - Soul v2 I2I: POST /higgsfield-ai/soul/v2/image-to-image → request_id + status_url
+ *  - Kling 3 Pro I2V: POST /kling-video/v3.0/pro/image-to-video → request_id + status_url
+ *  - Poll GET status_url (or /requests/{id}/status) until completed|failed|nsfw|canceled
  * No Replicate fallback — fail closed when credentials are missing (unless mock).
  */
 
@@ -9,8 +12,8 @@ import {
   isSuccessfulHiggsfieldStatus,
   isTerminalHiggsfieldStatus,
   readHiggsfieldAuthorization,
+  HIGGSFIELD_API_BASE,
 } from "../higgsfieldImage.ts";
-import { HIGGSFIELD_API_BASE } from "../higgsfieldImage.ts";
 import {
   CHRISTMAS_KLING_3_PRO_VIDEO_MODEL,
   CHRISTMAS_SOUL_V2_IMAGE_MODEL,
@@ -19,6 +22,12 @@ import {
 } from "./constants.ts";
 
 type FetchImpl = typeof fetch;
+
+export type HiggsfieldSubmitResult = {
+  requestId: string;
+  statusUrl: string;
+  model: string;
+};
 
 function authHeaders(authorization: string, hasBody: boolean): HeadersInit {
   const headers: Record<string, string> = {
@@ -30,13 +39,23 @@ function authHeaders(authorization: string, hasBody: boolean): HeadersInit {
   return headers;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function resolveStatusUrl(requestId: string, submitted: Record<string, unknown>): string {
+  const fromBody = String(submitted.status_url || "").trim();
+  if (fromBody.startsWith("https://api.higgsfield.ai/")) return fromBody;
+  return `${HIGGSFIELD_API_BASE}/requests/${requestId}/status`;
+}
+
 async function higgsfieldJson(
   authorization: string,
   method: string,
   path: string,
   body?: unknown,
   fetchImpl: FetchImpl = fetch,
-): Promise<Record<string, unknown>> {
+): Promise<{ status: number; body: Record<string, unknown> }> {
   const url = path.startsWith("http") ? path : `${HIGGSFIELD_API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   let response: Response;
   try {
@@ -58,11 +77,37 @@ async function higgsfieldJson(
       parsed = {};
     }
   }
-  if (!response.ok) {
-    const detail = String(parsed.detail || parsed.error || parsed.message || "").slice(0, 200);
-    throw new Error(detail || `Higgsfield HTTP ${response.status}`);
+  return { status: response.status, body: parsed };
+}
+
+async function higgsfieldJsonOk(
+  authorization: string,
+  method: string,
+  path: string,
+  body?: unknown,
+  fetchImpl: FetchImpl = fetch,
+  options?: { maxRetries?: number },
+): Promise<Record<string, unknown>> {
+  const maxRetries = options?.maxRetries ?? 4;
+  let delayMs = 1000;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    const { status, body: parsed } = await higgsfieldJson(
+      authorization,
+      method,
+      path,
+      body,
+      fetchImpl,
+    );
+    if (status >= 200 && status < 300) return parsed;
+    const retryable = status === 429 || status >= 500;
+    if (!retryable || attempt === maxRetries) {
+      const detail = String(parsed.detail || parsed.error || parsed.message || "").slice(0, 200);
+      throw new Error(detail || `Higgsfield HTTP ${status}`);
+    }
+    await sleep(delayMs + Math.floor(Math.random() * 400));
+    delayMs = Math.min(delayMs * 2, 16_000);
   }
-  return parsed;
+  throw new Error("Higgsfield request failed");
 }
 
 export function requireChristmasHiggsfieldAuth(env: {
@@ -77,42 +122,10 @@ export function requireChristmasHiggsfieldAuth(env: {
   return auth;
 }
 
-export async function pollHiggsfieldRequest(
-  authorization: string,
-  requestId: string,
-  options?: { maxAttempts?: number; sleepMs?: number; fetchImpl?: FetchImpl },
-): Promise<{ done: boolean; failed: boolean; body: Record<string, unknown> | null }> {
-  const maxAttempts = options?.maxAttempts ?? 60;
-  const sleepMs = options?.sleepMs ?? 2500;
-  const fetchImpl = options?.fetchImpl ?? fetch;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const current = await higgsfieldJson(
-      authorization,
-      "GET",
-      `/requests/${requestId}/status`,
-      undefined,
-      fetchImpl,
-    );
-    const status = String(current.status || "");
-    if (isTerminalHiggsfieldStatus(status)) {
-      return {
-        done: true,
-        failed: !isSuccessfulHiggsfieldStatus(status),
-        body: current,
-      };
-    }
-    if (attempt < maxAttempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, sleepMs));
-    }
-  }
-  return { done: false, failed: false, body: null };
-}
-
 export function soulV2ImageRequest(input: {
   prompt: string;
   imageUrl: string;
   aspectRatio?: string;
-  /** Optional override · defaults to official Soul v2 I2I id. */
   model?: string;
 }): { path: string; body: Record<string, unknown>; model: string } {
   const model = String(input.model || CHRISTMAS_SOUL_V2_IMAGE_MODEL).replace(/^\/+/, "");
@@ -134,7 +147,6 @@ export function kling3ProVideoRequest(input: {
   prompt: string;
   imageUrl: string;
   duration?: number;
-  /** Optional override · defaults to official Kling 3 Pro I2V id. */
   model?: string;
 }): { path: string; body: Record<string, unknown>; model: string } {
   const model = String(input.model || CHRISTMAS_KLING_3_PRO_VIDEO_MODEL).replace(/^\/+/, "");
@@ -145,23 +157,26 @@ export function kling3ProVideoRequest(input: {
       image_url: input.imageUrl,
       prompt: input.prompt,
       duration: input.duration ?? 5,
+      // Product does not promise audio · keep sound off (HF default is "on").
       sound: "off",
+      multi_shots: false,
     },
   };
 }
 
-export async function generateSoulV2Image(input: {
+/** Submit only · caller MUST persist requestId before polling (anti double-charge). */
+export async function submitSoulV2Image(input: {
   authorization: string;
   prompt: string;
   imageUrl: string;
   aspectRatio?: string;
   fetchImpl?: FetchImpl;
-}): Promise<{ requestId: string; outputUrl: string; model: string }> {
+}): Promise<HiggsfieldSubmitResult> {
   const request = soulV2ImageRequest({
     ...input,
     model: christmasImageModel(),
   });
-  const submitted = await higgsfieldJson(
+  const submitted = await higgsfieldJsonOk(
     input.authorization,
     "POST",
     request.path,
@@ -170,28 +185,122 @@ export async function generateSoulV2Image(input: {
   );
   const requestId = String(submitted.request_id || "").trim();
   if (!requestId) throw new Error("Higgsfield Soul v2 returned no request_id");
+  return {
+    requestId,
+    statusUrl: resolveStatusUrl(requestId, submitted),
+    model: request.model,
+  };
+}
 
-  const polled = await pollHiggsfieldRequest(input.authorization, requestId, {
+/** Submit only · caller MUST persist requestId before polling. */
+export async function submitKling3ProVideo(input: {
+  authorization: string;
+  prompt: string;
+  imageUrl: string;
+  duration?: number;
+  fetchImpl?: FetchImpl;
+}): Promise<HiggsfieldSubmitResult> {
+  const request = kling3ProVideoRequest({
+    ...input,
+    model: christmasVideoModel(),
+  });
+  const submitted = await higgsfieldJsonOk(
+    input.authorization,
+    "POST",
+    request.path,
+    request.body,
+    input.fetchImpl,
+  );
+  const requestId = String(submitted.request_id || "").trim();
+  if (!requestId) throw new Error("Higgsfield Kling 3 Pro returned no request_id");
+  return {
+    requestId,
+    statusUrl: resolveStatusUrl(requestId, submitted),
+    model: request.model,
+  };
+}
+
+/**
+ * Poll with official backoff guidance: start ~2s, grow toward ~10s + jitter.
+ * Prefer statusUrl from submit response when available.
+ */
+export async function pollHiggsfieldRequest(
+  authorization: string,
+  requestId: string,
+  options?: {
+    maxAttempts?: number;
+    initialSleepMs?: number;
+    statusUrl?: string | null;
+    fetchImpl?: FetchImpl;
+  },
+): Promise<{ done: boolean; failed: boolean; body: Record<string, unknown> | null; status?: string }> {
+  const maxAttempts = options?.maxAttempts ?? 60;
+  const fetchImpl = options?.fetchImpl ?? fetch;
+  const statusPath =
+    options?.statusUrl && options.statusUrl.startsWith("https://api.higgsfield.ai/")
+      ? options.statusUrl
+      : `/requests/${requestId}/status`;
+  let delayMs = options?.initialSleepMs ?? 2000;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const current = await higgsfieldJsonOk(
+        authorization,
+        "GET",
+        statusPath,
+        undefined,
+        fetchImpl,
+        { maxRetries: 2 },
+      );
+      const status = String(current.status || "");
+      if (isTerminalHiggsfieldStatus(status)) {
+        return {
+          done: true,
+          failed: !isSuccessfulHiggsfieldStatus(status),
+          body: current,
+          status,
+        };
+      }
+    } catch (err) {
+      // Transient poll errors: continue with backoff unless out of attempts.
+      if (attempt >= maxAttempts - 1) throw err;
+    }
+    if (attempt < maxAttempts - 1) {
+      await sleep(delayMs + Math.floor(Math.random() * 500));
+      delayMs = Math.min(Math.floor(delayMs * 1.5), 10_000);
+    }
+  }
+  return { done: false, failed: false, body: null };
+}
+
+export function extractVideoUrl(body: Record<string, unknown>): string | null {
+  const video = body.video;
+  if (video && typeof video === "object" && typeof (video as { url?: unknown }).url === "string") {
+    return (video as { url: string }).url;
+  }
+  if (typeof body.video_url === "string") return body.video_url;
+  return null;
+}
+
+/** Convenience: submit+poll in-process (tests / short paths). Prefer split for workers. */
+export async function generateSoulV2Image(input: {
+  authorization: string;
+  prompt: string;
+  imageUrl: string;
+  aspectRatio?: string;
+  fetchImpl?: FetchImpl;
+}): Promise<{ requestId: string; outputUrl: string; model: string }> {
+  const submitted = await submitSoulV2Image(input);
+  const polled = await pollHiggsfieldRequest(input.authorization, submitted.requestId, {
     maxAttempts: 48,
-    sleepMs: 2500,
+    statusUrl: submitted.statusUrl,
     fetchImpl: input.fetchImpl,
   });
   if (!polled.done) throw new Error("Higgsfield Soul v2 timed out");
   if (polled.failed || !polled.body) throw new Error("Higgsfield Soul v2 generation failed");
   const outputUrl = extractHiggsfieldImageUrl(polled.body);
   if (!outputUrl) throw new Error("Higgsfield Soul v2 returned no image URL");
-  return { requestId, outputUrl, model: request.model };
-}
-
-function extractVideoUrl(body: Record<string, unknown>): string | null {
-  const video = body.video;
-  if (video && typeof video === "object" && typeof (video as { url?: unknown }).url === "string") {
-    return (video as { url: string }).url;
-  }
-  if (typeof body.video_url === "string") return body.video_url;
-  const output = body.output;
-  if (typeof output === "string" && /^https?:\/\//i.test(output)) return output;
-  return null;
+  return { requestId: submitted.requestId, outputUrl, model: submitted.model };
 }
 
 export async function generateKling3ProVideo(input: {
@@ -201,28 +310,15 @@ export async function generateKling3ProVideo(input: {
   duration?: number;
   fetchImpl?: FetchImpl;
 }): Promise<{ requestId: string; outputUrl: string; model: string }> {
-  const request = kling3ProVideoRequest({
-    ...input,
-    model: christmasVideoModel(),
-  });
-  const submitted = await higgsfieldJson(
-    input.authorization,
-    "POST",
-    request.path,
-    request.body,
-    input.fetchImpl,
-  );
-  const requestId = String(submitted.request_id || "").trim();
-  if (!requestId) throw new Error("Higgsfield Kling 3 Pro returned no request_id");
-
-  const polled = await pollHiggsfieldRequest(input.authorization, requestId, {
+  const submitted = await submitKling3ProVideo(input);
+  const polled = await pollHiggsfieldRequest(input.authorization, submitted.requestId, {
     maxAttempts: 90,
-    sleepMs: 3000,
+    statusUrl: submitted.statusUrl,
     fetchImpl: input.fetchImpl,
   });
   if (!polled.done) throw new Error("Higgsfield Kling 3 Pro timed out");
   if (polled.failed || !polled.body) throw new Error("Higgsfield Kling 3 Pro generation failed");
   const outputUrl = extractVideoUrl(polled.body);
   if (!outputUrl) throw new Error("Higgsfield Kling 3 Pro returned no video URL");
-  return { requestId, outputUrl, model: request.model };
+  return { requestId: submitted.requestId, outputUrl, model: submitted.model };
 }

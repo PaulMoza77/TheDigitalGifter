@@ -16,12 +16,20 @@ import {
   recordChristmasV2ImageCost,
 } from "../_shared/christmas/costLedger.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import { extractHiggsfieldImageUrl } from "../_shared/higgsfieldImage.ts";
 import {
-  generateSoulV2Image,
+  pollHiggsfieldRequest,
   requireChristmasHiggsfieldAuth,
+  submitSoulV2Image,
 } from "../_shared/christmas/higgsfieldProviders.ts";
+import {
+  CHRISTMAS_MAX_IMAGE_BYTES,
+  fetchProviderMediaBytes,
+} from "../_shared/christmas/providerMedia.ts";
 
 type Body = { order_id?: string };
+
+const MAX_SCENE_ATTEMPTS = 3;
 
 function waitUntil(promise: Promise<unknown>) {
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void } })
@@ -57,25 +65,6 @@ async function copyObject(
     upsert: true,
   });
   if (upError) throw upError;
-}
-
-async function generateChristmasImage(prompt: string, imageUrl: string): Promise<{
-  predictionId: string;
-  outputUrl: string;
-  model: string;
-}> {
-  const authorization = requireChristmasHiggsfieldAuth({ get: (name) => Deno.env.get(name) });
-  const result = await generateSoulV2Image({
-    authorization,
-    prompt,
-    imageUrl,
-    aspectRatio: "3:4",
-  });
-  return {
-    predictionId: result.requestId,
-    outputUrl: result.outputUrl,
-    model: result.model,
-  };
 }
 
 async function finalizeChristmasV2Generation(
@@ -194,13 +183,47 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, status: "held", started: 0 });
     }
 
-    const targets = (scenes ?? []).filter(
-      (scene) =>
-        ["queued", "failed"].includes(asString(scene.status)) && !scene.replicate_prediction_id,
-    );
+    // Orphan: generating without request_id means uncertain paid outcome — never silent re-submit.
+    for (const scene of scenes ?? []) {
+      if (asString(scene.status) === "generating" && !scene.replicate_prediction_id) {
+        await service
+          .from("christmas_v2_order_scenes")
+          .update({
+            status: "failed",
+            last_error: "uncertain_provider_outcome",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", scene.id);
+      }
+    }
+
+    const { data: refreshedScenes } = await service
+      .from("christmas_v2_order_scenes")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("scene_number", { ascending: true });
+
+    const targets = (refreshedScenes ?? []).filter((scene) => {
+      const status = asString(scene.status);
+      const pred = asString(scene.replicate_prediction_id);
+      const lastError = asString(scene.last_error);
+      if (lastError.startsWith("provider_terminal:") || lastError === "uncertain_provider_outcome") {
+        return false;
+      }
+      if (status === "generating" && pred) return true; // resume poll only
+      // Download/storage failure after submit: resume poll, never create a second request_id.
+      if (status === "failed" && pred) return true;
+      if (["queued", "failed"].includes(status) && !pred) {
+        return Number(scene.attempts || 0) < MAX_SCENE_ATTEMPTS;
+      }
+      return false;
+    });
 
     let started = 0;
     const contentType = asString(order.photo_content_type) || "image/jpeg";
+    const authorization = generationMock()
+      ? null
+      : requireChristmasHiggsfieldAuth({ get: (name) => Deno.env.get(name) });
 
     for (const scene of targets) {
       const sceneKey = asString(scene.scene_key);
@@ -213,23 +236,29 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      await service
-        .from("christmas_v2_order_scenes")
-        .update({
-          status: "generating",
-          started_at: new Date().toISOString(),
-          last_error: null,
-          attempts: Number(scene.attempts || 0) + 1,
-        })
-        .eq("id", scene.id);
-
       const resultPath = `${orderId}/scenes/${sceneKey}.jpg`;
-      const attemptNumber = Number(scene.attempts || 0) + 1;
+      const existingPredictionId = asString(scene.replicate_prediction_id);
+      const resumeOnly = Boolean(existingPredictionId);
+      const attemptNumber = resumeOnly
+        ? Math.max(Number(scene.attempts || 1), 1)
+        : Number(scene.attempts || 0) + 1;
       const isRetry = attemptNumber > 1;
+
+      if (!resumeOnly) {
+        await service
+          .from("christmas_v2_order_scenes")
+          .update({
+            status: "generating",
+            started_at: new Date().toISOString(),
+            last_error: null,
+            attempts: attemptNumber,
+          })
+          .eq("id", scene.id);
+      }
 
       try {
         if (generationMock()) {
-          const predictionId = `mock_${orderId}_${sceneKey}`;
+          const predictionId = existingPredictionId || `mock_${orderId}_${sceneKey}`;
           await copyObject(
             service,
             CHRISTMAS_SOURCE_BUCKET,
@@ -264,37 +293,72 @@ Deno.serve(async (req) => {
             isRetry,
           });
         } else {
-          const prompt = buildScenePrompt(def);
-          const prediction = await generateChristmasImage(prompt, signed.signedUrl);
-          const imgRes = await fetch(prediction.outputUrl);
-          if (!imgRes.ok) throw new Error(`Failed to download generated image (${imgRes.status})`);
-          const bytes = new Uint8Array(await imgRes.arrayBuffer());
+          let requestId = existingPredictionId;
+          let modelName = asString(scene.model_name) || undefined;
+          if (!requestId) {
+            const submitted = await submitSoulV2Image({
+              authorization: authorization!,
+              prompt: buildScenePrompt(def),
+              imageUrl: signed.signedUrl,
+              aspectRatio: "3:4",
+            });
+            requestId = submitted.requestId;
+            modelName = submitted.model;
+            // Persist BEFORE polling — crash-safe anti double-charge.
+            await service
+              .from("christmas_v2_order_scenes")
+              .update({
+                replicate_prediction_id: requestId,
+                model_name: submitted.model,
+                status: "generating",
+                progress_percent: 20,
+              })
+              .eq("id", scene.id);
+          }
+
+          const polled = await pollHiggsfieldRequest(authorization!, requestId, {
+            maxAttempts: 48,
+          });
+          if (!polled.done) throw new Error("Higgsfield Soul v2 timed out");
+          if (polled.failed || !polled.body) {
+            throw new Error(`provider_terminal:${polled.status || "failed"}`);
+          }
+          const outputUrl = extractHiggsfieldImageUrl(polled.body);
+          if (!outputUrl) throw new Error("Higgsfield Soul v2 returned no image URL");
+
+          const media = await fetchProviderMediaBytes(outputUrl, {
+            maxBytes: CHRISTMAS_MAX_IMAGE_BYTES,
+            kind: "image",
+          });
           const { error: upErr } = await service.storage
             .from(CHRISTMAS_RESULT_BUCKET)
-            .upload(resultPath, bytes, { contentType: "image/jpeg", upsert: true });
+            .upload(resultPath, media.bytes, {
+              contentType: media.contentType || "image/jpeg",
+              upsert: true,
+            });
           if (upErr) throw upErr;
           await service
             .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
-              replicate_prediction_id: prediction.predictionId,
+              replicate_prediction_id: requestId,
               result_bucket: CHRISTMAS_RESULT_BUCKET,
               result_path: resultPath,
-              result_content_type: "image/jpeg",
-              model_name: prediction.model,
+              result_content_type: media.contentType || "image/jpeg",
+              model_name: modelName,
               completed_at: new Date().toISOString(),
             })
             .eq("id", scene.id);
           await recordChristmasV2ImageCost(service, {
-            predictionId: prediction.predictionId,
+            predictionId: requestId,
             orderId,
             sceneId: asString(scene.id),
             sceneKey,
             attemptNumber,
             productSku: asString(order.sku),
             providerStatus: "succeeded",
-            modelName: prediction.model,
+            modelName,
             isMock: false,
             isRetry,
             costNotes: "estimate_catalog_not_provider_invoice",
@@ -303,6 +367,15 @@ Deno.serve(async (req) => {
         started += 1;
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
+        const persistedId = asString(
+          (
+            await service
+              .from("christmas_v2_order_scenes")
+              .select("replicate_prediction_id")
+              .eq("id", scene.id)
+              .maybeSingle()
+          ).data?.replicate_prediction_id,
+        );
         await service
           .from("christmas_v2_order_scenes")
           .update({
@@ -312,12 +385,14 @@ Deno.serve(async (req) => {
           })
           .eq("id", scene.id);
         await recordChristmasV2ImageCost(service, {
-          predictionId: christmasFailedPredictionId({
-            kind: "image",
-            orderId,
-            assetId: asString(scene.id),
-            attempt: attemptNumber,
-          }),
+          predictionId:
+            persistedId ||
+            christmasFailedPredictionId({
+              kind: "image",
+              orderId,
+              assetId: asString(scene.id),
+              attempt: attemptNumber,
+            }),
           orderId,
           sceneId: asString(scene.id),
           sceneKey,
@@ -326,7 +401,9 @@ Deno.serve(async (req) => {
           providerStatus: "failed",
           isMock: generationMock(),
           isRetry,
-          costNotes: "failed_attempt_estimated_consumption",
+          costNotes: persistedId
+            ? "provider_or_postprocess_failed_with_request_id"
+            : "failed_attempt_estimated_consumption",
         });
       }
     }

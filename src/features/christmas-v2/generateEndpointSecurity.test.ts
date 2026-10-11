@@ -102,7 +102,8 @@ describe("Christmas generate endpoint security attack matrix", () => {
     expect(paidIdx).toBeGreaterThan(authIdx);
     expect(claimIdx).toBeGreaterThan(paidIdx);
     expect(image).toContain("generationMock()");
-    expect(image).toContain("generateSoulV2Image");
+    expect(image).toContain("submitSoulV2Image");
+    expect(image).toContain("uncertain_provider_outcome");
   });
 });
 

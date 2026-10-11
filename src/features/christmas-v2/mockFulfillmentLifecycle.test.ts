@@ -67,7 +67,8 @@ describe("Christmas V2 mock fulfillment matrix (deterministic)", () => {
     const image = readFileSync(resolve("api/christmas-generate.ts"), "utf8");
     expect(image).toContain("generationMock()");
     expect(image).not.toContain("api.replicate.com");
-    expect(image).toContain("generateSoulV2Image");
+    expect(image).toContain("submitSoulV2Image");
+    expect(image).toContain("pollHiggsfieldRequest");
   });
 
   it("ships disposable SQL assertion harness covering concurrency + EUR matrix", () => {
