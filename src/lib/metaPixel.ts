@@ -52,14 +52,20 @@ export function buildMetaCustomData(input: {
   valueCents: number;
   orderId?: string;
   numItems?: number;
+  /** ISO currency · defaults USD (pet). Christmas V2 passes EUR. */
+  currency?: string;
+  sku?: string;
 }): Record<string, unknown> {
   const value = Number(input.valueCents) / 100;
+  const currency = (input.currency || "USD").toUpperCase();
+  const sku = input.sku || PET_PRODUCT_SKU;
   const data: Record<string, unknown> = {
-    content_ids: [PET_PRODUCT_SKU],
+    content_ids: [sku],
     content_type: "product",
     value,
-    currency: "USD",
+    currency,
     num_items: input.numItems ?? 1,
+    contents: [{ id: sku, quantity: 1, item_price: value }],
   };
   if (input.orderId) data.order_id = input.orderId;
   return data;
@@ -94,13 +100,20 @@ export function trackMetaInitiateCheckout(input: {
   eventId: string;
   valueCents: number;
   orderId?: string;
+  currency?: string;
+  sku?: string;
 }) {
   if (!input.eventId) return;
   if (!Number.isFinite(input.valueCents) || input.valueCents <= 0) return;
   if (!once(`tdg.meta.initiateCheckout.${input.eventId}`)) return;
   track(
     "InitiateCheckout",
-    buildMetaCustomData({ valueCents: input.valueCents, orderId: input.orderId }),
+    buildMetaCustomData({
+      valueCents: input.valueCents,
+      orderId: input.orderId,
+      currency: input.currency,
+      sku: input.sku,
+    }),
     input.eventId,
   );
 }
@@ -110,6 +123,8 @@ export function trackMetaPurchaseOnce(input: {
   amountCents: number;
   orderId: string;
   paidAt?: string | null;
+  currency?: string;
+  sku?: string;
 }) {
   if (!input.eventId || !input.orderId) return;
   if (!input.paidAt) return;
@@ -120,6 +135,8 @@ export function trackMetaPurchaseOnce(input: {
     buildMetaCustomData({
       valueCents: input.amountCents,
       orderId: input.orderId,
+      currency: input.currency,
+      sku: input.sku,
     }),
     input.eventId,
   );

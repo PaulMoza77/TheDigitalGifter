@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { PageHead } from "@/components/PageHead";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
-import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
+import { trackMetaInitiateCheckout, trackMetaPurchaseOnce } from "@/lib/metaPixel";
 import { trackChristmasV2Event } from "./analytics";
 import {
   christmasFunnelApi,
@@ -207,6 +207,8 @@ export function ChristmasV2FunnelPage() {
                 eventId: checkout.sessionId || checkout.orderId || `cv2_${Date.now()}`,
                 valueCents: checkout.amountCents,
                 orderId: checkout.orderId || undefined,
+                currency: "EUR",
+                sku: CHRISTMAS_PACKS.starter.sku,
               });
             }}
             onSubmit={() =>
@@ -274,17 +276,34 @@ export function ChristmasV2OrderPage() {
 
         if (
           !purchaseTracked.current &&
-          ["paid", "generating", "complete", "awaiting_qc"].includes(data.order.status)
+          ["paid", "generating", "complete", "awaiting_qc", "partial_failure"].includes(
+            data.order.status,
+          ) &&
+          data.order.paidAt
         ) {
           purchaseTracked.current = true;
+          const sku =
+            data.order.sku ||
+            CHRISTMAS_PACKS[data.order.packKey]?.sku ||
+            data.order.packKey;
+          const amountCents = data.order.chargedAmountCents || data.order.amountCents;
+          const eventId = data.order.metaEventId || `christmas_purchase_${data.order.orderId}`;
+          trackMetaPurchaseOnce({
+            eventId,
+            amountCents,
+            orderId: data.order.orderId,
+            paidAt: data.order.paidAt,
+            currency: (data.order.currency || "EUR").toUpperCase(),
+            sku,
+          });
           trackChristmasV2Event({
             eventName: "christmas_v2_purchase",
-            amountCents: data.order.amountCents,
-            product: CHRISTMAS_PACKS[data.order.packKey]?.sku || data.order.packKey,
+            amountCents,
+            product: sku,
           });
           trackChristmasV2Event({
             eventName: "christmas_v2_generation_started",
-            product: CHRISTMAS_PACKS[data.order.packKey]?.sku || data.order.packKey,
+            product: sku,
           });
         }
 

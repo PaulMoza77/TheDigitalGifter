@@ -11,6 +11,10 @@ import {
   type ChristmasPackKey,
 } from "../_shared/christmas/constants.ts";
 import { asString } from "../_shared/christmas/crypto.ts";
+import {
+  christmasFailedPredictionId,
+  recordChristmasV2ImageCost,
+} from "../_shared/christmas/costLedger.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
 import {
   generateSoulV2Image,
@@ -220,9 +224,12 @@ Deno.serve(async (req) => {
         .eq("id", scene.id);
 
       const resultPath = `${orderId}/scenes/${sceneKey}.jpg`;
+      const attemptNumber = Number(scene.attempts || 0) + 1;
+      const isRetry = attemptNumber > 1;
 
       try {
         if (generationMock()) {
+          const predictionId = `mock_${orderId}_${sceneKey}`;
           await copyObject(
             service,
             CHRISTMAS_SOURCE_BUCKET,
@@ -236,7 +243,7 @@ Deno.serve(async (req) => {
             .update({
               status: "succeeded",
               progress_percent: 100,
-              replicate_prediction_id: `mock_${orderId}_${sceneKey}`,
+              replicate_prediction_id: predictionId,
               result_bucket: CHRISTMAS_RESULT_BUCKET,
               result_path: resultPath,
               result_content_type: contentType,
@@ -244,6 +251,18 @@ Deno.serve(async (req) => {
               completed_at: new Date().toISOString(),
             })
             .eq("id", scene.id);
+          await recordChristmasV2ImageCost(service, {
+            predictionId,
+            orderId,
+            sceneId: asString(scene.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName: "mock",
+            isMock: true,
+            isRetry,
+          });
         } else {
           const prompt = buildScenePrompt(def);
           const prediction = await generateChristmasImage(prompt, signed.signedUrl);
@@ -267,6 +286,19 @@ Deno.serve(async (req) => {
               completed_at: new Date().toISOString(),
             })
             .eq("id", scene.id);
+          await recordChristmasV2ImageCost(service, {
+            predictionId: prediction.predictionId,
+            orderId,
+            sceneId: asString(scene.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName: prediction.model,
+            isMock: false,
+            isRetry,
+            costNotes: "estimate_catalog_not_provider_invoice",
+          });
         }
         started += 1;
       } catch (genErr) {
@@ -279,6 +311,23 @@ Deno.serve(async (req) => {
             completed_at: new Date().toISOString(),
           })
           .eq("id", scene.id);
+        await recordChristmasV2ImageCost(service, {
+          predictionId: christmasFailedPredictionId({
+            kind: "image",
+            orderId,
+            assetId: asString(scene.id),
+            attempt: attemptNumber,
+          }),
+          orderId,
+          sceneId: asString(scene.id),
+          sceneKey,
+          attemptNumber,
+          productSku: asString(order.sku),
+          providerStatus: "failed",
+          isMock: generationMock(),
+          isRetry,
+          costNotes: "failed_attempt_estimated_consumption",
+        });
       }
     }
 

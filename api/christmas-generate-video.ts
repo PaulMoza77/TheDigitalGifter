@@ -15,6 +15,10 @@ import {
   requireChristmasHiggsfieldAuth,
 } from "./_lib/christmas/higgsfieldProviders";
 import { asString, isUuid } from "./_lib/christmas/crypto";
+import {
+  christmasFailedPredictionId,
+  recordChristmasV2VideoCost,
+} from "./_lib/christmas/costLedger";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 import { sendChristmasDeliveryEmail } from "./_lib/christmas/email";
 
@@ -128,19 +132,23 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         continue;
       }
 
+      const attemptNumber = Number(video.attempts || 0) + 1;
+      const isRetry = attemptNumber > 1;
       await service
         .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
-          attempts: Number(video.attempts || 0) + 1,
+          attempts: attemptNumber,
         })
         .eq("id", video.id);
 
       const resultPath = `${orderId}/videos/${video.id}.mp4`;
+      const sceneKey = asString(video.source_scene_key);
 
       try {
         if (generationMock()) {
+          const predictionId = `mock_video_${video.id}`;
           await service
             .from("christmas_v2_order_videos")
             .update({
@@ -150,10 +158,22 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
               result_path: resultPath,
               result_content_type: "video/mp4",
               duration_seconds: 5,
-              replicate_prediction_id: `mock_video_${video.id}`,
+              replicate_prediction_id: predictionId,
               completed_at: new Date().toISOString(),
             })
             .eq("id", video.id);
+          await recordChristmasV2VideoCost(service, {
+            predictionId,
+            orderId,
+            videoId: asString(video.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName: "mock",
+            isMock: true,
+            isRetry,
+          });
         } else {
           const bucket = asString(source.result_bucket) || CHRISTMAS_RESULT_BUCKET;
           const { data: signed } = await service.storage
@@ -188,6 +208,19 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
               completed_at: new Date().toISOString(),
             })
             .eq("id", video.id);
+          await recordChristmasV2VideoCost(service, {
+            predictionId: prediction.requestId,
+            orderId,
+            videoId: asString(video.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName: prediction.model,
+            isMock: false,
+            isRetry,
+            costNotes: "estimate_catalog_not_provider_invoice",
+          });
         }
 
         started += 1;
@@ -216,6 +249,23 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             completed_at: new Date().toISOString(),
           })
           .eq("id", video.id);
+        await recordChristmasV2VideoCost(service, {
+          predictionId: christmasFailedPredictionId({
+            kind: "video",
+            orderId,
+            assetId: asString(video.id),
+            attempt: attemptNumber,
+          }),
+          orderId,
+          videoId: asString(video.id),
+          sceneKey,
+          attemptNumber,
+          productSku: asString(order.sku),
+          providerStatus: "failed",
+          isMock: generationMock(),
+          isRetry,
+          costNotes: "failed_attempt_estimated_consumption",
+        });
       }
     }
 

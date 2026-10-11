@@ -4,6 +4,7 @@ import {
   captureFunnelAttribution,
 } from "../pet/funnelAttribution";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
+import { getMetaCapiClickIds } from "../pet/metaCookies";
 import { trackChristmasV2Event } from "./analytics";
 import {
   christmasFunnelApi,
@@ -109,6 +110,7 @@ export function useChristmasEmbeddedCheckout(input: {
       }
 
       const origin = window.location.origin;
+      const metaClick = getMetaCapiClickIds();
       const checkout = await christmasFunnelApi.createStripeCheckout({
         orderId: order.orderId,
         publicToken: order.publicToken,
@@ -117,6 +119,9 @@ export function useChristmasEmbeddedCheckout(input: {
         cancelUrl: `${origin}${CHRISTMAS_V2_ROUTE}?checkout=canceled`,
         funnelSessionId,
         attribution: attributionParamsForInternal(),
+        fbc: metaClick.fbc,
+        fbp: metaClick.fbp,
+        metaClick: { fbc: metaClick.fbc, fbp: metaClick.fbp },
       });
       if (bootId !== bootRef.current) return;
 

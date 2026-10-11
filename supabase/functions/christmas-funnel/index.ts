@@ -24,6 +24,10 @@ import {
   isUuid,
   sha256Hex,
 } from "../_shared/christmas/crypto.ts";
+import {
+  emitChristmasV2MetaPurchase,
+  persistChristmasMetaClickIds,
+} from "../_shared/christmas/metaCapi.ts";
 import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts";
 
 type Body = Record<string, unknown>;
@@ -238,9 +242,15 @@ async function buildOrderResults(
       status: asString(order.status),
       packKey: asString(order.pack_key) as ChristmasPackKey,
       amountCents: asInt(order.amount_cents),
+      chargedAmountCents: asInt(order.charged_amount_cents ?? order.amount_cents),
+      currency: asString(order.currency) || CHRISTMAS_V2_CURRENCY,
+      sku: asString(order.sku),
+      paidAt: order.paid_at ? asString(order.paid_at) : null,
+      metaEventId: asString(order.meta_event_id) || `christmas_purchase_${orderId}`,
       imageCount: asInt(order.image_count),
       videoCount: asInt(order.video_count),
       email: asString(order.email) || undefined,
+      parentOrderId: order.parent_order_id ? asString(order.parent_order_id) : null,
     },
     scenes: sceneOut,
     videos: videoOut,
@@ -446,6 +456,12 @@ Deno.serve(async (req) => {
         ? asString(body.funnelSessionId || body.funnel_session_id)
         : asString(order.funnel_session_id) || null;
       const attribution = attributionFromBody(body.attribution);
+      await persistChristmasMetaClickIds(service, asString(order.id), {
+        ...(typeof body.attribution === "object" && body.attribution ? body.attribution : {}),
+        ...(typeof body.metaClick === "object" && body.metaClick ? body.metaClick : {}),
+        fbc: body.fbc,
+        fbp: body.fbp,
+      });
       const pack = CHRISTMAS_PACKS[packKeyOrDefault(order.pack_key)];
       const amountCents = asInt(order.amount_cents) || pack.amountCents;
 
@@ -603,6 +619,12 @@ Deno.serve(async (req) => {
       await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", child.id);
       await insertScenes(service, child.id, sceneKeys);
       await insertVideos(service, child.id, videoSourceSceneKeys);
+      // Upsell Purchase is its own transaction; inherit parent click ids when client omits them.
+      await persistChristmasMetaClickIds(service, asString(child.id), {
+        fbc: body.fbc ?? parent.meta_fbc,
+        fbp: body.fbp ?? parent.meta_fbp,
+        ...(typeof body.metaClick === "object" && body.metaClick ? body.metaClick : {}),
+      });
 
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
       const publishableKey = asString(Deno.env.get("STRIPE_PUBLISHABLE_KEY"));
@@ -758,6 +780,13 @@ Deno.serve(async (req) => {
         } catch (evtErr) {
           console.error("christmas_v2_purchase event failed", evtErr);
         }
+      }
+
+      // Best-effort Meta Purchase (deduped vs webhook); never fail confirm.
+      try {
+        await emitChristmasV2MetaPurchase(service, asString(order.id));
+      } catch (metaErr) {
+        console.error("christmas_v2 meta purchase confirm path failed", metaErr);
       }
 
       return jsonResponse({

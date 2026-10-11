@@ -18,6 +18,12 @@ export type ChristmasOrderSummary = {
   status: string;
   packKey: ChristmasPackKey;
   amountCents: number;
+  chargedAmountCents?: number;
+  currency?: string;
+  sku?: string;
+  paidAt?: string | null;
+  metaEventId?: string;
+  parentOrderId?: string | null;
   imageCount: number;
   videoCount: number;
   email?: string;
@@ -193,6 +199,9 @@ export const christmasFunnelApi = {
     cancelUrl?: string;
     funnelSessionId?: string;
     attribution?: Record<string, string | null | undefined>;
+    fbc?: string | null;
+    fbp?: string | null;
+    metaClick?: { fbc?: string | null; fbp?: string | null };
   }) => callChristmasFunnel<CheckoutResult>("createStripeCheckout", input as unknown as Record<string, unknown>),
 
   createUpsellCheckout: (input: {

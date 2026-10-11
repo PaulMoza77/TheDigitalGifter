@@ -62,13 +62,24 @@ stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook
 ```bash
 npx vitest run src/features/christmas-v2/stripeWebhookContract.test.ts \
   src/features/christmas-v2/generateEndpointSecurity.test.ts \
-  src/features/christmas-v2/mockFulfillmentLifecycle.test.ts
+  src/features/christmas-v2/mockFulfillmentLifecycle.test.ts \
+  src/features/christmas-v2/metaPurchaseAndCostLedger.test.ts
 
 PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
   -f scripts/christmas-v2-iso-sql-assertions.sql
 PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
   -f scripts/christmas-v2-iso-mock-e2e.sql
+
+# Meta Purchase + AI cost ledger (stubs first on disposable DBs without pet cost stack)
+PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
+  -f scripts/christmas-v2-iso-meta-cost-stubs.sql
+PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
+  -f supabase/migrations/20261011180000_christmas_v2_meta_purchase_and_cost_ledger.sql
+PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
+  -f scripts/christmas-v2-iso-meta-cost-assertions.sql
 ```
+
+**Meta CAPI safety:** live Ads dataset writes require `CHRISTMAS_META_CAPI_LIVE=true` **or** `META_TEST_EVENT_CODE`. Token stays server-side (`META_CAPI_ACCESS_TOKEN`). Never send mock conversions to production Pixel datasets from agent/staging.
 
 ## Exit criteria to unblock GO
 
