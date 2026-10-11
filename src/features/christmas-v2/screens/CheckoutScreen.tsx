@@ -189,7 +189,9 @@ export function ChristmasCheckoutScreen({
     <div className="space-y-5">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A227]">Secure checkout</p>
-        <h1 className="cv2-display mt-1 text-3xl font-semibold text-[#F7F0E4]">Create My 3 Christmas Photos</h1>
+        <h1 className="cv2-display mt-1 text-3xl font-semibold text-[#F7F0E4]">
+          {CHRISTMAS_PACKS.starter.cta.replace(" · €7", "")}
+        </h1>
         <p className="mt-2 text-sm text-[#F7F0E4]/70">
           {CHRISTMAS_PACKS.starter.priceDisplay} · No subscription · Delivered to your email
         </p>
