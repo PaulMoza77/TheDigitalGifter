@@ -34,6 +34,7 @@ describe("admin video library", () => {
       "pet_other",
       "volocar_dubai_moments",
       "volocar_product_motion",
+      "flavours_bistro",
     ]);
     expect(CHRISTMAS_LIBRARY_KINDS.map((item) => item.id)).toEqual(["reel", "short", "photo"]);
     for (const video of LIBRARY_VIDEOS) {
@@ -64,11 +65,34 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-01-express-rush");
-    expect(LIBRARY_VIDEOS.slice(0, 10).every((v) => v.id.startsWith("reel-lib-montage-"))).toBe(true);
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-11-europe-postcard");
+    expect(LIBRARY_VIDEOS.slice(0, 10).map((v) => v.id)).toEqual([
+      "reel-lib-montage-11-europe-postcard",
+      "reel-lib-montage-12-palace-flash",
+      "reel-lib-montage-13-train-spark",
+      "reel-lib-montage-14-nyc-1990-glow",
+      "reel-lib-montage-15-swiss-afterglow",
+      "reel-lib-montage-16-family-hearth",
+      "reel-lib-montage-17-north-pole-arc",
+      "reel-lib-montage-18-memories-europe-30",
+      "reel-lib-montage-19-manhattan-night-30",
+      "reel-lib-montage-20-santa-workshop-30",
+    ]);
+    expect(LIBRARY_VIDEOS.slice(10, 20).map((v) => v.id)).toEqual([
+      "reel-lib-montage-01-express-rush",
+      "reel-lib-montage-02-fireside-embrace",
+      "reel-lib-montage-03-nyc-luxe",
+      "reel-lib-montage-04-santa-sprint",
+      "reel-lib-montage-05-aurora-pulse",
+      "reel-lib-montage-06-alpine-dawn",
+      "reel-lib-montage-07-global-flash",
+      "reel-lib-montage-08-cozy-cartoon",
+      "reel-lib-montage-09-pick-your-world",
+      "reel-lib-montage-10-iconic-slowburn",
+    ]);
     const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
-    expect(christmasReels.slice(10, 13).every((v) => v.id.startsWith("reel-cme1990s-"))).toBe(true);
-    expect(christmasReels.slice(13, 18).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    expect(christmasReels.slice(20, 23).every((v) => v.id.startsWith("reel-cme1990s-"))).toBe(true);
+    expect(christmasReels.slice(23, 28).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
@@ -346,11 +370,34 @@ describe("admin video library", () => {
     const pickOneReel = LIBRARY_VIDEOS.find((item) => item.id === "reel-pick-one-i2v");
     expect(pickOneReel?.kind).toBe("reel");
     expect(pickOneReel?.clipsUsed).toHaveLength(4);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-01-express-rush");
-    expect(LIBRARY_VIDEOS.slice(0, 10).every((v) => v.id.startsWith("reel-lib-montage-"))).toBe(true);
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lib-montage-11-europe-postcard");
+    expect(LIBRARY_VIDEOS.slice(0, 10).map((v) => v.id)).toEqual([
+      "reel-lib-montage-11-europe-postcard",
+      "reel-lib-montage-12-palace-flash",
+      "reel-lib-montage-13-train-spark",
+      "reel-lib-montage-14-nyc-1990-glow",
+      "reel-lib-montage-15-swiss-afterglow",
+      "reel-lib-montage-16-family-hearth",
+      "reel-lib-montage-17-north-pole-arc",
+      "reel-lib-montage-18-memories-europe-30",
+      "reel-lib-montage-19-manhattan-night-30",
+      "reel-lib-montage-20-santa-workshop-30",
+    ]);
+    expect(LIBRARY_VIDEOS.slice(10, 20).map((v) => v.id)).toEqual([
+      "reel-lib-montage-01-express-rush",
+      "reel-lib-montage-02-fireside-embrace",
+      "reel-lib-montage-03-nyc-luxe",
+      "reel-lib-montage-04-santa-sprint",
+      "reel-lib-montage-05-aurora-pulse",
+      "reel-lib-montage-06-alpine-dawn",
+      "reel-lib-montage-07-global-flash",
+      "reel-lib-montage-08-cozy-cartoon",
+      "reel-lib-montage-09-pick-your-world",
+      "reel-lib-montage-10-iconic-slowburn",
+    ]);
     const christmasReels = LIBRARY_VIDEOS.filter((v) => v.category === "christmas_reels" && v.kind === "reel");
-    expect(christmasReels.slice(10, 13).every((v) => v.id.startsWith("reel-cme1990s-"))).toBe(true);
-    expect(christmasReels.slice(13, 18).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
+    expect(christmasReels.slice(20, 23).every((v) => v.id.startsWith("reel-cme1990s-"))).toBe(true);
+    expect(christmasReels.slice(23, 28).every((v) => v.id.startsWith("reel-c20-"))).toBe(true);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("reel-cme1990s-"))).toHaveLength(3);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("short-cme1990s-"))).toHaveLength(10);
     expect(LIBRARY_VIDEOS.filter((v) => v.id.startsWith("photo-cme1990s-"))).toHaveLength(10);
