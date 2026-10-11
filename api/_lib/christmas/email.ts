@@ -29,7 +29,7 @@ export async function sendChristmasDeliveryEmail(input: {
         : "starter_ready";
 
   const { data: existing } = await input.service
-    .from("christmas_email_deliveries")
+    .from("christmas_v2_email_deliveries")
     .select("id, status")
     .eq("order_id", input.orderId)
     .eq("kind", kind)
@@ -60,7 +60,7 @@ export async function sendChristmasDeliveryEmail(input: {
     process.env.CHRISTMAS_EMAIL_FROM || process.env.TRANSACTIONAL_EMAIL_FROM || process.env.PET_EMAIL_FROM,
   );
 
-  await input.service.from("christmas_email_deliveries").upsert(
+  await input.service.from("christmas_v2_email_deliveries").upsert(
     {
       order_id: input.orderId,
       kind,
@@ -83,7 +83,7 @@ export async function sendChristmasDeliveryEmail(input: {
   if (!res.ok) {
     const providerError = (await res.text()).slice(0, 500);
     await input.service
-      .from("christmas_email_deliveries")
+      .from("christmas_v2_email_deliveries")
       .update({ status: "failed", last_error: providerError || `resend_http_${res.status}` })
       .eq("order_id", input.orderId)
       .eq("kind", kind);
@@ -91,7 +91,7 @@ export async function sendChristmasDeliveryEmail(input: {
   }
   const body = (await res.json()) as { id?: string };
   await input.service
-    .from("christmas_email_deliveries")
+    .from("christmas_v2_email_deliveries")
     .update({
       status: "sent",
       provider_message_id: asString(body.id),
@@ -101,7 +101,7 @@ export async function sendChristmasDeliveryEmail(input: {
     .eq("order_id", input.orderId)
     .eq("kind", kind);
   await input.service
-    .from("christmas_orders")
+    .from("christmas_v2_orders")
     .update({ delivery_email_sent_at: new Date().toISOString() })
     .eq("id", input.orderId);
   return { sent: true };

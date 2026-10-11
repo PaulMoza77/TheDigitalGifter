@@ -8,6 +8,7 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   generationMock,
   videoGenerationEnabled,
+  type ChristmasPackKey,
 } from "./_lib/christmas/constants";
 import {
   generateKling3ProVideo,
@@ -15,83 +16,20 @@ import {
 } from "./_lib/christmas/higgsfieldProviders";
 import { asString, isUuid } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
+import { sendChristmasDeliveryEmail } from "./_lib/christmas/email";
 
 type Body = { order_id?: string };
-
-type ReplicatePrediction = {
-  id?: string;
-  status?: string;
-  error?: string;
-  detail?: string;
-  output?: unknown;
-};
 
 const CHRISTMAS_VIDEO_PROMPT =
   "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
 
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
+function decryptStoredToken(ciphertext: string | null | undefined): string | null {
+  if (!ciphertext) return null;
+  try {
+    return Buffer.from(ciphertext, "base64").toString("utf8");
+  } catch {
+    return null;
   }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
-
-async function generateSeedanceVideo(imageUrl: string): Promise<{
-  predictionId: string;
-  outputUrl: string;
-  model: string;
-}> {
-  const token = asString(process.env.REPLICATE_API_TOKEN);
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasVideoModel();
-  const input = {
-    prompt: CHRISTMAS_VIDEO_PROMPT,
-    image: imageUrl,
-    duration: 5,
-    resolution: "720p",
-    camera_fixed: false,
-  };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
-  });
-  let prediction = (await createRes.json()) as ReplicatePrediction;
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate video prediction failed");
-  }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 90
-  ) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = (await poll.json()) as ReplicatePrediction;
-    guard += 1;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Video generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no video URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
 }
 
 function parseBody(req: NodeApiRequest): Body {
@@ -167,6 +105,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     if (!targets.length) return res.status(200).json({ ok: true, status: "nothing_to_do", started: 0 });
 
     let started = 0;
+    const authorization = generationMock()
+      ? null
+      : requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
 
     for (const video of targets) {
       const source = sceneRows.find(
@@ -220,9 +161,8 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             .createSignedUrl(source.result_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
           if (!signed?.signedUrl) throw new Error("Could not sign source scene image");
 
-          const authorization = requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
           const prediction = await generateKling3ProVideo({
-            authorization,
+            authorization: authorization!,
             prompt: CHRISTMAS_VIDEO_PROMPT,
             imageUrl: signed.signedUrl,
             duration: 5,
@@ -279,10 +219,46 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
     }
 
+    let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", { p_order_id: orderId });
+    if (finalized.error) {
+      const msg = String(finalized.error.message || "").toLowerCase();
+      if (msg.includes("could not find") || msg.includes("function") || msg.includes("does not exist")) {
+        finalized = await service.rpc("christmas_finalize_generation_if_done", { p_order_id: orderId });
+      }
+    }
+    if (finalized.error) throw finalized.error;
+    const finalData = (typeof finalized.data === "string"
+      ? JSON.parse(finalized.data)
+      : finalized.data) as { done?: boolean; succeeded?: number };
+
+    if (finalData?.done && (finalData.succeeded || 0) > 0) {
+      const { data: refreshed } = await service
+        .from("christmas_v2_orders")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
+      const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+      const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+      if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
+        try {
+          await sendChristmasDeliveryEmail({
+            service,
+            orderId,
+            email: asString(refreshed.email),
+            publicToken,
+            packKey,
+          });
+        } catch (emailErr) {
+          console.error("christmas delivery email failed", emailErr);
+        }
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       started,
       status: generationMock() ? "mock_completed" : "completed",
+      finalize: finalData,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -25,25 +25,13 @@ import { sendChristmasDeliveryEmail } from "./_lib/christmas/email";
 
 type Body = { order_id?: string };
 
-type ReplicatePrediction = {
-  id?: string;
-  status?: string;
-  error?: string;
-  detail?: string;
-  output?: unknown;
-};
-
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
+function decryptStoredToken(ciphertext: string | null | undefined): string | null {
+  if (!ciphertext) return null;
+  try {
+    return Buffer.from(ciphertext, "base64").toString("utf8");
+  } catch {
+    return null;
   }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
 }
 
 async function copyObject(
@@ -64,54 +52,41 @@ async function copyObject(
   if (upError) throw upError;
 }
 
-async function generateWithNanoBanana(prompt: string, imageUrl: string): Promise<{
+async function generateChristmasImage(prompt: string, imageUrl: string): Promise<{
   predictionId: string;
   outputUrl: string;
   model: string;
 }> {
-  const token = asString(process.env.REPLICATE_API_TOKEN);
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasImageModel();
-  const input = {
+  const authorization = requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
+  const result = await generateSoulV2Image({
+    authorization,
     prompt,
-    image: imageUrl,
-    image_input: [imageUrl],
-  };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
+    imageUrl,
+    aspectRatio: "3:4",
   });
-  let prediction = (await createRes.json()) as ReplicatePrediction;
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate prediction failed");
-  }
+  return {
+    predictionId: result.requestId,
+    outputUrl: result.outputUrl,
+    model: result.model,
+  };
+}
 
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = (await poll.json()) as ReplicatePrediction;
-    guard += 1;
+async function finalizeChristmasV2Generation(
+  service: ReturnType<typeof getServiceClient>,
+  orderId: string,
+) {
+  let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
+    p_order_id: orderId,
+  });
+  if (finalized.error) {
+    const msg = String(finalized.error.message || "").toLowerCase();
+    if (msg.includes("could not find") || msg.includes("function") || msg.includes("does not exist")) {
+      finalized = await service.rpc("christmas_finalize_generation_if_done", {
+        p_order_id: orderId,
+      });
+    }
   }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no image URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
+  return finalized;
 }
 
 function parseBody(req: NodeApiRequest): Body {
@@ -144,7 +119,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     const service = getServiceClient();
 
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
@@ -152,7 +127,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     if (!order) return res.status(404).json({ error: "order not found" });
     if (!order.paid_at) return res.status(402).json({ error: "Payment required", code: "PAYMENT_REQUIRED" });
 
-    const claim = await service.rpc("claim_christmas_generation_job", { p_order_id: orderId });
+    const claim = await service.rpc("claim_christmas_v2_generation_job", { p_order_id: orderId });
     if (claim.error) throw claim.error;
     const claimData = (typeof claim.data === "string" ? JSON.parse(claim.data) : claim.data) as {
       claimed?: boolean;
@@ -164,7 +139,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
     if (!order.photo_path) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({
           status: "failed",
           last_error: "source_photo_missing",
@@ -173,7 +148,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         })
         .eq("order_id", orderId);
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({ status: "failed", last_error: "source_photo_missing", updated_at: new Date().toISOString() })
         .eq("id", orderId);
       return res.status(400).json({ error: "Source photo missing" });
@@ -184,7 +159,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       .createSignedUrl(order.photo_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
     if (!signed?.signedUrl) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({
           status: "failed",
           last_error: "source_photo_sign_failed",
@@ -196,7 +171,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     }
 
     const { data: scenes, error: sceneError } = await service
-      .from("christmas_order_scenes")
+      .from("christmas_v2_order_scenes")
       .select("*")
       .eq("order_id", orderId)
       .order("scene_number", { ascending: true });
@@ -204,18 +179,19 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
     if (!generationEnabled() && !generationMock()) {
       await service
-        .from("christmas_generation_jobs")
+        .from("christmas_v2_generation_jobs")
         .update({ status: "held", last_error: "generation_disabled" })
         .eq("order_id", orderId);
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({ status: "paid", last_error: "generation_disabled" })
         .eq("id", orderId);
       return res.status(200).json({ ok: true, status: "held", started: 0 });
     }
 
     const targets = (scenes ?? []).filter(
-      (scene) => ["queued", "failed"].includes(asString(scene.status)) && !scene.replicate_prediction_id,
+      (scene) =>
+        ["queued", "failed"].includes(asString(scene.status)) && !scene.replicate_prediction_id,
     );
 
     let started = 0;
@@ -226,14 +202,14 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       const def = sceneByKey(sceneKey);
       if (!def) {
         await service
-          .from("christmas_order_scenes")
+          .from("christmas_v2_order_scenes")
           .update({ status: "failed", last_error: "unknown_scene" })
           .eq("id", scene.id);
         continue;
       }
 
       await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .update({
           status: "generating",
           started_at: new Date().toISOString(),
@@ -246,9 +222,16 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
       try {
         if (generationMock()) {
-          await copyObject(service, CHRISTMAS_SOURCE_BUCKET, order.photo_path, CHRISTMAS_RESULT_BUCKET, resultPath, contentType);
+          await copyObject(
+            service,
+            CHRISTMAS_SOURCE_BUCKET,
+            order.photo_path,
+            CHRISTMAS_RESULT_BUCKET,
+            resultPath,
+            contentType,
+          );
           await service
-            .from("christmas_order_scenes")
+            .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
@@ -262,9 +245,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             .eq("id", scene.id);
         } else {
           const prompt = buildScenePrompt(def);
-          const authorization = requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
-          const soul = await generateSoulV2Image({ authorization, prompt, imageUrl: signed.signedUrl, aspectRatio: "3:4" });
-          const prediction = { predictionId: soul.requestId, outputUrl: soul.outputUrl, model: soul.model };
+          const prediction = await generateChristmasImage(prompt, signed.signedUrl);
           const imgRes = await fetch(prediction.outputUrl);
           if (!imgRes.ok) throw new Error(`Failed to download generated image (${imgRes.status})`);
           const bytes = Buffer.from(await imgRes.arrayBuffer());
@@ -273,7 +254,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             .upload(resultPath, bytes, { contentType: "image/jpeg", upsert: true });
           if (upErr) throw upErr;
           await service
-            .from("christmas_order_scenes")
+            .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
@@ -290,7 +271,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_scenes")
+          .from("christmas_v2_order_scenes")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),
@@ -300,49 +281,27 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
     }
 
-    let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", { p_order_id: orderId });
-    if (finalized.error) {
-      const msg = String(finalized.error.message || "").toLowerCase();
-      if (msg.includes("could not find") || msg.includes("does not exist") || msg.includes("function")) {
-        finalized = await service.rpc("christmas_finalize_generation_if_done", { p_order_id: orderId });
-      }
-    }
+    const finalized = await finalizeChristmasV2Generation(service, orderId);
     if (finalized.error) throw finalized.error;
-    const finalData = (typeof finalized.data === "string" ? JSON.parse(finalized.data) : finalized.data) as {
+    const finalData = (typeof finalized.data === "string"
+      ? JSON.parse(finalized.data)
+      : finalized.data) as {
       done?: boolean;
+      scenes_done?: boolean;
+      awaiting_videos?: boolean;
       succeeded?: number;
       failed?: number;
     };
 
-    if (finalData?.done && (finalData.succeeded || 0) > 0) {
+    const scenesReady =
+      Boolean(finalData?.done) || Boolean(finalData?.scenes_done) || Boolean(finalData?.awaiting_videos);
+
+    if (scenesReady && (finalData.succeeded || 0) > 0) {
       const { data: refreshed } = await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .select("*")
         .eq("id", orderId)
         .maybeSingle();
-      const publicToken = (() => {
-        const ciphertext = asString(refreshed?.public_token_ciphertext);
-        if (!ciphertext) return null;
-        try {
-          return Buffer.from(ciphertext, "base64").toString("utf8");
-        } catch {
-          return null;
-        }
-      })();
-      const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
-      if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
-        try {
-          await sendChristmasDeliveryEmail({
-            service,
-            orderId,
-            email: asString(refreshed.email),
-            publicToken,
-            packKey,
-          });
-        } catch (emailErr) {
-          console.error("christmas delivery email failed", emailErr);
-        }
-      }
 
       if (Number(refreshed?.video_count || 0) > 0) {
         const originForInvoke = resolveSiteOriginFromRequest(req.headers as Record<string, string | string[]>);
@@ -351,6 +310,25 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             console.error("christmas-generate-video enqueue failed", err);
           }),
         );
+      }
+
+      // Delivery email only when the order is fully finalized (images + paid videos).
+      if (finalData?.done) {
+        const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+        const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+        if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
+          try {
+            await sendChristmasDeliveryEmail({
+              service,
+              orderId,
+              email: asString(refreshed.email),
+              publicToken,
+              packKey,
+            });
+          } catch (emailErr) {
+            console.error("christmas delivery email failed", emailErr);
+          }
+        }
       }
     }
 

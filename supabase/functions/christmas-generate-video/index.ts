@@ -5,8 +5,10 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   generationMock,
   videoGenerationEnabled,
+  type ChristmasPackKey,
 } from "../_shared/christmas/constants.ts";
 import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
 import {
   generateKling3ProVideo,
   requireChristmasHiggsfieldAuth,
@@ -16,6 +18,15 @@ type Body = { order_id?: string };
 
 const CHRISTMAS_VIDEO_PROMPT =
   "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
+
+function decryptStoredToken(ciphertext: string | null | undefined): string | null {
+  if (!ciphertext) return null;
+  try {
+    return atob(ciphertext);
+  } catch {
+    return null;
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
@@ -189,10 +200,54 @@ Deno.serve(async (req) => {
       }
     }
 
+    let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
+      p_order_id: orderId,
+    });
+    if (finalized.error) {
+      const msg = String(finalized.error.message || "").toLowerCase();
+      if (msg.includes("could not find") || msg.includes("function") || msg.includes("does not exist")) {
+        finalized = await service.rpc("christmas_finalize_generation_if_done", {
+          p_order_id: orderId,
+        });
+      }
+    }
+    if (finalized.error) throw finalized.error;
+    const finalData = (typeof finalized.data === "string"
+      ? JSON.parse(finalized.data)
+      : finalized.data) as { done?: boolean; succeeded?: number };
+
+    if (finalData?.done && (finalData.succeeded || 0) > 0) {
+      const { data: refreshed } = await service
+        .from("christmas_v2_orders")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
+      const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+      const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+      if (
+        publicToken &&
+        refreshed?.email &&
+        (packKey === "starter" || packKey === "magic" || packKey === "ultimate")
+      ) {
+        try {
+          await sendChristmasDeliveryEmail({
+            service,
+            orderId,
+            email: asString(refreshed.email),
+            publicToken,
+            packKey,
+          });
+        } catch (emailErr) {
+          console.error("christmas delivery email failed", emailErr);
+        }
+      }
+    }
+
     return jsonResponse({
       ok: true,
       started,
       status: generationMock() ? "mock_completed" : "completed",
+      finalize: finalData,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

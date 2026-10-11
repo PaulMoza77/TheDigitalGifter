@@ -90,6 +90,10 @@ declare
   total int;
   succeeded int;
   failed int;
+  video_total int;
+  video_succeeded int;
+  video_failed int;
+  video_entitled int;
   final_status text;
 begin
   select count(*) into total from public.christmas_v2_order_scenes where order_id = p_order_id;
@@ -106,9 +110,39 @@ begin
     return jsonb_build_object('done', false, 'succeeded', succeeded, 'failed', failed, 'total', total);
   end if;
 
+  select coalesce(video_count, 0) into video_entitled
+  from public.christmas_v2_orders where id = p_order_id;
+
+  select count(*) into video_total from public.christmas_v2_order_videos where order_id = p_order_id;
+  select count(*) into video_succeeded from public.christmas_v2_order_videos
+    where order_id = p_order_id and status in ('succeeded', 'ready');
+  select count(*) into video_failed from public.christmas_v2_order_videos
+    where order_id = p_order_id and status = 'failed';
+
+  -- Paid videos outstanding: keep order generating; do not mark complete/email-ready.
+  if video_entitled > 0 and (video_total < video_entitled or video_succeeded + video_failed < video_total) then
+    update public.christmas_v2_orders
+    set status = 'generating', updated_at = now()
+    where id = p_order_id
+      and status is distinct from 'generating';
+
+    return jsonb_build_object(
+      'done', false,
+      'scenes_done', true,
+      'awaiting_videos', true,
+      'succeeded', succeeded,
+      'failed', failed,
+      'total', total,
+      'video_succeeded', video_succeeded,
+      'video_failed', video_failed,
+      'video_total', video_total,
+      'video_entitled', video_entitled
+    );
+  end if;
+
   final_status := case
     when failed > 0 and succeeded = 0 then 'failed'
-    when failed > 0 then 'partial_failure'
+    when failed > 0 or video_failed > 0 then 'partial_failure'
     else 'complete'
   end;
 
@@ -116,7 +150,7 @@ begin
   set
     status = final_status,
     generation_finished_at = now(),
-    completed_at = case when failed = 0 then now() else completed_at end,
+    completed_at = case when failed = 0 and video_failed = 0 then now() else completed_at end,
     updated_at = now()
   where id = p_order_id;
 
@@ -124,7 +158,15 @@ begin
   set status = 'completed', finished_at = now(), updated_at = now()
   where order_id = p_order_id;
 
-  return jsonb_build_object('done', true, 'succeeded', succeeded, 'failed', failed, 'total', total);
+  return jsonb_build_object(
+    'done', true,
+    'succeeded', succeeded,
+    'failed', failed,
+    'total', total,
+    'video_succeeded', video_succeeded,
+    'video_failed', video_failed,
+    'video_total', video_total
+  );
 end;
 $$;
 
@@ -240,4 +282,62 @@ $$;
 revoke all on function public.fulfill_christmas_v2_order_payment(text, text, text, text, text, integer, text, uuid)
   from anon, authenticated, public;
 grant execute on function public.fulfill_christmas_v2_order_payment(text, text, text, text, text, integer, text, uuid)
+  to service_role;
+
+-- ---------------------------------------------------------------------------
+-- 5) Claim: treat finalize's `completed` as terminal (prevents re-paid jobs)
+--    Also allow stale `running` reclaim after 3 minutes (unchanged).
+-- ---------------------------------------------------------------------------
+
+create or replace function public.claim_christmas_v2_generation_job(p_order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to public
+as $$
+declare
+  job_row public.christmas_v2_generation_jobs%rowtype;
+begin
+  insert into public.christmas_v2_generation_jobs (order_id, status)
+  values (p_order_id, 'queued')
+  on conflict (order_id) do nothing;
+
+  select * into job_row
+  from public.christmas_v2_generation_jobs
+  where order_id = p_order_id
+  for update;
+
+  if not found then
+    return jsonb_build_object('claimed', false, 'reason', 'missing_job');
+  end if;
+
+  if job_row.status in ('completed', 'succeeded') then
+    return jsonb_build_object('claimed', false, 'status', 'already_completed');
+  end if;
+
+  if job_row.status = 'held' then
+    return jsonb_build_object('claimed', false, 'status', 'held');
+  end if;
+
+  if job_row.status = 'running' and job_row.claimed_at is not null
+     and job_row.claimed_at > now() - interval '3 minutes' then
+    return jsonb_build_object('claimed', false, 'status', 'already_running');
+  end if;
+
+  update public.christmas_v2_generation_jobs
+  set
+    status = 'running',
+    claimed_at = now(),
+    last_error = null,
+    updated_at = now()
+  where order_id = p_order_id
+  returning * into job_row;
+
+  return jsonb_build_object('claimed', true, 'status', job_row.status);
+end;
+$$;
+
+revoke all on function public.claim_christmas_v2_generation_job(uuid)
+  from anon, authenticated, public;
+grant execute on function public.claim_christmas_v2_generation_job(uuid)
   to service_role;

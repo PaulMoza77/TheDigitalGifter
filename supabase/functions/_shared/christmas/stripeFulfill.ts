@@ -327,7 +327,8 @@ export async function handleChristmasStripeEvent(input: {
     p_payment_status: paymentStatus || "paid",
     p_payment_intent_id: asString(input.obj.payment_intent),
     p_amount_cents: input.obj.amount_total == null ? null : asInt(input.obj.amount_total),
-    p_currency: asString(input.obj.currency) || "usd",
+    // Do not soft-default currency: fulfill RPC rejects empty/mismatched values.
+    p_currency: asString(input.obj.currency),
     p_order_id: orderId,
   });
   if (error) throw error;

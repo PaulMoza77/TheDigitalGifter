@@ -292,27 +292,17 @@ Deno.serve(async (req) => {
       failed?: number;
     };
 
-    if (finalData?.done && (finalData.succeeded || 0) > 0) {
+    const scenesReady =
+      Boolean(finalData?.done) ||
+      Boolean((finalData as { scenes_done?: boolean }).scenes_done) ||
+      Boolean((finalData as { awaiting_videos?: boolean }).awaiting_videos);
+
+    if (scenesReady && (finalData.succeeded || 0) > 0) {
       const { data: refreshed } = await service
         .from("christmas_v2_orders")
         .select("*")
         .eq("id", orderId)
         .maybeSingle();
-      const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
-      const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
-      if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
-        try {
-          await sendChristmasDeliveryEmail({
-            service,
-            orderId,
-            email: asString(refreshed.email),
-            publicToken,
-            packKey,
-          });
-        } catch (emailErr) {
-          console.error("christmas delivery email failed", emailErr);
-        }
-      }
 
       if (Number(refreshed?.video_count || 0) > 0) {
         waitUntil(
@@ -320,6 +310,29 @@ Deno.serve(async (req) => {
             console.error("christmas-generate-video enqueue failed", err);
           }),
         );
+      }
+
+      // Delivery email only when images + paid videos are finalized.
+      if (finalData?.done) {
+        const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+        const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+        if (
+          publicToken &&
+          refreshed?.email &&
+          (packKey === "starter" || packKey === "magic" || packKey === "ultimate")
+        ) {
+          try {
+            await sendChristmasDeliveryEmail({
+              service,
+              orderId,
+              email: asString(refreshed.email),
+              publicToken,
+              packKey,
+            });
+          } catch (emailErr) {
+            console.error("christmas delivery email failed", emailErr);
+          }
+        }
       }
     }
 
