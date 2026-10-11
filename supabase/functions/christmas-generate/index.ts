@@ -5,7 +5,6 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   CHRISTMAS_SOURCE_BUCKET,
   buildScenePrompt,
-  christmasImageModel,
   generationEnabled,
   generationMock,
   sceneByKey,
@@ -13,6 +12,10 @@ import {
 } from "../_shared/christmas/constants.ts";
 import { asString } from "../_shared/christmas/crypto.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import {
+  generateSoulV2Image,
+  requireChristmasHiggsfieldAuth,
+} from "../_shared/christmas/higgsfieldProviders.ts";
 
 type Body = { order_id?: string };
 
@@ -35,19 +38,6 @@ function decryptStoredToken(ciphertext: string | null | undefined): string | nul
   }
 }
 
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
-  }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
-
 async function copyObject(
   service: ReturnType<typeof getServiceClient>,
   fromBucket: string,
@@ -65,54 +55,42 @@ async function copyObject(
   if (upError) throw upError;
 }
 
-async function generateWithNanoBanana(prompt: string, imageUrl: string): Promise<{
+async function generateChristmasImage(prompt: string, imageUrl: string): Promise<{
   predictionId: string;
   outputUrl: string;
   model: string;
 }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasImageModel();
-  const input = {
+  const authorization = requireChristmasHiggsfieldAuth({ get: (name) => Deno.env.get(name) });
+  const result = await generateSoulV2Image({
+    authorization,
     prompt,
-    image: imageUrl,
-    image_input: [imageUrl],
-  };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
+    imageUrl,
+    aspectRatio: "3:4",
   });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate prediction failed");
-  }
+  return {
+    predictionId: result.requestId,
+    outputUrl: result.outputUrl,
+    model: result.model,
+  };
+}
 
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
+async function finalizeChristmasV2Generation(
+  service: ReturnType<typeof getServiceClient>,
+  orderId: string,
+) {
+  // Prefer the post-quarantine name; keep the legacy alias for older DBs.
+  let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
+    p_order_id: orderId,
+  });
+  if (finalized.error) {
+    const msg = String(finalized.error.message || "").toLowerCase();
+    if (msg.includes("could not find") || msg.includes("function") || msg.includes("does not exist")) {
+      finalized = await service.rpc("christmas_finalize_generation_if_done", {
+        p_order_id: orderId,
+      });
+    }
   }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no image URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
+  return finalized;
 }
 
 async function enqueueChristmasVideo(orderId: string) {
@@ -268,7 +246,7 @@ Deno.serve(async (req) => {
             .eq("id", scene.id);
         } else {
           const prompt = buildScenePrompt(def);
-          const prediction = await generateWithNanoBanana(prompt, signed.signedUrl);
+          const prediction = await generateChristmasImage(prompt, signed.signedUrl);
           const imgRes = await fetch(prediction.outputUrl);
           if (!imgRes.ok) throw new Error(`Failed to download generated image (${imgRes.status})`);
           const bytes = new Uint8Array(await imgRes.arrayBuffer());
@@ -304,9 +282,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const finalized = await service.rpc("christmas_finalize_generation_if_done", {
-      p_order_id: orderId,
-    });
+    const finalized = await finalizeChristmasV2Generation(service, orderId);
     if (finalized.error) throw finalized.error;
     const finalData = (typeof finalized.data === "string"
       ? JSON.parse(finalized.data)

@@ -3,81 +3,19 @@ import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/sup
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
-  christmasVideoModel,
   generationMock,
   videoGenerationEnabled,
 } from "../_shared/christmas/constants.ts";
 import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+import {
+  generateKling3ProVideo,
+  requireChristmasHiggsfieldAuth,
+} from "../_shared/christmas/higgsfieldProviders.ts";
 
 type Body = { order_id?: string };
 
 const CHRISTMAS_VIDEO_PROMPT =
   "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
-
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
-  }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
-
-async function generateSeedanceVideo(imageUrl: string): Promise<{
-  predictionId: string;
-  outputUrl: string;
-  model: string;
-}> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasVideoModel();
-  const input = {
-    prompt: CHRISTMAS_VIDEO_PROMPT,
-    image: imageUrl,
-    duration: 5,
-    resolution: "720p",
-    camera_fixed: false,
-  };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
-  });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate video prediction failed");
-  }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 90
-  ) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Video generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no video URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
@@ -90,8 +28,9 @@ Deno.serve(async (req) => {
     if (!orderId) return jsonResponse({ error: "order_id required" }, 400);
     const service = getServiceClient();
 
+    // Christmas V2 quarantined tables (not commerce christmas_orders).
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
@@ -105,10 +44,10 @@ Deno.serve(async (req) => {
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
       service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", orderId),
-      service.from("christmas_order_videos").select("*").eq("order_id", orderId),
+      service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId),
     ]);
 
     // Upsell child packs may reference starter scene keys that live on the parent order.
@@ -116,7 +55,7 @@ Deno.serve(async (req) => {
     const parentOrderId = asString(order.parent_order_id);
     if (parentOrderId) {
       const { data: parentScenes } = await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", parentOrderId);
       if (parentScenes?.length) {
@@ -136,6 +75,9 @@ Deno.serve(async (req) => {
     if (!targets.length) return jsonResponse({ ok: true, status: "nothing_to_do", started: 0 });
 
     let started = 0;
+    const authorization = generationMock()
+      ? null
+      : requireChristmasHiggsfieldAuth({ get: (name) => Deno.env.get(name) });
 
     for (const video of targets) {
       const source = sceneRows.find(
@@ -146,7 +88,7 @@ Deno.serve(async (req) => {
       );
       if (!source?.result_path) {
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: "Source scene result missing",
@@ -157,7 +99,7 @@ Deno.serve(async (req) => {
       }
 
       await service
-        .from("christmas_order_videos")
+        .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
@@ -170,7 +112,7 @@ Deno.serve(async (req) => {
       try {
         if (generationMock()) {
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: "mock",
@@ -189,7 +131,12 @@ Deno.serve(async (req) => {
             .createSignedUrl(source.result_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
           if (!signed?.signedUrl) throw new Error("Could not sign source scene image");
 
-          const prediction = await generateSeedanceVideo(signed.signedUrl);
+          const prediction = await generateKling3ProVideo({
+            authorization: authorization!,
+            prompt: CHRISTMAS_VIDEO_PROMPT,
+            imageUrl: signed.signedUrl,
+            duration: 5,
+          });
           const videoRes = await fetch(prediction.outputUrl);
           if (!videoRes.ok) throw new Error(`Failed to download video (${videoRes.status})`);
           const bytes = new Uint8Array(await videoRes.arrayBuffer());
@@ -199,7 +146,7 @@ Deno.serve(async (req) => {
           if (upErr) throw upErr;
 
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: prediction.model,
@@ -207,7 +154,7 @@ Deno.serve(async (req) => {
               result_path: resultPath,
               result_content_type: "video/mp4",
               duration_seconds: 5,
-              replicate_prediction_id: prediction.predictionId,
+              replicate_prediction_id: prediction.requestId,
               completed_at: new Date().toISOString(),
             })
             .eq("id", video.id);
@@ -232,7 +179,7 @@ Deno.serve(async (req) => {
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),

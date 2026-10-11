@@ -6,10 +6,13 @@ import type { NodeApiRequest, NodeApiResponse } from "./_lib/nodeHandler";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
-  christmasVideoModel,
   generationMock,
   videoGenerationEnabled,
 } from "./_lib/christmas/constants";
+import {
+  generateKling3ProVideo,
+  requireChristmasHiggsfieldAuth,
+} from "./_lib/christmas/higgsfieldProviders";
 import { asString, isUuid } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 
@@ -121,7 +124,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     const service = getServiceClient();
 
     const { data: order, error } = await service
-      .from("christmas_orders")
+      .from("christmas_v2_orders")
       .select("*")
       .eq("id", orderId)
       .maybeSingle();
@@ -135,10 +138,10 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
       service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", orderId),
-      service.from("christmas_order_videos").select("*").eq("order_id", orderId),
+      service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId),
     ]);
 
     // Upsell child packs may reference starter scene keys that live on the parent order.
@@ -146,7 +149,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
     const parentOrderId = asString(order.parent_order_id);
     if (parentOrderId) {
       const { data: parentScenes } = await service
-        .from("christmas_order_scenes")
+        .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", parentOrderId);
       if (parentScenes?.length) {
@@ -174,7 +177,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       );
       if (!source?.result_path) {
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: "Source scene result missing",
@@ -185,7 +188,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
 
       await service
-        .from("christmas_order_videos")
+        .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
@@ -198,7 +201,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       try {
         if (generationMock()) {
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: "mock",
@@ -217,7 +220,13 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             .createSignedUrl(source.result_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
           if (!signed?.signedUrl) throw new Error("Could not sign source scene image");
 
-          const prediction = await generateSeedanceVideo(signed.signedUrl);
+          const authorization = requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
+          const prediction = await generateKling3ProVideo({
+            authorization,
+            prompt: CHRISTMAS_VIDEO_PROMPT,
+            imageUrl: signed.signedUrl,
+            duration: 5,
+          });
           const videoRes = await fetch(prediction.outputUrl);
           if (!videoRes.ok) throw new Error(`Failed to download video (${videoRes.status})`);
           const bytes = Buffer.from(await videoRes.arrayBuffer());
@@ -227,7 +236,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
           if (upErr) throw upErr;
 
           await service
-            .from("christmas_order_videos")
+            .from("christmas_v2_order_videos")
             .update({
               status: "succeeded",
               model_name: prediction.model,
@@ -235,7 +244,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
               result_path: resultPath,
               result_content_type: "video/mp4",
               duration_seconds: 5,
-              replicate_prediction_id: prediction.predictionId,
+              replicate_prediction_id: prediction.requestId,
               completed_at: new Date().toISOString(),
             })
             .eq("id", video.id);
@@ -260,7 +269,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
-          .from("christmas_order_videos")
+          .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),

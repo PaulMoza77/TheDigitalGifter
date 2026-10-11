@@ -9,12 +9,15 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   CHRISTMAS_SOURCE_BUCKET,
   buildScenePrompt,
-  christmasImageModel,
   generationEnabled,
   generationMock,
   sceneByKey,
   type ChristmasPackKey,
 } from "./_lib/christmas/constants";
+import {
+  generateSoulV2Image,
+  requireChristmasHiggsfieldAuth,
+} from "./_lib/christmas/higgsfieldProviders";
 import { asString } from "./_lib/christmas/crypto";
 import { getServiceClient, isServiceRoleRequest } from "./_lib/christmas/supabaseClient";
 import { invokeChristmasGenerateVideo, resolveSiteOriginFromRequest } from "./_lib/christmas/stripeFulfill";
@@ -259,7 +262,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             .eq("id", scene.id);
         } else {
           const prompt = buildScenePrompt(def);
-          const prediction = await generateWithNanoBanana(prompt, signed.signedUrl);
+          const authorization = requireChristmasHiggsfieldAuth({ get: (name) => process.env[name] });
+          const soul = await generateSoulV2Image({ authorization, prompt, imageUrl: signed.signedUrl, aspectRatio: "3:4" });
+          const prediction = { predictionId: soul.requestId, outputUrl: soul.outputUrl, model: soul.model };
           const imgRes = await fetch(prediction.outputUrl);
           if (!imgRes.ok) throw new Error(`Failed to download generated image (${imgRes.status})`);
           const bytes = Buffer.from(await imgRes.arrayBuffer());
@@ -295,7 +300,13 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
     }
 
-    const finalized = await service.rpc("christmas_finalize_generation_if_done", { p_order_id: orderId });
+    let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", { p_order_id: orderId });
+    if (finalized.error) {
+      const msg = String(finalized.error.message || "").toLowerCase();
+      if (msg.includes("could not find") || msg.includes("does not exist") || msg.includes("function")) {
+        finalized = await service.rpc("christmas_finalize_generation_if_done", { p_order_id: orderId });
+      }
+    }
     if (finalized.error) throw finalized.error;
     const finalData = (typeof finalized.data === "string" ? JSON.parse(finalized.data) : finalized.data) as {
       done?: boolean;
