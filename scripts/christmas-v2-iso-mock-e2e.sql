@@ -67,8 +67,10 @@ begin
     end loop;
 
     perform public.fulfill_christmas_v2_order_payment(
-      'e2e_evt_' || packs.pack, 'e2e_cs_' || packs.pack, 'checkout.session.completed',
-      'paid', 'e2e_pi_' || packs.pack, packs.amount, 'eur', oid
+      'e2e_evt_' || packs.pack || '_' || oid::text,
+      'e2e_cs_' || packs.pack || '_' || oid::text,
+      'checkout.session.completed',
+      'paid', 'e2e_pi_' || packs.pack || '_' || oid::text, packs.amount, 'eur', oid
     );
 
     claim := public.claim_christmas_v2_generation_job(oid);

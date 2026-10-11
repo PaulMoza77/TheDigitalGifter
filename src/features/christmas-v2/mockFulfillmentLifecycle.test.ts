@@ -101,7 +101,10 @@ describe("Christmas V2 Stripe test-mode contract (offline)", () => {
     expect(nodeFunnel).toContain('line_items[0][price_data][currency]", CHRISTMAS_V2_CURRENCY');
     expect(nodeFunnel).toContain("unit_amount");
     expect(nodeFunnel).toContain("fulfill_christmas_v2_order_payment");
-    expect(nodeFunnel).toMatch(/p_currency:\s*asString\(session\?\.currency\)\s*\|\|\s*CHRISTMAS_V2_CURRENCY/);
+    expect(nodeFunnel).toMatch(/p_currency:\s*asString\(session\?\.currency\)/);
+    expect(nodeFunnel).not.toMatch(
+      /p_currency:\s*asString\(session\?\.currency\)\s*\|\|\s*CHRISTMAS_V2_CURRENCY/,
+    );
 
     const edgeFulfill = readFileSync(
       resolve("supabase/functions/_shared/christmas/stripeFulfill.ts"),

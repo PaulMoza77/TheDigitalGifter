@@ -735,7 +735,8 @@ Deno.serve(async (req) => {
         p_payment_status: paymentStatus,
         p_payment_intent_id: asString(session?.payment_intent),
         p_amount_cents: amountTotal,
-        p_currency: asString(session?.currency) || CHRISTMAS_V2_CURRENCY,
+        // No soft-default: fulfill RPC rejects empty/mismatched currency.
+        p_currency: asString(session?.currency),
         p_order_id: asString(order.id),
       });
       if (error) throw error;

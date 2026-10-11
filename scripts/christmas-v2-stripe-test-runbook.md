@@ -1,15 +1,28 @@
 # Christmas V2 Stripe test-mode runbook (operator)
 
-**Status:** Live Stripe tests are **BLOCKED** in the Cloud Agent environment (`STRIPE_SECRET_KEY` unset).  
-**Never** use production Stripe keys (`sk_live_…`). Use `sk_test_…` / `pk_test_…` only.
+**Cloud Agent status (reverified):** `STRIPE_SECRET_KEY` / publishable / webhook secret **UNSET**.  
+Stripe MCP auth **timed out / unavailable**. Live Stripe integration remains **BLOCKED** here.
+
+**Never** use production keys (`sk_live_…`, `pk_live_…`, production `whsec_…`).  
+Use `sk_test_…` / `pk_test_…` / test-endpoint `whsec_…` only.  
+**Never** paste secrets into chat, commits, PR bodies, or logs.
+
+## Secure credential supply (operator)
+
+1. In Stripe Dashboard → **Test mode** → Developers → API keys, copy `sk_test_` / `pk_test_`.
+2. Create a **test-mode** webhook endpoint (or `stripe listen`) and copy its `whsec_`.
+3. Inject into the **isolated** agent/staging environment only via the platform secret manager / env panel (not `.env` committed to git):
+   - `STRIPE_SECRET_KEY=sk_test_…`
+   - `STRIPE_PUBLISHABLE_KEY=pk_test_…`
+   - `STRIPE_WEBHOOK_SECRET=whsec_…`
+4. Confirm prefix classification before any call: must start with `sk_test_` / `pk_test_`. Abort if `sk_live_`.
+5. Pair with disposable DB (`christmas_v2_iso` harness) + `CHRISTMAS_GENERATION_MOCK=true`.
 
 ## Preconditions
 
-1. Isolated non-production DB with `20261011140000_christmas_v2_eur_offers_and_finalize.sql` applied (see local `christmas_v2_iso` harness).
-2. Staging/VPS + Edge deployed from the same PR SHA, or local Vite + Node API with mock generation:
-   - `CHRISTMAS_GENERATION_MOCK=true`
-   - `CHRISTMAS_GENERATION_ENABLED=true` (or mock alone)
-3. Env: `STRIPE_SECRET_KEY=sk_test_…`, `STRIPE_PUBLISHABLE_KEY=pk_test_…`, `STRIPE_WEBHOOK_SECRET=whsec_…` (test endpoint).
+1. Isolated non-production DB with `20261011140000_christmas_v2_eur_offers_and_finalize.sql` applied.
+2. Same SHA for Edge + VPS (or local Node API).
+3. Mock generation: `CHRISTMAS_GENERATION_MOCK=true` (no paid Higgsfield).
 
 ## Session matrix (expected)
 
@@ -19,44 +32,50 @@
 | magic | 1700 | eur | 5 | 1 |
 | ultimate | 2700 | eur | 10 | 3 |
 
-Checkout must use server pack amounts (`CHRISTMAS_PACKS`), not client-supplied prices.
+Checkout must use server pack amounts (`CHRISTMAS_PACKS`), `mode=payment`, description “No subscription.”  
+**VAT/tax:** Christmas checkout does **not** set `automatic_tax` today — legal/business configuration still required; do not invent rates.
 
-## Commands (operator machine)
-
-```bash
-# 1) Create hosted/elements session via funnel createCheckout (starter)
-# 2) Complete payment with Stripe test card 4242…
-# 3) Confirm webhook + confirmStripePayment both call fulfill_christmas_v2_order_payment once
-# 4) Assert generation job enqueued exactly once (should_enqueue false on replay)
-```
-
-Stripe CLI (test mode):
+## Operator commands
 
 ```bash
-stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
-stripe trigger checkout.session.completed --add checkout_session:metadata.product_type=christmas_portrait_pack
+# Local webhook forward (test mode)
+stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook
+
+# Funnel: createOrder → upload → createCheckout for each pack
+# Pay with 4242… (success), 4000…0002 (decline)
+# Cancel hosted checkout; abandon Elements return
+# Refresh success URL (confirmStripePayment + webhook race)
+# Replay event_id; out-of-order async_payment_succeeded
 ```
 
 ## Negative cases
 
-1. Tamper session amount → RPC raises `amount mismatch` (no `paid_at`).
-2. Wrong currency (`usd` vs order `eur`) → `currency mismatch`.
-3. Replay same `event_id` → `processed_stripe_events` unique; no second job row.
-4. Cancel / unpaid session → order remains unpaid; no enqueue.
+1. Amount mismatch → RPC `amount mismatch`, no `paid_at`
+2. Currency mismatch → RPC `currency mismatch`
+3. Forged/missing `stripe-signature` → HTTP 400
+4. Replay same `event_id` → `already_processed` / no second job
+5. Unpaid / cancelled → no enqueue
+6. Concurrent webhook + `confirmStripePayment` → one paid row, one job
 
-## Pet / subscription non-regression
-
-After Christmas webhook changes, re-run:
+## Offline proofs already automated (no sk_test)
 
 ```bash
-npx vitest run src/features/pet-v3/paymentHardening.test.ts src/features/pet-v3/v3CheckoutSemantics.test.ts
+npx vitest run src/features/christmas-v2/stripeWebhookContract.test.ts \
+  src/features/christmas-v2/generateEndpointSecurity.test.ts \
+  src/features/christmas-v2/mockFulfillmentLifecycle.test.ts
+
+PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
+  -f scripts/christmas-v2-iso-sql-assertions.sql
+PGPASSWORD=tdg_test_local psql -h 127.0.0.1 -U tdg_test -d christmas_v2_iso \
+  -f scripts/christmas-v2-iso-mock-e2e.sql
 ```
 
-Confirm `stripeFulfill` still routes `product_family=christmas` commerce separately from V2 `christmas_v2_*`.
+## Exit criteria to unblock GO
 
-## Exit criteria for unblocking GO
-
-- [ ] Test-mode Sessions for 700 / 1700 / 2700 EUR cents created and paid
-- [ ] Exactly one fulfill + one generate enqueue per successful payment
-- [ ] Mismatch + replay cases observed in logs/DB
+- [ ] Test-mode Sessions for 700 / 1700 / 2700 EUR cents paid
+- [ ] Exactly one fulfill + one generate enqueue per success
+- [ ] Decline / cancel / abandon / refresh / replay observed
+- [ ] Signature forgery rejected in live webhook path
+- [ ] Mock fulfillment tied to those three paid sessions
 - [ ] Pet payment hardening suite green
+- [ ] VAT/tax business decision recorded

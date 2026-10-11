@@ -145,8 +145,8 @@ declare
 begin
   select order_id into oid from fixture_orders where pack = 'starter';
   result := public.fulfill_christmas_v2_order_payment(
-    'evt_starter_paid', 'cs_starter_paid', 'checkout.session.completed',
-    'paid', 'pi_starter', 700, 'eur', oid
+    'evt_starter_paid_' || oid::text, 'cs_starter_paid_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_starter_' || oid::text, 700, 'eur', oid
   );
   select count(*) into job_count from public.christmas_v2_generation_jobs where order_id = oid;
   perform pg_temp.record_assert(
@@ -172,12 +172,12 @@ declare
 begin
   select order_id into oid from fixture_orders where pack = 'starter';
   first := public.fulfill_christmas_v2_order_payment(
-    'evt_starter_paid', 'cs_starter_paid', 'checkout.session.completed',
-    'paid', 'pi_starter', 700, 'eur', oid
+    'evt_starter_paid_' || oid::text, 'cs_starter_paid_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_starter_' || oid::text, 700, 'eur', oid
   );
   replay := public.fulfill_christmas_v2_order_payment(
-    'evt_starter_paid_replay', 'cs_starter_paid', 'checkout.session.completed',
-    'paid', 'pi_starter', 700, 'eur', oid
+    'evt_starter_paid_replay_' || oid::text, 'cs_starter_paid_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_starter_' || oid::text, 700, 'eur', oid
   );
   select count(*) into paid_count from public.christmas_v2_generation_jobs where order_id = oid;
   perform pg_temp.record_assert(
@@ -190,7 +190,7 @@ begin
   -- original event row present once
   perform pg_temp.record_assert(
     'stripe_event_dedupe',
-    (select count(*) from public.processed_stripe_events where event_id = 'evt_starter_paid') = 1,
+    (select count(*) from public.processed_stripe_events where event_id = 'evt_starter_paid_' || oid::text) = 1,
     'processed_stripe_events'
   );
 end $$;
@@ -236,8 +236,8 @@ declare
 begin
   select order_id into oid from fixture_orders where pack = 'magic';
   perform public.fulfill_christmas_v2_order_payment(
-    'evt_magic_paid', 'cs_magic_paid', 'checkout.session.completed',
-    'paid', 'pi_magic', 1700, 'eur', oid
+    'evt_magic_paid_' || oid::text, 'cs_magic_paid_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_magic_' || oid::text, 1700, 'eur', oid
   );
   update public.christmas_v2_generation_jobs
   set status = 'running', claimed_at = now() - interval '4 minutes', updated_at = now()
@@ -322,8 +322,8 @@ declare
 begin
   select order_id into oid from fixture_orders where pack = 'ultimate';
   perform public.fulfill_christmas_v2_order_payment(
-    'evt_ultimate_paid', 'cs_ultimate_paid', 'checkout.session.completed',
-    'paid', 'pi_ult', 2700, 'eur', oid
+    'evt_ultimate_paid_' || oid::text, 'cs_ultimate_paid_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_ult_' || oid::text, 2700, 'eur', oid
   );
   update public.christmas_v2_order_scenes
   set status = 'succeeded', progress_percent = 100, result_path = 'x.jpg', completed_at = now()
@@ -383,8 +383,8 @@ declare
 begin
   select order_id into oid from fixture_orders where pack = 'legacy_usd';
   result := public.fulfill_christmas_v2_order_payment(
-    'evt_legacy_usd', 'cs_legacy_usd', 'checkout.session.completed',
-    'paid', 'pi_legacy', 300, 'usd', oid
+    'evt_legacy_usd_' || oid::text, 'cs_legacy_usd_' || oid::text, 'checkout.session.completed',
+    'paid', 'pi_legacy_' || oid::text, 300, 'usd', oid
   );
   perform pg_temp.record_assert(
     'legacy_usd_fulfill',

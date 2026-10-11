@@ -4,6 +4,7 @@ import {
   handleChristmasStripeEvent,
   isChristmasCheckoutMetadata,
 } from "../_shared/christmas/stripeFulfill.ts";
+import { verifyStripeSignature } from "../_shared/christmas/stripeSignature.ts";
 import { handlePetStripeEvent, isPetCheckoutMetadata } from "../_shared/pet/stripeFulfill.ts";
 import { handlePetUpsellStripeEvent, isPetUpsellMetadata } from "../_shared/pet/stripeUpsellFulfill.ts";
 
@@ -12,55 +13,6 @@ type StripeEvent = {
   type?: string;
   data?: { object?: Record<string, unknown> };
 };
-
-function toHex(buffer: ArrayBuffer): string {
-  return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  const enc = new TextEncoder();
-  const left = enc.encode(a);
-  const right = enc.encode(b);
-  if (left.length !== right.length) return false;
-  let diff = 0;
-  for (let i = 0; i < left.length; i++) diff |= left[i] ^ right[i];
-  return diff === 0;
-}
-
-async function verifyStripeSignature(rawBody: string, header: string, secret: string): Promise<boolean> {
-  const parts = Object.fromEntries(
-    header.split(",").map((item) => {
-      const [k, ...rest] = item.split("=");
-      return [k.trim(), rest.join("=").trim()];
-    }),
-  );
-  const timestamp = parts.t;
-  const signatures = header
-    .split(",")
-    .filter((item) => item.trim().startsWith("v1="))
-    .map((item) => item.trim().slice(3));
-  if (!timestamp || signatures.length === 0) return false;
-
-  const ts = Number(timestamp);
-  if (!Number.isFinite(ts)) return false;
-  const skew = Math.abs(Date.now() / 1000 - ts);
-  if (skew > 60 * 5) return false;
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signed = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(`${timestamp}.${rawBody}`),
-  );
-  const digest = toHex(signed);
-  return signatures.some((signature) => timingSafeEqual(digest, signature));
-}
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();
