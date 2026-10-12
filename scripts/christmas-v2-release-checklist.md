@@ -2,7 +2,7 @@
 
 **PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/353  
 **Branch:** `cursor/christmas-v2-eur-p0-7cbb`  
-**Offline QA HEAD:** _(updated on each release-prep commit)_  
+**Offline QA HEAD:** `f695930a0240f4f0d706a02ae8e3d8cbc82a64d8` (expected start: `a21bebe3`)  
 **Security PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/356  
 **Self-host audit:** https://github.com/PaulMoza77/TheDigitalGifter/pull/358  
 
