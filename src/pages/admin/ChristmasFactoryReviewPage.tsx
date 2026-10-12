@@ -39,8 +39,22 @@ const BUCKET_TO_LABEL: Record<string, string> = {
 type SortMode = "number" | "category" | "title";
 
 function categoryOf(video: LibraryVideo): string {
-  const tag = (video.tags || []).find((item) => item in BUCKET_TO_LABEL);
-  return tag ? BUCKET_TO_LABEL[tag] : "JOY";
+  const tagged = (video.tags || []).find((item) => item in BUCKET_TO_LABEL);
+  // Prefer explicit non-joy buckets from catalog tags when present.
+  if (tagged && tagged !== "joy") return BUCKET_TO_LABEL[tagged];
+
+  // Inventory currently marks completed masters as joy; infer useful browse buckets
+  // from id/title so SANTA / COZY / NYC filters are not empty.
+  const hay = `${video.id} ${video.filename} ${video.title} ${video.description}`.toLowerCase();
+  if (/\bsanta\b/.test(hay)) return "SANTA";
+  if (/\b(nyc|manhattan|central[\s_-]?park|brooklyn|times[\s_-]?square)\b/.test(hay)) return "NYC";
+  if (/\b(europe|paris|london|vienna|prague|rome|berlin)\b/.test(hay)) return "EUROPE";
+  if (/\b(nostalg|1990|vintage|retro)\b/.test(hay)) return "NOSTALGIA";
+  if (/\b(cozy|fireplace|hearth|cocoa|pajamas|\bpj\b|hot[\s_-]?tub)\b/.test(hay)) return "COZY";
+  if (/\b(wow|grand|spectacle|firework|aurora)\b/.test(hay)) return "WOW";
+  if (/\b(elegant|moody|luxury|chandelier|ballroom)\b/.test(hay)) return "ELEGANT";
+  if (tagged) return BUCKET_TO_LABEL[tagged];
+  return "JOY";
 }
 
 function factoryNumber(video: LibraryVideo): number {
