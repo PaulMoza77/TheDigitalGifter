@@ -9,6 +9,7 @@ public/assets/christmas/christmas-20-batch/silent/
 node_modules/
 dist/
 .tdg-commit
+supabase/.temp/
 
 .env.local
 
