@@ -10,13 +10,14 @@
 
 | Profile / method | Result |
 |------------------|--------|
-| `tunnel-key` → `root@62.171.191.209` | Authenticates; **remote exec exit 1** (port-forward / restrict style). Tunnel unit still healthy. |
-| `/root/.ssh/casahub_deploy` → Contabo | **Permission denied** (publickey) |
+| `tunnel-key` → `root@62.171.191.209` (`vmi3646115.contaboserver.net`) | Authenticates; **remote exec exit 1** (port-forward / restrict style). Tunnel unit still healthy. |
+| `/root/.ssh/casahub_deploy` → Contabo | **Permission denied** (publickey) — **do not retry** |
 | Mozas `/root/.ssh/config` Host aliases | Only `github.com` — **no Contabo host alias** |
 | Agent injected secrets | `MOZAS_SSH_*` + `SUPABASE_SERVICE_ROLE_KEY_mozas` only — **no Contabo exec key** |
 | Contabo panel / API token on Mozas | **Not found** under `/opt/mozas/secrets` |
 | Ansible inventory for Contabo | **Not found** |
 | SFTP subsystem via tunnel-key | Not usable for inventory (same restrict path) |
+| Owner console steps | `docs/audits/TDG_CONTABO_OWNER_CONSOLE_STEPS_2026-10-12.md` |
 
 ### Inference
 
