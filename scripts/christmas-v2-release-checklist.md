@@ -2,6 +2,7 @@
 
 **PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/353  
 **Branch:** `cursor/christmas-v2-eur-p0-7cbb`  
+**Offline QA HEAD:** `0c419e6e` (start this turn: `6504a33f`)  
 **Hard stop:** no merge, production deploy, DB write, live Stripe charge, paid Higgsfield, secrets/DNS/Caddy/Docker changes, or customer messages from agents.
 
 ---
