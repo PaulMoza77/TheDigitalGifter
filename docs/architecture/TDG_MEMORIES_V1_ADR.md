@@ -15,10 +15,11 @@
 | Production host | Mozas VPS (`MOZAS_SSH_HOST`, user `mozas`) |
 | Edge proxy | Caddy → Docker `thedigitalgifter:8080` |
 | App runtime | Docker Compose (`deploy/docker-compose.yml`) |
-| Database / Auth / Storage | Supabase (external; **not** VoloCar) |
+| Database / Auth / Storage | **Contabo self-hosted Supabase** via Mozas tunnel (`supabase.thedigitalgifter.com` → `127.0.0.1:19000` / `172.18.0.1:19001` → Contabo Kong `:8000`). Cloud project `kjlsocejpmnzhhduyumy` is **not** the production PostgREST target for Memories writes. |
 | Checkout / webhooks | Supabase Edge primary; Mozas origin fallback for funnel APIs |
 | Deploy | `bash scripts/deploy-vps.sh` (atomic image + rollback to `:previous`) |
 | Backups | `scripts/run-tdg-backup-now.sh` → R2 |
+| Contabo SQL apply | When `SUPABASE_DB_PASSWORD` / Contabo SSH are unavailable: `scripts/apply-memories-migration-via-pgmeta.py` over Mozas `POST http://127.0.0.1:19000/pg/query` (service role), then `NOTIFY pgrst, 'reload schema'` |
 
 ## Design principles
 
