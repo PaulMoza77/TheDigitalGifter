@@ -94,5 +94,19 @@ describe("christmas-v2 release hardening regressions", () => {
     expect(checklist).toContain("20261012130000_hotfix_admin_role_escalation.sql");
     expect(checklist).toContain("VAT");
     expect(checklist).toContain("Contabo");
+    expect(checklist).toContain("Safari / WebKit verdict");
+    expect(checklist).toContain("environment");
+    expect(checklist).toContain("delete-my-account");
+    expect(checklist).toContain("automatic_tax");
+  });
+
+  it("does not reintroduce profiles.role into useAdminAuth or is_admin migration", () => {
+    const auth = read("src/hooks/useAdminAuth.ts");
+    expect(auth).toContain("admin_users");
+    expect(auth).toContain("profiles.role is intentionally ignored");
+    expect(auth).not.toMatch(/from\("profiles"\)[\s\S]*role/);
+    const migration = read("supabase/migrations/20261012120000_platform_security_admin_and_rls.sql");
+    expect(migration).toContain("profiles.role is intentionally ignored");
+    expect(migration).not.toMatch(/p\.role\s*=\s*'admin'/);
   });
 });

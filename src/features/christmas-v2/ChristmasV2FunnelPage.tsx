@@ -301,6 +301,9 @@ export function ChristmasV2OrderPage() {
   const [publicToken, setPublicToken] = useState(fixture ? "fixture-token" : "");
   const [orderPackKey, setOrderPackKey] = useState<ChristmasPackKey>(fixture?.packKey || "starter");
   const [orderEmail, setOrderEmail] = useState<string | null>(null);
+  const [orderOutcome, setOrderOutcome] = useState<"complete" | "partial_failure" | "failed" | "unknown">(
+    fixture?.mode === "results" || fixture?.mode === "upsell" ? "complete" : "unknown",
+  );
   const [busyPack, setBusyPack] = useState<"magic" | "ultimate" | null>(null);
   const purchaseTracked = useRef(false);
   const resultsTracked = useRef(false);
@@ -338,6 +341,13 @@ export function ChristmasV2OrderPage() {
         setProgress(data.progressPercent || 10);
         setOrderPackKey(data.order.packKey || "starter");
         setOrderEmail(data.order.email || null);
+        if (
+          data.order.status === "complete" ||
+          data.order.status === "partial_failure" ||
+          data.order.status === "failed"
+        ) {
+          setOrderOutcome(data.order.status);
+        }
 
         if (
           !purchaseTracked.current &&
@@ -482,15 +492,25 @@ export function ChristmasV2OrderPage() {
             scenes={scenes}
             videos={videos}
             emailHint={orderEmail}
-            onContinueUpsell={() => {
-              trackChristmasV2Event({ eventName: "christmas_v2_upsell_viewed" });
-              setStatus("upsell");
-            }}
+            outcome={orderOutcome}
+            onContinueUpsell={
+              orderOutcome === "failed"
+                ? undefined
+                : () => {
+                    trackChristmasV2Event({ eventName: "christmas_v2_upsell_viewed" });
+                    setStatus("upsell");
+                  }
+            }
           />
         ) : null}
         {status === "upsell" ? (
           <div className="space-y-8">
-            <ChristmasResultsScreen scenes={scenes} videos={videos} emailHint={orderEmail} />
+            <ChristmasResultsScreen
+              scenes={scenes}
+              videos={videos}
+              emailHint={orderEmail}
+              outcome={orderOutcome}
+            />
             <ChristmasUpsellScreen
               purchasedPackKey={orderPackKey}
               starterScenes={scenes}

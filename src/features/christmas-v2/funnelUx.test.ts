@@ -118,5 +118,23 @@ describe("christmas-v2 funnel UX contracts", () => {
     const shell = read("src/features/christmas-v2/ChristmasV2Shell.tsx");
     expect(shell).toContain("One-time purchase · no subscription");
     expect(shell.toLowerCase()).not.toContain("subscribe");
+    expect(shell).toContain('data-testid="cv2-footer-refunds"');
+    expect(shell).toContain('data-testid="cv2-footer-privacy"');
+    expect(shell).toContain('href="/refunds"');
+    expect(shell).toContain('href="/privacy"');
+  });
+
+  it("results screen distinguishes complete vs partial_failure vs failed", () => {
+    const results = read("src/features/christmas-v2/screens/ResultsScreen.tsx");
+    expect(results).toContain("ChristmasResultsOutcome");
+    expect(results).toContain("partial_failure");
+    expect(results).toContain('data-testid="cv2-results-failure-note"');
+    expect(results).toContain("We couldn’t finish your Christmas portraits");
+    expect(results).toContain("Some of your Christmas portraits are ready");
+    expect(results).toContain("/refunds");
+    expect(results).toContain("onContinueUpsell && !isTotalFail");
+    const orderPage = read("src/features/christmas-v2/ChristmasV2FunnelPage.tsx");
+    expect(orderPage).toContain("outcome={orderOutcome}");
+    expect(orderPage).toContain('orderOutcome === "failed"');
   });
 });

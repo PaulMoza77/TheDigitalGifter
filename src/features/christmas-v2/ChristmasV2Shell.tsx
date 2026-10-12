@@ -98,6 +98,14 @@ export function ChristmasV2Shell({
             <a className="underline-offset-2 hover:underline" href="/generator?occasion=christmas">
               Full Christmas generator
             </a>
+            {" · "}
+            <a className="underline-offset-2 hover:underline" href="/refunds" data-testid="cv2-footer-refunds">
+              Refunds
+            </a>
+            {" · "}
+            <a className="underline-offset-2 hover:underline" href="/privacy" data-testid="cv2-footer-privacy">
+              Privacy
+            </a>
           </p>
         </footer>
       </div>
