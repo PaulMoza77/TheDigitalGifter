@@ -2,7 +2,8 @@
 
 **Scope:** PaulMoza77/TheDigitalGifter only (not Mozas).  
 **Mode:** Read-only verification. No DNS changes, secret edits, migrations, merges, deploys, or restarts were performed.  
-**Verdict:** **NO-GO** for production cutover until P0 blockers below are cleared.
+**Verdict:** **NO-GO** for production cutover until P0 blockers below are cleared.  
+**Follow-up (recovery prep, same day):** `docs/audits/TDG_SELFHOST_API_RECOVERY_PREP_2026-10-12.md` — Mozas→Kong architecture, isolated TLS proof, storage manifests, Edge/#356 gates.
 
 ---
 
