@@ -4,6 +4,10 @@ import {
   handleChristmasStripeEvent,
   isChristmasCheckoutMetadata,
 } from "../_shared/christmas/stripeFulfill.ts";
+import {
+  handleMemoriesStripeEvent,
+  isMemoriesCheckoutMetadata,
+} from "../_shared/memories/stripeFulfill.ts";
 import { handlePetStripeEvent, isPetCheckoutMetadata } from "../_shared/pet/stripeFulfill.ts";
 import { handlePetUpsellStripeEvent, isPetUpsellMetadata } from "../_shared/pet/stripeUpsellFulfill.ts";
 
@@ -116,11 +120,25 @@ Deno.serve(async (req) => {
       eventType === "checkout.session.async_payment_succeeded" ||
       eventType === "charge.refunded" ||
       eventType === "refund.created" ||
+      eventType === "customer.subscription.created" ||
+      eventType === "customer.subscription.updated" ||
+      eventType === "customer.subscription.deleted" ||
+      eventType === "invoice.payment_failed" ||
       (eventType === "invoice.paid" &&
         (isPetCheckoutMetadata(metadata) ||
           isPetUpsellMetadata(metadata) ||
-          isChristmasCheckoutMetadata(metadata)))
+          isChristmasCheckoutMetadata(metadata) ||
+          isMemoriesCheckoutMetadata(metadata)))
     ) {
+      const memoriesResponse = await handleMemoriesStripeEvent({
+        service,
+        eventId,
+        eventType,
+        obj,
+        metadata,
+      });
+      if (memoriesResponse) return memoriesResponse;
+
       const christmasResponse = await handleChristmasStripeEvent({
         service,
         eventId,

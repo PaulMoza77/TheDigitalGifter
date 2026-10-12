@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Fictional demonstration still photograph">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5c4a3a"/>
+      <stop offset="100%" stop-color="#2a221a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <ellipse cx="600" cy="720" rx="420" ry="90" fill="#1a1510" opacity=".35"/>
+  <circle cx="600" cy="390" r="120" fill="#c9b39a"/>
+  <path d="M420 720c20-140 80-220 180-220s160 80 180 220" fill="#6b5644"/>
+  <rect x="40" y="40" width="320" height="48" rx="8" fill="#000" opacity=".45"/>
+  <text x="60" y="72" fill="#F4EDE3" font-family="Georgia,serif" font-size="22">FICTIONAL DEMO · STILL</text>
+</svg>

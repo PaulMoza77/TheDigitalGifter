@@ -6,6 +6,7 @@ import { petFunnelEventDevPlugin } from "./vite.petFunnelEventPlugin";
 import { petV2DevPlugin } from "./vite.petV2Plugin";
 import { christmasV2DevPlugin } from "./vite.christmasPlugin";
 import { christmasSeoPrerenderPlugin } from "./vite.christmasSeoPlugin";
+import { memoriesDevPlugin } from "./vite.memoriesPlugin";
 
 function christmasFactory200DevPlugin(): Plugin {
   const root = path.resolve(__dirname, "generated/christmas-factory-200");
@@ -71,6 +72,7 @@ export default defineConfig(({ mode }) => {
       petFunnelEventDevPlugin(),
       petV2DevPlugin(),
       christmasV2DevPlugin(),
+      memoriesDevPlugin(),
       christmasSeoPrerenderPlugin(),
       christmasFactory200DevPlugin(),
     ],
