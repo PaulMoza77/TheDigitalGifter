@@ -4,8 +4,11 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { rememberAuthReturnTo } from "@/lib/auth/returnTo";
+import { withTimeout } from "@/lib/withTimeout";
 
 const PlannerAuthGate = lazy(() => import("@/features/christmas/planner/PlannerAuthGate"));
+
+const PROTECTED_SESSION_TIMEOUT_MS = 4_000;
 
 export default function ProtectedClientRoute() {
   const location = useLocation();
@@ -15,11 +18,22 @@ export default function ProtectedClientRoute() {
   React.useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+    void withTimeout(
+      supabase.auth.getSession(),
+      PROTECTED_SESSION_TIMEOUT_MS,
+      "protected.getSession",
+    )
+      .then(({ data }) => {
+        if (!mounted) return;
+        setSession(data.session ?? null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("[ProtectedClientRoute] getSession failed:", error);
+        if (!mounted) return;
+        setSession(null);
+        setLoading(false);
+      });
 
     const {
       data: { subscription },
