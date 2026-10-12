@@ -308,6 +308,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         poster: row.thumbnail_path ? signedPlaybackPath("thumb", row.id) : undefined,
         width: row.width,
         height: row.height,
+        createdAt: row.created_at || undefined,
       }));
       const { data: renders } = videos.length
         ? await service

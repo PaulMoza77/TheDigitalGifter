@@ -5,13 +5,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   CHRISTMAS_LIBRARY_KINDS,
-  LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
+  LIBRARY_CATEGORIES,
   appendLibraryQueryParam,
   countChristmasKind,
   isLibraryPhoto,
   librarySrcPath,
   searchLibraryVideos,
+  sortLibraryNewestFirst,
 } from "./catalog";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -473,17 +474,39 @@ describe("admin video library", () => {
     expect(manifest.wording_shortened).toBe(true);
   });
 
+  it("sorts library results newest-first without requiring a search", () => {
+    const older = LIBRARY_VIDEOS.find((item) => item.id === "reel-lauren-overwhelm-master");
+    const newest = LIBRARY_VIDEOS.find((item) => item.id === "reel-lib-montage-11-europe-postcard");
+    expect(older && newest).toBeTruthy();
+    const reordered = sortLibraryNewestFirst([older!, newest!]);
+    expect(reordered.map((item) => item.id)).toEqual([
+      "reel-lib-montage-11-europe-postcard",
+      "reel-lauren-overwhelm-master",
+    ]);
+    const reels = searchLibraryVideos("", "christmas_reels", "reel");
+    const montage = reels.findIndex((item) => item.id === "reel-lib-montage-11-europe-postcard");
+    const lauren = reels.findIndex((item) => item.id === "reel-lauren-overwhelm-master");
+    expect(montage).toBeGreaterThanOrEqual(0);
+    expect(lauren).toBeGreaterThan(montage);
+  });
+
   it("is wired into admin nav and the /admin/library route", () => {
     expect(readSrc("src/App.tsx")).toMatch(/path="library"/);
     expect(readSrc("src/App.tsx")).toContain('path="library/christmas-factory"');
     expect(readSrc("src/App.tsx")).toContain("/dev/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/library/christmas-factory");
-    expect(readSrc("src/pages/admin/ChristmasFactoryReviewPage.tsx")).toContain("Christmas Factory RAW");
+    const factoryPage = readSrc("src/pages/admin/ChristmasFactoryReviewPage.tsx");
+    expect(factoryPage).toContain("Christmas Factory RAW");
+    expect(factoryPage).toContain("Download");
+    expect(factoryPage).toContain("By category");
+    expect(factoryPage).toContain("Search title, id, or tag");
+    expect(factoryPage).toContain("triggerBlobDownload");
     expect(readSrc("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
     expect(readSrc("src/App.tsx")).toContain("path=\"clip-factory\"");
     const page = readSrc("src/pages/admin/AdminLibraryPage.tsx");
     expect(page).toContain("/admin/library/christmas-factory");
+    expect(page).toContain("Newest videos stay on top");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
     expect(page).toContain("onShare");
@@ -510,5 +533,7 @@ describe("admin video library", () => {
     expect(readSrc("src/App.tsx")).toContain("path=\"social-accounts\"");
     expect(readSrc("src/App.tsx")).toContain("path=\"publishing\"");
     expect(readSrc("src/App.tsx")).toContain("path=\"publisher\"");
+    expect(readSrc("src/pages/admin/AdminClipFactoryPage.tsx")).toContain("saveLibraryVideo");
+    expect(readSrc("api/clip-factory.ts")).toContain("createdAt: row.created_at");
   });
 });
