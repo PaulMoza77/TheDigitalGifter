@@ -38,6 +38,8 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(ensure).toMatch(/Caddyfile\.https\.ready/);
     expect(ensure).toMatch(/mozas-apply-tdg-caddy-https/);
     expect(ensure).toMatch(/tdg-caddy\.mode/);
+    expect(ensure).toMatch(/supabase\.thedigitalgifter\.com/);
+    expect(ensure).toMatch(/172\.18\.0\.1:19001/);
   });
 
   it("successful deploy prunes stale TDG docker tags after verified pin advances", () => {

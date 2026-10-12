@@ -55,6 +55,14 @@ describe("TDG Caddy mode selection (deploy must not downgrade HTTPS)", () => {
     expect(httpsFile).toContain("X-Robots-Tag");
   });
 
+  it("HTTPS template keeps supabase.thedigitalgifter.com on the Contabo Kong tunnel", () => {
+    expect(httpsFile).toMatch(/^\s*supabase\.thedigitalgifter\.com\s*\{/m);
+    expect(httpsFile).toContain("reverse_proxy 172.18.0.1:19001");
+    expect(httpsFile).not.toMatch(
+      /supabase\.thedigitalgifter\.com[\s\S]{0,400}thedigitalgifter:8080/,
+    );
+  });
+
   it("refuses HTTPS candidate that drops CasaHub", () => {
     const stripped = httpsFile
       .replace(/casahub\.eu,\s*www\.casahub\.eu\s*\{[\s\S]*?\n\}\n?/m, "")
