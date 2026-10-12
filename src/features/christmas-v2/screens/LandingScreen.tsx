@@ -123,7 +123,7 @@ export function ChristmasLandingScreen({
               <span className="max-w-xs text-sm text-[#F7F0E4]/60">
                 JPEG, PNG, or WebP · up to 15 MB · one clear portrait works best
               </span>
-              <span className="max-w-xs text-xs text-[#F7F0E4]/45">
+              <span className="max-w-xs text-xs font-medium text-[#F3D98A]/90">
                 iPhone HEIC is not supported here — export or share as JPEG first.
               </span>
             </>
