@@ -50,7 +50,7 @@ function categoryOf(video: LibraryVideo): string {
   if (/\b(nyc|manhattan|central[\s_-]?park|brooklyn|times[\s_-]?square)\b/.test(hay)) return "NYC";
   if (/\b(europe|paris|london|vienna|prague|rome|berlin)\b/.test(hay)) return "EUROPE";
   if (/\b(nostalg|1990|vintage|retro)\b/.test(hay)) return "NOSTALGIA";
-  if (/\b(cozy|fireplace|hearth|cocoa|pajamas|\bpj\b|hot[\s_-]?tub)\b/.test(hay)) return "COZY";
+  if (/\b(cozy|fireplace|hearth|hot[\s_-]?tub)\b/.test(hay)) return "COZY";
   if (/\b(wow|grand|spectacle|firework|aurora)\b/.test(hay)) return "WOW";
   if (/\b(elegant|moody|luxury|chandelier|ballroom)\b/.test(hay)) return "ELEGANT";
   if (tagged) return BUCKET_TO_LABEL[tagged];
