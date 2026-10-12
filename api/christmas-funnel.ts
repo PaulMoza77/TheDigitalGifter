@@ -241,8 +241,18 @@ async function buildOrderResults(
   }
 
   const videoOut: Array<{ id: string; sourceSceneKey: string; status: string; videoUrl: string | null }> = [];
+  let videoProgressSum = 0;
   for (const video of videoRows) {
     const status = asString(video.status);
+    const videoPct =
+      status === "succeeded" || status === "ready"
+        ? 100
+        : status === "generating"
+          ? 45
+          : status === "failed"
+            ? 100
+            : 0;
+    videoProgressSum += videoPct;
     const videoUrl =
       unlocked && ["succeeded", "ready"].includes(status) && video.result_path
         ? await signedDownload(service, asString(video.result_bucket) || CHRISTMAS_RESULT_BUCKET, video.result_path)
@@ -255,8 +265,9 @@ async function buildOrderResults(
     });
   }
 
-  const progressPercent = sceneRows.length
-    ? Math.round(progressSum / sceneRows.length)
+  const progressUnits = sceneRows.length + videoRows.length;
+  const progressPercent = progressUnits
+    ? Math.round((progressSum + videoProgressSum) / progressUnits)
     : asString(order.status) === "complete"
       ? 100
       : 0;

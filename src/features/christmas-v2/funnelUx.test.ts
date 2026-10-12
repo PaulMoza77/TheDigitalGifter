@@ -69,6 +69,14 @@ describe("christmas-v2 funnel UX contracts", () => {
     expect(upsell).toContain("Optional upgrade");
     expect(upsell).toContain("not a subscription");
     expect(upsell).not.toContain("Surprise Me ✨");
+    expect(upsell.toLowerCase()).not.toContain("golden frame");
+  });
+
+  it("generating screen distinguishes portrait vs clip phase", () => {
+    const generating = read("src/features/christmas-v2/screens/GeneratingScreen.tsx");
+    expect(generating).toContain("awaitingVideos");
+    expect(generating).toContain("Finishing your Christmas clips…");
+    expect(generating).toContain("Portraits are ready — short clips are still rendering");
   });
 
   it("validates upload MIME/size and explains HEIC clearly", () => {

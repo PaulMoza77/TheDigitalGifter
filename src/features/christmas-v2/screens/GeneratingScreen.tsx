@@ -3,10 +3,13 @@ import { motion } from "framer-motion";
 export function ChristmasGeneratingScreen({
   progressPercent = 12,
   fixtureBanner,
+  awaitingVideos = false,
 }: {
   progressPercent?: number;
   /** Visible when rendering a local test fixture — never implies a real payment. */
   fixtureBanner?: string | null;
+  /** When true, images may be ready but short clips are still rendering. */
+  awaitingVideos?: boolean;
 }) {
   const pct = Math.max(8, Math.min(99, Math.round(progressPercent || 12)));
   return (
@@ -33,11 +36,12 @@ export function ChristmasGeneratingScreen({
       </motion.div>
       <div>
         <h1 className="cv2-display text-3xl font-semibold text-[#F7F0E4] sm:text-4xl">
-          Creating your Christmas magic…
+          {awaitingVideos ? "Finishing your Christmas clips…" : "Creating your Christmas magic…"}
         </h1>
         <p className="mt-2 text-sm text-[#F7F0E4]/65">
-          Your portraits are being crafted. This page updates automatically — safe to refresh or
-          reopen with your order link.
+          {awaitingVideos
+            ? "Portraits are ready — short clips are still rendering. This page updates automatically."
+            : "Your portraits are being crafted. This page updates automatically — safe to refresh or reopen with your order link."}
         </p>
       </div>
       <div

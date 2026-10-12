@@ -229,6 +229,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         } else {
           let requestId = existingPredictionId;
           let modelName = asString(video.model_name) || undefined;
+          let statusUrl: string | undefined;
           if (!requestId) {
             const bucket = asString(source.result_bucket) || CHRISTMAS_RESULT_BUCKET;
             const { data: signed } = await service.storage
@@ -244,6 +245,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             });
             requestId = submitted.requestId;
             modelName = submitted.model;
+            statusUrl = submitted.statusUrl;
             await service
               .from("christmas_v2_order_videos")
               .update({
@@ -256,6 +258,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
           const polled = await pollHiggsfieldRequest(authorization!, requestId, {
             maxAttempts: 90,
+            statusUrl,
           });
           if (!polled.done) throw new Error("Higgsfield Kling 3 Pro timed out");
           if (polled.failed || !polled.body) {

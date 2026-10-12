@@ -294,6 +294,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         } else {
           let requestId = existingPredictionId;
           let modelName = asString(scene.model_name) || undefined;
+          let statusUrl: string | undefined;
           if (!requestId) {
             const submitted = await submitSoulV2Image({
               authorization: authorization!,
@@ -303,6 +304,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
             });
             requestId = submitted.requestId;
             modelName = submitted.model;
+            statusUrl = submitted.statusUrl;
             // Persist BEFORE polling — crash-safe anti double-charge.
             await service
               .from("christmas_v2_order_scenes")
@@ -317,6 +319,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
           const polled = await pollHiggsfieldRequest(authorization!, requestId, {
             maxAttempts: 48,
+            statusUrl,
           });
           if (!polled.done) throw new Error("Higgsfield Soul v2 timed out");
           if (polled.failed || !polled.body) {

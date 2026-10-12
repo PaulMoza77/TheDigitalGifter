@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
       }
       return false;
     });
-    if (!targets.length) return res.status(200).json({ ok: true, status: "nothing_to_do", started: 0 });
+    if (!targets.length) return jsonResponse({ ok: true, status: "nothing_to_do", started: 0 });
 
     let started = 0;
     const authorization = generationMock()
@@ -208,6 +208,7 @@ Deno.serve(async (req) => {
         } else {
           let requestId = existingPredictionId;
           let modelName = asString(video.model_name) || undefined;
+          let statusUrl: string | undefined;
           if (!requestId) {
             const bucket = asString(source.result_bucket) || CHRISTMAS_RESULT_BUCKET;
             const { data: signed } = await service.storage
@@ -223,6 +224,7 @@ Deno.serve(async (req) => {
             });
             requestId = submitted.requestId;
             modelName = submitted.model;
+            statusUrl = submitted.statusUrl;
             await service
               .from("christmas_v2_order_videos")
               .update({
@@ -235,6 +237,7 @@ Deno.serve(async (req) => {
 
           const polled = await pollHiggsfieldRequest(authorization!, requestId, {
             maxAttempts: 90,
+            statusUrl,
           });
           if (!polled.done) throw new Error("Higgsfield Kling 3 Pro timed out");
           if (polled.failed || !polled.body) {

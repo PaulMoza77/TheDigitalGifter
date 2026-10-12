@@ -372,9 +372,16 @@ export function ChristmasV2OrderPage() {
           });
         }
 
-        const done =
-          data.order.status === "complete" ||
-          (data.progressPercent >= 100 && data.scenes.some((s) => s.imageUrl));
+        const orderTerminal = ["complete", "partial_failure", "failed"].includes(
+          data.order.status,
+        );
+        // Image-only shortcut: never flip to results on scene progress while clips remain.
+        const imageOnlyReady =
+          data.order.videoCount === 0 &&
+          data.progressPercent >= 100 &&
+          data.scenes.some((s) => s.imageUrl) &&
+          !["paid", "generating", "awaiting_qc"].includes(data.order.status);
+        const done = orderTerminal || imageOnlyReady;
         if (done) {
           setStatus((current) => (current === "upsell" ? "upsell" : "results"));
           if (!resultsTracked.current) {
@@ -462,7 +469,13 @@ export function ChristmasV2OrderPage() {
           </p>
         ) : null}
         {status === "loading" || status === "generating" ? (
-          <ChristmasGeneratingScreen progressPercent={progress} />
+          <ChristmasGeneratingScreen
+            progressPercent={progress}
+            awaitingVideos={
+              videos.length > 0 &&
+              videos.some((v) => !["succeeded", "ready", "failed"].includes(v.status))
+            }
+          />
         ) : null}
         {status === "results" ? (
           <ChristmasResultsScreen
