@@ -2,6 +2,8 @@
 
 **Hard stops honored:** No Docker/migration/deploy/secrets/merge/billing/storage/Stripe/Mozas/Caddy/DNS changes. Tunnel-key restrictions untouched.
 
+> **Update (same day, session 2):** See `TDG_CONTABO_READONLY_P0_INSPECT_2026-10-12.md` for refreshed public Edge matrix (partial entrypoint recovery: `christmas-funnel` / generate workers boot; many slugs still 500) and Contabo API orphan-admin precheck (0 orphans). Contabo **exec SSH still BLOCKED** for agents without `CONTABO_SSH_PRIVATE_KEY`. Security remains **VULNERABLE until verified**. Repair prompt: `TDG_CONTABO_REPAIR_EXECUTION_PROMPT_2026-10-12.md`.
+
 ---
 
 ## Phase A — Access status: **BLOCKED**
