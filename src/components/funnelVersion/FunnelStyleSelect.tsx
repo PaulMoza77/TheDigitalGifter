@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { occasionLookupKeys } from "./occasionKeys";
 
 type TemplateDbRow = {
   id: string;
@@ -191,6 +192,10 @@ export default function FunnelStyleSelect() {
   );
 
   const header = useMemo(() => headerForOccasion(occasion), [occasion]);
+  const lookupKeys = useMemo(
+    () => occasionLookupKeys(occasion, slugFromQs, searchParams.get("occasion")),
+    [occasion, slugFromQs, searchParams],
+  );
 
   const [loading, setLoading] = useState(true);
   const [styles, setStyles] = useState<FunnelStyle[]>([]);
@@ -221,21 +226,13 @@ export default function FunnelStyleSelect() {
       setLoading(true);
       setErrorMsg(null);
 
-      const primaryOccasion = occasion;
-      const legacyOccasion = primaryOccasion === "newborn" ? "new_born" : null;
-
-      async function runQuery(occ: string) {
-        return await supabase
-          .from("templates")
-          .select("id,title,prompt,occasion,style_id,isactive")
-          .eq("isactive", true)
-          .eq("occasion", occ)
-          .order("title", { ascending: true });
-      }
-
-      let rows: TemplateDbRow[] = [];
-
-      const q1 = await runQuery(primaryOccasion);
+      const keys = lookupKeys.length > 0 ? lookupKeys : [occasion];
+      const q1 = await supabase
+        .from("templates")
+        .select("id,title,prompt,occasion,style_id,isactive")
+        .eq("isactive", true)
+        .in("occasion", keys)
+        .order("title", { ascending: true });
 
       if (q1.error) {
         if (!alive) return;
@@ -246,12 +243,7 @@ export default function FunnelStyleSelect() {
         return;
       }
 
-      rows = (q1.data ?? []) as TemplateDbRow[];
-
-      if (rows.length === 0 && legacyOccasion) {
-        const q2 = await runQuery(legacyOccasion);
-        if (!q2.error) rows = ((q2.data ?? []) as TemplateDbRow[]) || [];
-      }
+      const rows = (q1.data ?? []) as TemplateDbRow[];
 
       if (!alive) return;
 
@@ -273,7 +265,7 @@ export default function FunnelStyleSelect() {
     return () => {
       alive = false;
     };
-  }, [occasion]);
+  }, [lookupKeys, occasion]);
 
   function goNext(style: FunnelStyle) {
     setErrorMsg(null);
