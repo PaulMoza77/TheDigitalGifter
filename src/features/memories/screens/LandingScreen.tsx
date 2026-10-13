@@ -1,38 +1,54 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Lock, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, Lock, Play, Shield, Sparkles } from "lucide-react";
 import {
   MEMORIES_CREATE_ROUTE,
   MEMORIES_FAQ,
   MEMORIES_PLANS,
 } from "../config";
 import { trackMemoriesEvent } from "../analytics";
+import {
+  MEMORIES_DEMO_DISCLAIMER,
+  MEMORIES_GALLERY_DEMOS,
+  MEMORIES_HERO_DEMO,
+} from "../demoAssets";
 
-function BeforeAfterDemo() {
-  const [pos, setPos] = useState(52);
+function BeforeAfterDemo({ className = "" }: { className?: string }) {
+  const [pos, setPos] = useState(48);
   const reduce = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (reduce) {
+      video.pause();
+      return;
+    }
+    void video.play().catch(() => undefined);
+  }, [reduce]);
+
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-none sm:rounded-[1.25rem]">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg,#3d2f24 0%,#6b4f3a 45%,#a67c52 100%)",
-        }}
-        aria-hidden
-      />
-      <img
-        src="/assets/memories/demo-after.svg"
-        alt="Fictional demonstration: illustrated motion still representing a future animation preview"
+    <div className={`relative aspect-[4/3] w-full overflow-hidden ${className}`}>
+      <video
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
+        src={MEMORIES_HERO_DEMO.afterVideo}
+        poster={MEMORIES_HERO_DEMO.afterPoster}
+        muted
+        loop
+        playsInline
+        autoPlay={!reduce}
+        aria-label={MEMORIES_HERO_DEMO.afterAlt}
       />
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <img
-          src="/assets/memories/demo-before.svg"
-          alt="Fictional demonstration: still photograph before animation"
+          src={MEMORIES_HERO_DEMO.before}
+          alt={MEMORIES_HERO_DEMO.beforeAlt}
           className="h-full max-w-none object-cover"
           style={{ width: "100vw", maxWidth: "72rem", height: "100%" }}
+          draggable={false}
         />
       </div>
       <input
@@ -40,16 +56,22 @@ function BeforeAfterDemo() {
         min={8}
         max={92}
         value={pos}
-        aria-label="Compare still photo and demonstration preview"
+        aria-label="Compare still photograph and short animated preview"
         onChange={(e) => setPos(Number(e.target.value))}
         className="absolute bottom-4 left-1/2 z-10 w-[70%] -translate-x-1/2 accent-[#D4AF7A]"
       />
-      <p className="absolute left-3 top-3 rounded bg-black/55 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-[#F4EDE3]">
-        Fictional demo · not a real recording
-      </p>
+      <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1">
+        <p className="rounded bg-black/60 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-[#F4EDE3]">
+          {MEMORIES_DEMO_DISCLAIMER}
+        </p>
+        <div className="flex gap-2 text-[10px] font-semibold uppercase tracking-wider">
+          <span className="rounded bg-[#F4EDE3]/90 px-2 py-0.5 text-[#1a1510]">Before · still</span>
+          <span className="rounded bg-[#D4AF7A]/95 px-2 py-0.5 text-[#1a1510]">After · short clip</span>
+        </div>
+      </div>
       {!reduce && (
         <motion.div
-          className="pointer-events-none absolute inset-y-0 w-0.5 bg-[#F4EDE3]/80"
+          className="pointer-events-none absolute inset-y-0 w-0.5 bg-[#F4EDE3]/85"
           style={{ left: `${pos}%` }}
           layout
         />
@@ -58,8 +80,33 @@ function BeforeAfterDemo() {
   );
 }
 
+function GalleryCard({
+  label,
+  still,
+  alt,
+}: {
+  label: string;
+  still: string;
+  alt: string;
+}) {
+  return (
+    <figure className="group overflow-hidden">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#2a221a]">
+        <img
+          src={still}
+          alt={alt}
+          className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+      </div>
+      <figcaption className="mt-2 text-sm text-[#F4EDE3]/65">{label}</figcaption>
+    </figure>
+  );
+}
+
 export function MemoriesLandingScreen() {
   const howRef = useRef<HTMLElement>(null);
+  const compareRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
 
   useEffect(() => {
@@ -149,7 +196,7 @@ export function MemoriesLandingScreen() {
               </motion.div>
             </div>
             <motion.div {...fade(0.2)} className="relative">
-              <BeforeAfterDemo />
+              <BeforeAfterDemo className="rounded-none sm:rounded-[1.25rem]" />
             </motion.div>
           </div>
         </div>
@@ -187,75 +234,95 @@ export function MemoriesLandingScreen() {
         </ol>
       </section>
 
-      <section className="border-y border-[#F4EDE3]/08 bg-[#221b15] py-20">
+      <section ref={compareRef} className="border-y border-[#F4EDE3]/08 bg-[#221b15] py-20">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <h2 className="memories-display text-3xl font-semibold sm:text-4xl">Example moments</h2>
-          <p className="mt-3 max-w-xl text-[#F4EDE3]/7">
-            Illustrative gallery using clearly labeled fictional imagery — not customer photos and
-            not generated video.
-          </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {["Family gathering", "Quiet afternoon", "Celebration night"].map((label, i) => (
-              <figure key={label} className="overflow-hidden">
-                <img
-                  src={`/assets/memories/gallery-${i + 1}.svg`}
-                  alt={`Fictional demonstration still: ${label}`}
-                  className="aspect-[4/5] w-full object-cover"
-                />
-                <figcaption className="mt-2 text-sm text-[#F4EDE3]/65">{label}</figcaption>
-              </figure>
-            ))}
+          <div className="grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF7A]">
+                Interactive comparison
+              </p>
+              <h2 className="memories-display mt-3 text-3xl font-semibold sm:text-4xl">
+                Still photograph → short clip
+              </h2>
+              <p className="mt-4 max-w-md text-base leading-7 text-[#F4EDE3]/75">
+                Drag the slider to compare a fictional still with a short animated preview. This is a
+                demonstration of the experience we are validating — not a live customer product yet,
+                and not a real recording.
+              </p>
+              <button
+                type="button"
+                onClick={() => compareRef.current?.querySelector("input")?.focus()}
+                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#D4AF7A]"
+              >
+                <Play className="h-4 w-4" aria-hidden />
+                Drag to compare
+              </button>
+            </div>
+            <BeforeAfterDemo className="rounded-none sm:rounded-[1rem]" />
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-        <h2 className="memories-display text-3xl font-semibold sm:text-4xl">Subscription benefits</h2>
+        <h2 className="memories-display text-3xl font-semibold sm:text-4xl">Example moments</h2>
         <p className="mt-3 max-w-xl text-[#F4EDE3]/7">
-          Planned membership benefits for when the product ships. Limits are provisional.
+          Fictional demonstration stills created for this landing page — not customer photographs
+          and not claimed as recordings of real private memories.
         </p>
-        <div className="mt-10 grid gap-6 lg:grid-cols-3">
-          {Object.values(MEMORIES_PLANS).map((plan) => (
-            <div
-              key={plan.key}
-              className={`space-y-4 border p-6 ${
-                plan.badge ? "border-[#D4AF7A]/55 bg-[#2a221a]" : "border-[#F4EDE3]/12"
-              }`}
-            >
-              {plan.badge ? (
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF7A]">
-                  {plan.badge}
-                </p>
-              ) : (
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-transparent">·</p>
-              )}
-              <h3 className="memories-display text-2xl font-semibold">{plan.name}</h3>
-              <p className="text-lg text-[#D4AF7A]">{plan.priceDisplay}</p>
-              <ul className="space-y-2 text-sm text-[#F4EDE3]/75">
-                {plan.features.map((f) => (
-                  <li key={f}>• {f}</li>
-                ))}
-              </ul>
-              <p className="text-xs text-[#F4EDE3]/45">{plan.provisionalNote}</p>
-            </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {MEMORIES_GALLERY_DEMOS.map((item) => (
+            <GalleryCard key={item.id} label={item.label} still={item.still} alt={item.alt} />
           ))}
         </div>
       </section>
 
       <section className="border-y border-[#F4EDE3]/08 bg-[#221b15] py-20">
-        <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
-          <h2 className="memories-display text-3xl font-semibold sm:text-4xl">
-            Transparent early access
-          </h2>
-          <p className="mt-4 text-base leading-7 text-[#F4EDE3]/75">
-            You are joining a validation funnel for a product still in development. We do not
-            advertise unfinished AI features as currently usable. Recurring charges only begin under
-            an approved commercial mode after informed checkout. Cancel anytime once subscribed.
+        <div className="mx-auto max-w-6xl px-5 sm:px-8">
+          <h2 className="memories-display text-3xl font-semibold sm:text-4xl">Subscription benefits</h2>
+          <p className="mt-3 max-w-xl text-[#F4EDE3]/7">
+            Planned membership benefits for when the product ships. Limits are provisional.
           </p>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {Object.values(MEMORIES_PLANS).map((plan) => (
+              <div
+                key={plan.key}
+                className={`space-y-4 border p-6 ${
+                  plan.badge ? "border-[#D4AF7A]/55 bg-[#2a221a]" : "border-[#F4EDE3]/12"
+                }`}
+              >
+                {plan.badge ? (
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF7A]">
+                    {plan.badge}
+                  </p>
+                ) : (
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-transparent">·</p>
+                )}
+                <h3 className="memories-display text-2xl font-semibold">{plan.name}</h3>
+                <p className="text-lg text-[#D4AF7A]">{plan.priceDisplay}</p>
+                <ul className="space-y-2 text-sm text-[#F4EDE3]/75">
+                  {plan.features.map((f) => (
+                    <li key={f}>• {f}</li>
+                  ))}
+                </ul>
+                <p className="text-xs text-[#F4EDE3]/45">{plan.provisionalNote}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
+      <section className="mx-auto max-w-3xl px-5 py-20 text-center sm:px-8">
+        <h2 className="memories-display text-3xl font-semibold sm:text-4xl">
+          Transparent early access
+        </h2>
+        <p className="mt-4 text-base leading-7 text-[#F4EDE3]/75">
+          You are joining a validation funnel for a product still in development. We do not
+          advertise unfinished AI features as currently usable. Recurring charges only begin under
+          an approved commercial mode after informed checkout. Cancel anytime once subscribed.
+        </p>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-10 sm:px-8">
         <h2 className="memories-display text-3xl font-semibold sm:text-4xl">FAQ</h2>
         <div className="mt-8 space-y-4">
           {MEMORIES_FAQ.map((item) => (
@@ -269,7 +336,7 @@ export function MemoriesLandingScreen() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-10 sm:px-8">
+      <section className="mx-auto max-w-6xl px-5 pb-16 sm:px-8">
         <div className="grid gap-6 sm:grid-cols-3">
           {[
             { icon: Lock, t: "Private by default", d: "Uploads are not publicly listed. Access uses signed URLs where required." },

@@ -1,0 +1,32 @@
+{
+  "batch_id": "memories-landing-demo-20261013",
+  "disclaimer": "Fictional / consenting-person styled demo assets. Not customer photos. Not recordings of deceased persons.",
+  "hero": {
+    "before": "/assets/memories/demo-before.jpg",
+    "afterVideo": "/assets/memories/demo-after.mp4",
+    "afterPoster": "/assets/memories/demo-after-poster.jpg",
+    "label": "Sunday dinner",
+    "afterKind": "higgsfield_kling_i2v",
+    "beforeKind": "higgsfield_recraft_still"
+  },
+  "gallery": [
+    {
+      "id": "gallery_garden",
+      "label": "Garden afternoon",
+      "still": "/assets/memories/gallery-1.jpg",
+      "kind": "higgsfield_recraft_still"
+    },
+    {
+      "id": "gallery_living_room",
+      "label": "Quiet afternoon",
+      "still": "/assets/memories/gallery-2.jpg",
+      "kind": "higgsfield_recraft_still"
+    },
+    {
+      "id": "gallery_celebration",
+      "label": "Celebration night",
+      "still": "/assets/memories/gallery-3.jpg",
+      "kind": "higgsfield_recraft_still"
+    }
+  ]
+}

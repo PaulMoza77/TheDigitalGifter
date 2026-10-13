@@ -57,4 +57,18 @@ describe("Memories V1 wiring", () => {
     expect(christmas).toContain("CHRISTMAS_STARTER_PRICE_CENTS = 300");
     expect(christmas).toContain("CHRISTMAS_MAGIC_PRICE_CENTS = 800");
   });
+
+  it("ships real Memories demo stills and hero after clip", () => {
+    const landing = readSrc("src/features/memories/screens/LandingScreen.tsx");
+    expect(landing).toContain("MEMORIES_HERO_DEMO");
+    expect(landing).toContain("afterVideo");
+    expect(landing).toContain("Before · still");
+    expect(landing).toContain("After · short clip");
+    const before = readFileSync(resolve(process.cwd(), "public/assets/memories/demo-before.jpg"));
+    const after = readFileSync(resolve(process.cwd(), "public/assets/memories/demo-after.mp4"));
+    const g1 = readFileSync(resolve(process.cwd(), "public/assets/memories/gallery-1.jpg"));
+    expect(before.byteLength).toBeGreaterThan(80_000);
+    expect(after.byteLength).toBeGreaterThan(500_000);
+    expect(g1.byteLength).toBeGreaterThan(80_000);
+  });
 });

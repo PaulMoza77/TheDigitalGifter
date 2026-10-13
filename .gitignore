@@ -19,3 +19,4 @@ output/long-form/**/*.jpg
 output/long-form/state.json
 output/long-form/productions/
 public/assets/long-form/music/*.m4a
+scripts/__pycache__/
