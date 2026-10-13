@@ -63,6 +63,24 @@ describe("TDG Caddy mode selection (deploy must not downgrade HTTPS)", () => {
     );
   });
 
+  it("refuses HTTPS candidate that drops the supabase Kong site", () => {
+    const stripped = httpsFile.replace(
+      /supabase\.thedigitalgifter\.com\s*\{[\s\S]*?\n\}\n?/m,
+      "",
+    );
+    expect(() => assertCaddyContentMatchesMode(stripped, "https")).toThrow(
+      /supabase\.thedigitalgifter\.com/,
+    );
+  });
+
+  it("refuses HTTPS candidate that points supabase host at the Vite app", () => {
+    const hijacked = httpsFile.replace(
+      "reverse_proxy 172.18.0.1:19001",
+      "reverse_proxy thedigitalgifter:8080",
+    );
+    expect(() => assertCaddyContentMatchesMode(hijacked, "https")).toThrow(/Vite app|Kong tunnel/);
+  });
+
   it("refuses HTTPS candidate that drops CasaHub", () => {
     const stripped = httpsFile
       .replace(/casahub\.eu,\s*www\.casahub\.eu\s*\{[\s\S]*?\n\}\n?/m, "")

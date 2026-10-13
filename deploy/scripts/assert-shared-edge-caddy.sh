@@ -24,6 +24,20 @@ assert_shared_edge_caddy_hosts() {
       || { echo "ABORT: HTTPS Caddyfile missing named CasaHub site block" >&2; return 1; }
     grep -q 'mcp.themozas.com' "${file}" || { echo "ABORT: HTTPS Caddyfile missing mcp.themozas.com" >&2; return 1; }
     grep -q 'mozas-mcp-bridge:8787' "${file}" || { echo "ABORT: HTTPS Caddyfile missing MCP upstream mozas-mcp-bridge:8787" >&2; return 1; }
+    grep -qE '^[[:space:]]*supabase\.thedigitalgifter\.com[[:space:]]*\{' "${file}" \
+      || { echo "ABORT: HTTPS Caddyfile missing supabase.thedigitalgifter.com site block" >&2; return 1; }
+    grep -q 'reverse_proxy 172.18.0.1:19001' "${file}" \
+      || { echo "ABORT: HTTPS Caddyfile missing Kong tunnel reverse_proxy 172.18.0.1:19001" >&2; return 1; }
+    if python3 - "${file}" <<'PY'
+import re, sys
+from pathlib import Path
+text = Path(sys.argv[1]).read_text()
+sys.exit(0 if re.search(r"supabase\.thedigitalgifter\.com[\s\S]{0,400}thedigitalgifter:8080", text) else 1)
+PY
+    then
+      echo "ABORT: supabase.thedigitalgifter.com must not point at thedigitalgifter:8080" >&2
+      return 1
+    fi
   fi
 
   echo "shared_edge_caddy_hosts_ok=yes mode=${mode}"

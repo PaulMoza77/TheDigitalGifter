@@ -9,6 +9,11 @@ const deployRemote = readFileSync(resolve("deploy/scripts/mozas-deploy-thedigita
 const pruneDocker = readFileSync(resolve("deploy/scripts/mozas-prune-tdg-docker.sh"), "utf8");
 const rollback = readFileSync(resolve("deploy/scripts/mozas-rollback-thedigitalgifter.sh"), "utf8");
 const workflow = readFileSync(resolve(".github/workflows/deploy-vps-static.yml"), "utf8");
+const mergeEnv = readFileSync(resolve("deploy/scripts/merge-tdg-app-env.sh"), "utf8");
+const persist = readFileSync(resolve("scripts/persist-tdg-vps-config.sh"), "utf8");
+const assertEdge = readFileSync(resolve("deploy/scripts/assert-shared-edge-caddy.sh"), "utf8");
+const applyChristmas = readFileSync(resolve("scripts/deploy-christmas-v2.sh"), "utf8");
+const applyHttps = readFileSync(resolve("deploy/scripts/apply-tdg-caddy-https.sh"), "utf8");
 
 describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
   it("deploy-vps.sh applies Caddy via ensure, not unconditional HTTP apply", () => {
@@ -71,6 +76,23 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(rollback).toMatch(/mozas\/thedigitalgifter:previous/);
     expect(rollback).toMatch(/verified\.sha/);
     expect(rollback).toMatch(/current\.sha/);
+  });
+
+  it("HTTPS apply still backups and restores Caddy on validate/smoke failure", () => {
+    expect(applyHttps).toMatch(/Caddyfile\.bak-tdg-https-/);
+    expect(applyHttps).toMatch(/install_caddyfile_atomic/);
+    expect(applyHttps).toMatch(/restore_caddyfile_from_backup/);
+    expect(applyHttps).toMatch(/caddy validate/);
+    expect(assertEdge).toMatch(/supabase\.thedigitalgifter\.com/);
+    expect(assertEdge).toMatch(/172\.18\.0\.1:19001/);
+  });
+
+  it("merge-tdg-app-env fail-closes Cloud URL rewrite and keeps last-merge backup", () => {
+    expect(mergeEnv).toMatch(/tdg_supabase_url_guard/);
+    expect(mergeEnv).toMatch(/\.bak-last-merge/);
+    expect(deployVps).toMatch(/tdg_supabase_url_guard\.py/);
+    expect(persist).toMatch(/tdg_supabase_url_guard\.py/);
+    expect(applyChristmas).not.toMatch(/merge-tdg-app-env/);
   });
 
   it("GitHub Actions Verify TDG origin receives Mozas SSH secrets", () => {

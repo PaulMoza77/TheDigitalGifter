@@ -57,6 +57,7 @@ mozas_ssh "set -euo pipefail
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/apply-tdg-caddy-https.sh /opt/mozas/bin/mozas-apply-tdg-caddy-https
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-ensure-tdg-caddy.sh /opt/mozas/bin/mozas-ensure-tdg-caddy
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/merge-tdg-app-env.sh /opt/mozas/bin/mozas-merge-tdg-app-env
+  install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/lib/tdg_supabase_url_guard.py /opt/mozas/bin/tdg_supabase_url_guard.py
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/merge-mozas-backup-env.sh /opt/mozas/bin/mozas-merge-backup-env
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/ensure-offsite-restic.sh /opt/mozas/bin/mozas-ensure-offsite-restic
   install -m 0755 /opt/mozas/projects/thedigitalgifter/repo/deploy/scripts/mozas-restore-offsite-test.sh /opt/mozas/bin/mozas-restore-offsite-test

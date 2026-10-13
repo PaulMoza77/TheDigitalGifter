@@ -5,9 +5,49 @@ set -euo pipefail
 
 APP_ENV="${TDG_APP_ENV:-/opt/mozas/projects/thedigitalgifter/secrets/app.env}"
 SECRETS_DIR="$(dirname "${APP_ENV}")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+resolve_url_guard() {
+  local candidate
+  for candidate in \
+    "${SCRIPT_DIR}/../lib/tdg_supabase_url_guard.py" \
+    "${SCRIPT_DIR}/tdg_supabase_url_guard.py" \
+    "/opt/mozas/bin/tdg_supabase_url_guard.py" \
+    "/opt/mozas/projects/thedigitalgifter/repo/deploy/lib/tdg_supabase_url_guard.py"
+  do
+    if [[ -f "${candidate}" ]]; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+enforce_supabase_url_guard() {
+  local guard
+  if guard="$(resolve_url_guard)"; then
+    python3 "${guard}" --app-env "${APP_ENV}" \
+      --vite "${VITE_SUPABASE_URL:-}" \
+      --server "${SUPABASE_URL:-}"
+    return 0
+  fi
+  if [[ "${APP_ENV}" == "/opt/mozas/projects/thedigitalgifter/secrets/app.env" ]]; then
+    echo "BLOCKED: tdg_supabase_url_guard missing on VPS merge path" >&2
+    exit 2
+  fi
+  if [[ "${TDG_SUPABASE_URL_GUARD:-}" == "self-hosted-prod" ]]; then
+    echo "BLOCKED: tdg_supabase_url_guard missing" >&2
+    exit 2
+  fi
+}
+
+enforce_supabase_url_guard
 
 umask 077
 mkdir -p "${SECRETS_DIR}"
+if [[ -s "${APP_ENV}" ]]; then
+  cp -a "${APP_ENV}" "${APP_ENV}.bak-last-merge"
+fi
 touch "${APP_ENV}"
 if [[ "${SECRETS_DIR}" == "/opt/mozas/projects/thedigitalgifter/secrets" ]]; then
   chmod 0750 "${SECRETS_DIR}"
