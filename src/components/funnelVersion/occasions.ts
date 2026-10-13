@@ -61,11 +61,11 @@ const asset = (name: string) => name;
 export const FUNNEL_OCCASIONS: Record<FunnelOccasionKey, FunnelOccasionConfig> = {
   christmas: {
     key: "christmas",
-    heroTitle: "Turn a Christmas photo into a moving memory",
+    heroTitle: "Turn a Christmas photo into a living memory",
     heroSubtitle:
-      "Upload a holiday photo and create a warm, shareable Christmas gift in minutes · soft motion, festive feeling.",
-    heroCaption: "From a still Christmas photo to a living holiday card.",
-    ctaLabel: "Try now · Create a Christmas gift",
+      "Drag across a real holiday photo. The after side is a short clip of the same faces — soft snow, warm lights, ready to send.",
+    heroCaption: "Before is the photo. After is a 5-second clip.",
+    ctaLabel: "Create your Christmas memory",
     heroBeforeVariant: asset("christmas-before"),
     heroAfterVariant: asset("christmas-after"),
     ctaTo: "/funnel/uploadPhoto",
