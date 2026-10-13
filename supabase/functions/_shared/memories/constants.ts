@@ -8,6 +8,7 @@ export const MEMORIES_PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 export type MemoriesPlanKey = "starter" | "plus" | "legacy";
 export type MemoriesCommercialMode = "waitlist" | "test" | "paid_early_access";
 
+/** Proposed membership specs for early-access waitlist. Not live generation entitlements. */
 export const MEMORIES_PLANS = {
   starter: {
     key: "starter" as const,
@@ -16,12 +17,15 @@ export const MEMORIES_PLANS = {
     amountCents: 900,
     priceDisplay: "$9/month",
     badge: null as string | null,
+    tagline: "Bring a few special moments to life.",
+    monthlyAnimations: 5,
     features: [
-      "Limited monthly photo animations (when available)",
-      "Personal memory library",
-      "Basic preservation features",
+      "5 photo animations per month",
+      "Short animated memories",
+      "Personal memory gallery",
+      "Download your creations",
+      "Standard processing",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
   plus: {
     key: "plus" as const,
@@ -29,13 +33,17 @@ export const MEMORIES_PLANS = {
     name: "Memories Plus",
     amountCents: 1900,
     priceDisplay: "$19/month",
-    badge: "Most Popular",
+    badge: "Best Value",
+    tagline: "Turn your favorite memories into beautiful stories.",
+    monthlyAnimations: 20,
     features: [
-      "More monthly animations (when available)",
-      "Advanced memory experiences",
-      "Expanded library",
+      "20 photo animations per month",
+      "Everything in Starter",
+      "Longer memory clips",
+      "Photo enhancement",
+      "Personalized memory stories",
+      "Priority processing",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
   legacy: {
     key: "legacy" as const,
@@ -44,12 +52,16 @@ export const MEMORIES_PLANS = {
     amountCents: 4900,
     priceDisplay: "$49/month",
     badge: null as string | null,
+    tagline: "Build a lasting collection for generations.",
+    monthlyAnimations: 60,
     features: [
-      "Premium memory experiences (when available)",
-      "Advanced voice and storytelling features, subject to rights and feasibility",
-      "Future interactive features",
+      "60 photo animations per month",
+      "Everything in Plus",
+      "Premium memory films",
+      "Family memory collections",
+      "Advanced storytelling experiences",
+      "Highest processing priority",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
 } as const;
 

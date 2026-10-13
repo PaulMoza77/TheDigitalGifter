@@ -16,7 +16,10 @@ describe("Memories V1 config", () => {
     expect(MEMORIES_PLANS.starter.amountCents).toBe(900);
     expect(MEMORIES_PLANS.plus.amountCents).toBe(1900);
     expect(MEMORIES_PLANS.legacy.amountCents).toBe(4900);
-    expect(MEMORIES_PLANS.plus.badge).toBe("Most Popular");
+    expect(MEMORIES_PLANS.plus.badge).toBe("Best Value");
+    expect(MEMORIES_PLANS.starter.monthlyAnimations).toBe(5);
+    expect(MEMORIES_PLANS.plus.monthlyAnimations).toBe(20);
+    expect(MEMORIES_PLANS.legacy.monthlyAnimations).toBe(60);
   });
 
   it("exposes funnel routes", () => {

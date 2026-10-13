@@ -1,6 +1,9 @@
 /**
  * Memories V1 funnel — centralized pricing and product config.
  * Do not hardcode prices in components; import from here.
+ *
+ * Monthly creation limits and feature rows below are proposed product specs
+ * for early-access memberships. They are not live generation entitlements yet.
  */
 
 export const MEMORIES_ROUTE = "/memories" as const;
@@ -26,46 +29,133 @@ export const MEMORIES_PLANS = {
   starter: {
     key: "starter" as const,
     sku: "memories-starter-monthly",
-    name: "Memories Starter",
+    name: "Starter",
+    displayName: "Memories Starter",
     amountCents: 900,
+    priceAmount: "$9",
     priceDisplay: "$9/month",
+    pricePeriod: "/month",
     badge: null as string | null,
+    tagline: "Bring a few special moments to life.",
+    ctaLabel: "Choose Starter",
+    monthlyAnimations: 5,
     features: [
-      "Limited monthly photo animations (when available)",
-      "Personal memory library",
-      "Basic preservation features",
+      "5 photo animations per month",
+      "Short animated memories",
+      "Personal memory gallery",
+      "Download your creations",
+      "Standard processing",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
   plus: {
     key: "plus" as const,
     sku: "memories-plus-monthly",
-    name: "Memories Plus",
+    name: "Plus",
+    displayName: "Memories Plus",
     amountCents: 1900,
+    priceAmount: "$19",
     priceDisplay: "$19/month",
-    badge: "Most Popular",
+    pricePeriod: "/month",
+    badge: "Best Value",
+    tagline: "Turn your favorite memories into beautiful stories.",
+    ctaLabel: "Choose Plus",
+    monthlyAnimations: 20,
     features: [
-      "More monthly animations (when available)",
-      "Advanced memory experiences",
-      "Expanded library",
+      "20 photo animations per month",
+      "Everything in Starter",
+      "Longer memory clips",
+      "Photo enhancement",
+      "Personalized memory stories",
+      "Priority processing",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
   legacy: {
     key: "legacy" as const,
     sku: "memories-legacy-monthly",
-    name: "Memories Legacy",
+    name: "Legacy",
+    displayName: "Memories Legacy",
     amountCents: 4900,
+    priceAmount: "$49",
     priceDisplay: "$49/month",
+    pricePeriod: "/month",
     badge: null as string | null,
+    tagline: "Build a lasting collection for generations.",
+    ctaLabel: "Choose Legacy",
+    monthlyAnimations: 60,
     features: [
-      "Premium memory experiences (when available)",
-      "Advanced voice and storytelling features, subject to rights and feasibility",
-      "Future interactive features",
+      "60 photo animations per month",
+      "Everything in Plus",
+      "Premium memory films",
+      "Family memory collections",
+      "Advanced storytelling experiences",
+      "Highest processing priority",
     ],
-    provisionalNote: "Entitlements are provisional until product launch.",
   },
 } as const;
+
+export const MEMORIES_PLAN_COMPARISON = [
+  {
+    label: "Monthly photo animations",
+    starter: "5",
+    plus: "20",
+    legacy: "60",
+  },
+  {
+    label: "Clip duration",
+    starter: "Short",
+    plus: "Longer",
+    legacy: "Premium films",
+  },
+  {
+    label: "Photo enhancement",
+    starter: "—",
+    plus: "Included",
+    legacy: "Included",
+  },
+  {
+    label: "Memory stories",
+    starter: "—",
+    plus: "Included",
+    legacy: "Included",
+  },
+  {
+    label: "Family collections",
+    starter: "—",
+    plus: "—",
+    legacy: "Included",
+  },
+  {
+    label: "Processing priority",
+    starter: "Standard",
+    plus: "Priority",
+    legacy: "Highest",
+  },
+  {
+    label: "Downloads",
+    starter: "Included",
+    plus: "Included",
+    legacy: "Included",
+  },
+] as const;
+
+export const MEMORIES_PLANS_FAQ = [
+  {
+    q: "Can I cancel anytime?",
+    a: "Once memberships become available, you'll be able to manage or cancel your subscription according to the membership terms.",
+  },
+  {
+    q: "Will I be charged today?",
+    a: "No. You're joining our early-access waitlist. We'll let you know when Memories is ready.",
+  },
+  {
+    q: "What happens after I choose a plan?",
+    a: "We'll save your preferred plan and email you when early access becomes available.",
+  },
+  {
+    q: "Can I change my plan later?",
+    a: "Yes, you can choose a different plan when memberships launch.",
+  },
+] as const;
 
 export const MEMORIES_EVENTS = [
   "memories_page_view",
@@ -88,15 +178,15 @@ export type MemoriesEventName = (typeof MEMORIES_EVENTS)[number];
 export const MEMORIES_FAQ = [
   {
     q: "Is Memories available today?",
-    a: "Memories is in early access while we validate demand. AI animation and voice features are not available yet. You can join the waitlist or, when approved, subscribe with clear early-access terms.",
+    a: "Memories is in early access while we validate demand. AI animation features are not available yet. You can choose a preferred membership and join the waitlist — no payment is taken until Memories is ready and memberships launch.",
   },
   {
     q: "When does billing start?",
-    a: "In waitlist mode, no payment is collected. In an approved paid early-access mode, recurring monthly billing begins only after Stripe confirms a successful checkout.",
+    a: "No payment is collected on the waitlist. When memberships launch, recurring monthly billing begins only after you complete an approved checkout.",
   },
   {
     q: "Can I cancel?",
-    a: "Yes. Subscribers can cancel anytime through the Stripe billing portal. Waitlist members can ask support to remove their email.",
+    a: "Yes. Once you have an active membership, you can cancel anytime through the billing portal. Waitlist members can ask support to remove their email.",
   },
   {
     q: "Are my photos private?",

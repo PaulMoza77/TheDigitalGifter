@@ -280,7 +280,8 @@ export function MemoriesLandingScreen() {
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
           <h2 className="memories-display text-3xl font-semibold sm:text-4xl">Subscription benefits</h2>
           <p className="mt-3 max-w-xl text-[#F4EDE3]/7">
-            Planned membership benefits for when the product ships. Limits are provisional.
+            Proposed membership benefits for when Memories launches. Choose a plan on the waitlist —
+            no payment is taken today.
           </p>
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
             {Object.values(MEMORIES_PLANS).map((plan) => (
@@ -297,14 +298,14 @@ export function MemoriesLandingScreen() {
                 ) : (
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-transparent">·</p>
                 )}
-                <h3 className="memories-display text-2xl font-semibold">{plan.name}</h3>
+                <h3 className="memories-display text-2xl font-semibold">{plan.displayName}</h3>
+                <p className="text-sm text-[#F4EDE3]/7">{plan.tagline}</p>
                 <p className="text-lg text-[#D4AF7A]">{plan.priceDisplay}</p>
                 <ul className="space-y-2 text-sm text-[#F4EDE3]/75">
-                  {plan.features.map((f) => (
+                  {plan.features.slice(0, 4).map((f) => (
                     <li key={f}>• {f}</li>
                   ))}
                 </ul>
-                <p className="text-xs text-[#F4EDE3]/45">{plan.provisionalNote}</p>
               </div>
             ))}
           </div>

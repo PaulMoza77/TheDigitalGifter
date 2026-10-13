@@ -51,8 +51,9 @@ function publicPlans() {
     amountCents: plan.amountCents,
     priceDisplay: plan.priceDisplay,
     badge: plan.badge,
+    tagline: plan.tagline,
+    monthlyAnimations: plan.monthlyAnimations,
     features: [...plan.features],
-    provisionalNote: plan.provisionalNote,
     stripePriceConfigured: Boolean(stripePriceIdForPlan(plan.key)),
   }));
 }

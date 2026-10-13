@@ -55,7 +55,7 @@ export function MemoriesSuccessScreen({
           </p>
           {plan ? (
             <p className="text-sm text-[#D4AF7A]">
-              {plan.name} · {plan.priceDisplay}
+              {plan.displayName} · {plan.priceDisplay}
             </p>
           ) : null}
           {status ? (

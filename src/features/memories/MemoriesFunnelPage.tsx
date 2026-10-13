@@ -265,32 +265,39 @@ export function MemoriesPlansPage() {
     return <Navigate to={MEMORIES_CREATE_ROUTE} replace />;
   }
 
-  async function handleCheckout() {
-    if (!draft.selectedPlanKey) return;
+  function handleSelectPlan(key: MemoriesPlanKey) {
+    setDraft((d) => ({ ...d, selectedPlanKey: key }));
+    trackMemoriesEvent({
+      eventName: "memories_plan_selected",
+      product: MEMORIES_PLANS[key].sku,
+      amountCents: MEMORIES_PLANS[key].amountCents,
+      pathname: MEMORIES_PLANS_ROUTE,
+    });
+  }
+
+  async function handleCheckout(planKey?: MemoriesPlanKey) {
+    const selected = planKey || draft.selectedPlanKey;
+    if (!selected) return;
+    setDraft((d) => ({ ...d, selectedPlanKey: selected }));
     setBusy(true);
     setError(null);
     try {
-      await memoriesApi.selectPlan(draft.selectedPlanKey);
-      trackMemoriesEvent({
-        eventName: "memories_plan_selected",
-        product: MEMORIES_PLANS[draft.selectedPlanKey].sku,
-        amountCents: MEMORIES_PLANS[draft.selectedPlanKey].amountCents,
-        pathname: MEMORIES_PLANS_ROUTE,
-      });
+      await memoriesApi.selectPlan(selected);
       trackMemoriesEvent({
         eventName: "memories_checkout_started",
-        product: MEMORIES_PLANS[draft.selectedPlanKey].sku,
-        amountCents: MEMORIES_PLANS[draft.selectedPlanKey].amountCents,
+        product: MEMORIES_PLANS[selected].sku,
+        amountCents: MEMORIES_PLANS[selected].amountCents,
         pathname: MEMORIES_PLANS_ROUTE,
       });
       const res = await memoriesApi.createCheckout(
-        draft.selectedPlanKey,
-        `memories_${draft.selectedPlanKey}_${Date.now()}`,
+        selected,
+        `memories_${selected}_${Date.now()}`,
       );
       if (!res.ok) throw new Error(String(res.error || "Checkout failed"));
       const token = String(res.publicToken || "");
       setDraft((d) => ({
         ...d,
+        selectedPlanKey: selected,
         orderId: String(res.orderId || ""),
         publicToken: token,
         commercialMode: String(res.mode || config.commercialMode),
@@ -301,7 +308,7 @@ export function MemoriesPlansPage() {
       }
       trackMemoriesEvent({
         eventName: "memories_waitlist_joined",
-        product: MEMORIES_PLANS[draft.selectedPlanKey].sku,
+        product: MEMORIES_PLANS[selected].sku,
         pathname: MEMORIES_SUCCESS_ROUTE,
       });
       navigate(`${MEMORIES_SUCCESS_ROUTE}?token=${encodeURIComponent(token)}&mode=waitlist`);
@@ -327,7 +334,7 @@ export function MemoriesPlansPage() {
           disclosures={config.disclosures}
           busy={busy}
           error={error}
-          onSelect={(key: MemoriesPlanKey) => setDraft((d) => ({ ...d, selectedPlanKey: key }))}
+          onSelect={handleSelectPlan}
           onCheckout={handleCheckout}
         />
       </MemoriesShell>

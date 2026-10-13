@@ -58,6 +58,25 @@ describe("Memories V1 wiring", () => {
     expect(christmas).toContain("CHRISTMAS_MAGIC_PRICE_CENTS = 800");
   });
 
+  it("uses customer-friendly pricing copy without internal jargon", () => {
+    const plans = readSrc("src/features/memories/screens/PlansScreen.tsx");
+    expect(plans).toContain("Choose how you&apos;d like to preserve their memories.");
+    expect(plans).toContain("What&apos;s the difference?");
+    expect(plans).toContain("No payment is");
+    expect(plans).toContain("taken yet.");
+    expect(plans).toContain("MEMORIES_PLAN_COMPARISON");
+    expect(plans).toContain("MEMORIES_PLANS_FAQ");
+    expect(plans).toContain("plan.ctaLabel");
+    expect(plans).not.toContain("Commercial mode");
+    expect(plans).not.toContain("provisional");
+    expect(plans).not.toContain("Most Popular");
+    const config = readSrc("src/features/memories/config.ts");
+    expect(config).toContain('badge: "Best Value"');
+    expect(config).toContain("monthlyAnimations: 20");
+    expect(config).toContain("Bring a few special moments to life.");
+    expect(config).toContain("Choose Plus");
+  });
+
   it("ships real Memories demo stills and hero after clip", () => {
     const landing = readSrc("src/features/memories/screens/LandingScreen.tsx");
     expect(landing).toContain("MEMORIES_HERO_DEMO");
