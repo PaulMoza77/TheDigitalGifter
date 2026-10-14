@@ -31,6 +31,8 @@ COPY server ./server
 # Origin /api handlers import shared TypeScript from src/ (gift tree, funnel contract).
 COPY src ./src
 COPY public/.well-known ./public/.well-known
+# COPY keeps source modes. A 0600 asset is unreadable by tdg, and that open used to crash the origin.
+RUN chmod -R a+rX /app
 ENV NODE_ENV=production \
     TDG_ENV=production \
     PORT=8080

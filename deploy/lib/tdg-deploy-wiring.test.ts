@@ -51,6 +51,20 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
     expect(deployVps).toMatch(/mozas-prune-tdg-docker\.sh/);
   });
 
+  it("does not mark verified while dist has a file the origin user cannot read", () => {
+    const dockerfile = readFileSync(resolve("Dockerfile"), "utf8");
+    const chmodAt = dockerfile.indexOf("chmod -R a+rX /app");
+    const userAt = dockerfile.indexOf("USER tdg");
+    expect(chmodAt).toBeGreaterThan(0);
+    expect(userAt).toBeGreaterThan(chmodAt);
+    const probeAt = deployRemote.indexOf("! -perm -004");
+    const verifiedAdvance = deployRemote.indexOf('printf \'%s\\n\' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"');
+    expect(probeAt).toBeGreaterThan(0);
+    expect(verifiedAdvance).toBeGreaterThan(probeAt);
+    const origin = readFileSync(resolve("server/origin.mjs"), "utf8");
+    expect(origin).toContain("static_read_failed");
+  });
+
   it("failed deploy rolls back and does not advance verified pins", () => {
     const failBlock = deployRemote.slice(
       deployRemote.indexOf("up -d --remove-orphans --force-recreate --wait"),
