@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/accordion";
 import { Star } from "lucide-react";
 
+import { BeforeAfterClip } from "@/components/funnelVersion/BeforeAfterClip";
+import {
+  CHRISTMAS_CREATIVES,
+  CHRISTMAS_HERO_CREATIVE,
+} from "@/components/funnelVersion/christmasCreatives";
 import {
   FUNNEL_OCCASIONS,
   funnelUploadSlugForKey,
@@ -431,7 +436,7 @@ function SectionTitle({
   );
 }
 
-function Nav() {
+function Nav({ uploadTo, ctaLabel }: { uploadTo?: string; ctaLabel?: string }) {
   const items = [
     { label: "How it works", href: "#how" },
     { label: "Examples", href: "#examples" },
@@ -455,9 +460,13 @@ function Nav() {
               {it.label}
             </a>
           ))}
-          <a href="#" className="text-sm font-medium text-emerald-950/70 hover:text-emerald-950">
-            Contact
-          </a>
+          {uploadTo && ctaLabel ? (
+            <CTAButton to={uploadTo} label={ctaLabel} className="!px-4 !py-2 text-sm" />
+          ) : (
+            <a href="#" className="text-sm font-medium text-emerald-950/70 hover:text-emerald-950">
+              Contact
+            </a>
+          )}
         </div>
 
         <div className="md:hidden" />
@@ -523,47 +532,71 @@ function Hero({
     <section id="top" className="relative overflow-hidden bg-[#F6F2EA]">
       <SoftBg />
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 md:grid-cols-2 md:py-20">
-        <div className="flex flex-col justify-center">
-          <div className="mb-5">
-            <StarRow />
-          </div>
-
-          <h1 className="text-balance font-serif text-4xl tracking-tight text-emerald-950 sm:text-5xl md:text-6xl">
-            {cfg.heroTitle}
-          </h1>
-
-          <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-emerald-950/70 sm:text-lg">
-            {cfg.heroSubtitle}
-          </p>
-
-          <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <CTAButton to={uploadTo} label={ctaLabel} />
-            <div className="flex items-center gap-2 text-sm text-emerald-950/70">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
-                ✓
-              </span>
-              100% private · your memories are yours
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 md:grid-cols-2 md:items-center md:py-20">
+        <div className="flex flex-col justify-center max-md:contents">
+          <div className="max-md:order-1">
+            <div className="mb-5">
+              <StarRow />
             </div>
+
+            <h1 className="text-balance font-serif text-4xl tracking-tight text-emerald-950 sm:text-5xl md:text-6xl">
+              {cfg.heroTitle}
+            </h1>
+
+            <p className="mt-4 max-w-xl text-pretty text-base leading-relaxed text-emerald-950/70 sm:text-lg">
+              {cfg.heroSubtitle}
+            </p>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center gap-3 text-xs text-emerald-950/60">
-            <Pill tone="mint">Takes ~1 minute to start</Pill>
-            <Pill tone="mint">No tech skills needed</Pill>
-            <Pill tone="mint">Made for meaningful gifts</Pill>
+          <div className="max-md:order-3">
+            <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <CTAButton to={uploadTo} label={ctaLabel} />
+              <div className="flex items-center gap-2 text-sm text-emerald-950/70">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
+                  ✓
+                </span>
+                100% private · your memories are yours
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-emerald-950/60 md:mt-10">
+              <Pill tone="mint">{cfg.key === "christmas" ? "5-second clip" : "Takes ~1 minute to start"}</Pill>
+              <Pill tone="mint">{cfg.key === "christmas" ? "Same faces" : "No tech skills needed"}</Pill>
+              <Pill tone="mint">{cfg.key === "christmas" ? "Ready to share" : "Made for meaningful gifts"}</Pill>
+            </div>
           </div>
         </div>
 
-        <div ref={rootRef} className="relative">
-          <ConnectorOverlay rootRef={rootRef} links={links} />
+        <div ref={rootRef} className="relative max-md:order-2">
+          {cfg.key === "christmas" ? null : <ConnectorOverlay rootRef={rootRef} links={links} />}
 
-          <Card className="mx-auto max-w-[560px] rounded-[32px] border-emerald-950/10 bg-white/55 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur">
+          <Card
+            className={
+              "mx-auto rounded-[32px] border-emerald-950/10 bg-white/70 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur " +
+              (cfg.key === "christmas"
+                ? "max-w-[420px] md:ml-auto md:max-w-[460px]"
+                : "max-w-[560px]")
+            }
+          >
             <CardContent className="p-4 sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-center justify-between gap-3">
                 <Pill tone="sun">Before → After</Pill>
-                <span className="text-xs text-emerald-950/60">a single photo, transformed</span>
+                <span className="text-xs text-emerald-950/60">
+                  {cfg.key === "christmas" ? "drag to compare · 5s clip" : "a single photo, transformed"}
+                </span>
               </div>
 
+              {cfg.key === "christmas" ? (
+                <BeforeAfterClip
+                  beforeSrc={CHRISTMAS_HERO_CREATIVE.beforeSrc}
+                  posterSrc={CHRISTMAS_HERO_CREATIVE.posterSrc}
+                  clipSrc={CHRISTMAS_HERO_CREATIVE.clipSrc}
+                  beforeAlt={CHRISTMAS_HERO_CREATIVE.beforeAlt}
+                  afterAlt={CHRISTMAS_HERO_CREATIVE.afterAlt}
+                  eager
+                  nudge
+                />
+              ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
                 <div ref={beforeRef} className="relative">
                   <PhotoMock
@@ -585,6 +618,7 @@ function Hero({
                   />
                 </div>
               </div>
+              )}
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-emerald-950/60">
@@ -759,7 +793,15 @@ function HowItWorks({
   );
 }
 
-function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
+function Examples({
+  cfg,
+  uploadTo,
+  ctaLabel = DEFAULT_CTA_LABEL,
+}: {
+  cfg: FunnelOccasionConfig;
+  uploadTo: string;
+  ctaLabel?: string;
+}) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const a1 = useRef<HTMLDivElement | null>(null);
@@ -820,20 +862,35 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
     <section id="examples" className="relative bg-[#F6F2EA] py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <SectionTitle
-          title={<>See the magic of moving memories</>}
+          title={
+            cfg.key === "christmas" ? (
+              <>See a still photo become a 5-second memory</>
+            ) : (
+              <>See the magic of moving memories</>
+            )
+          }
           subtitle={
-            <>
-              A “before → after” flow for this occasion. Each example shows how a
-              photo turns into a gift-worthy moment.
-            </>
+            cfg.key === "christmas" ? (
+              <>
+                Drag each filter. Before is the original photo. After is a short
+                clip of the same moment, generated to move.
+              </>
+            ) : (
+              <>
+                A “before → after” flow for this occasion. Each example shows how a
+                photo turns into a gift-worthy moment.
+              </>
+            )
           }
         />
 
         <div ref={rootRef} className="relative mt-12">
-          <ConnectorOverlay rootRef={rootRef} links={links} />
+          {cfg.key === "christmas" ? null : <ConnectorOverlay rootRef={rootRef} links={links} />}
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {items.map((it) => (
+            {items.map((it, index) => {
+              const creative = cfg.key === "christmas" ? CHRISTMAS_CREATIVES[index] : undefined;
+              return (
               <div key={it.name} className="relative">
                 <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
                   <CardContent className="p-6">
@@ -854,6 +911,21 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                       </div>
                     </div>
 
+                    {creative ? (
+                      <div className="mt-5">
+                        <BeforeAfterClip
+                          beforeSrc={creative.beforeSrc}
+                          posterSrc={creative.posterSrc}
+                          clipSrc={creative.clipSrc}
+                          beforeAlt={creative.beforeAlt}
+                          afterAlt={creative.afterAlt}
+                          eager={index === 0}
+                        />
+                        <p className="mt-2 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-950/45">
+                          Drag the line · after is a 5s clip
+                        </p>
+                      </div>
+                    ) : (
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <div ref={it.refs.a} className="relative">
                         <PhotoMock
@@ -874,9 +946,10 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                         />
                       </div>
                     </div>
+                    )}
 
                     <p className="mt-5 text-sm italic leading-relaxed text-emerald-950/70">
-                      “{it.quote}”
+                      “{creative?.quote || it.quote}”
                     </p>
 
                     <div className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-950/70">
@@ -888,10 +961,12 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                   </CardContent>
                 </Card>
               </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <CTAButton to={uploadTo} label={ctaLabel} />
             <Pill tone="sun">
               Trusted by more than <span className="font-semibold">120,000+</span> users
             </Pill>
@@ -1019,11 +1094,21 @@ function ResultsBand() {
 function FAQ({
   uploadTo,
   ctaLabel = DEFAULT_CTA_LABEL,
+  christmas = false,
 }: {
   uploadTo: string;
   ctaLabel?: string;
+  christmas?: boolean;
 }) {
   const faqs = [
+    ...(christmas
+      ? [
+          {
+            q: "What is the after side of the examples?",
+            a: "A short clip, about five seconds, made from that same photo. Drag the gold line to compare it with the original. Your own photo stays private.",
+          },
+        ]
+      : []),
     {
       q: "Do I need any technical skills to use this?",
       a: "No. Upload a photo, pick a style, and generate. The flow is designed to feel simple and fast.",
@@ -1141,15 +1226,27 @@ export default function FunnelHomePage() {
     return <Navigate to="/" replace />;
   }
 
+  const christmas = key === "christmas";
+
   return (
-    <div className="min-h-screen bg-[#F6F2EA] text-emerald-950">
-      <Nav />
+    <div
+      className={
+        "min-h-screen bg-[#F6F2EA] text-emerald-950 " +
+        (christmas ? "funnel-home--christmas pb-24 md:pb-0" : "")
+      }
+    >
+      <Nav uploadTo={christmas ? uploadTo : undefined} ctaLabel={christmas ? ctaLabel : undefined} />
       <Hero cfg={cfg} uploadTo={uploadTo} />
       <HowItWorks cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />
-      <Examples cfg={cfg} />
+      <Examples cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />
       <ValueTrio cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />
       <ResultsBand />
-      <FAQ uploadTo={uploadTo} ctaLabel={ctaLabel} />
+      <FAQ uploadTo={uploadTo} ctaLabel={ctaLabel} christmas={christmas} />
+      {christmas ? (
+        <div className="funnel-sticky-cta">
+          <CTAButton to={uploadTo} label={ctaLabel} className="w-full max-w-md" />
+        </div>
+      ) : null}
     </div>
   );
 }
