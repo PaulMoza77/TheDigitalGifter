@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import "./beforeAfterClip.css";
+import { playInlineClip, primeInlineVideo, watchInlineClip } from "./inlineClip";
 
 type Props = {
   beforeSrc: string;
@@ -35,7 +36,7 @@ export function BeforeAfterClip({
   nudge = false,
   durationLabel = "5s",
 }: Props) {
-  const [pos, setPos] = useState(nudge ? 78 : 52);
+  const [pos, setPos] = useState(nudge ? 58 : 48);
   const [boxW, setBoxW] = useState(0);
   const [reduced, setReduced] = useState(false);
   const dragging = useRef(false);
@@ -59,12 +60,12 @@ export function BeforeAfterClip({
   useEffect(() => {
     if (!nudge || prefersReducedMotion()) return;
     const start = performance.now();
-    const from = 78;
-    const to = 42;
+    const from = 58;
+    const to = 40;
     let raf = 0;
     const tick = (now: number) => {
       if (dragging.current) return;
-      const t = Math.min(1, (now - start) / 1400);
+      const t = Math.min(1, (now - start) / 700);
       const eased = 1 - Math.pow(1 - t, 3);
       setPos(from + (to - from) * eased);
       if (t < 1) raf = requestAnimationFrame(tick);
@@ -77,19 +78,8 @@ export function BeforeAfterClip({
     const video = videoRef.current;
     const root = rootRef.current;
     if (!video || !root || !clipSrc || reduced) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          void video.play().catch(() => undefined);
-        } else {
-          video.pause();
-        }
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(root);
-    return () => io.disconnect();
-  }, [clipSrc, reduced]);
+    return watchInlineClip(video, root, eager);
+  }, [clipSrc, reduced, eager]);
 
   const updateFromClientX = useCallback((clientX: number) => {
     const el = rootRef.current;
@@ -135,7 +125,12 @@ export function BeforeAfterClip({
     >
       {showClip ? (
         <video
-          ref={videoRef}
+          ref={(node) => {
+            videoRef.current = node;
+            if (!node) return;
+            primeInlineVideo(node);
+            if (eager) playInlineClip(node);
+          }}
           className="funnel-ba__media"
           src={clipSrc}
           poster={posterSrc}
@@ -143,6 +138,7 @@ export function BeforeAfterClip({
           loop
           playsInline
           autoPlay
+          controls={false}
           preload={eager ? "auto" : "metadata"}
           aria-label={afterAlt}
         />

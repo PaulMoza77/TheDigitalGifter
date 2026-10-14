@@ -919,7 +919,6 @@ function Examples({
                           clipSrc={creative.clipSrc}
                           beforeAlt={creative.beforeAlt}
                           afterAlt={creative.afterAlt}
-                          eager={index === 0}
                         />
                         <p className="mt-2 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-950/45">
                           Drag the line · after is a 5s clip
