@@ -53,6 +53,14 @@ describe("TDG Caddy mode selection (deploy must not downgrade HTTPS)", () => {
     expect(httpsFile).toContain("thedigitalgifter.com");
     expect(httpsFile).toContain("frame-ancestors 'self'");
     expect(httpsFile).toContain("X-Robots-Tag");
+    expect(httpsFile).toContain("supabase.thedigitalgifter.com");
+    expect(httpsFile).toContain("172.18.0.1:19001");
+    expect(httpsFile).not.toMatch(/supabase\.thedigitalgifter\.com[\s\S]{0,500}thedigitalgifter:8080/);
+  });
+
+  it("refuses HTTPS candidate that drops the self-hosted Supabase gateway", () => {
+    const stripped = httpsFile.replace(/supabase\.thedigitalgifter\.com[\s\S]*$/, "");
+    expect(() => assertCaddyContentMatchesMode(stripped, "https")).toThrow(/Kong tunnel/i);
   });
 
   it("refuses HTTPS candidate that drops CasaHub", () => {
