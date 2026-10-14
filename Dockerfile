@@ -31,6 +31,9 @@ COPY server ./server
 # Origin /api handlers import shared TypeScript from src/ (gift tree, funnel contract).
 COPY src ./src
 COPY public/.well-known ./public/.well-known
+# COPY keeps source modes. A 0600 asset is unreadable by tdg, and that open used to crash the origin.
+# Only the copied trees — not node_modules — so this layer stays small enough to export.
+RUN chmod -R a+rX dist api server src public supabase
 ENV NODE_ENV=production \
     TDG_ENV=production \
     PORT=8080

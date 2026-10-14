@@ -4,7 +4,7 @@
  * /api/* never returns index.html.
  */
 import { createServer } from "node:http";
-import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
+import { accessSync, constants, createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { APPLE_PAY_PATH, classifyPath } from "./routes.mjs";
@@ -73,8 +73,39 @@ function cacheHeadersFor(pathname) {
   return {};
 }
 
+function refuseUnreadable(res, error) {
+  console.error(
+    JSON.stringify({
+      source: "tdg-origin",
+      kind: "static_read_failed",
+      code: error && typeof error === "object" && "code" in error ? String(error.code) : "ERR",
+    }),
+  );
+  if (!res.headersSent) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    res.end("unavailable");
+    return;
+  }
+  res.destroy();
+}
+
+function pipeStatic(res, filePath, options) {
+  const stream = createReadStream(filePath, options);
+  stream.on("error", (error) => refuseUnreadable(res, error));
+  stream.pipe(res);
+}
+
 function sendFile(res, filePath, extraHeaders = {}, req = null) {
-  const stat = statSync(filePath);
+  let stat;
+  try {
+    stat = statSync(filePath);
+    accessSync(filePath, constants.R_OK);
+  } catch (error) {
+    refuseUnreadable(res, error);
+    return true;
+  }
   if (!stat.isFile()) return false;
   const type = MIME[extname(filePath).toLowerCase()] || "application/octet-stream";
   const size = stat.size;
@@ -97,7 +128,7 @@ function sendFile(res, filePath, extraHeaders = {}, req = null) {
         for (const [key, value] of Object.entries(extraHeaders)) {
           res.setHeader(key, value);
         }
-        createReadStream(filePath, { start, end: safeEnd }).pipe(res);
+        pipeStatic(res, filePath, { start, end: safeEnd });
         return true;
       }
     }
@@ -110,7 +141,7 @@ function sendFile(res, filePath, extraHeaders = {}, req = null) {
   for (const [key, value] of Object.entries(extraHeaders)) {
     res.setHeader(key, value);
   }
-  createReadStream(filePath).pipe(res);
+  pipeStatic(res, filePath);
   return true;
 }
 
@@ -306,6 +337,17 @@ async function handle(req, res) {
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.end("not found");
 }
+
+process.on("uncaughtException", (error) => {
+  console.error(
+    JSON.stringify({
+      source: "tdg-origin",
+      kind: "uncaught",
+      code: error && typeof error === "object" && "code" in error ? String(error.code) : "",
+      message: error instanceof Error ? error.message : String(error),
+    }),
+  );
+});
 
 const server = createServer((req, res) => {
   handle(req, res).catch((error) => {

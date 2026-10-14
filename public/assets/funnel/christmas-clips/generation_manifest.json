@@ -1,0 +1,88 @@
+{
+  "pending": [],
+  "clips": [
+    {
+      "id": "family",
+      "before": "public/assets/funnel/christmas-before.png",
+      "clip": "public/assets/funnel/christmas-clips/family.mp4",
+      "poster": "public/assets/funnel/christmas-clips/family.jpg",
+      "job_id": "ad718cf0-fa6c-4f60-af1d-2a71a5b4bb22",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_requested": 5,
+      "generation_cost_usd": 0.56,
+      "credits": "8.960",
+      "raw_probe": {
+        "duration": 5.041667,
+        "width": 1176,
+        "height": 1764,
+        "codec": "h264",
+        "size": 11257500
+      },
+      "web_probe": {
+        "duration": 5.041667,
+        "width": 720,
+        "height": 1080,
+        "codec": "h264",
+        "size": 521737
+      },
+      "created_at": "2026-10-13T21:51:58.515025+00:00"
+    },
+    {
+      "id": "morning",
+      "before": "public/assets/funnel/christmas-ex2-before.png",
+      "clip": "public/assets/funnel/christmas-clips/morning.mp4",
+      "poster": "public/assets/funnel/christmas-clips/morning.jpg",
+      "job_id": "9eb86b37-4c8e-46b3-8629-bbb22a45d68e",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_requested": 5,
+      "generation_cost_usd": 0.56,
+      "credits": "8.960",
+      "raw_probe": {
+        "duration": 5.041667,
+        "width": 1176,
+        "height": 1764,
+        "codec": "h264",
+        "size": 11464710
+      },
+      "web_probe": {
+        "duration": 5.041667,
+        "width": 720,
+        "height": 1080,
+        "codec": "h264",
+        "size": 717569
+      },
+      "created_at": "2026-10-13T21:53:35.374311+00:00"
+    },
+    {
+      "id": "gift",
+      "before": "public/assets/funnel/christmas-ex3-before.png",
+      "clip": "public/assets/funnel/christmas-clips/gift.mp4",
+      "poster": "public/assets/funnel/christmas-clips/gift.jpg",
+      "job_id": "0695d1d1-f643-4eee-a46d-81a21360d3c5",
+      "model": "kling-video/v3.0/pro/image-to-video",
+      "duration_requested": 5,
+      "generation_cost_usd": 0.56,
+      "credits": "8.960",
+      "raw_probe": {
+        "duration": 5.041667,
+        "width": 1176,
+        "height": 1764,
+        "codec": "h264",
+        "size": 10206954
+      },
+      "web_probe": {
+        "duration": 5.041667,
+        "width": 720,
+        "height": 1080,
+        "codec": "h264",
+        "size": 496905
+      },
+      "created_at": "2026-10-13T21:54:55.062499+00:00"
+    }
+  ],
+  "status": "ready",
+  "updated_at": "2026-10-13T21:54:55.062867+00:00",
+  "model": "kling-video/v3.0/pro/image-to-video",
+  "provider": "higgsfield",
+  "budget_usd": 1.8
+}

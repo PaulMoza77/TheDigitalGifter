@@ -116,7 +116,24 @@ if ! docker compose \
   die "TDG deploy failed · previous verified release retained when rollback succeeded"
 fi
 
-# Only mark verified after health wait succeeds.
+# healthz does not open static media. A 0600 file under dist is stat-able by tdg
+# and crashes the origin on the first request, after compose --wait already passed.
+if ! unreadable="$(docker exec thedigitalgifter sh -c 'find /app/dist -type f ! -perm -004 | head -n 1')"; then
+  log "could not inspect dist permissions · rolling back before marking verified"
+  if [[ -x /opt/mozas/bin/mozas-rollback-thedigitalgifter ]]; then
+    /opt/mozas/bin/mozas-rollback-thedigitalgifter || true
+  fi
+  die "TDG deploy failed · dist permission check failed"
+fi
+if [[ -n "${unreadable}" ]]; then
+  log "unreadable file in /app/dist · rolling back before marking verified"
+  if [[ -x /opt/mozas/bin/mozas-rollback-thedigitalgifter ]]; then
+    /opt/mozas/bin/mozas-rollback-thedigitalgifter || true
+  fi
+  die "TDG deploy failed · dist contains a file the origin user cannot read"
+fi
+
+# Only mark verified after health wait succeeds and dist is readable.
 printf '%s\n' "${RELEASE}" >"${TDG_RELEASES}/verified.tag"
 printf '%s\n' "${COMMIT}" >"${TDG_RELEASES}/verified.sha"
 log "TDG deploy ok release=${RELEASE} commit=${COMMIT}"
