@@ -53,7 +53,7 @@ describe("TDG deploy wiring (HTTPS persist + rollback + CI verify)", () => {
 
   it("does not mark verified while dist has a file the origin user cannot read", () => {
     const dockerfile = readFileSync(resolve("Dockerfile"), "utf8");
-    const chmodAt = dockerfile.indexOf("chmod -R a+rX /app");
+    const chmodAt = dockerfile.indexOf("chmod -R a+rX dist api server src public supabase");
     const userAt = dockerfile.indexOf("USER tdg");
     expect(chmodAt).toBeGreaterThan(0);
     expect(userAt).toBeGreaterThan(chmodAt);
