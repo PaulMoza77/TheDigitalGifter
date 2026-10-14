@@ -6,7 +6,8 @@ Prices, providers, and product design are unchanged.
 
 | Route / capability | After migration | Notes |
 | --- | --- | --- |
-| `/`, marketing pages, `/pet/*`, `/christmas-ai-photos`, `/account/*`, `/admin/*`, `/funnel/*`, `/blog/*`, `/:pageType/:slug` | Mozas origin (Caddy → `thedigitalgifter:8080`) | SPA. Refresh serves `index.html` except `/api/*`. |
+| `/`, marketing pages, `/pet/*`, `/christmas-ai-photos`, `/memories`, `/memories/*`, `/account/*`, `/admin/*`, `/funnel/*`, `/blog/*`, `/:pageType/:slug` | Mozas origin (Caddy → `thedigitalgifter:8080`) | SPA. Refresh serves `index.html` except `/api/*`. |
+| `/api/memories-funnel`, `/api/memories-funnel-event` | Mozas Node origin (Edge `memories-funnel` / `memories-funnel-event` primary in browser) | Memories V1 early-access subscription funnel. Default commercial mode `waitlist`. |
 | `/auth/callback` | Mozas origin (SPA) | OAuth still uses Supabase Auth. Add verify host to Supabase redirect allow-list if testing Google on the verify URL. |
 | `/api/pet/funnel-event` | Mozas Node origin | Same-origin V1 analytics. Needs `SUPABASE_SERVICE_ROLE_KEY` on the VPS to persist events. |
 | `/api/pet-v2/funnel-event` | Mozas Node origin | Same-origin V2 analytics. Same service-role requirement. |

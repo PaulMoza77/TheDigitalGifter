@@ -10,6 +10,7 @@ public/assets/christmas/christmas-20-batch/silent/
 node_modules/
 dist/
 .tdg-commit
+supabase/.temp/
 
 .env.local
 
@@ -19,3 +20,4 @@ output/long-form/**/*.jpg
 output/long-form/state.json
 output/long-form/productions/
 public/assets/long-form/music/*.m4a
+scripts/__pycache__/

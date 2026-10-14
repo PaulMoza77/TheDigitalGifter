@@ -21,6 +21,7 @@ import {
   BarChart3,
   PawPrint,
   Gift,
+  Heart,
   Library,
   WandSparkles,
   Clapperboard,
@@ -271,6 +272,11 @@ const SidebarNavigation: React.FC<{
             label: "Christmas",
             path: "/admin/christmas",
             icon: Gift,
+          },
+          {
+            label: "Memories",
+            path: "/admin/memories",
+            icon: Heart,
           },
           {
             label: "Pet Funnel Analytics",

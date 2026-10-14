@@ -346,6 +346,24 @@ const ChristmasV2OrderRoute = lazy(() =>
     default: m.ChristmasV2OrderRoute,
   })),
 );
+const MemoriesLandingPage = lazy(() =>
+  import("@/features/memories").then((m) => ({ default: m.MemoriesLandingPage })),
+);
+const MemoriesCreatePage = lazy(() =>
+  import("@/features/memories").then((m) => ({ default: m.MemoriesCreatePage })),
+);
+const MemoriesPlansPage = lazy(() =>
+  import("@/features/memories").then((m) => ({ default: m.MemoriesPlansPage })),
+);
+const MemoriesSuccessPage = lazy(() =>
+  import("@/features/memories").then((m) => ({ default: m.MemoriesSuccessPage })),
+);
+const MemoriesAdminLayout = lazy(
+  () => import("@/pages/admin/memories/MemoriesAdminLayout"),
+);
+const MemoriesDashboardPage = lazy(
+  () => import("@/pages/admin/memories/MemoriesDashboardPage"),
+);
 
 // ================= FUNNEL =================
 const FunnelHomePage = lazy(
@@ -1011,6 +1029,10 @@ function AppInner() {
               path="/christmas-ai-photos/order"
               element={<ChristmasV2OrderRoute />}
             />
+            <Route path="/memories" element={<MemoriesLandingPage />} />
+            <Route path="/memories/create" element={<MemoriesCreatePage />} />
+            <Route path="/memories/plans" element={<MemoriesPlansPage />} />
+            <Route path="/memories/success" element={<MemoriesSuccessPage />} />
             <Route path="/pet-v2" element={<Navigate to="/pet/dog-v2" replace />} />
             <Route path="/pet-v2/dog" element={<Navigate to="/pet/dog-v2" replace />} />
             <Route path="/pet-v2/cat" element={<Navigate to="/pet/cat-v2" replace />} />
@@ -1038,6 +1060,9 @@ function AppInner() {
               <Route path="analytics" element={<ChristmasAnalyticsPage />} />
               <Route path="orders" element={<ChristmasOrdersPage />} />
               <Route path="monetization" element={<ChristmasMonetizationPage />} />
+            </Route>
+            <Route path="memories" element={<MemoriesAdminLayout />}>
+              <Route index element={<MemoriesDashboardPage />} />
             </Route>
             <Route
               path="christmas-orders"

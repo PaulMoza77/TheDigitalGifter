@@ -109,3 +109,27 @@ casahub.eu, www.casahub.eu {
 		}
 	}
 }
+
+# TDG Supabase API edge (Kong via SSH tunnel).
+# Upstream 172.18.0.1:19001 is the docker-bridge LocalForward of the same
+# tunnel as host-loopback 127.0.0.1:19000 → Contabo Kong :8000.
+# Do not point this host at the Vite web app.
+supabase.thedigitalgifter.com {
+	reverse_proxy 172.18.0.1:19001 {
+		header_up Host {host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Real-IP {remote_host}
+		flush_interval -1
+		transport http {
+			read_timeout 360s
+			write_timeout 360s
+			dial_timeout 10s
+		}
+	}
+	log {
+		output file /var/log/caddy/supabase-tdg.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}
