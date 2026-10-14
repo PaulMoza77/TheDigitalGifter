@@ -24,6 +24,12 @@ assert_shared_edge_caddy_hosts() {
       || { echo "ABORT: HTTPS Caddyfile missing named CasaHub site block" >&2; return 1; }
     grep -q 'mcp.themozas.com' "${file}" || { echo "ABORT: HTTPS Caddyfile missing mcp.themozas.com" >&2; return 1; }
     grep -q 'mozas-mcp-bridge:8787' "${file}" || { echo "ABORT: HTTPS Caddyfile missing MCP upstream mozas-mcp-bridge:8787" >&2; return 1; }
+    grep -q 'supabase.thedigitalgifter.com' "${file}" || { echo "ABORT: HTTPS Caddyfile missing supabase.thedigitalgifter.com" >&2; return 1; }
+    grep -q '172.18.0.1:19001' "${file}" || { echo "ABORT: HTTPS Caddyfile missing Kong tunnel 172.18.0.1:19001" >&2; return 1; }
+    if awk '/supabase\.thedigitalgifter\.com/,/^}/' "${file}" | grep -q 'thedigitalgifter:8080'; then
+      echo "ABORT: supabase.thedigitalgifter.com must not point at the Vite app" >&2
+      return 1
+    fi
   fi
 
   echo "shared_edge_caddy_hosts_ok=yes mode=${mode}"
@@ -49,6 +55,18 @@ smoke_shared_edge_caddy() {
   smoke_https "themozas.com" "/healthz" "200" || fail=1
   smoke_https "www.thedigitalgifter.com" "/healthz" "200" || fail=1
   smoke_https "mcp.themozas.com" "/healthz" "200" || fail=1
+
+  code="$(curl -sS -o /tmp/sb-smoke-body -w '%{http_code}' --max-time 20 \
+    --resolve "supabase.thedigitalgifter.com:443:${origin_ip}" \
+    "https://supabase.thedigitalgifter.com/auth/v1/health" || true)"
+  echo "smoke_https_supabase.thedigitalgifter.com/auth/v1/health=${code}"
+  if [[ "${code}" != "401" && "${code}" != "200" ]]; then
+    fail=1
+  fi
+  if grep -qi '<html' /tmp/sb-smoke-body 2>/dev/null; then
+    echo "ABORT: supabase.thedigitalgifter.com returned HTML instead of Kong" >&2
+    fail=1
+  fi
 
   if [[ "${fail}" -ne 0 ]]; then
     echo "ABORT: shared edge smoke tests failed" >&2

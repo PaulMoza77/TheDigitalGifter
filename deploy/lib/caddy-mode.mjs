@@ -82,6 +82,12 @@ export function assertCaddyContentMatchesMode(candidateContent, mode) {
     if (!text.includes("mcp.themozas.com") || !text.includes("mozas-mcp-bridge:8787")) {
       throw new Error("HTTPS Caddyfile must keep MCP site and upstream");
     }
+    if (!text.includes("supabase.thedigitalgifter.com") || !text.includes("172.18.0.1:19001")) {
+      throw new Error("HTTPS Caddyfile must keep supabase.thedigitalgifter.com on the Kong tunnel");
+    }
+    if (/supabase\.thedigitalgifter\.com[\s\S]{0,500}thedigitalgifter:8080/.test(text)) {
+      throw new Error("supabase.thedigitalgifter.com must not reverse_proxy to the Vite app");
+    }
   }
   if (mode === "http") {
     if (hasNamedTdgHttpsSite(text)) {
