@@ -35,13 +35,18 @@ No production migrations, DNS changes, webhook subscriptions, or deploys were pe
 | `christmas-source` | 18 | 8.3 | Customer Christmas sources — **do not delete** |
 | others | — | <30 | — |
 
-### Safe resolution (pick one; requires founder approval)
+### Resolution path (updated)
 
-1. **Recommended:** Upgrade org/project off Free (Pro) so Edge + Storage work under Christmas traffic.  
-2. **Optional capacity reclaim (no customer deletes):** After approval, archive/move **internal** `clip-factory` media (~314 MB) to external object storage / cold archive, then remove only those internal objects. Do **not** touch pet/christmas source or result buckets.  
-3. **Do not** delete `templates` without a rebuild plan (site catalog breakage risk).
+Cloud Free quota explains Cloud Edge **402**, but production runtime already uses **self-hosted** Supabase (`supabase.thedigitalgifter.com`). Full evidence: `TDG_SELFHOSTED_SUPABASE_MIGRATION_VERDICT_2026-10-15.md`.
 
-Until quota is cleared, live upload/checkout/generate remain **BLOCKED**.
+**Do not upgrade to Cloud Pro for production.** Prefer:
+
+1. Repair Contabo Edge worker entrypoints for `christmas-checkout` / `christmas-photo-funnel` / `christmas-photo-generate`.  
+2. Configure self-host `STRIPE_WEBHOOK_SECRET` (current self-host webhook returns 503).  
+3. Reconcile storage/RLS drift; disable Cloud Stripe webhook only after self-host smoke passes.  
+4. Optional: archive internal Cloud `clip-factory` later — not required to unblock self-host.
+
+Until self-host Edge boots, live upload/checkout/generate remain **BLOCKED**.
 
 ---
 

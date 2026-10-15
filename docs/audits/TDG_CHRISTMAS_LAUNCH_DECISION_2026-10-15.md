@@ -23,23 +23,23 @@ No production changes, DNS writes, upgrades, deletes, or webhook mutations were 
 
 ---
 
-## 1. Supabase upgrade options (no upgrade performed)
+## 1. Supabase path (updated — self-hosted is the target)
+
+**Superseded:** Do **not** upgrade to Supabase Cloud Pro for Christmas production.  
+Production app already points at self-hosted `https://supabase.thedigitalgifter.com` (see `TDG_SELFHOSTED_SUPABASE_MIGRATION_VERDICT_2026-10-15.md`).
 
 | Item | Value |
 | --- | --- |
-| Org | `thedigitalgifter` · `tier_free` |
-| Project | `kjlsocejpmnzhhduyumy` |
-| Usage | **1.130 GB** file storage (717 objects) |
-| Free limit | **1 GB** → Edge returns `exceed_storage_size_quota` |
-| MCP upgrade API | Not available (billing is Dashboard / external) |
+| Active runtime | Self-hosted via Mozas → Contabo tunnel |
+| Cloud project | `kjlsocejpmnzhhduyumy` · still **free**; Edge **402** quota — residual dependency only |
+| Self-host storage | ~1.9 GB objects (Cloud 1 GB Free quota is **not** the self-host blocker) |
+| Primary blockers | Self-host Edge `InvalidWorkerCreation` for christmas-checkout/photo-*; missing `STRIPE_WEBHOOK_SECRET`; Resend DNS |
 
 **Options requiring founder approval:**
 
-1. **Upgrade org to Pro** (Dashboard) — recommended; Pro includes substantially higher storage (see Supabase pricing/docs; typically 100 GB included on Pro). Remove spend caps if any block restoration.  
-2. **Reclaim ~314 MB** by archiving internal `clip-factory` only (not customer pet/christmas). Still may leave little headroom on Free.  
-3. Do **not** delete `templates` / customer buckets.
-
-Agent cannot upgrade via MCP.
+1. **Repair/redeploy Edge on Contabo** + set webhook/secrets (preferred).  
+2. Reconcile storage drift / RLS; disable Cloud Stripe webhook after self-host green.  
+3. Optional Cloud Free cleanup later — not a Pro purchase.
 
 ---
 
@@ -115,7 +115,7 @@ Do **not** switch From to `volocar.eu` without explicit brand approval.
 
 ## Founder actions that cannot be automated here
 
-1. **Unblock Supabase storage** — upgrade to Pro **or** approve clip-factory archive (~314 MB).  
+1. **Unblock self-hosted Edge** — Contabo shell access to fix function entrypoints + set `STRIPE_WEBHOOK_SECRET` (not Cloud Pro).  
 2. **Add the four Resend DNS records** in Cloudflare (or inject Cloudflare token + approve agent write), then Verify in Resend.  
 3. **Provide Stripe TEST access** — sandbox MCP auth or inject `sk_test` / `pk_test` / test `whsec` (never live).  
 4. **Approve production apply** — two migrations + three Edge deploys + refund webhook event subscription.  
