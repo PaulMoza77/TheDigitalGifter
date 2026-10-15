@@ -149,11 +149,25 @@ describe("christmas photo pricing + wiring", () => {
     expect(fulfill).toContain('fulfillment !== "processing"');
   });
 
-  it("portrait refunds are not wired (planner-only refund path)", () => {
+  it("portrait refunds are wired for full and partial via commerce RPC", () => {
     const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
-    expect(fulfill).toContain("handleChristmasPlannerRefund");
+    const migration = readSrc(
+      "supabase/migrations/20261015194500_christmas_portrait_refunds.sql",
+    );
+    const funnel = readSrc("supabase/functions/christmas-photo-funnel/index.ts");
+    const webhook = readSrc("supabase/functions/stripe-webhook/index.ts");
+    expect(fulfill).toContain("handleChristmasRefund");
+    expect(fulfill).toContain("refund_christmas_commerce_order");
     expect(fulfill).toContain("refund_christmas_planner_order");
-    expect(fulfill).not.toContain("refund_christmas_portrait");
+    expect(fulfill).toContain("sendPortraitRefundedEmail");
+    expect(fulfill).toContain("charge_refunded_cumulative");
+    expect(migration).toContain("partially_refunded");
+    expect(migration).toContain("refunded_amount_cents");
+    expect(migration).toContain("portrait_refunded");
+    expect(funnel).toContain('payment_status === "partially_refunded"');
+    expect(funnel).toContain("download_revoked");
+    expect(webhook).toContain("charge.refunded");
+    expect(webhook).toContain("refund.created");
   });
 
   it("portrait delivery email uses ledger + Resend idempotency key", () => {
@@ -178,5 +192,14 @@ describe("christmas photo pricing + wiring", () => {
     );
     expect(sql).toContain("payment_status <> 'paid'");
     expect(sql).toContain("payment_required");
+  });
+
+  it("claim RPC allows partially_refunded after refund migration", () => {
+    const sql = readSrc(
+      "supabase/migrations/20261015194500_christmas_portrait_refunds.sql",
+    );
+    expect(sql).toContain("partially_refunded");
+    expect(sql).toContain("claim_christmas_generation_job");
+    expect(sql).toContain("payment_status not in ('paid', 'partially_refunded')");
   });
 });

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (order.payment_status !== "paid") {
+    if (order.payment_status !== "paid" && order.payment_status !== "partially_refunded") {
       return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
     }
     if (!order.source_path || !order.style_key) {

@@ -137,8 +137,11 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (!order) return jsonResponse({ error: "Order not found" }, 404);
 
+      // Full refunds revoke download. Partial refunds keep access (paid residual).
+      const downloadAllowed =
+        order.payment_status === "paid" || order.payment_status === "partially_refunded";
       let resultUrl: string | null = null;
-      if (order.result_asset_id) {
+      if (downloadAllowed && order.result_asset_id) {
         const { data: asset } = await service
           .from("christmas_order_assets")
           .select("storage_bucket,storage_path")
@@ -157,6 +160,7 @@ Deno.serve(async (req) => {
         order: {
           ...order,
           resultUrl,
+          download_revoked: order.payment_status === "refunded",
         },
       });
     }
@@ -172,7 +176,10 @@ Deno.serve(async (req) => {
         .select("id,payment_status,fulfillment_status")
         .eq("id", orderId)
         .maybeSingle();
-      if (!order || order.payment_status !== "paid") {
+      if (
+        !order ||
+        (order.payment_status !== "paid" && order.payment_status !== "partially_refunded")
+      ) {
         return jsonResponse({ error: "payment_required" }, 402);
       }
       await service.from("christmas_generation_jobs").upsert(

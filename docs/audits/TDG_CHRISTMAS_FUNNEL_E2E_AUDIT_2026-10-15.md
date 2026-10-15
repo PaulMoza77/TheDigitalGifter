@@ -17,6 +17,8 @@
 
 Code path is largely wired; live end-to-end purchase/delivery cannot be proven and several production blockers remain.
 
+**Unblock follow-up (same branch):** see `docs/audits/TDG_CHRISTMAS_UNBLOCK_ACTIONS_2026-10-15.md` — storage root cause (1.13 GB / 1 GB free), exact Resend DNS records, Stripe TEST prerequisites, portrait refund implementation, deployment plan.
+
 ---
 
 ## Stage results
