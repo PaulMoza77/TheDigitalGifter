@@ -141,6 +141,37 @@ describe("christmas photo pricing + wiring", () => {
     );
   });
 
+  it("webhook can re-enqueue generation on already_paid when fulfillment incomplete", () => {
+    const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
+    expect(fulfill).toContain('result.status === "already_paid"');
+    expect(fulfill).toContain("needsGenerate");
+    expect(fulfill).toContain('fulfillment !== "completed"');
+    expect(fulfill).toContain('fulfillment !== "processing"');
+  });
+
+  it("portrait refunds are not wired (planner-only refund path)", () => {
+    const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
+    expect(fulfill).toContain("handleChristmasPlannerRefund");
+    expect(fulfill).toContain("refund_christmas_planner_order");
+    expect(fulfill).not.toContain("refund_christmas_portrait");
+  });
+
+  it("portrait delivery email uses ledger + Resend idempotency key", () => {
+    const generate = readSrc("supabase/functions/christmas-photo-generate/index.ts");
+    const email = readSrc("supabase/functions/_shared/christmas/portraitEmail.ts");
+    const migration = readSrc(
+      "supabase/migrations/20261015193000_christmas_portrait_email_kind.sql",
+    );
+    expect(generate).toContain("sendPortraitReadyEmail");
+    expect(generate).not.toContain("api.resend.com/emails");
+    expect(email).toContain('kind = "portrait_ready"');
+    expect(email).toContain("christmas_email_deliveries");
+    expect(email).toContain("Idempotency-Key");
+    expect(email).toContain("xmas-portrait-ready/");
+    expect(email).toContain("delivery_email_sent_at");
+    expect(migration).toContain("portrait_ready");
+  });
+
   it("claim RPC migration requires payment_status paid", () => {
     const sql = readSrc(
       "supabase/migrations/20260902150000_christmas_claim_requires_paid.sql",

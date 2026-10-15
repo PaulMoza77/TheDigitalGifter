@@ -221,95 +221,102 @@ export async function handleChristmasStripeEvent(input: {
       }
     }
 
-    if (result.ok === true && result.status === "paid") {
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid")) {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
+      const firstPaid = result.status === "paid";
 
       if (isPlannerProductKey(productKey)) {
         // Entitlements + email handled above (including webhook replay).
       } else if (productKey === "christmas_gift_tree") {
-        const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
-          || (packageKey === "open_5"
-            ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
-            : undefined);
-        const opens = paid?.opens_granted ?? 0;
-        if (opens > 0) {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("user_id,email,metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const meta = (ord?.metadata || {}) as Record<string, unknown>;
-          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
-          const email = asString(ord?.email) || asString(input.metadata.email);
-          await input.service.rpc("christmas_gift_tree_grant_opens", {
-            p_season_year: 2026,
-            p_opens: opens,
-            p_source: "purchase",
-            p_source_ref: `stripe_order:${orderId}`,
-            p_user_id: ord?.user_id || null,
-            p_guest_token_hash: guestHash || null,
-            p_email_normalized: email ? email.trim().toLowerCase() : null,
-            p_metadata: {
-              package_key: packageKey,
-              stripe_session_id: sessionId,
-              christmas_order_id: orderId,
-            },
-          });
-        }
-      } else {
-        {
-          const { data: ordMeta } = await input.service
-            .from("christmas_orders")
-            .select("metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
-          const entId =
-            asString(input.metadata.gift_tree_entitlement_id) ||
-            asString(meta.gift_tree_entitlement_id);
-          if (entId) {
-            await input.service
-              .from("christmas_reward_entitlements")
-              .update({
-                redeemed_at: new Date().toISOString(),
-                status: "redeemed",
-                metadata: {
-                  redeemed_via: "stripe_webhook",
-                  christmas_order_id: orderId,
-                  stripe_session_id: sessionId,
-                },
-              })
-              .eq("id", entId)
-              .is("redeemed_at", null);
+        // Grant opens only on the first paid transition (idempotent source_ref protects duplicates).
+        if (firstPaid) {
+          const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
+            || (packageKey === "open_5"
+              ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
+              : undefined);
+          const opens = paid?.opens_granted ?? 0;
+          if (opens > 0) {
+            const { data: ord } = await input.service
+              .from("christmas_orders")
+              .select("user_id,email,metadata")
+              .eq("id", orderId)
+              .maybeSingle();
+            const meta = (ord?.metadata || {}) as Record<string, unknown>;
+            const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
+            const email = asString(ord?.email) || asString(input.metadata.email);
+            await input.service.rpc("christmas_gift_tree_grant_opens", {
+              p_season_year: 2026,
+              p_opens: opens,
+              p_source: "purchase",
+              p_source_ref: `stripe_order:${orderId}`,
+              p_user_id: ord?.user_id || null,
+              p_guest_token_hash: guestHash || null,
+              p_email_normalized: email ? email.trim().toLowerCase() : null,
+              p_metadata: {
+                package_key: packageKey,
+                stripe_session_id: sessionId,
+                christmas_order_id: orderId,
+              },
+            });
           }
         }
+      } else {
+        const { data: ordMeta } = await input.service
+          .from("christmas_orders")
+          .select("metadata,fulfillment_status,product_key")
+          .eq("id", orderId)
+          .maybeSingle();
+        const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
+        const entId =
+          asString(input.metadata.gift_tree_entitlement_id) ||
+          asString(meta.gift_tree_entitlement_id);
+        if (entId && firstPaid) {
+          await input.service
+            .from("christmas_reward_entitlements")
+            .update({
+              redeemed_at: new Date().toISOString(),
+              status: "redeemed",
+              metadata: {
+                redeemed_via: "stripe_webhook",
+                christmas_order_id: orderId,
+                stripe_session_id: sessionId,
+              },
+            })
+            .eq("id", entId)
+            .is("redeemed_at", null);
+        }
         let mode: "commerce" | "santa" = "commerce";
-        if (productKey === "christmas_santa_video") {
+        const resolvedProductKey = productKey || asString(ordMeta?.product_key);
+        if (resolvedProductKey === "christmas_santa_video") {
           mode = "santa";
-        } else if (!productKey) {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("product_key")
-            .eq("id", orderId)
-            .maybeSingle();
-          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("user_id,email,commercial_snapshot")
-            .eq("id", orderId)
-            .maybeSingle();
-          await input.service.rpc("grant_christmas_bundle_entitlements", {
-            p_order_id: orderId,
-            p_user_id: ord?.user_id || null,
-            p_email: ord?.email || null,
-            p_snapshot: ord?.commercial_snapshot || {},
-          });
+        if (resolvedProductKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+          if (firstPaid) {
+            const { data: ord } = await input.service
+              .from("christmas_orders")
+              .select("user_id,email,commercial_snapshot")
+              .eq("id", orderId)
+              .maybeSingle();
+            await input.service.rpc("grant_christmas_bundle_entitlements", {
+              p_order_id: orderId,
+              p_user_id: ord?.user_id || null,
+              p_email: ord?.email || null,
+              p_snapshot: ord?.commercial_snapshot || {},
+            });
+          }
         } else {
-          enqueueChristmasGenerate(orderId, mode);
+          const fulfillment = asString(ordMeta?.fulfillment_status) || "not_started";
+          const needsGenerate =
+            firstPaid ||
+            fulfillment === "not_started" ||
+            fulfillment === "failed" ||
+            fulfillment === "queued";
+          // Skip completed / in-progress order fulfillment on webhook replay.
+          if (needsGenerate && fulfillment !== "completed" && fulfillment !== "processing") {
+            enqueueChristmasGenerate(orderId, mode);
+          }
         }
       }
     }

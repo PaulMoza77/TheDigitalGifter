@@ -67,6 +67,7 @@ export async function sendPlannerReadyEmail(input: {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `xmas-planner-ready/${input.orderId}`,
     },
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });
