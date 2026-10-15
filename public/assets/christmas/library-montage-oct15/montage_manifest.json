@@ -1,0 +1,1053 @@
+{
+  "assembled_at": "2026-10-15T13:45:03.661913+00:00",
+  "ai_generation_cost_usd": 0,
+  "edit_style": "hard_cuts_only",
+  "reels_requested": 10,
+  "reels_produced": 10,
+  "qc_failures": 0,
+  "duration_target": "10-12s",
+  "disk_note": "assembled on agent VM; public assets shipped with deploy",
+  "publishing": "READY_FOR_LIBRARY",
+  "reels": [
+    {
+      "id": "reel-cut-01-express-punch",
+      "filename": "reel-cut-01-express-punch.mp4",
+      "title": "Express Punch \u00b7 11s",
+      "concept": "Hard-cut Christmas Express \u2014 gifts hook, viaduct flashes, station hold",
+      "mood": "upbeat",
+      "shots": [
+        [
+          "short-cx-05-santa-gifts",
+          0.04,
+          1.6,
+          1.04
+        ],
+        [
+          "short-cx-02-sunset-viaduct",
+          0.06,
+          1.8,
+          1.03
+        ],
+        [
+          "short-cx-04-aurora-viaduct",
+          0.08,
+          2.0,
+          1.03
+        ],
+        [
+          "short-npj-04-viaduct-wide",
+          0.1,
+          1.8,
+          1.03
+        ],
+        [
+          "short-cx-03-station",
+          0.1,
+          3.8,
+          1.02
+        ]
+      ],
+      "music": "joy-to-the-world-synthwave.mp3",
+      "clips_used": [
+        "short-cx-05-santa-gifts",
+        "short-cx-02-sunset-viaduct",
+        "short-cx-04-aurora-viaduct",
+        "short-npj-04-viaduct-wide",
+        "short-cx-03-station"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-cx-05-santa-gifts",
+          "start": 0.04,
+          "duration": 1.6,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cx-02-sunset-viaduct",
+          "start": 0.06,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cx-04-aurora-viaduct",
+          "start": 0.08,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-04-viaduct-wide",
+          "start": 0.1,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cx-03-station",
+          "start": 0.1,
+          "duration": 3.8,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.133333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15422409,
+        "size": 21462852
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.133333,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15422409,
+          "size": 21462852
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-01-express-punch.mp4"
+    },
+    {
+      "id": "reel-cut-02-santa-night",
+      "filename": "reel-cut-02-santa-night.mp4",
+      "title": "Santa Night \u00b7 11s",
+      "concept": "Santa sprint \u2014 sleigh, workshop, London, moon bedroom payoff",
+      "mood": "magical",
+      "shots": [
+        [
+          "short-santa-02-sleigh",
+          0.04,
+          1.8,
+          1.05
+        ],
+        [
+          "short-santa-01-workshop",
+          0.08,
+          1.8,
+          1.03
+        ],
+        [
+          "short-cinematic-santa-london",
+          0.05,
+          2.0,
+          1.04
+        ],
+        [
+          "short-npj-09-window-sleigh",
+          0.1,
+          1.8,
+          1.03
+        ],
+        [
+          "short-c20-20-bedroom-santa-moon-finished",
+          0.2,
+          3.6,
+          1.02
+        ]
+      ],
+      "music": "the-first-noel-synthwave.mp3",
+      "clips_used": [
+        "short-santa-02-sleigh",
+        "short-santa-01-workshop",
+        "short-cinematic-santa-london",
+        "short-npj-09-window-sleigh",
+        "short-c20-20-bedroom-santa-moon-finished"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-santa-02-sleigh",
+          "start": 0.04,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-santa-01-workshop",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cinematic-santa-london",
+          "start": 0.05,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-09-window-sleigh",
+          "start": 0.1,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-20-bedroom-santa-moon-finished",
+          "start": 0.2,
+          "duration": 3.6,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.1,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15402043,
+        "size": 21370335
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.1,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15402043,
+          "size": 21370335
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-02-santa-night.mp4"
+    },
+    {
+      "id": "reel-cut-03-nyc-flash",
+      "filename": "reel-cut-03-nyc-flash.mp4",
+      "title": "NYC Flash \u00b7 11s",
+      "concept": "Manhattan holiday punch \u2014 Saks, Radio City, Rockefeller, penthouse",
+      "mood": "cinematic",
+      "shots": [
+        [
+          "short-c20-17-saks-rockefeller-finished",
+          0.08,
+          2.0,
+          1.04
+        ],
+        [
+          "short-c20-08-radio-city-finished",
+          0.1,
+          1.8,
+          1.03
+        ],
+        [
+          "short-nyc-winter-1990-02-rockefeller-tree",
+          0.06,
+          1.8,
+          1.03
+        ],
+        [
+          "short-c20-01-ny-awning-finished",
+          0.12,
+          1.8,
+          1.02
+        ],
+        [
+          "short-c20-10-penthouse-empire-finished",
+          0.12,
+          3.6,
+          1.02
+        ]
+      ],
+      "music": "we-three-kings-synthwave.mp3",
+      "clips_used": [
+        "short-c20-17-saks-rockefeller-finished",
+        "short-c20-08-radio-city-finished",
+        "short-nyc-winter-1990-02-rockefeller-tree",
+        "short-c20-01-ny-awning-finished",
+        "short-c20-10-penthouse-empire-finished"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-c20-17-saks-rockefeller-finished",
+          "start": 0.08,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-08-radio-city-finished",
+          "start": 0.1,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-nyc-winter-1990-02-rockefeller-tree",
+          "start": 0.06,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-01-ny-awning-finished",
+          "start": 0.12,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-10-penthouse-empire-finished",
+          "start": 0.12,
+          "duration": 3.6,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.033333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15588349,
+        "size": 21498932
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.033333,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15588349,
+          "size": 21498932
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-03-nyc-flash.mp4"
+    },
+    {
+      "id": "reel-cut-04-alpine-cut",
+      "filename": "reel-cut-04-alpine-cut.mp4",
+      "title": "Alpine Cut \u00b7 11s",
+      "concept": "Swiss dawn hard cuts \u2014 sunrise, fireplace, ski, breakfast",
+      "mood": "warm",
+      "shots": [
+        [
+          "short-swiss-alpine-01-sunrise-chalet",
+          0.04,
+          2.2,
+          1.03
+        ],
+        [
+          "short-swiss-alpine-02-fireplace",
+          0.06,
+          2.0,
+          1.01
+        ],
+        [
+          "short-swiss-alpine-03-christmas-tree",
+          0.08,
+          1.8,
+          1.02
+        ],
+        [
+          "short-swiss-alpine-04-ski-entry",
+          0.08,
+          1.8,
+          1.02
+        ],
+        [
+          "short-swiss-alpine-05-breakfast",
+          0.1,
+          3.2,
+          1.02
+        ]
+      ],
+      "music": "angels-we-have-heard-lofi.mp3",
+      "clips_used": [
+        "short-swiss-alpine-01-sunrise-chalet",
+        "short-swiss-alpine-02-fireplace",
+        "short-swiss-alpine-03-christmas-tree",
+        "short-swiss-alpine-04-ski-entry",
+        "short-swiss-alpine-05-breakfast"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-swiss-alpine-01-sunrise-chalet",
+          "start": 0.04,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-swiss-alpine-02-fireplace",
+          "start": 0.06,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-swiss-alpine-03-christmas-tree",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-swiss-alpine-04-ski-entry",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-swiss-alpine-05-breakfast",
+          "start": 0.1,
+          "duration": 3.2,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.066667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15395665,
+        "size": 21297338
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.066667,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15395665,
+          "size": 21297338
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-04-alpine-cut.mp4"
+    },
+    {
+      "id": "reel-cut-05-europe-post",
+      "filename": "reel-cut-05-europe-post.mp4",
+      "title": "Europe Post \u00b7 11s",
+      "concept": "1990s Europe postcard \u2014 London, Paris, market, eve window",
+      "mood": "nostalgic",
+      "shots": [
+        [
+          "short-cme1990s-01-london",
+          0.04,
+          2.0,
+          1.03
+        ],
+        [
+          "short-cme1990s-02-paris-cafe",
+          0.06,
+          2.0,
+          1.03
+        ],
+        [
+          "short-cme1990s-06-christmas-market",
+          0.08,
+          2.2,
+          1.02
+        ],
+        [
+          "short-cme1990s-05-christmas-train",
+          0.08,
+          1.8,
+          1.03
+        ],
+        [
+          "short-cme1990s-10-eve-window",
+          0.1,
+          3.0,
+          1.02
+        ]
+      ],
+      "music": "auld-lang-syne-lofi.mp3",
+      "clips_used": [
+        "short-cme1990s-01-london",
+        "short-cme1990s-02-paris-cafe",
+        "short-cme1990s-06-christmas-market",
+        "short-cme1990s-05-christmas-train",
+        "short-cme1990s-10-eve-window"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-cme1990s-01-london",
+          "start": 0.04,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cme1990s-02-paris-cafe",
+          "start": 0.06,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cme1990s-06-christmas-market",
+          "start": 0.08,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cme1990s-05-christmas-train",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cme1990s-10-eve-window",
+          "start": 0.1,
+          "duration": 3.0,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.033333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15561305,
+        "size": 21461633
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.033333,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15561305,
+          "size": 21461633
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-05-europe-post.mp4"
+    },
+    {
+      "id": "reel-cut-06-hearth-snap",
+      "filename": "reel-cut-06-hearth-snap.mp4",
+      "title": "Hearth Snap \u00b7 11s",
+      "concept": "Cozy family hard cuts \u2014 dog, stairs, dinner, alpine cabin",
+      "mood": "emotional",
+      "shots": [
+        [
+          "short-c20-16-library-dog-finished",
+          0.2,
+          2.4,
+          1.01
+        ],
+        [
+          "short-c20-14-stairs-morning-finished",
+          0.15,
+          1.8,
+          1.02
+        ],
+        [
+          "short-c20-13-home-alone-tv-finished",
+          0.12,
+          1.6,
+          1.02
+        ],
+        [
+          "short-c20-15-family-dinner-finished",
+          0.18,
+          2.4,
+          1.02
+        ],
+        [
+          "short-c20-12-alpine-cabin-finished",
+          0.22,
+          2.8,
+          1.02
+        ]
+      ],
+      "music": "o-holy-night-lofi.mp3",
+      "clips_used": [
+        "short-c20-16-library-dog-finished",
+        "short-c20-14-stairs-morning-finished",
+        "short-c20-13-home-alone-tv-finished",
+        "short-c20-15-family-dinner-finished",
+        "short-c20-12-alpine-cabin-finished"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-c20-16-library-dog-finished",
+          "start": 0.2,
+          "duration": 2.4,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-14-stairs-morning-finished",
+          "start": 0.15,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-13-home-alone-tv-finished",
+          "start": 0.12,
+          "duration": 1.6,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-15-family-dinner-finished",
+          "start": 0.18,
+          "duration": 2.4,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-c20-12-alpine-cabin-finished",
+          "start": 0.22,
+          "duration": 2.8,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.0,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16306416,
+        "size": 22421323
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.0,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 16306416,
+          "size": 22421323
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-06-hearth-snap.mp4"
+    },
+    {
+      "id": "reel-cut-07-palace-hit",
+      "filename": "reel-cut-07-palace-hit.mp4",
+      "title": "Palace Hit \u00b7 11s",
+      "concept": "Luxury palace energy \u2014 establish, approach, gates, hero",
+      "mood": "cinematic",
+      "shots": [
+        [
+          "short-palace-01-establish",
+          0.04,
+          2.2,
+          1.03
+        ],
+        [
+          "short-palace-02-approach",
+          0.06,
+          1.8,
+          1.03
+        ],
+        [
+          "short-palace-03-gates",
+          0.08,
+          2.0,
+          1.02
+        ],
+        [
+          "short-palace-04-entrance",
+          0.08,
+          1.8,
+          1.02
+        ],
+        [
+          "short-palace-05-hero",
+          0.1,
+          3.2,
+          1.02
+        ]
+      ],
+      "music": "we-three-kings-synthwave.mp3",
+      "clips_used": [
+        "short-palace-01-establish",
+        "short-palace-02-approach",
+        "short-palace-03-gates",
+        "short-palace-04-entrance",
+        "short-palace-05-hero"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-palace-01-establish",
+          "start": 0.04,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-palace-02-approach",
+          "start": 0.06,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-palace-03-gates",
+          "start": 0.08,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-palace-04-entrance",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-palace-05-hero",
+          "start": 0.1,
+          "duration": 3.2,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.066667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16364297,
+        "size": 22637279
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.066667,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 16364297,
+          "size": 22637279
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-07-palace-hit.mp4"
+    },
+    {
+      "id": "reel-cut-08-north-pole-beat",
+      "filename": "reel-cut-08-north-pole-beat.mp4",
+      "title": "North Pole Beat \u00b7 11s",
+      "concept": "Journey beat \u2014 train window, aurora, workshop, village",
+      "mood": "magical",
+      "shots": [
+        [
+          "short-npj-01-train-window",
+          0.08,
+          2.0,
+          1.03
+        ],
+        [
+          "short-npj-03-aurora-window",
+          0.06,
+          2.2,
+          1.02
+        ],
+        [
+          "short-npj-06-workshop-street",
+          0.1,
+          1.8,
+          1.03
+        ],
+        [
+          "short-npj-08-wrapping",
+          0.12,
+          1.6,
+          1.02
+        ],
+        [
+          "short-npj-05-village-arrival",
+          0.14,
+          3.4,
+          1.02
+        ]
+      ],
+      "music": "the-first-noel-synthwave.mp3",
+      "clips_used": [
+        "short-npj-01-train-window",
+        "short-npj-03-aurora-window",
+        "short-npj-06-workshop-street",
+        "short-npj-08-wrapping",
+        "short-npj-05-village-arrival"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-npj-01-train-window",
+          "start": 0.08,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-03-aurora-window",
+          "start": 0.06,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-06-workshop-street",
+          "start": 0.1,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-08-wrapping",
+          "start": 0.12,
+          "duration": 1.6,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-npj-05-village-arrival",
+          "start": 0.14,
+          "duration": 3.4,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.1,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15755252,
+        "size": 21860413
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.1,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15755252,
+          "size": 21860413
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-08-north-pole-beat.mp4"
+    },
+    {
+      "id": "reel-cut-09-movie-nostalgia",
+      "filename": "reel-cut-09-movie-nostalgia.mp4",
+      "title": "Movie Nostalgia \u00b7 11s",
+      "concept": "Iconic Christmas movie energy \u2014 Home Alone, Polar Express, Rockefeller",
+      "mood": "nostalgic",
+      "shots": [
+        [
+          "short-cinematic-home-alone-house",
+          0.06,
+          2.2,
+          1.04
+        ],
+        [
+          "short-cinematic-polar-express",
+          0.08,
+          2.0,
+          1.03
+        ],
+        [
+          "short-cinematic-rockefeller",
+          0.1,
+          2.0,
+          1.03
+        ],
+        [
+          "short-cinematic-plaza-hotel",
+          0.08,
+          1.8,
+          1.03
+        ],
+        [
+          "short-christmas-master-07",
+          0.2,
+          3.0,
+          1.02
+        ]
+      ],
+      "music": "auld-lang-syne-lofi.mp3",
+      "clips_used": [
+        "short-cinematic-home-alone-house",
+        "short-cinematic-polar-express",
+        "short-cinematic-rockefeller",
+        "short-cinematic-plaza-hotel",
+        "short-christmas-master-07"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-cinematic-home-alone-house",
+          "start": 0.06,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cinematic-polar-express",
+          "start": 0.08,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cinematic-rockefeller",
+          "start": 0.1,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-cinematic-plaza-hotel",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-christmas-master-07",
+          "start": 0.2,
+          "duration": 3.0,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.033333,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 16751488,
+        "size": 23103094
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.033333,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 16751488,
+          "size": 23103094
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-09-movie-nostalgia.mp4"
+    },
+    {
+      "id": "reel-cut-10-world-tour",
+      "filename": "reel-cut-10-world-tour.mp4",
+      "title": "World Tour \u00b7 11s",
+      "concept": "Global Christmas flash \u2014 Lapland, Alps, plaza, White House",
+      "mood": "upbeat",
+      "shots": [
+        [
+          "short-global-01-lapland",
+          0.06,
+          2.0,
+          1.03
+        ],
+        [
+          "short-global-02-alps",
+          0.06,
+          1.8,
+          1.03
+        ],
+        [
+          "short-global-03-home",
+          0.08,
+          1.8,
+          1.02
+        ],
+        [
+          "short-global-04-plaza",
+          0.08,
+          2.2,
+          1.03
+        ],
+        [
+          "short-global-05-white-house",
+          0.1,
+          3.2,
+          1.02
+        ]
+      ],
+      "music": "joy-to-the-world-synthwave.mp3",
+      "clips_used": [
+        "short-global-01-lapland",
+        "short-global-02-alps",
+        "short-global-03-home",
+        "short-global-04-plaza",
+        "short-global-05-white-house"
+      ],
+      "shots_resolved": [
+        {
+          "library_id": "short-global-01-lapland",
+          "start": 0.06,
+          "duration": 2.0,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-global-02-alps",
+          "start": 0.06,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-global-03-home",
+          "start": 0.08,
+          "duration": 1.8,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-global-04-plaza",
+          "start": 0.08,
+          "duration": 2.2,
+          "transition": "cut"
+        },
+        {
+          "library_id": "short-global-05-white-house",
+          "start": 0.1,
+          "duration": 3.2,
+          "transition": "cut"
+        }
+      ],
+      "probe": {
+        "duration": 11.066667,
+        "width": 1080,
+        "height": 1920,
+        "codec": "h264",
+        "fps": 30.0,
+        "bitrate": 15932124,
+        "size": 22039440
+      },
+      "qc": {
+        "pass": true,
+        "issues": [],
+        "probe": {
+          "duration": 11.066667,
+          "width": 1080,
+          "height": 1920,
+          "codec": "h264",
+          "fps": 30.0,
+          "bitrate": 15932124,
+          "size": 22039440
+        },
+        "planned_duration": 11.0,
+        "blackdetect": []
+      },
+      "path": "public/assets/christmas/library-montage-oct15/final/reel-cut-10-world-tour.mp4"
+    }
+  ]
+}
