@@ -109,3 +109,17 @@ casahub.eu, www.casahub.eu {
 		}
 	}
 }
+
+# Private Contabo tunnel. Caddy reaches the docker bridge only; the tunnel stays on host loopback.
+supabase.thedigitalgifter.com {
+	reverse_proxy 172.23.0.1:19002 {
+		header_up X-Forwarded-Proto https
+		flush_interval -1
+	}
+	log {
+		output file /var/log/caddy/supabase-thedigitalgifter.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}
