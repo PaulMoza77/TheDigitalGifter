@@ -18,6 +18,7 @@ import {
   plannerSafeCheckoutSuccessUrl,
   resolvePlannerCheckoutFromRows,
 } from "../_shared/christmas/plannerCommerce.ts";
+import { GIFT_TREE_PAID_OFFERS } from "../_shared/christmas/giftTreeRewards.ts";
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -91,6 +92,29 @@ function checkoutEnabled(): boolean {
   return raw === "true" || raw === "1" || raw === "on";
 }
 
+/** Portrait offers can go live one product at a time without the global kill switch. */
+const INDIVIDUAL_PORTRAIT_KEYS = new Set([
+  "christmas_photo",
+  "christmas_family",
+  "christmas_couple",
+  "christmas_pet",
+  "xmas_portrait",
+]);
+
+function isIndividualPortraitKey(productKey: string): boolean {
+  return INDIVIDUAL_PORTRAIT_KEYS.has(productKey);
+}
+
+function liveProductAllowed(productKey: string): boolean {
+  const allow = new Set(
+    asString(Deno.env.get("CHRISTMAS_LIVE_PRODUCTS"))
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+  return allow.has(productKey);
+}
+
 function siteOrigin(): string {
   return (
     Deno.env.get("SITE_URL") ||
@@ -114,8 +138,10 @@ Deno.serve(async (req) => {
     if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
     // Planner Founding Pass is gated by checkout_live / CHRISTMAS_PLANNER_CHECKOUT_ENABLED.
     // Other Christmas products stay behind the global CHRISTMAS_CHECKOUT_ENABLED kill switch.
-    if (!isPlannerProductKey(productKey) && !checkoutEnabled()) {
-      return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
+    if (!isPlannerProductKey(productKey) && !isIndividualPortraitKey(productKey)) {
+      if (!checkoutEnabled() || !liveProductAllowed(productKey)) {
+        return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
+      }
     }
     // Client-supplied Stripe price IDs are never accepted.
     void (body as { price_id?: unknown }).price_id;
@@ -199,6 +225,47 @@ Deno.serve(async (req) => {
         entitlements: plannerPlan.entitlements,
         seasonYear: plannerPlan.seasonYear,
       };
+    } else if (productKey === "christmas_gift_tree") {
+      const offer = GIFT_TREE_PAID_OFFERS.find((item) => item.package_key === packageKey);
+      if (!offer) {
+        return jsonResponse({ error: "Unknown gift tree pack.", code: "unknown_package" }, 400);
+      }
+      const { data: treeProduct, error: treeProductError } = await service
+        .from("christmas_products")
+        .select("id, product_key, name, active")
+        .eq("product_key", "christmas_gift_tree")
+        .maybeSingle();
+      if (treeProductError) throw treeProductError;
+      if (!treeProduct?.active) {
+        return jsonResponse({ error: "Gift tree checkout is not available.", code: "inactive_product" }, 400);
+      }
+      const { data: treePkg, error: treePkgError } = await service
+        .from("christmas_packages")
+        .select("package_key, price_cents, currency, active, purchasable")
+        .eq("product_id", treeProduct.id)
+        .eq("package_key", offer.package_key)
+        .maybeSingle();
+      if (treePkgError) throw treePkgError;
+      if (!treePkg?.active || !treePkg.purchasable) {
+        return jsonResponse({ error: "Gift tree pack is not purchasable.", code: "inactive_product" }, 400);
+      }
+      if (Number(treePkg.price_cents) !== offer.price_cents || String(treePkg.currency).toLowerCase() !== "usd") {
+        return jsonResponse({ error: "Gift tree price does not match the server catalog.", code: "pricing_mismatch" }, 409);
+      }
+      resolvedProductKey = "christmas_gift_tree";
+      productName = treeProduct.name || offer.label;
+      amountCents = offer.price_cents;
+      currency = "usd";
+      packageKeyResolved = offer.package_key;
+      sku = `xmas_tree_${offer.package_key}`;
+      pricingKey = offer.package_key === "open_five" ? "xmas_tree_gift_5" : "xmas_tree_gift";
+      commercialSnapshot = {
+        pricingKey,
+        chargedAmountMinor: amountCents,
+        currency: "usd",
+        opensGranted: offer.opens_granted,
+        packageKey: offer.package_key,
+      };
     } else {
       commercialKey = commercialKeyForProduct(productKey);
       const { data: pricingRows, error: pricingError } = await service
@@ -219,7 +286,7 @@ Deno.serve(async (req) => {
 
       const { data: product, error: productError } = await service
         .from("christmas_products")
-        .select("id, product_key, name, active")
+        .select("id, product_key, name, active, metadata")
         .eq(
           "product_key",
           productKey === "xmas_portrait"
@@ -258,6 +325,20 @@ Deno.serve(async (req) => {
       sku = checkoutPlan.sku;
       pricingKey = checkoutPlan.offer.key;
       pricingUpdatedAt = checkoutPlan.offer.updatedAt;
+      const productMeta = (product?.metadata || {}) as Record<string, unknown>;
+      if (
+        isIndividualPortraitKey(resolvedProductKey) &&
+        !checkoutEnabled() &&
+        productMeta.checkout_live !== true
+      ) {
+        return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
+      }
+      if (commercialKey === "xmas_portrait" && (amountCents !== 499 || currency !== "eur")) {
+        return jsonResponse(
+          { error: "Portrait price is not the authoritative €4.99 offer.", code: "invalid_price" },
+          409,
+        );
+      }
     }
 
     const styleKey = asString(body.style_key);

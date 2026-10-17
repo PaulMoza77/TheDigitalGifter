@@ -1,6 +1,7 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
-import { kontextProInput, replicateOutputUrl } from "../_shared/pet/replicate.ts";
+import { generateChristmasHiggsfieldImage } from "../_shared/christmas/higgsfield.ts";
+import { readHiggsfieldAuthorization } from "../_shared/higgsfieldImage.ts";
 import {
   buildChristmasPortraitPrompt,
   recoveryRouteForOrder,
@@ -16,7 +17,8 @@ type Body = { order_id?: string; prompt?: string; client_prompt?: string };
 
 const SOURCE_BUCKET = "christmas-source";
 const RESULT_BUCKET = "christmas-generated";
-const DEFAULT_MODEL = "black-forest-labs/flux-kontext-pro";
+const DEFAULT_MODEL = "higgsfield-ai/soul/v2/image-to-image";
+const PORTRAIT_TEMPLATE_URL = "https://www.thedigitalgifter.com/assets/funnel/christmas-after.png";
 /** Project tariff snapshot (same as pet Kontext). Label as estimated. */
 const ESTIMATED_UNIT_COST_USD = 0.04;
 
@@ -37,40 +39,29 @@ async function createChristmasPrediction(input: {
   prompt: string;
   imageUrl: string;
   model: string;
-}): Promise<{ id: string; status?: string; output?: unknown; error?: string }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${input.model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input: kontextProInput(input.prompt, input.imageUrl),
-    }),
-  });
-  const created = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(String(created?.detail || created?.error || "replicate_create_failed"));
+  sourceBytes?: Uint8Array;
+  contentType?: string;
+  requestId?: string | null;
+}): Promise<{ id: string; status: string; output: string; model: string }> {
+  if (!readHiggsfieldAuthorization(Deno.env)) {
+    throw new Error("TDG Higgsfield credentials are not configured");
   }
-
-  let current = created;
-  let guard = 0;
-  while (
-    current?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(current.status)) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${created.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    current = await poll.json();
-    guard += 1;
-  }
-  return current;
+  const generated = await generateChristmasHiggsfieldImage(
+    Deno.env,
+    input.prompt,
+    input.imageUrl,
+    PORTRAIT_TEMPLATE_URL,
+    { requestId: input.requestId || null },
+    input.sourceBytes
+      ? { bytes: input.sourceBytes, contentType: input.contentType || "image/png" }
+      : undefined,
+  );
+  return {
+    id: generated.predictionId,
+    status: "succeeded",
+    output: generated.outputUrl,
+    model: generated.model || input.model,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -144,12 +135,13 @@ Deno.serve(async (req) => {
     const prompt = built.prompt;
 
     const sourceBucket = asString(order.source_bucket) || SOURCE_BUCKET;
-    const { data: signed } = await service.storage
+    const { data: sourceBlob, error: sourceError } = await service.storage
       .from(sourceBucket)
-      .createSignedUrl(order.source_path, 60 * 15);
-    if (!signed?.signedUrl) throw new Error("Could not sign source photo");
+      .download(order.source_path);
+    if (sourceError || !sourceBlob) throw sourceError || new Error("Could not read source photo");
+    const sourceBytes = new Uint8Array(await sourceBlob.arrayBuffer());
 
-    const model = asString(Deno.env.get("CHRISTMAS_IMAGE_MODEL")) || DEFAULT_MODEL;
+    let model = asString(Deno.env.get("CHRISTMAS_IMAGE_MODEL")) || DEFAULT_MODEL;
     const startedMs = Date.now();
     let predictionId = `xmas_${orderId}_${Date.now()}`;
     let resultPath = "";
@@ -170,21 +162,26 @@ Deno.serve(async (req) => {
       } else {
         const prediction = await createChristmasPrediction({
           prompt,
-          imageUrl: signed.signedUrl,
+          imageUrl: PORTRAIT_TEMPLATE_URL,
           model,
+          sourceBytes,
+          contentType: asString(order.source_content_type) || "image/png",
+          requestId: asString(order.model_name) === DEFAULT_MODEL ? asString(order.replicate_prediction_id) || null : null,
         });
         predictionId = asString(prediction.id) || predictionId;
+        model = prediction.model || model;
         if (String(prediction.status) !== "succeeded") {
-          throw new Error(asString(prediction.error) || `prediction_${prediction.status}`);
+          throw new Error(`prediction_${prediction.status}`);
         }
-        const remoteUrl = replicateOutputUrl(prediction.output);
+        const remoteUrl = prediction.output;
         if (!remoteUrl) throw new Error("missing_output_url");
         const download = await fetch(remoteUrl);
         if (!download.ok) throw new Error("result_download_failed");
         const bytes = new Uint8Array(await download.arrayBuffer());
-        resultPath = `results/${orderId}.jpg`;
+        const png = bytes.length > 3 && bytes[0] === 0x89 && bytes[1] === 0x50;
+        resultPath = `results/${orderId}.${png ? "png" : "jpg"}`;
         const { error: upError } = await service.storage.from(RESULT_BUCKET).upload(resultPath, bytes, {
-          contentType: "image/jpeg",
+          contentType: png ? "image/png" : "image/jpeg",
           upsert: true,
         });
         if (upError) throw upError;
@@ -251,7 +248,7 @@ Deno.serve(async (req) => {
         status: "succeeded",
         completed_at: new Date().toISOString(),
         prediction_id: predictionId,
-        provider: generationMock() ? "mock" : "replicate",
+        provider: generationMock() ? "mock" : "higgsfield",
         model_name: model,
       })
       .eq("order_id", orderId);
@@ -298,11 +295,26 @@ Deno.serve(async (req) => {
           landingPath: asString(order.landing_path) || null,
         });
         const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
-        await fetch("https://api.resend.com/emails", {
+        const kind = "portrait_ready";
+        const { data: existingMail } = await service
+          .from("christmas_email_deliveries")
+          .select("id,status")
+          .eq("order_id", orderId)
+          .eq("kind", kind)
+          .maybeSingle();
+        if (existingMail?.status === "sent") {
+          // already delivered
+        } else {
+        await service.from("christmas_email_deliveries").upsert(
+          { order_id: orderId, kind, status: "queued", last_error: null },
+          { onConflict: "order_id,kind" },
+        );
+        const mailRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
+            "Idempotency-Key": `xmas-portrait-ready/${orderId}`,
           },
           body: JSON.stringify({
             from,
@@ -311,6 +323,22 @@ Deno.serve(async (req) => {
             html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>— The Digital Gifter</p>`,
           }),
         });
+        if (!mailRes.ok) {
+          const providerError = (await mailRes.text()).slice(0, 500);
+          await service.from("christmas_email_deliveries").update({
+            status: "failed",
+            last_error: providerError || `resend_http_${mailRes.status}`,
+          }).eq("order_id", orderId).eq("kind", kind);
+        } else {
+          const mailBody = await mailRes.json() as { id?: string };
+          await service.from("christmas_email_deliveries").update({
+            status: "sent",
+            provider_message_id: String(mailBody.id || ""),
+            last_error: null,
+            sent_at: new Date().toISOString(),
+          }).eq("order_id", orderId).eq("kind", kind);
+        }
+        }
       }
     } catch {
       /* best-effort transactional email */
