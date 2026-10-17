@@ -1,0 +1,18 @@
+{
+  "conclusion": "NOT_P0_FOR_CATALOG",
+  "reason": "245 objects match intentional orphan prune on 2026-10-10; live templates reference only preserved objects",
+  "prune_evidence_path": "/opt/mozas/projects/thedigitalgifter/media/cleanup/orphan-previews-pruned-20261005.json",
+  "prune_completed_at": "2026-10-10T08:27:38.879Z",
+  "deleted_objects": 245,
+  "deleted_bytes": 514924432,
+  "preserved_referenced_objects": 22,
+  "live_templates_count": 73,
+  "live_unique_public_preview_paths": 26,
+  "live_preview_head_ok": 26,
+  "live_preview_head_fail": 0,
+  "mozas_disk_hits_for_sample_missing_filenames": 0,
+  "byte_source_status": "UNAVAILABLE_ON_MOZAS; Contabo volume search needs SSH exec; Cloud Data API 402",
+  "customer_facing_impact": "None for current catalog/template card URLs. Historical unreferenced assets only.",
+  "safe_regeneration": "Only if product requires unused historical previews; otherwise leave pruned. Do not overwrite existing 22 referenced objects.",
+  "backfill_required_for_browse_go": false
+}

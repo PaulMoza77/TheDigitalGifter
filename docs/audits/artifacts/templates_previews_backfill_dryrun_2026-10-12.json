@@ -1,0 +1,32 @@
+{
+  "destination": "ISOLATED_STAGING_ONLY \u2014 no Contabo prod writes until authorized",
+  "bucket": "templates",
+  "cloud_previews_total": 267,
+  "selfhost_previews_total": 22,
+  "missing_count": 245,
+  "extra_on_selfhost_count": 0,
+  "missing_bytes": 514924432,
+  "present_on_both": 22,
+  "idempotent_rule": "PUT only if absent; never delete; skip if size+etag match",
+  "byte_source_status": "BLOCKED: Cloud Data API 402; Contabo migration archive needs SSH exec or known archive path",
+  "missing_root_previews": 233,
+  "missing_from_convex": 12,
+  "missing_sample": [
+    "previews/1771876436287-b149da.png",
+    "previews/1771877235703-b005f7.png",
+    "previews/1771877450138-9c83fa.png",
+    "previews/1771877626525-9275dd.png",
+    "previews/1771877727730-3854c8.png",
+    "previews/1771877852892-f5b13d.png",
+    "previews/1771877996262-dcd185.png",
+    "previews/1771878120606-075d53.png",
+    "previews/1771878241403-564862.png",
+    "previews/1771878458978-0156f6.png",
+    "previews/1771878685539-b37154.png",
+    "previews/1771918109635-b56cb5.png",
+    "previews/1771921952970-5be10f.png",
+    "previews/1771921974432-122024.png",
+    "previews/1771925057721-8e59d2.png"
+  ],
+  "extra_sample": []
+}
