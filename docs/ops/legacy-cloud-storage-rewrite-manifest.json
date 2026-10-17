@@ -1,0 +1,1013 @@
+{
+  "generated_at": "2026-10-13T06:44:56Z",
+  "live_sha": "943f62dfb9a3a9f4bc26f5e3b33a55ef605f6a07",
+  "self_hosted_base": "https://supabase.thedigitalgifter.com",
+  "legacy_cloud_host": "kjlsocejpmnzhhduyumy.supabase.co",
+  "method": "read-only REST + Storage GET; no DB writes",
+  "published_templates_scanned": 73,
+  "row_hits_with_cloud_url": 349,
+  "unique_objects": 49,
+  "rewrite_eligible": 37,
+  "blocked_gaps": 12,
+  "self_hosted_buckets_present": [
+    "templates",
+    "uploads",
+    "occasion-collections",
+    "seo-images",
+    "blog-images",
+    "generated-images",
+    "pet-source-photos",
+    "pet-generated",
+    "christmas-source-photos",
+    "christmas-source",
+    "christmas-generated",
+    "tdg-library",
+    "long-form",
+    "clip-factory",
+    "generator-sources",
+    "memories-source-photos"
+  ],
+  "note": "Read-only inventory. Do not rewrite DB rows until bytes_proven is true. Signed query tokens stripped.",
+  "objects": [
+    {
+      "bucket": "occasion-collections",
+      "object_path": "birthday/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/birthday/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/birthday/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1699376,
+      "self_hosted_sha256": "d1bc909121cce1b55bc2aa01da20a5ca9eb4aa5996e40b979e313dbd5dbd1698",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 20,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 20,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/434360a0-6206-4438-8471-8ace10f35578.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/434360a0-6206-4438-8471-8ace10f35578.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/434360a0-6206-4438-8471-8ace10f35578.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1534594,
+      "self_hosted_sha256": "38f58b376571d50e7354f621c308dd7bbe95306e641b93eeb837b1ef288b53e5",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 20,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 20,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/a8249fe4-f837-44c7-952f-b1092916a38c.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/a8249fe4-f837-44c7-952f-b1092916a38c.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/a8249fe4-f837-44c7-952f-b1092916a38c.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2938084,
+      "self_hosted_sha256": "3bdb1ef27f986185f1fd55dd9a1751a42b4921f6bc55d16cfbcb5d2efc3ad028",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 20,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 20,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/cfd0f1c2-5ec7-4562-81e5-3782d35aa919.jpg",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/cfd0f1c2-5ec7-4562-81e5-3782d35aa919.jpg",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/cfd0f1c2-5ec7-4562-81e5-3782d35aa919.jpg",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 170871,
+      "self_hosted_sha256": "62808872a40569c52d1310281ac839ee9281ee94a2fb5db55fe9e886568cec70",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 20,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 20,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/49de4c75-473c-4c47-9482-e8b8d7c4d25f.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/49de4c75-473c-4c47-9482-e8b8d7c4d25f.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/49de4c75-473c-4c47-9482-e8b8d7c4d25f.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1523069,
+      "self_hosted_sha256": "523569e0b0f34fbf0a8a07d3cb234d01cab3dd4f34a689308d43e1c17f5bf84c",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 15,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 15,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/601ae84f-73de-40be-80a7-1e545f052177.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/601ae84f-73de-40be-80a7-1e545f052177.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/601ae84f-73de-40be-80a7-1e545f052177.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1562674,
+      "self_hosted_sha256": "446292422309b759e7b1517994769b0929d49d7590ee6f95217b115557342484",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 15,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 15,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "anniversary/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/anniversary/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/anniversary/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2288050,
+      "self_hosted_sha256": "7366693fab374ed79e2c76d6440f1d0de4c3571f2d3b95ef180b69fe2c93e5d9",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "valentines-day/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/valentines-day/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/valentines-day/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2012209,
+      "self_hosted_sha256": "fb7f97c25b85566afe43fe8175b506fb2ddebe515179abdc25735bb5020e1324",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "wedding/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/wedding/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/wedding/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2100517,
+      "self_hosted_sha256": "1be1005e32f18a86d8702921a339412b136eda1d54188c1c8a67007e2281b7f0",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/113dcb6e-00fc-492a-a9a1-a34041b3e34b.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/113dcb6e-00fc-492a-a9a1-a34041b3e34b.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/113dcb6e-00fc-492a-a9a1-a34041b3e34b.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2836505,
+      "self_hosted_sha256": "e0b8e31a4e81d76e0e09f5124565ceb495be8319dde27e14606ace653312c470",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/32d88747-c256-4285-9edb-9b4a6d0a77d7.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/32d88747-c256-4285-9edb-9b4a6d0a77d7.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/32d88747-c256-4285-9edb-9b4a6d0a77d7.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1135415,
+      "self_hosted_sha256": "f1c2b944bc6134d37881d22570212ca4dfa16d11b696f6819ce1d9feccc965c9",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/3630359c-7f8c-40e5-9b6a-1389d9d99204.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/3630359c-7f8c-40e5-9b6a-1389d9d99204.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/3630359c-7f8c-40e5-9b6a-1389d9d99204.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1432925,
+      "self_hosted_sha256": "d33ea347ca9d884df3b62d7e07b7780fabb5e6fe56719368bf4def6eb83c8429",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/5d2d4c32-8193-4763-b136-2e7a8d950f96.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/5d2d4c32-8193-4763-b136-2e7a8d950f96.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/5d2d4c32-8193-4763-b136-2e7a8d950f96.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1507596,
+      "self_hosted_sha256": "a7aceddd2b74d73a0f99eb4f8ba9afa56932daf2019556fc4da5ee82bf0b0825",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/832ce66a-423b-4d1a-96a2-d0aa52438d1f.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/832ce66a-423b-4d1a-96a2-d0aa52438d1f.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/832ce66a-423b-4d1a-96a2-d0aa52438d1f.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1514189,
+      "self_hosted_sha256": "903ef85e502a3cc9afdacd72b5828594475a2ef35793327468d96711bda382e5",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/8f9799ba-b25a-4b57-8799-03c12946a43f.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/8f9799ba-b25a-4b57-8799-03c12946a43f.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/8f9799ba-b25a-4b57-8799-03c12946a43f.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1575066,
+      "self_hosted_sha256": "c0b6db0480c3468e02637236dcddd802dabdbe40300fbf9892ee6613f018c75d",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/de4b859c-2228-4ead-95ea-b82a29a07b15.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/de4b859c-2228-4ead-95ea-b82a29a07b15.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/de4b859c-2228-4ead-95ea-b82a29a07b15.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 786591,
+      "self_hosted_sha256": "bb38a6dd8ae32621d5df65898cf92765f4abda463c49cbe219b9bb12733690f9",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/e849c8df-0e63-4599-b3af-5c10a83d8f0f.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/e849c8df-0e63-4599-b3af-5c10a83d8f0f.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/e849c8df-0e63-4599-b3af-5c10a83d8f0f.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2572051,
+      "self_hosted_sha256": "809ec32719ec5da23584bb2eb8b7c4f51652f6f135ab82d8c908ba49d3679992",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 10,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 10,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "easter/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/easter/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/easter/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2295544,
+      "self_hosted_sha256": "6daff05118f8b06ed9eec59cc18352510b38a9fe69b2cdd5d5e78059db0ad0b8",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "fathers-day/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/fathers-day/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/fathers-day/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2165557,
+      "self_hosted_sha256": "ccf6c00b393159900fadb611d44b850c46df8075cca9e96b401a169d4dec8c1f",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "mothers-day/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/mothers-day/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/mothers-day/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2224580,
+      "self_hosted_sha256": "a990a707a3189c73fb59a50b697e0f94695bb86427cc79334b0fcb2fd1a9c588",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "new-born/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/new-born/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/new-born/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2045434,
+      "self_hosted_sha256": "9d38d0093723995d55f7a7e01a84c41b72770502a6839fb63e1abaad6540a6fb",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "pregnancy/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/pregnancy/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/pregnancy/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2324172,
+      "self_hosted_sha256": "2fe2eb0b79a8bf3f9c82d813d83075c9efdb0eb24a49614db9307983cb824c77",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "sorry/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/sorry/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/sorry/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2074256,
+      "self_hosted_sha256": "2085f93f4b7d3fa3dcbecc36dd5da9b0cf849d74ec657cfc8d34e005bb97555a",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "occasion-collections",
+      "object_path": "thank-you/cover.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/thank-you/cover.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/thank-you/cover.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1828457,
+      "self_hosted_sha256": "18a1a2c7d17b800fafc9987f4e8aa61a39725ff9c5f80401d177063af0989931",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "ai-previews/elegant-evening-baby-reveal-1777233779344.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/ai-previews/elegant-evening-baby-reveal-1777233779344.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/ai-previews/elegant-evening-baby-reveal-1777233779344.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2113048,
+      "self_hosted_sha256": "f1bda89253b148f8e49ea8c2a4d17ef69b9aebb2cf9e55f34dd2cf031ba162fa",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "ai-previews/elegant-graduation-evening-1777206573790.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/ai-previews/elegant-graduation-evening-1777206573790.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/ai-previews/elegant-graduation-evening-1777206573790.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2333146,
+      "self_hosted_sha256": "9de7081a21b29e5be87dbdcc605228028ab40fe830110a8b1aebaf2093db5ad1",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "ai-previews/sunny-outdoor-graduation-1777233394423.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/ai-previews/sunny-outdoor-graduation-1777233394423.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/ai-previews/sunny-outdoor-graduation-1777233394423.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2340346,
+      "self_hosted_sha256": "6ea4e49d155896f4c46d0a264c1b0581dbb6fe73f993b86ccc6eee98b71ab2f6",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "ai-previews/thanksgiving-family-picnic-1777152372495.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/ai-previews/thanksgiving-family-picnic-1777152372495.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/ai-previews/thanksgiving-family-picnic-1777152372495.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2519983,
+      "self_hosted_sha256": "27acfe7250f05520e318a92e5c4610cec6cfe88c386e5fc304ccd103fef50aa1",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/2cf3b1b3-e33b-421a-9456-f1a66b65506f.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/2cf3b1b3-e33b-421a-9456-f1a66b65506f.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/2cf3b1b3-e33b-421a-9456-f1a66b65506f.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1596385,
+      "self_hosted_sha256": "d3e6c27f433d8997fbf2fb73395cb51f99dad7c1b72a6aaeb5d84695a3b0f858",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/34d7ef5e-5ecd-4ada-b3d8-93349d9d8076.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/34d7ef5e-5ecd-4ada-b3d8-93349d9d8076.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/34d7ef5e-5ecd-4ada-b3d8-93349d9d8076.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1489220,
+      "self_hosted_sha256": "494e6a5133fd139d7add0a69897b8399be97b43cf50d1921fb72960ca468a934",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/39c7cc1a-40df-4718-9dea-9ef4dcb89346.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/39c7cc1a-40df-4718-9dea-9ef4dcb89346.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/39c7cc1a-40df-4718-9dea-9ef4dcb89346.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1447987,
+      "self_hosted_sha256": "5274ca13eaaf6655c81186bcf008c24fbc86fa09c1485a71b0b022c3919e46ce",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/435334be-fb10-4139-a3e5-778f6cce107e.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/435334be-fb10-4139-a3e5-778f6cce107e.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/435334be-fb10-4139-a3e5-778f6cce107e.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2892799,
+      "self_hosted_sha256": "e004a23730f345e2db8e9120d8180fbe3a040d56672d6e73eb29eb41c3a8fc07",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/5424576f-77cf-4820-8911-87c200c96c99.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/5424576f-77cf-4820-8911-87c200c96c99.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/5424576f-77cf-4820-8911-87c200c96c99.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1432830,
+      "self_hosted_sha256": "4f890e9435d80c3cc48dbd272439836b435474c320ad64de970dae37645ebffc",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/71c13f0e-1b33-410b-98ae-bea8ac41c5f3.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/71c13f0e-1b33-410b-98ae-bea8ac41c5f3.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/71c13f0e-1b33-410b-98ae-bea8ac41c5f3.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1607891,
+      "self_hosted_sha256": "b418684603669dd2d088e2ba43ef190010b49d403aa62e7d84bf0aa95d94ccc8",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/7b79f88a-6e70-4668-8113-00c9b826ed77.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/7b79f88a-6e70-4668-8113-00c9b826ed77.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/7b79f88a-6e70-4668-8113-00c9b826ed77.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1475096,
+      "self_hosted_sha256": "7d61190a2bb46d80eb7395b9f8de5c364d3f88dbb7b344a91632d4c72e0dbbc4",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/ab570f87-58fd-42d0-8116-94bf43f89ec4.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/ab570f87-58fd-42d0-8116-94bf43f89ec4.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/ab570f87-58fd-42d0-8116-94bf43f89ec4.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 1592302,
+      "self_hosted_sha256": "fa73968a2a52dfe3664b2841619d4a5f112efd6964477393aef4555919056e46",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/c0741650-9aec-42dd-b8aa-ea7f685c9035.png",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/c0741650-9aec-42dd-b8aa-ea7f685c9035.png",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/c0741650-9aec-42dd-b8aa-ea7f685c9035.png",
+      "cloud_http": 402,
+      "self_hosted_http": 200,
+      "self_hosted_bytes": 2776047,
+      "self_hosted_sha256": "11be42c4ea21a1df670bccb275783b9c1bb70e80299e2c197642f845745545c9",
+      "self_hosted_sha256_truncated": false,
+      "bytes_proven": true,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": true,
+      "block_reason": null
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/e94f3df7-8553-4089-822b-b5a190b83ed1.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/e94f3df7-8553-4089-822b-b5a190b83ed1.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/e94f3df7-8553-4089-822b-b5a190b83ed1.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 5,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 5,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/2d32231d-9403-473f-968b-62485379683e.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/2d32231d-9403-473f-968b-62485379683e.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/2d32231d-9403-473f-968b-62485379683e.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 4,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 4,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/91ee572b-b72c-4135-aade-9e87d3c46c5c.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/91ee572b-b72c-4135-aade-9e87d3c46c5c.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/91ee572b-b72c-4135-aade-9e87d3c46c5c.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 3,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 3,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/da7cc737-1f59-4f38-8abb-f3444569baad.mov",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/da7cc737-1f59-4f38-8abb-f3444569baad.mov",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/da7cc737-1f59-4f38-8abb-f3444569baad.mov",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 3,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 3,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/faa3c068-cfd8-4a79-b63a-d906aa449faa.mov",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/faa3c068-cfd8-4a79-b63a-d906aa449faa.mov",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/faa3c068-cfd8-4a79-b63a-d906aa449faa.mov",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 3,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 3,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/222518b1-b43a-4a07-8e2e-bdf212c37a50.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/222518b1-b43a-4a07-8e2e-bdf212c37a50.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/222518b1-b43a-4a07-8e2e-bdf212c37a50.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 2,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 2,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/5455893c-b602-4c12-a78b-3cd468195316.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/5455893c-b602-4c12-a78b-3cd468195316.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/5455893c-b602-4c12-a78b-3cd468195316.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 2,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 2,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/8b4fa6af-e9f1-48be-a98e-078af876f399.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/8b4fa6af-e9f1-48be-a98e-078af876f399.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/8b4fa6af-e9f1-48be-a98e-078af876f399.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 2,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 2,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/8d51fc73-0468-4c92-a564-187d8fed522b.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/8d51fc73-0468-4c92-a564-187d8fed522b.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/8d51fc73-0468-4c92-a564-187d8fed522b.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 2,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 2,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/c5dcbc25-f5e2-4bcd-ac3c-00a352e5cddd.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/c5dcbc25-f5e2-4bcd-ac3c-00a352e5cddd.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/c5dcbc25-f5e2-4bcd-ac3c-00a352e5cddd.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 1,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 1,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/e559f884-3fc4-4d97-be6c-a5b362991a4b.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/e559f884-3fc4-4d97-be6c-a5b362991a4b.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/e559f884-3fc4-4d97-be6c-a5b362991a4b.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 1,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 1,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    },
+    {
+      "bucket": "templates",
+      "object_path": "previews/from-convex/efc9e84f-ed1f-47cb-ac2b-606d35b7cc25.mp4",
+      "storage_kind": "public",
+      "old_url": "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/templates/previews/from-convex/efc9e84f-ed1f-47cb-ac2b-606d35b7cc25.mp4",
+      "intended_new_url": "https://supabase.thedigitalgifter.com/storage/v1/object/public/templates/previews/from-convex/efc9e84f-ed1f-47cb-ac2b-606d35b7cc25.mp4",
+      "cloud_http": 402,
+      "self_hosted_http": 400,
+      "self_hosted_bytes": "88",
+      "self_hosted_sha256": null,
+      "self_hosted_sha256_truncated": null,
+      "bytes_proven": false,
+      "ref_count": 1,
+      "tables": [
+        "templates"
+      ],
+      "published_refs": 1,
+      "rewrite_eligible": false,
+      "block_reason": "self_hosted_object_missing_and_cloud_http_402"
+    }
+  ]
+}

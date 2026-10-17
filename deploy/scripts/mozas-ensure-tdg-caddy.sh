@@ -57,6 +57,10 @@ if "thedigitalgifter.com" not in text:
     sys.exit("Caddyfile must include thedigitalgifter.com")
 if "casahub.eu" not in text or "www.casahub.eu" not in text:
     sys.exit("Caddyfile must include CasaHub hosts casahub.eu / www.casahub.eu")
+if mode == "https" and "supabase.thedigitalgifter.com" not in text:
+    sys.exit("HTTPS Caddyfile must keep supabase.thedigitalgifter.com API gateway")
+if mode == "https" and "172.18.0.1:19001" not in text:
+    sys.exit("HTTPS Caddyfile must proxy supabase host to Kong tunnel 172.18.0.1:19001")
 if "casahub-web:3000" not in text:
     sys.exit("Caddyfile must keep CasaHub upstream casahub-web:3000")
 combined = bool(re.search(r"(?m)^\s*thedigitalgifter\.com,\s*www\.thedigitalgifter\.com\s*\{", text)) \
