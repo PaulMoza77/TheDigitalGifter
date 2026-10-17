@@ -60,6 +60,11 @@ services:
       - /opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory
       - /opt/mozas/projects/thedigitalgifter/repo/generated/christmas-factory-200:/app/dist/assets/christmas/christmas-factory-200
       - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
+      # Origin checkout and planner funnel stay aligned with the synced repo
+      # without rebuilding the media image.
+      - /opt/mozas/projects/thedigitalgifter/repo/api:/app/api:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/server:/app/server:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/supabase/functions:/app/supabase/functions:ro
     expose:
       - "8080"
     networks:

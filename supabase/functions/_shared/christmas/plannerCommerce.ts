@@ -118,10 +118,16 @@ export function isPlannerAddonKey(value: string): value is PlannerAddonKey {
   return (PLANNER_ADDON_KEYS as readonly string[]).includes(String(value || "").trim());
 }
 
+function plannerCheckoutEnv(name: string): string {
+  const deno = (globalThis as { Deno?: { env?: { get?: (key: string) => string | undefined } } }).Deno;
+  const fromDeno = deno?.env?.get?.(name);
+  if (fromDeno != null && fromDeno !== "") return String(fromDeno);
+  const fromNode = typeof process !== "undefined" ? process.env?.[name] : "";
+  return String(fromNode || "");
+}
+
 export function plannerCheckoutFlagEnabled(): boolean {
-  const raw = String(Deno.env.get("CHRISTMAS_PLANNER_CHECKOUT_ENABLED") || "")
-    .trim()
-    .toLowerCase();
+  const raw = plannerCheckoutEnv("CHRISTMAS_PLANNER_CHECKOUT_ENABLED").trim().toLowerCase();
   return raw === "true" || raw === "1" || raw === "on";
 }
 

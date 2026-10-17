@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-photo-funnel`;
 const CHECKOUT_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-checkout`;
+const ORIGIN_CHECKOUT_URL = "/api/christmas-checkout";
 
 async function anonHeaders(): Promise<Record<string, string>> {
   const anon = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "");
@@ -90,13 +91,20 @@ export async function startChristmasCheckout(body: Record<string, unknown>) {
   return pending;
 }
 
+function edgeCheckoutUnavailable(status: number, data: { error?: unknown; msg?: unknown }): boolean {
+  if (status === 503) return true;
+  return status >= 500 && /entrypoint|InvalidWorker|not configured/i.test(String(data?.error || data?.msg || ""));
+}
+
 async function startChristmasCheckoutRequest(body: Record<string, unknown>) {
-  const res = await fetch(CHECKOUT_URL, {
-    method: "POST",
-    headers: await anonHeaders(),
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
+  const headers = await anonHeaders();
+  const payload = JSON.stringify(body);
+  let res = await fetch(CHECKOUT_URL, { method: "POST", headers, body: payload });
+  let data = await res.json().catch(() => ({}));
+  if (edgeCheckoutUnavailable(res.status, data)) {
+    res = await fetch(ORIGIN_CHECKOUT_URL, { method: "POST", headers, body: payload });
+    data = await res.json().catch(() => ({}));
+  }
   if (!res.ok) {
     const err = new Error(data.error || "Checkout failed") as Error & { code?: string };
     err.code = data.code;
