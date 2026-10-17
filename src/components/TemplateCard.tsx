@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Play, Maximize, Coins, ImageIcon } from "lucide-react";
+import { reachablePublicStorageUrl } from "@/lib/publicStorageUrl";
 import { TemplateSummary } from "@/types/templates";
 
 type WrapperType = "div" | "button";
@@ -29,7 +30,7 @@ function readTemplateImage(template: TemplateSummary): string {
   ];
 
   for (const value of candidates) {
-    const url = String(value ?? "").trim();
+    const url = reachablePublicStorageUrl(value);
     if (url) return url;
   }
 

@@ -1,4 +1,5 @@
 import { occasions } from "@/constants/occasions";
+import { reachablePublicStorageUrl } from "@/lib/publicStorageUrl";
 import type { AnyTemplate, CategoryKey, EdgeResponse } from "./generatorTypes";
 import { ALL_CATEGORIES } from "./generatorTypes";
 
@@ -103,7 +104,7 @@ export function getTemplateImageUrl(template: AnyTemplate) {
   ];
 
   for (const candidate of candidates) {
-    const url = safeString(candidate);
+    const url = reachablePublicStorageUrl(safeString(candidate));
     if (url) return url;
   }
 
