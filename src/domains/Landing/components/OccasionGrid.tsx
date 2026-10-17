@@ -1,14 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  CalendarDays,
-  Heart,
-  PawPrint,
-  Plus,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { occasionById, occasionHref, occasions } from "@/constants/occasions";
 import { supabase } from "@/lib/supabase";
@@ -17,12 +10,11 @@ import {
   landingBodyClass,
   landingEyebrowClass,
   landingPrimaryCtaClass,
-  landingSecondaryCtaClass,
   landingSectionHeadingClass,
+  landingTertiaryLinkClass,
 } from "@/domains/Landing/landingStyles";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 type CategoryKey = "occasions" | "personal" | "spiritual" | "pets";
 
@@ -57,31 +49,26 @@ const categoryTabs: {
   key: CategoryKey;
   title: string;
   subtitle: string;
-  icon: React.ElementType;
 }[] = [
   {
     key: "occasions",
     title: "Occasions",
     subtitle: "Birthdays, holidays",
-    icon: CalendarDays,
   },
   {
     key: "personal",
     title: "Personal",
     subtitle: "Names, kids, love",
-    icon: Heart,
   },
   {
     key: "spiritual",
     title: "Spiritual",
     subtitle: "Faith, prayer, hope",
-    icon: Plus,
   },
   {
     key: "pets",
     title: "Pets",
     subtitle: "Dogs, cats, other pets",
-    icon: PawPrint,
   },
 ];
 
@@ -516,81 +503,61 @@ export default function OccasionGrid() {
           viewport={{ once: true }}
           transition={{ duration: 0.45 }}
         >
-          <div className="rounded-3xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] p-6 sm:p-8">
-            <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className={landingEyebrowClass}>What can I create?</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <Sparkles
-                    className="h-6 w-6 text-[var(--tdg-home-accent)]"
-                    aria-hidden="true"
-                  />
-                  <h2
-                    id="occasions-heading"
-                    className={landingSectionHeadingClass}
-                  >
-                    Choose a category and occasion
-                  </h2>
-                </div>
-
-                <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
-                  Cards, portraits, videos, and seasonal experiences. Start with
-                  the moment, then make it personal.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                onClick={() => navigate("/templates")}
-                variant="ghost"
-                className={`${landingSecondaryCtaClass} h-auto`}
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <p className={landingEyebrowClass}>What can I create?</p>
+              <h2
+                id="occasions-heading"
+                className={`mt-4 ${landingSectionHeadingClass}`}
               >
-                View all
-                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Button>
+                Choose a category and occasion
+              </h2>
+              <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
+                Cards, portraits, videos, and seasonal experiences. Start with
+                the moment, then make it personal.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => navigate("/templates")}
+              className={`${landingTertiaryLinkClass} inline-flex w-fit shrink-0 items-center gap-1.5 pb-1`}
+            >
+              View all
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="mt-8 border-t border-[var(--tdg-home-border)]">
+            <div
+              role="group"
+              aria-label="Categories"
+              className="flex flex-wrap gap-x-7 gap-y-1 sm:gap-x-10"
+            >
               {categoryTabs.map((tab) => {
-                const Icon = tab.icon;
                 const isActive = selectedCategory === tab.key;
 
                 return (
                   <button
                     key={tab.key}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() => setSelectedCategory(tab.key)}
                     className={cn(
-                      "flex items-center gap-4 rounded-3xl border p-5 text-left transition",
+                      "-mb-px border-b-2 py-3.5 text-[15px] font-medium tracking-tight transition-colors sm:text-base",
                       isActive
-                        ? "border-[var(--tdg-home-accent)] bg-[var(--tdg-home-accent)] text-[#1a1208] shadow-lg shadow-black/20"
-                        : "border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] text-[var(--tdg-home-text)] hover:bg-white/[0.04]"
+                        ? "border-[var(--tdg-home-accent)] text-[var(--tdg-home-text)]"
+                        : "border-transparent text-[var(--tdg-home-text-muted)] hover:text-[var(--tdg-home-text)]"
                     )}
                   >
-                    <Icon
-                      className={cn(
-                        "h-7 w-7 shrink-0",
-                        isActive ? "text-black" : "text-white/80"
-                      )}
-                    />
-
-                    <span>
-                      <span className="block text-xl font-black">
-                        {tab.title}
-                      </span>
-                      <span
-                        className={cn(
-                          "mt-1 block text-sm font-medium",
-                          isActive ? "text-black/65" : "text-white/45"
-                        )}
-                      >
-                        {tab.subtitle}
-                      </span>
-                    </span>
+                    {tab.title}
                   </button>
                 );
               })}
             </div>
+            <p className="pt-3 text-sm text-[var(--tdg-home-text-muted)]">
+              {categoryTabs.find((tab) => tab.key === selectedCategory)?.subtitle}
+            </p>
           </div>
         </motion.div>
 
