@@ -1,103 +1,62 @@
-import { Download, Gift, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import {
-  landingBodyClass,
-  landingPrimaryCtaClass,
-  landingSectionClass,
-  landingSectionHeadingClass,
-  landingEyebrowClass,
+  landingTertiaryLinkClass,
 } from "@/domains/Landing/landingStyles";
 
 const steps = [
   {
-    icon: Gift,
     title: "Choose the moment",
-    description:
-      "Birthdays, love, apologies, pets, faith, family. Start with the occasion that fits them.",
+    description: "Birthdays, love, apologies, pets, faith, family.",
   },
   {
-    icon: Sparkles,
     title: "Make it personal",
-    description:
-      "Add a photo, name, or message. We handle layout and polish so it feels made only for them.",
+    description: "A photo, a name, or a short message.",
   },
   {
-    icon: Download,
     title: "Share the gift",
-    description:
-      "Download in high resolution and send it as a card, video, keepsake, or surprise.",
+    description: "A card, a video, or a file they can keep.",
   },
 ];
 
 export const HowItWorks = () => {
-  const reduceMotion = useReducedMotion();
-
   return (
-    <section className={landingSectionClass} aria-labelledby="how-it-works-heading">
+    <section
+      className="w-full border-t border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] px-4 py-12 sm:px-6 sm:py-14 lg:px-8"
+      aria-labelledby="how-it-works-heading"
+    >
       <div className="mx-auto max-w-7xl">
-        <motion.div
-          className="mx-auto mb-12 max-w-3xl text-center sm:mb-16"
-          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.45 }}
-        >
-          <p className={landingEyebrowClass}>How it works</p>
-
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <h2
             id="how-it-works-heading"
-            className={`mt-4 ${landingSectionHeadingClass}`}
+            className="text-2xl font-semibold tracking-tight text-[var(--tdg-home-text)]"
           >
-            Three simple steps to something meaningful.
+            How it works
           </h2>
-
-          <p className={`mt-4 ${landingBodyClass}`}>
-            No design apps or blank canvases. Just a clear path from idea to
-            finished gift.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.title}
-              className="relative rounded-2xl border border-[var(--tdg-home-border)] bg-[var(--tdg-home-surface)] p-6 sm:p-8"
-              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.08, duration: 0.4 }}
-            >
-              <div
-                className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--tdg-home-bg)] text-sm font-bold text-[var(--tdg-home-accent)] ring-1 ring-[var(--tdg-home-border)]"
-                aria-hidden="true"
-              >
-                {index + 1}
-              </div>
-
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--tdg-home-bg)] ring-1 ring-[var(--tdg-home-border)]">
-                <step.icon
-                  className="h-6 w-6 text-[var(--tdg-home-accent)]"
-                  aria-hidden="true"
-                />
-              </div>
-
-              <h3 className="mb-2 text-lg font-semibold text-[var(--tdg-home-text)]">
-                {step.title}
-              </h3>
-
-              <p className="text-sm leading-7 text-[var(--tdg-home-text-muted)]">
-                {step.description}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <Link to="/generator" className={landingPrimaryCtaClass}>
-            Create Something
+          <Link
+            to="/generator"
+            className={`${landingTertiaryLinkClass} inline-flex items-center gap-1.5`}
+          >
+            Create something
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
+
+        <ol className="mt-6 grid grid-cols-1 gap-6 border-t border-[var(--tdg-home-border)] pt-6 sm:grid-cols-3 sm:gap-10">
+          {steps.map((step, index) => (
+            <li key={step.title}>
+              <h3 className="text-[15px] font-medium tracking-tight text-[var(--tdg-home-text)] sm:text-base">
+                <span className="mr-3 tabular-nums text-[var(--tdg-home-accent)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                {step.title}
+              </h3>
+              <p className="mt-2 max-w-xs text-sm leading-6 text-[var(--tdg-home-text-muted)]">
+                {step.description}
+              </p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
