@@ -44,7 +44,8 @@ function browserStorageUrl(req: Request, signedUrl: string): string {
   const publicHost = internal ? "supabase.thedigitalgifter.com" : host;
   const signed = new URL(signedUrl);
   signed.protocol = "https:";
-  signed.host = publicHost;
+  signed.hostname = publicHost;
+  signed.port = "";
   return signed.toString();
 }
 
