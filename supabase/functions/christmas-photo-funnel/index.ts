@@ -16,11 +16,18 @@ type Body = {
   height?: number;
   style_key?: string;
   public_token?: string;
+  session_id?: string;
   order_id?: string;
   email?: string;
   image_data_url?: string;
   expected_species?: string;
 };
+
+const CONFIRMABLE_PORTRAITS = new Set([
+  "christmas_photo",
+  "christmas_family",
+  "christmas_couple",
+]);
 
 const SOURCE_BUCKET = "christmas-source";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -33,6 +40,21 @@ function asString(value: unknown): string {
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function enqueuePortraitGeneration(orderId: string) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  void fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-photo-generate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      apikey: key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order_id: orderId }),
+  });
 }
 
 Deno.serve(async (req) => {
@@ -121,6 +143,69 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "confirmStripePayment") {
+      const token = asString(body.public_token);
+      const sessionId = asString(body.session_id);
+      if (!token || token.length < 32 || !/^cs_(live|test)_[A-Za-z0-9]+$/.test(sessionId)) {
+        return jsonResponse({ error: "invalid confirmation" }, 400);
+      }
+      const hash = await sha256Hex(token);
+      const { data: order, error } = await service
+        .from("christmas_orders")
+        .select("id,product_key,payment_status,fulfillment_status,stripe_checkout_session_id")
+        .eq("public_token_hash", hash)
+        .maybeSingle();
+      if (error) throw error;
+      if (!order) return jsonResponse({ error: "Order not found" }, 404);
+      if (!CONFIRMABLE_PORTRAITS.has(asString(order.product_key))) {
+        return jsonResponse({ error: "unsupported product", code: "unsupported_product" }, 403);
+      }
+      if (
+        order.stripe_checkout_session_id &&
+        asString(order.stripe_checkout_session_id) !== sessionId
+      ) {
+        return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
+      }
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+      if (!stripeKey) return jsonResponse({ error: "Stripe is not configured" }, 503);
+      const sessionRes = await fetch(
+        `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+        { headers: { Authorization: `Bearer ${stripeKey}` } },
+      );
+      const session = await sessionRes.json();
+      if (!sessionRes.ok) {
+        return jsonResponse({ error: "Could not verify payment" }, 502);
+      }
+      const sessionMeta = (session?.metadata || {}) as Record<string, unknown>;
+      if (asString(sessionMeta.christmas_order_id) !== asString(order.id)) {
+        return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
+      }
+      const paymentStatus = asString(session?.payment_status);
+      if (paymentStatus !== "paid") {
+        return jsonResponse({ ok: true, status: "not_paid", paymentStatus });
+      }
+      const { data, error: rpcError } = await service.rpc("fulfill_christmas_order_payment", {
+        p_order_id: order.id,
+        p_stripe_session_id: sessionId,
+        p_stripe_payment_intent_id: asString(session?.payment_intent) || null,
+        p_amount_cents: session?.amount_total == null ? null : Number(session.amount_total),
+        p_currency: asString(session?.currency) || null,
+        p_stripe_event_id: `confirm:${sessionId}`,
+      });
+      if (rpcError) throw rpcError;
+      const result = (data || {}) as { ok?: boolean; status?: string; fulfillment_status?: string };
+      if (result.ok !== true) {
+        return jsonResponse({ ok: false, status: result.status || "rejected" }, 409);
+      }
+      const fulfillment = asString(result.fulfillment_status || order.fulfillment_status);
+      if (fulfillment !== "completed") enqueuePortraitGeneration(asString(order.id));
+      return jsonResponse({
+        ok: true,
+        status: result.status || "paid",
+        fulfillment_status: fulfillment,
+      });
+    }
+
     if (action === "getOrder") {
       const token = asString(body.public_token);
       if (!token || token.length < 32) {
@@ -188,19 +273,7 @@ Deno.serve(async (req) => {
         .update({ fulfillment_status: "queued", last_error: null })
         .eq("id", orderId);
 
-      const url = Deno.env.get("SUPABASE_URL");
-      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      if (url && key) {
-        void fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-photo-generate`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            apikey: key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ order_id: orderId }),
-        });
-      }
+      enqueuePortraitGeneration(orderId);
       return jsonResponse({ ok: true, queued: true });
     }
 

@@ -97,7 +97,6 @@ const INDIVIDUAL_PORTRAIT_KEYS = new Set([
   "christmas_photo",
   "christmas_family",
   "christmas_couple",
-  "christmas_pet",
   "xmas_portrait",
 ]);
 

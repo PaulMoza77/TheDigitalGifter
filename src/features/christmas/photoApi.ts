@@ -124,6 +124,21 @@ export async function fetchChristmasCommercialOffers() {
   return data ?? [];
 }
 
+export async function confirmChristmasStripePayment(publicToken: string, sessionId: string) {
+  const res = await fetch(FUNNEL_URL, {
+    method: "POST",
+    headers: await anonHeaders(),
+    body: JSON.stringify({
+      action: "confirmStripePayment",
+      public_token: publicToken,
+      session_id: sessionId,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Payment confirmation failed");
+  return data as { ok: boolean; status: string; paymentStatus?: string; fulfillment_status?: string };
+}
+
 export async function getChristmasOrderByToken(publicToken: string) {
   const res = await fetch(FUNNEL_URL, {
     method: "POST",
@@ -143,6 +158,7 @@ export async function getChristmasOrderByToken(publicToken: string) {
       fulfillment_status: string;
       amount_cents: number;
       currency: string;
+      paid_at?: string | null;
       last_error: string | null;
       resultUrl: string | null;
       portrait_type?: string | null;
