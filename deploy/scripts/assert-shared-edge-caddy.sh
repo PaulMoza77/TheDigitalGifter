@@ -24,6 +24,8 @@ assert_shared_edge_caddy_hosts() {
       || { echo "ABORT: HTTPS Caddyfile missing named CasaHub site block" >&2; return 1; }
     grep -q 'mcp.themozas.com' "${file}" || { echo "ABORT: HTTPS Caddyfile missing mcp.themozas.com" >&2; return 1; }
     grep -q 'mozas-mcp-bridge:8787' "${file}" || { echo "ABORT: HTTPS Caddyfile missing MCP upstream mozas-mcp-bridge:8787" >&2; return 1; }
+    grep -q 'supabase.thedigitalgifter.com' "${file}" || { echo "ABORT: HTTPS Caddyfile missing supabase.thedigitalgifter.com" >&2; return 1; }
+    grep -q '172.18.0.1:19001' "${file}" || { echo "ABORT: HTTPS Caddyfile missing Supabase Kong upstream" >&2; return 1; }
   fi
 
   echo "shared_edge_caddy_hosts_ok=yes mode=${mode}"

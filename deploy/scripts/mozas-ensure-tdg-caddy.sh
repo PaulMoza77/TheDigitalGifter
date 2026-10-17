@@ -73,6 +73,8 @@ if mode == "https":
         sys.exit("HTTPS Caddyfile must keep MCP site mcp.themozas.com → mozas-mcp-bridge:8787")
     if "casahub.eu, www.casahub.eu" not in text and "www.casahub.eu, casahub.eu" not in text:
         sys.exit("HTTPS Caddyfile must keep named CasaHub site block")
+    if "supabase.thedigitalgifter.com" not in text or "172.18.0.1:19001" not in text:
+        sys.exit("HTTPS Caddyfile must keep supabase.thedigitalgifter.com → 172.18.0.1:19001")
 if mode == "http" and https_layout:
     sys.exit("HTTP Caddyfile must not enable named HTTPS site blocks")
 print("tdg_caddy_source_ok=yes")

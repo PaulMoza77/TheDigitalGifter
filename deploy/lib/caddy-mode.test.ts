@@ -51,6 +51,8 @@ describe("TDG Caddy mode selection (deploy must not downgrade HTTPS)", () => {
     expect(httpsFile).toContain("mozas-mcp-bridge:8787");
     expect(httpsFile).toContain("themozas.com");
     expect(httpsFile).toContain("thedigitalgifter.com");
+    expect(httpsFile).toContain("supabase.thedigitalgifter.com");
+    expect(httpsFile).toContain("172.18.0.1:19001");
     expect(httpsFile).toContain("frame-ancestors 'self'");
     expect(httpsFile).toContain("X-Robots-Tag");
   });
