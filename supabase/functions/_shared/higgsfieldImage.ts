@@ -1,3 +1,5 @@
+import { reachablePublicStorageUrl } from "./publicStorageUrl.ts";
+
 /**
  * Public /generator image request rules for Higgsfield.
  * Pure module: no credentials, no network. The edge function performs I/O.
@@ -151,7 +153,7 @@ export function templateImageUrl(template: Record<string, unknown> | null | unde
     template.thumbnailurl,
   ];
   for (const candidate of candidates) {
-    const url = String(candidate ?? "").trim();
+    const url = reachablePublicStorageUrl(candidate);
     if (/^https?:\/\//i.test(url)) return url;
   }
   return "";

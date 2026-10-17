@@ -158,6 +158,12 @@ describe("public generator higgsfield request", () => {
         preview_image_url: "https://cdn.example/template.jpg",
       }),
     ).toBe("https://cdn.example/template.jpg");
+    const blocked =
+      "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/occasion-collections/valentines-day/cover.png";
+    const reachable =
+      "https://supabase.thedigitalgifter.com/storage/v1/object/public/occasion-collections/valentines-day/cover.png";
+    expect(templateImageUrl({ preview_url: blocked })).toBe(reachable);
+    expect(templateImageUrl({ preview_url: reachable })).toBe(reachable);
     expect(extractHiggsfieldImageUrl({ images: [{ url: "https://cdn.example/out.jpg" }] })).toBe(
       "https://cdn.example/out.jpg",
     );
