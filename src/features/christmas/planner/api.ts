@@ -14,6 +14,32 @@ import type {
 } from "./types";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-planner-funnel`;
+const ORIGIN_FUNNEL_URL = "/api/christmas-planner-funnel";
+
+function edgeWorkerDown(status: number, data: { msg?: unknown }): boolean {
+  return status >= 500 && /entrypoint|InvalidWorker/i.test(String(data?.msg || ""));
+}
+
+async function postPlannerFunnel(body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
+  const hdrs = await headers();
+  const attempts = [FUNNEL_URL, ORIGIN_FUNNEL_URL];
+  let lastError: Error | null = null;
+  for (const url of attempts) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: hdrs,
+        body: JSON.stringify(body),
+      });
+      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (edgeWorkerDown(res.status, data)) continue;
+      return { ok: res.ok, status: res.status, data };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error("network");
+    }
+  }
+  throw lastError || new Error("planner_funnel_unavailable");
+}
 
 async function headers(): Promise<Record<string, string>> {
   const anon = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "");
@@ -60,24 +86,14 @@ export type PlannerCatalog = {
 };
 
 export async function fetchPlannerCatalog(): Promise<PlannerCatalog> {
-  const res = await fetch(FUNNEL_URL, {
-    method: "POST",
-    headers: await headers(),
-    body: JSON.stringify({ action: "getCatalog", product_key: PLANNER_PRODUCT_KEY }),
-  });
-  const data = await res.json();
-  if (!res.ok || !data?.catalog) throw new Error(data.error || "catalog_failed");
+  const { ok, data } = await postPlannerFunnel({ action: "getCatalog", product_key: PLANNER_PRODUCT_KEY });
+  if (!ok || !data?.catalog) throw new Error(String(data.error || "catalog_failed"));
   return data.catalog as PlannerCatalog;
 }
 
 export async function fetchPlannerOrder(publicToken: string) {
-  const res = await fetch(FUNNEL_URL, {
-    method: "POST",
-    headers: await headers(),
-    body: JSON.stringify({ action: "getOrder", public_token: publicToken }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "order_failed");
+  const { ok, data } = await postPlannerFunnel({ action: "getOrder", public_token: publicToken });
+  if (!ok) throw new Error(String(data.error || "order_failed"));
   return data.order as {
     orderId: string;
     productKey: string;
@@ -94,28 +110,18 @@ export async function fetchPlannerOrder(publicToken: string) {
 }
 
 export async function claimPlannerOrder(publicToken: string) {
-  const res = await fetch(FUNNEL_URL, {
-    method: "POST",
-    headers: await headers(),
-    body: JSON.stringify({ action: "claimOrder", public_token: publicToken }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    const err = new Error(data.error || "claim_failed") as Error & { code?: string };
-    err.code = data.code || data.error;
+  const { ok, data } = await postPlannerFunnel({ action: "claimOrder", public_token: publicToken });
+  if (!ok) {
+    const err = new Error(String(data.error || "claim_failed")) as Error & { code?: string };
+    err.code = String(data.code || data.error || "");
     throw err;
   }
   return data as { ok: true; already: boolean; orderId: string; packageKey: string };
 }
 
 export async function fetchMyPlannerEntitlements() {
-  const res = await fetch(FUNNEL_URL, {
-    method: "POST",
-    headers: await headers(),
-    body: JSON.stringify({ action: "myEntitlements" }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "entitlements_failed");
+  const { ok, data } = await postPlannerFunnel({ action: "myEntitlements" });
+  if (!ok) throw new Error(String(data.error || "entitlements_failed"));
   return (data.entitlements || []) as Array<{
     entitlement_key: string;
     tier: string | null;

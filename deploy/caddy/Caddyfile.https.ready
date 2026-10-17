@@ -116,6 +116,13 @@ casahub.eu, www.casahub.eu {
 # Do not point this host at the Vite app. Keep this block in the HTTPS template
 # so mozas-ensure-tdg-caddy cannot wipe it on the next TDG deploy.
 supabase.thedigitalgifter.com {
+	# Planner checkout runs on the Mozas origin when the Contabo edge worker
+	# has no Stripe secret. Every other Supabase path stays on Kong.
+	@planner_checkout path /functions/v1/christmas-checkout /functions/v1/christmas-checkout/*
+	handle @planner_checkout {
+		rewrite * /api/christmas-checkout
+		reverse_proxy thedigitalgifter:8080
+	}
 	reverse_proxy 172.18.0.1:19001 {
 		header_up Host {host}
 		header_up X-Forwarded-Host {host}

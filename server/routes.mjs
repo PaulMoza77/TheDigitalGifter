@@ -16,6 +16,8 @@ export const API_MODULES = {
   "/api/pet-v3-internal-test-status": "pet-v3-internal-test-status.ts",
   "/api/pet-provider-status": "pet-provider-status.ts",
   "/api/christmas-funnel": "christmas-funnel.ts",
+  "/api/christmas-planner-funnel": "christmas-planner-funnel.ts",
+  "/api/christmas-checkout": "christmas-checkout.ts",
   "/api/christmas-santa-compose": "christmas-santa-compose.ts",
   "/api/clip-factory": "clip-factory.ts",
   "/api/clip-factory-import": "clip-factory-import.ts",
