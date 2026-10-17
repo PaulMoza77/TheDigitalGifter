@@ -1,6 +1,10 @@
 // FILE: src/hooks/useAccountOverview.ts
 import * as React from "react";
 import { supabase } from "@/lib/supabase";
+import { withTimeout } from "@/lib/withTimeout";
+
+/** Avoid infinite "Loading menu..." when Supabase REST/auth is unreachable. */
+const ACCOUNT_OVERVIEW_TIMEOUT_MS = 5_000;
 
 type LedgerBalanceRow = {
   direction: "in" | "out" | null;
@@ -125,68 +129,74 @@ export function useAccountOverview(): AccountOverview {
     setLoading(true);
 
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      await withTimeout(
+        (async () => {
+          const {
+            data: { user },
+            error: userError,
+          } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        setIsAdmin(false);
-        setCreditsRemaining(0);
-        setCreditsUsed(0);
-        setAffiliateEarnings(0);
-        return;
-      }
+          if (userError || !user) {
+            setIsAdmin(false);
+            setCreditsRemaining(0);
+            setCreditsUsed(0);
+            setAffiliateEarnings(0);
+            return;
+          }
 
-      const email = user.email?.trim().toLowerCase() ?? "";
-      const authUserId = String(user.id ?? "");
-      const creditKey = await resolveCreditKey({ email, authUserId });
+          const email = user.email?.trim().toLowerCase() ?? "";
+          const authUserId = String(user.id ?? "");
+          const creditKey = await resolveCreditKey({ email, authUserId });
 
-      const [adminResult, ledgerResult, affiliateTotal] = await Promise.all([
-        email
-          ? supabase
-              .from("admin_users")
-              .select("email")
-              .eq("email", email)
-              .maybeSingle()
-          : Promise.resolve({ data: null, error: null }),
+          const [adminResult, ledgerResult, affiliateTotal] = await Promise.all([
+            email
+              ? supabase
+                  .from("admin_users")
+                  .select("email")
+                  .eq("email", email)
+                  .maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
 
-        creditKey
-          ? supabase
-              .from("credits_ledger")
-              .select("direction, credits")
-              .eq("user_convex_id", creditKey)
-          : Promise.resolve({ data: [], error: null }),
+            creditKey
+              ? supabase
+                  .from("credits_ledger")
+                  .select("direction, credits")
+                  .eq("user_convex_id", creditKey)
+              : Promise.resolve({ data: [], error: null }),
 
-        loadAffiliateEarnings(authUserId),
-      ]);
+            loadAffiliateEarnings(authUserId),
+          ]);
 
-      setIsAdmin(Boolean(adminResult.data?.email));
+          setIsAdmin(Boolean(adminResult.data?.email));
 
-      if (ledgerResult.error) {
-        console.error("[useAccountOverview] credits ledger error:", ledgerResult.error);
-        setCreditsRemaining(0);
-        setCreditsUsed(0);
-      } else {
-        const rows = (ledgerResult.data ?? []) as LedgerBalanceRow[];
+          if (ledgerResult.error) {
+            console.error("[useAccountOverview] credits ledger error:", ledgerResult.error);
+            setCreditsRemaining(0);
+            setCreditsUsed(0);
+          } else {
+            const rows = (ledgerResult.data ?? []) as LedgerBalanceRow[];
 
-        const remaining = rows.reduce((sum, row) => {
-          const value = toNumber(row.credits);
-          if (row.direction === "in") return sum + value;
-          if (row.direction === "out") return sum - value;
-          return sum;
-        }, 0);
+            const remaining = rows.reduce((sum, row) => {
+              const value = toNumber(row.credits);
+              if (row.direction === "in") return sum + value;
+              if (row.direction === "out") return sum - value;
+              return sum;
+            }, 0);
 
-        const used = rows.reduce((sum, row) => {
-          const value = toNumber(row.credits);
-          return row.direction === "out" ? sum + value : sum;
-        }, 0);
+            const used = rows.reduce((sum, row) => {
+              const value = toNumber(row.credits);
+              return row.direction === "out" ? sum + value : sum;
+            }, 0);
 
-        setCreditsRemaining(Math.max(0, remaining));
-        setCreditsUsed(Math.max(0, used));
-      }
+            setCreditsRemaining(Math.max(0, remaining));
+            setCreditsUsed(Math.max(0, used));
+          }
 
-      setAffiliateEarnings(affiliateTotal);
+          setAffiliateEarnings(affiliateTotal);
+        })(),
+        ACCOUNT_OVERVIEW_TIMEOUT_MS,
+        "account.overview",
+      );
     } catch (error) {
       console.error("[useAccountOverview] fatal:", error);
       setIsAdmin(false);

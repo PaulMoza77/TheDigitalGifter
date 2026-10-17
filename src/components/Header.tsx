@@ -57,7 +57,9 @@ export default function Header({ onBuyCredits }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const isAuthenticated = !!user;
-  const loading = authLoading || overviewLoading;
+  // Guest nav must never wait on account overview (Supabase outages used to
+  // leave the mobile menu on infinite skeletons). Auth skeleton is auth-only.
+  const showAuthSkeleton = authLoading;
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -124,8 +126,12 @@ export default function Header({ onBuyCredits }: HeaderProps) {
         </div>
 
         <div className="hidden items-center gap-2 sm:gap-3 lg:flex">
-          {authLoading ? (
-            <div className="h-9 w-24 animate-pulse rounded-full border border-white/10 bg-white/10" />
+          {showAuthSkeleton ? (
+            <div
+              className="h-9 w-24 animate-pulse rounded-full border border-white/10 bg-white/10"
+              data-testid="header-auth-skeleton"
+              aria-hidden="true"
+            />
           ) : isAuthenticated ? (
             <UserMenu />
           ) : (
@@ -171,8 +177,13 @@ export default function Header({ onBuyCredits }: HeaderProps) {
               </SheetHeader>
 
               <div className="px-5 py-6">
-                {loading ? (
-                  <div className="space-y-3">
+                {showAuthSkeleton ? (
+                  <div
+                    className="space-y-3"
+                    data-testid="header-mobile-auth-skeleton"
+                    aria-busy="true"
+                    aria-label="Checking sign-in status"
+                  >
                     <div className="h-20 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
                     <div className="h-14 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
                     <div className="h-14 animate-pulse rounded-2xl border border-white/10 bg-white/10" />
@@ -193,7 +204,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                           Credits
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-[#ffd976]">
-                          {creditsRemaining}
+                          {overviewLoading ? "…" : creditsRemaining}
                         </div>
                       </button>
 
@@ -207,12 +218,14 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                           Affiliate
                         </div>
                         <div className="mt-2 text-2xl font-semibold text-emerald-300">
-                          ${Number(affiliateEarnings || 0).toFixed(2)}
+                          {overviewLoading
+                            ? "…"
+                            : `$${Number(affiliateEarnings || 0).toFixed(2)}`}
                         </div>
                       </button>
                     </div>
 
-                    <nav className="mt-5 space-y-2">
+                    <nav className="mt-5 space-y-2" aria-label="Account">
                       <button
                         type="button"
                         onClick={() => goTo("/account/dashboard")}
@@ -274,7 +287,7 @@ export default function Header({ onBuyCredits }: HeaderProps) {
                   </>
                 ) : (
                   <>
-                    <nav className="space-y-2" aria-label="Explore">
+                    <nav className="space-y-2" aria-label="Explore" data-testid="header-guest-mobile-nav">
                       <button
                         type="button"
                         onClick={() => goTo("/")}
