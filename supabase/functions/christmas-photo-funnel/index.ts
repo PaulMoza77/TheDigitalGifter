@@ -152,22 +152,25 @@ Deno.serve(async (req) => {
       const hash = await sha256Hex(token);
       const { data: order, error } = await service
         .from("christmas_orders")
-        .select("id,product_key,payment_status,fulfillment_status,stripe_checkout_session_id")
+        .select("id,product_key,payment_status,fulfillment_status,stripe_checkout_session_id,amount_cents,currency,email,email_normalized,user_id")
         .eq("public_token_hash", hash)
         .maybeSingle();
       if (error) throw error;
       if (!order) return jsonResponse({ error: "Order not found" }, 404);
-      if (!CONFIRMABLE_PORTRAITS.has(asString(order.product_key))) {
+      const productKey = asString(order.product_key);
+      if (!CONFIRMABLE_PORTRAITS.has(productKey)) {
         return jsonResponse({ error: "unsupported product", code: "unsupported_product" }, 403);
       }
-      if (
-        order.stripe_checkout_session_id &&
-        asString(order.stripe_checkout_session_id) !== sessionId
-      ) {
+      if (Number(order.amount_cents) !== 499 || asString(order.currency).toLowerCase() !== "eur") {
+        return jsonResponse({ error: "price mismatch", code: "price_mismatch" }, 409);
+      }
+      const boundSession = asString(order.stripe_checkout_session_id);
+      if (!boundSession || boundSession !== sessionId) {
         return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
       }
       const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
-      if (!stripeKey) return jsonResponse({ error: "Stripe is not configured" }, 503);
+      const keyMode = stripeKey.startsWith("sk_live_") ? "live" : stripeKey.startsWith("sk_test_") ? "test" : "";
+      if (!keyMode) return jsonResponse({ error: "Stripe is not configured" }, 503);
       const sessionRes = await fetch(
         `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
         { headers: { Authorization: `Bearer ${stripeKey}` } },
@@ -176,20 +179,40 @@ Deno.serve(async (req) => {
       if (!sessionRes.ok) {
         return jsonResponse({ error: "Could not verify payment" }, 502);
       }
+      const liveMode = session?.livemode === true;
+      if ((keyMode === "live") !== liveMode) {
+        return jsonResponse({ error: "mode mismatch", code: "mode_mismatch" }, 403);
+      }
+      if (asString(session?.status) !== "complete" || asString(session?.payment_status) !== "paid") {
+        return jsonResponse({ ok: true, status: "not_paid", paymentStatus: asString(session?.payment_status) });
+      }
+      const amountTotal = Number(session?.amount_total);
+      const currency = asString(session?.currency).toLowerCase();
+      if (amountTotal !== 499 || currency !== "eur") {
+        return jsonResponse({ error: "price mismatch", code: "price_mismatch" }, 409);
+      }
       const sessionMeta = (session?.metadata || {}) as Record<string, unknown>;
       if (asString(sessionMeta.christmas_order_id) !== asString(order.id)) {
         return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
       }
-      const paymentStatus = asString(session?.payment_status);
-      if (paymentStatus !== "paid") {
-        return jsonResponse({ ok: true, status: "not_paid", paymentStatus });
+      if (asString(sessionMeta.product_key) !== productKey || asString(sessionMeta.product_family) !== "christmas") {
+        return jsonResponse({ error: "product mismatch", code: "product_mismatch" }, 403);
+      }
+      const sessionEmail = asString(session?.customer_details?.email || session?.customer_email).toLowerCase();
+      const orderEmail = asString(order.email_normalized || order.email).toLowerCase();
+      if (orderEmail && sessionEmail && orderEmail !== sessionEmail) {
+        return jsonResponse({ error: "customer mismatch", code: "customer_mismatch" }, 403);
+      }
+      const metaUser = asString(sessionMeta.user_id);
+      if (order.user_id && metaUser && metaUser !== asString(order.user_id)) {
+        return jsonResponse({ error: "customer mismatch", code: "customer_mismatch" }, 403);
       }
       const { data, error: rpcError } = await service.rpc("fulfill_christmas_order_payment", {
         p_order_id: order.id,
         p_stripe_session_id: sessionId,
         p_stripe_payment_intent_id: asString(session?.payment_intent) || null,
-        p_amount_cents: session?.amount_total == null ? null : Number(session.amount_total),
-        p_currency: asString(session?.currency) || null,
+        p_amount_cents: amountTotal,
+        p_currency: currency,
         p_stripe_event_id: `confirm:${sessionId}`,
       });
       if (rpcError) throw rpcError;
@@ -198,7 +221,18 @@ Deno.serve(async (req) => {
         return jsonResponse({ ok: false, status: result.status || "rejected" }, 409);
       }
       const fulfillment = asString(result.fulfillment_status || order.fulfillment_status);
-      if (fulfillment !== "completed") enqueuePortraitGeneration(asString(order.id));
+      if (fulfillment !== "completed") {
+        const { data: job } = await service
+          .from("christmas_generation_jobs")
+          .select("status,claimed_at")
+          .eq("order_id", order.id)
+          .maybeSingle();
+        const claimedAt = job?.claimed_at ? Date.parse(String(job.claimed_at)) : 0;
+        const runningFresh = job?.status === "running" && claimedAt > 0 && Date.now() - claimedAt < 3 * 60 * 1000;
+        if (job?.status !== "succeeded" && !runningFresh) {
+          enqueuePortraitGeneration(asString(order.id));
+        }
+      }
       return jsonResponse({
         ok: true,
         status: result.status || "paid",
