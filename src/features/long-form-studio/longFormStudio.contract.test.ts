@@ -11,8 +11,9 @@ function read(relative: string) {
 describe("long-form studio wiring", () => {
   it("registers a creative admin studio without codec controls", () => {
     expect(read("src/App.tsx")).toContain("path=\"long-form-studio\"");
-    expect(read("src/layouts/AdminLayout.tsx")).toContain("Long-Form Studio");
-    expect(read("src/layouts/AdminLayout.tsx")).toContain("/admin/long-form-studio");
+    expect(read("src/pages/admin/AdminLibraryPage.tsx")).toContain("Long-Form Studio");
+    expect(read("src/pages/admin/AdminLibraryPage.tsx")).toContain("/admin/long-form-studio");
+    expect(read("src/layouts/AdminLayout.tsx")).not.toContain("/admin/long-form-studio");
     expect(read("server/routes.mjs")).toContain('"/api/long-form-studio": "long-form-studio.ts"');
     expect(read("api/long-form-studio.ts")).toContain("requireClipFactoryAdmin");
     expect(read("api/long-form-studio.ts")).toContain("create_video");

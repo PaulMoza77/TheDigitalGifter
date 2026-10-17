@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarClock, Library, Music2, Search, Share2 } from "lucide-react";
+import { CalendarClock, Clapperboard, Library, Music2, Search, Share2, Sparkles, WandSparkles } from "lucide-react";
 
 import LibraryVideoCard from "@/features/admin-library/LibraryVideoCard";
 import {
@@ -132,7 +132,10 @@ export default function AdminLibraryPage() {
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
             <div className="flex flex-wrap gap-2">
-              <LibraryNavBadge to="/admin/library/christmas-factory" icon={Library} label="Factory RAW" />
+              <LibraryNavBadge to="/admin/library/christmas-factory" icon={Clapperboard} label="Factory RAW" />
+              <LibraryNavBadge to="/admin/long-form-studio" icon={Clapperboard} label="Long-Form Studio" />
+              <LibraryNavBadge to="/admin/clip-factory" icon={WandSparkles} label="AI Clip Factory" />
+              <LibraryNavBadge to="/admin/content-autopilot" icon={Sparkles} label="Content Autopilot" />
               <LibraryNavBadge to="/admin/music-library" icon={Music2} label="Music Library" />
               <LibraryNavBadge to="/admin/social-accounts" icon={Share2} label="Social Accounts" />
               <LibraryNavBadge to="/admin/publishing" icon={CalendarClock} label="Publishing" />

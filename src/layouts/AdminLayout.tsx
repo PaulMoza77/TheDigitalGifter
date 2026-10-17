@@ -22,8 +22,6 @@ import {
   PawPrint,
   Gift,
   Library,
-  WandSparkles,
-  Clapperboard,
   CalendarClock,
 } from "lucide-react";
 import { formatAlertCount } from "@/hooks/adminNavAlerts";
@@ -172,26 +170,6 @@ const SidebarNavigation: React.FC<{
             label: "Library",
             path: "/admin/library",
             icon: Library,
-          },
-          {
-            label: "Factory RAW",
-            path: "/admin/library/christmas-factory",
-            icon: Clapperboard,
-          },
-          {
-            label: "Long-Form Studio",
-            path: "/admin/long-form-studio",
-            icon: Clapperboard,
-          },
-          {
-            label: "AI Clip Factory",
-            path: "/admin/clip-factory",
-            icon: WandSparkles,
-          },
-          {
-            label: "Content Autopilot",
-            path: "/admin/content-autopilot",
-            icon: Sparkles,
           },
           {
             label: "Publisher",

@@ -11,8 +11,9 @@ function read(relative: string) {
 describe("clip factory production wiring", () => {
   it("registers admin route, origin API, and additive migration", () => {
     expect(read("src/App.tsx")).toContain("path=\"clip-factory\"");
-    expect(read("src/layouts/AdminLayout.tsx")).toContain("/admin/clip-factory");
-    expect(read("src/layouts/AdminLayout.tsx")).toContain("AI Clip Factory");
+    expect(read("src/pages/admin/AdminLibraryPage.tsx")).toContain("/admin/clip-factory");
+    expect(read("src/pages/admin/AdminLibraryPage.tsx")).toContain("AI Clip Factory");
+    expect(read("src/layouts/AdminLayout.tsx")).not.toContain("/admin/clip-factory");
     expect(read("server/routes.mjs")).toContain('"/api/clip-factory": "clip-factory.ts"');
     expect(read("api/clip-factory.ts")).toContain("requireClipFactoryAdmin");
     expect(read("api/clip-factory.ts")).toContain("create_job");
