@@ -36,20 +36,12 @@ export async function getAuthUser(authHeader: string | null | undefined): Promis
   return { user: data.user };
 }
 
-/** Matches supabase/functions/_shared/supabase.ts#isServiceRoleRequest so internal
- * origin-to-origin calls (e.g. christmas-funnel enqueueing christmas-generate) can
- * authenticate with the shared service-role key. */
+/** Exact service-role key match only.
+ * Do NOT trust unsigned JWT payload `role` claims — they are forgeable and would
+ * expose /api/christmas-generate* to unauthenticated callers on the VPS origin. */
 export function isServiceRoleRequest(authHeader: string | null | undefined): boolean {
   const token = String(authHeader || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return false;
   const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-  if (serviceKey && token === serviceKey) return true;
-  try {
-    const payload = token.split(".")[1] || "";
-    const padded = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
-    const json = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as { role?: string };
-    return json.role === "service_role";
-  } catch {
-    return false;
-  }
+  return Boolean(serviceKey) && token === serviceKey;
 }

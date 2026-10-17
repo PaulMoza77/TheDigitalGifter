@@ -51,7 +51,7 @@ export default function ChristmasGenerations({
     return (
       <ClientEmptyState
         title="No Christmas packs yet"
-        description="Create your first $3 Christmas portrait pack."
+        description="Create your first Christmas AI photo pack from €7."
         ctaLabel="Try Christmas AI Photos"
         ctaTo={CHRISTMAS_V2_ROUTE}
       />

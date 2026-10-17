@@ -11,7 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { christmasFunnelApi } from "../api";
-import { CHRISTMAS_PACKS, CHRISTMAS_V2_ORDER_ROUTE } from "../config";
+import {
+  CHRISTMAS_PACKS,
+  CHRISTMAS_V2_ORDER_ROUTE,
+  type ChristmasPackKey,
+} from "../config";
 
 const EXPRESS_OPTIONS = {
   buttonHeight: 52,
@@ -29,10 +33,15 @@ const EXPRESS_OPTIONS = {
   },
 };
 
+function formatEurFromCents(cents: number): string {
+  return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
 function CheckoutBody({
   email,
   publicToken,
   sessionId,
+  packKey,
   onReady,
   onPaymentInteraction,
   onSubmit,
@@ -41,6 +50,7 @@ function CheckoutBody({
   email?: string;
   publicToken: string | null;
   sessionId: string | null;
+  packKey: ChristmasPackKey;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
   onSubmit?: () => void;
@@ -50,6 +60,7 @@ function CheckoutBody({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const readyFired = useRef(false);
+  const pack = CHRISTMAS_PACKS[packKey];
 
   useEffect(() => {
     if (checkoutState.type === "success" && !readyFired.current) {
@@ -60,9 +71,6 @@ function CheckoutBody({
 
   async function finalizeAndNavigate(confirmedSessionId?: string | null) {
     const resolvedSessionId = confirmedSessionId || sessionId;
-    // Best-effort fulfillment nudge · verifies payment with Stripe and runs the same
-    // RPC the webhook uses, so results unlock immediately even if stripe-webhook (Edge)
-    // hasn't been redeployed yet. Never block navigation on this call.
     if (publicToken && resolvedSessionId) {
       try {
         await christmasFunnelApi.confirmStripePayment({ publicToken, sessionId: resolvedSessionId });
@@ -82,7 +90,10 @@ function CheckoutBody({
     setError(null);
     onSubmit?.();
     try {
-      const result = await checkoutState.checkout.confirm({ email: email || undefined, redirect: "if_required" });
+      const result = await checkoutState.checkout.confirm({
+        email: email || undefined,
+        redirect: "if_required",
+      });
       if (result.type === "error") {
         setError(result.error.message || "Payment failed. Please try again.");
         return;
@@ -132,20 +143,26 @@ function CheckoutBody({
         <span className="bg-[#F7F0E4] px-2">or pay with card</span>
       </div>
       <PaymentElement options={{ layout: "tabs" }} onChange={() => onPaymentInteraction?.()} />
-      {error ? <p className="text-sm text-[#9a3412]">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-[#9a3412]" role="alert">
+          {error}
+        </p>
+      ) : null}
       <Button
         type="button"
         disabled={busy}
+        data-testid="cv2-pay-button"
         onClick={() => void confirm()}
         className="h-12 w-full rounded-full bg-[#1B4332] text-base font-semibold text-[#F7F0E4] hover:bg-[#245C41]"
       >
-        {busy ? "Processing…" : `Pay ${CHRISTMAS_PACKS.starter.priceDisplay} securely`}
+        {busy ? "Processing…" : `Pay ${pack.priceDisplay} securely`}
       </Button>
     </div>
   );
 }
 
 export function ChristmasCheckoutScreen({
+  packKey,
   clientSecret,
   publishableKey,
   publicToken,
@@ -163,6 +180,7 @@ export function ChristmasCheckoutScreen({
   onExpressCancel,
   hostedFallbackUrl,
 }: {
+  packKey: ChristmasPackKey;
   clientSecret: string | null;
   publishableKey: string | null;
   publicToken?: string | null;
@@ -180,6 +198,7 @@ export function ChristmasCheckoutScreen({
   onExpressCancel?: () => void;
   hostedFallbackUrl?: string | null;
 }) {
+  const pack = CHRISTMAS_PACKS[packKey];
   const stripePromise = useMemo(
     () => (publishableKey ? loadStripe(publishableKey) : null),
     [publishableKey],
@@ -188,12 +207,51 @@ export function ChristmasCheckoutScreen({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A227]">Secure checkout</p>
-        <h1 className="cv2-display mt-1 text-3xl font-semibold text-[#F7F0E4]">Create My 3 Christmas Photos</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A227]">
+          Secure checkout
+        </p>
+        <h1 className="cv2-display mt-1 text-3xl font-semibold text-[#F7F0E4]">{pack.name}</h1>
         <p className="mt-2 text-sm text-[#F7F0E4]/70">
-          {CHRISTMAS_PACKS.starter.priceDisplay} · No subscription · Delivered to your email
+          One-time {pack.priceDisplay} · No subscription · Delivery link by email when ready
         </p>
       </div>
+
+      <section
+        className="rounded-[1.4rem] border border-[#F7F0E4]/12 bg-[#F7F0E4]/08 p-4"
+        aria-labelledby="cv2-order-summary-heading"
+        data-testid="cv2-order-summary"
+      >
+        <h2 id="cv2-order-summary-heading" className="text-sm font-semibold text-[#F7F0E4]">
+          Order summary
+        </h2>
+        <dl className="mt-3 space-y-2 text-sm text-[#F7F0E4]/80">
+          <div className="flex justify-between gap-3">
+            <dt>{pack.name}</dt>
+            <dd>{formatEurFromCents(pack.priceCents)}</dd>
+          </div>
+          <div className="flex justify-between gap-3 text-[#F7F0E4]/60">
+            <dt>Includes</dt>
+            <dd className="text-right">
+              {pack.imageCount} photos
+              {pack.videoCount > 0
+                ? ` · ${pack.videoCount} short video${pack.videoCount > 1 ? "s" : ""}`
+                : " · no videos"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3 text-[#F7F0E4]/60">
+            <dt>Tax</dt>
+            <dd className="text-right">Not calculated here</dd>
+          </div>
+          <div className="flex justify-between gap-3 border-t border-[#F7F0E4]/15 pt-2 font-semibold text-[#F7F0E4]">
+            <dt>Amount due at checkout</dt>
+            <dd>{formatEurFromCents(pack.priceCents)}</dd>
+          </div>
+        </dl>
+        <p className="mt-3 text-xs leading-5 text-[#F7F0E4]/45" data-testid="cv2-tax-blocked-note">
+          Tax configuration for this funnel is unresolved (BLOCKED). The amount above is the package
+          price charged by Stripe — we do not claim a tax-inclusive or tax-exclusive guarantee here.
+        </p>
+      </section>
 
       <div className="space-y-3 rounded-[1.4rem] border border-[#F7F0E4]/12 bg-[#F7F0E4] p-4 text-[#3b0610]">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -203,8 +261,9 @@ export function ChristmasCheckoutScreen({
               id="cv2-name"
               value={customerName}
               onChange={(e) => onCustomerName(e.target.value)}
-              className="mt-1 border-[#3b0610]/15 bg-white"
+              className="mt-1 min-h-11 border-[#3b0610]/15 bg-white"
               placeholder="Your name"
+              autoComplete="name"
             />
           </div>
           <div>
@@ -214,22 +273,29 @@ export function ChristmasCheckoutScreen({
               type="email"
               value={email}
               onChange={(e) => onEmail(e.target.value)}
-              className="mt-1 border-[#3b0610]/15 bg-white"
+              className="mt-1 min-h-11 border-[#3b0610]/15 bg-white"
               placeholder="you@email.com"
               required
+              autoComplete="email"
             />
           </div>
         </div>
 
-        {loading ? <p className="text-sm text-[#5c0a14]/65">Starting secure checkout…</p> : null}
+        {loading ? (
+          <p className="text-sm text-[#5c0a14]/65" data-testid="cv2-checkout-loading">
+            Starting secure checkout…
+          </p>
+        ) : null}
         {initError ? (
-          <div className="space-y-2">
-            <p className="text-sm text-[#9a3412]">{initError}</p>
-            <Button type="button" variant="outline" onClick={onRetry}>
+          <div className="space-y-2" data-testid="cv2-checkout-error">
+            <p className="text-sm text-[#9a3412]" role="alert">
+              {initError}
+            </p>
+            <Button type="button" variant="outline" className="min-h-11" onClick={onRetry}>
               Try again
             </Button>
             {hostedFallbackUrl ? (
-              <a className="block text-sm text-[#1B4332] underline" href={hostedFallbackUrl}>
+              <a className="block min-h-11 text-sm text-[#1B4332] underline" href={hostedFallbackUrl}>
                 Continue on Stripe hosted checkout
               </a>
             ) : null}
@@ -260,6 +326,7 @@ export function ChristmasCheckoutScreen({
               email={email}
               publicToken={publicToken ?? null}
               sessionId={sessionId ?? null}
+              packKey={packKey}
               onReady={onReady}
               onPaymentInteraction={onPaymentInteraction}
               onSubmit={onSubmit}

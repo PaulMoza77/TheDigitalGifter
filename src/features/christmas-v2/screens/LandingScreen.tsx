@@ -1,7 +1,14 @@
 import { useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, Sparkles, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { CHRISTMAS_PACKS, CHRISTMAS_STARTER_SCENES } from "../config";
+
+const PACK_TEASERS = [
+  CHRISTMAS_PACKS.starter,
+  CHRISTMAS_PACKS.magic,
+  CHRISTMAS_PACKS.ultimate,
+] as const;
 
 export function ChristmasLandingScreen({
   onFile,
@@ -14,10 +21,14 @@ export function ChristmasLandingScreen({
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const uploadZoneRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
-  const pack = CHRISTMAS_PACKS.starter;
 
   const openFilePicker = () => inputRef.current?.click();
+  const focusUpload = () => {
+    uploadZoneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    openFilePicker();
+  };
 
   return (
     <div className="space-y-7">
@@ -29,7 +40,7 @@ export function ChristmasLandingScreen({
           className="inline-flex items-center gap-2 rounded-full border border-[#C9A227]/45 bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#F3D98A]"
         >
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-          $3 Only
+          From €7 · one-time
         </motion.div>
 
         <motion.h1
@@ -47,20 +58,22 @@ export function ChristmasLandingScreen({
           transition={{ duration: 0.5, delay: 0.12 }}
           className="max-w-md text-base leading-7 text-[#F7F0E4]/78 sm:text-lg"
         >
-          Get 3 AI Christmas portraits for just $3
+          Premium AI Christmas portraits from a single photo — packs from €7 to €27.
         </motion.p>
 
         <p className="text-sm text-[#F7F0E4]/55">
-          Upload 1 photo • Receive 3 portraits • Delivered in minutes
+          Upload 1 photo · Choose a pack · Delivered by email when ready
         </p>
       </section>
 
       <motion.div
+        ref={uploadZoneRef}
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.18 }}
         role="button"
         tabIndex={0}
+        data-testid="cv2-upload-zone"
         aria-label="Upload your photo"
         onClick={openFilePicker}
         onKeyDown={(e) => {
@@ -91,11 +104,16 @@ export function ChristmasLandingScreen({
       >
         <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[1.35rem] bg-gradient-to-b from-[#F7F0E4]/08 to-transparent px-6 py-10 text-center sm:min-h-[280px]">
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Your uploaded portrait"
-              className="max-h-56 w-auto rounded-2xl object-cover shadow-2xl shadow-black/40"
-            />
+            <>
+              <img
+                src={previewUrl}
+                alt="Your uploaded portrait preview"
+                className="max-h-56 w-auto rounded-2xl object-cover shadow-2xl shadow-black/40"
+              />
+              <span className="text-xs text-[#F7F0E4]/60">
+                Local photo preview · AI portraits generate after payment
+              </span>
+            </>
           ) : (
             <>
               <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#1B4332] text-[#F7F0E4] shadow-lg shadow-black/30">
@@ -104,6 +122,9 @@ export function ChristmasLandingScreen({
               <span className="cv2-display text-2xl font-semibold text-[#F7F0E4]">Upload Your Photo</span>
               <span className="max-w-xs text-sm text-[#F7F0E4]/60">
                 JPEG, PNG, or WebP · up to 15 MB · one clear portrait works best
+              </span>
+              <span className="max-w-xs text-xs font-medium text-[#F3D98A]/90">
+                iPhone HEIC is not supported here — export or share as JPEG first.
               </span>
             </>
           )}
@@ -118,24 +139,55 @@ export function ChristmasLandingScreen({
         />
       </motion.div>
 
-      {photoError ? <p className="text-sm text-[#ffb4a8]">{photoError}</p> : null}
+      {photoError ? (
+        <p className="text-sm text-[#ffb4a8]" role="alert" data-testid="cv2-photo-error">
+          {photoError}
+        </p>
+      ) : null}
+
+      <section className="space-y-3" aria-labelledby="cv2-packs-teaser-heading">
+        <h2 id="cv2-packs-teaser-heading" className="cv2-display text-xl font-semibold text-[#F7F0E4]">
+          Three one-time packs
+        </h2>
+        <div className="grid gap-2 sm:grid-cols-3" data-testid="cv2-landing-packs">
+          {PACK_TEASERS.map((pack) => (
+            <div
+              key={pack.key}
+              className="rounded-2xl border border-[#F7F0E4]/12 bg-[#F7F0E4]/06 px-3 py-3"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A227]">
+                {pack.key}
+              </p>
+              <p className="cv2-display mt-1 text-2xl font-semibold text-[#F7F0E4]">
+                {pack.priceDisplay}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#F7F0E4]/65">
+                {pack.imageCount} photos
+                {pack.videoCount > 0
+                  ? ` · ${pack.videoCount} short video${pack.videoCount > 1 ? "s" : ""}`
+                  : " · no videos"}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#F7F0E4]/65">
-        {[
-          `${pack.imageCount} Christmas portraits`,
-          `${pack.priceDisplay} one-time`,
-          "No subscription",
-          "Secure checkout",
-        ].map((label) => (
-          <li key={label} className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-[#C9A227]" aria-hidden="true" />
-            {label}
-          </li>
-        ))}
+        {["One-time payment", "No subscription", "Secure checkout", "Private photo upload"].map(
+          (label) => (
+            <li key={label} className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-[#C9A227]" aria-hidden="true" />
+              {label}
+            </li>
+          ),
+        )}
       </ul>
 
       <section className="space-y-3 pt-2">
-        <h2 className="cv2-display text-xl font-semibold text-[#F7F0E4]">Your 3 AI Christmas Portraits</h2>
+        <h2 className="cv2-display text-xl font-semibold text-[#F7F0E4]">Example Christmas looks</h2>
+        <p className="text-sm text-[#F7F0E4]/55">
+          Authorized product examples — not your AI result until after purchase.
+        </p>
         <div className="grid gap-3 sm:grid-cols-3">
           {CHRISTMAS_STARTER_SCENES.map((scene, index) => (
             <motion.article
@@ -149,9 +201,11 @@ export function ChristmasLandingScreen({
                 {scene.exampleImage ? (
                   <img
                     src={scene.exampleImage}
-                    alt={scene.label}
+                    alt={`Example: ${scene.label}`}
                     className="h-full w-full object-cover"
                     loading={index === 0 ? "eager" : "lazy"}
+                    decoding={index === 0 ? "sync" : "async"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
                   />
                 ) : null}
               </div>
@@ -163,6 +217,19 @@ export function ChristmasLandingScreen({
           ))}
         </div>
       </section>
+
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#F7F0E4]/10 bg-[#2a0810]/92 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:hidden"
+        data-testid="cv2-sticky-upload-cta"
+      >
+        <Button
+          type="button"
+          onClick={focusUpload}
+          className="h-12 w-full rounded-full bg-[#C9A227] text-base font-semibold text-[#3b0610] hover:bg-[#dbb84a]"
+        >
+          Upload photo · packs from €7
+        </Button>
+      </div>
     </div>
   );
 }

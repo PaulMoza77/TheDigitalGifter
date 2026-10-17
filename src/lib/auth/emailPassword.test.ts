@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createAccountWithEmailPassword, signInWithEmailPassword } from "./emailPassword";
+import {
+  createAccountWithEmailPassword,
+  requestPasswordReset,
+  signInWithEmailPassword,
+} from "./emailPassword";
 
 function fakeClient(handlers: {
   signIn?: (args: { email: string; password: string }) => Promise<{ error: { message: string } | null }>;
@@ -9,11 +13,16 @@ function fakeClient(handlers: {
     data: { session: { access_token: string } | null };
     error: { message: string } | null;
   }>;
+  reset?: (
+    email: string,
+    options?: { redirectTo?: string },
+  ) => Promise<{ error: { message: string } | null }>;
 }) {
   return {
     auth: {
       signInWithPassword: handlers.signIn ?? (async () => ({ error: null })),
       signUp: handlers.signUp ?? (async () => ({ data: { session: { access_token: "t" } }, error: null })),
+      resetPasswordForEmail: handlers.reset ?? (async () => ({ error: null })),
     },
   } as never;
 }
@@ -57,9 +66,29 @@ describe("email password auth", () => {
     expect(gate).toContain("createAccountWithEmailPassword");
     expect(gate).toContain("Create account");
     expect(gate).toContain("Sign in");
+    expect(gate).toContain("Forgot password?");
     expect(gate).not.toMatch(/signInWithPassword[\s\S]{0,200}signUp/);
     expect(welcome).toContain("signInWithEmailPassword");
     expect(welcome).toContain("createAccountWithEmailPassword");
     expect(welcome).not.toMatch(/signInWithPassword[\s\S]{0,200}signUp/);
+  });
+
+  it("requests password reset with redirectTo and normalizes email", async () => {
+    let seen: { email: string; redirectTo?: string } | null = null;
+    const result = await requestPasswordReset(
+      fakeClient({
+        reset: async (email, options) => {
+          seen = { email, redirectTo: options?.redirectTo };
+          return { error: null };
+        },
+      }) as never,
+      "A@B.com",
+      "https://example.com/auth/callback",
+    );
+    expect(result).toEqual({ ok: true });
+    expect(seen).toEqual({
+      email: "a@b.com",
+      redirectTo: "https://example.com/auth/callback",
+    });
   });
 });

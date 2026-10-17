@@ -49,7 +49,8 @@ export function ChristmasV2Shell({
         <header className="flex items-center py-2">
           <a
             href={CHRISTMAS_V2_ROUTE}
-            className="flex items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227]"
+            aria-label="The Digital Gifter Christmas AI photos home"
+            className="flex min-h-11 items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A227]"
           >
             <img
               src={TDG_LOGO_SRC}
@@ -60,7 +61,10 @@ export function ChristmasV2Shell({
               fetchPriority="high"
               className="h-9 w-9 rounded-full object-cover shadow-[0_0_20px_rgba(201,162,39,0.35)] ring-1 ring-[#C9A227]/40"
             />
-            <span className="font-[family-name:var(--cv2-display)] text-lg font-semibold tracking-tight text-[#F7F0E4]">
+            <span
+              data-testid="cv2-brand"
+              className="font-[family-name:var(--cv2-display)] text-lg font-semibold tracking-tight text-[#F7F0E4]"
+            >
               The Digital Gifter
             </span>
           </a>
@@ -71,7 +75,7 @@ export function ChristmasV2Shell({
             <Button
               type="button"
               variant="ghost"
-              className="h-9 px-0 text-[#F7F0E4]/70 hover:bg-transparent hover:text-[#F7F0E4]"
+              className="h-11 px-0 text-[#F7F0E4]/70 hover:bg-transparent hover:text-[#F7F0E4]"
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -93,6 +97,14 @@ export function ChristmasV2Shell({
             {" · "}
             <a className="underline-offset-2 hover:underline" href="/generator?occasion=christmas">
               Full Christmas generator
+            </a>
+            {" · "}
+            <a className="underline-offset-2 hover:underline" href="/refunds" data-testid="cv2-footer-refunds">
+              Refunds
+            </a>
+            {" · "}
+            <a className="underline-offset-2 hover:underline" href="/privacy" data-testid="cv2-footer-privacy">
+              Privacy
             </a>
           </p>
         </footer>

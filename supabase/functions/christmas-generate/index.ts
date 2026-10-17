@@ -5,16 +5,31 @@ import {
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   CHRISTMAS_SOURCE_BUCKET,
   buildScenePrompt,
-  christmasImageModel,
   generationEnabled,
   generationMock,
   sceneByKey,
   type ChristmasPackKey,
 } from "../_shared/christmas/constants.ts";
 import { asString } from "../_shared/christmas/crypto.ts";
+import {
+  christmasFailedPredictionId,
+  recordChristmasV2ImageCost,
+} from "../_shared/christmas/costLedger.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import { extractHiggsfieldImageUrl } from "../_shared/higgsfieldImage.ts";
+import {
+  pollHiggsfieldRequest,
+  requireChristmasHiggsfieldAuth,
+  submitSoulV2Image,
+} from "../_shared/christmas/higgsfieldProviders.ts";
+import {
+  CHRISTMAS_MAX_IMAGE_BYTES,
+  fetchProviderMediaBytes,
+} from "../_shared/christmas/providerMedia.ts";
 
 type Body = { order_id?: string };
+
+const MAX_SCENE_ATTEMPTS = 3;
 
 function waitUntil(promise: Promise<unknown>) {
   const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void } })
@@ -35,19 +50,6 @@ function decryptStoredToken(ciphertext: string | null | undefined): string | nul
   }
 }
 
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
-  }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
-
 async function copyObject(
   service: ReturnType<typeof getServiceClient>,
   fromBucket: string,
@@ -65,54 +67,23 @@ async function copyObject(
   if (upError) throw upError;
 }
 
-async function generateWithNanoBanana(prompt: string, imageUrl: string): Promise<{
-  predictionId: string;
-  outputUrl: string;
-  model: string;
-}> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasImageModel();
-  const input = {
-    prompt,
-    image: imageUrl,
-    image_input: [imageUrl],
-  };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
+async function finalizeChristmasV2Generation(
+  service: ReturnType<typeof getServiceClient>,
+  orderId: string,
+) {
+  // Prefer the post-quarantine name; keep the legacy alias for older DBs.
+  let finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
+    p_order_id: orderId,
   });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate prediction failed");
+  if (finalized.error) {
+    const msg = String(finalized.error.message || "").toLowerCase();
+    if (msg.includes("could not find") || msg.includes("function") || msg.includes("does not exist")) {
+      finalized = await service.rpc("christmas_finalize_generation_if_done", {
+        p_order_id: orderId,
+      });
+    }
   }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no image URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
+  return finalized;
 }
 
 async function enqueueChristmasVideo(orderId: string) {
@@ -212,13 +183,47 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, status: "held", started: 0 });
     }
 
-    const targets = (scenes ?? []).filter(
-      (scene) =>
-        ["queued", "failed"].includes(asString(scene.status)) && !scene.replicate_prediction_id,
-    );
+    // Orphan: generating without request_id means uncertain paid outcome — never silent re-submit.
+    for (const scene of scenes ?? []) {
+      if (asString(scene.status) === "generating" && !scene.replicate_prediction_id) {
+        await service
+          .from("christmas_v2_order_scenes")
+          .update({
+            status: "failed",
+            last_error: "uncertain_provider_outcome",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", scene.id);
+      }
+    }
+
+    const { data: refreshedScenes } = await service
+      .from("christmas_v2_order_scenes")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("scene_number", { ascending: true });
+
+    const targets = (refreshedScenes ?? []).filter((scene) => {
+      const status = asString(scene.status);
+      const pred = asString(scene.replicate_prediction_id);
+      const lastError = asString(scene.last_error);
+      if (lastError.startsWith("provider_terminal:") || lastError === "uncertain_provider_outcome") {
+        return false;
+      }
+      if (status === "generating" && pred) return true; // resume poll only
+      // Download/storage failure after submit: resume poll, never create a second request_id.
+      if (status === "failed" && pred) return true;
+      if (["queued", "failed"].includes(status) && !pred) {
+        return Number(scene.attempts || 0) < MAX_SCENE_ATTEMPTS;
+      }
+      return false;
+    });
 
     let started = 0;
     const contentType = asString(order.photo_content_type) || "image/jpeg";
+    const authorization = generationMock()
+      ? null
+      : requireChristmasHiggsfieldAuth({ get: (name) => Deno.env.get(name) });
 
     for (const scene of targets) {
       const sceneKey = asString(scene.scene_key);
@@ -231,20 +236,29 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      await service
-        .from("christmas_v2_order_scenes")
-        .update({
-          status: "generating",
-          started_at: new Date().toISOString(),
-          last_error: null,
-          attempts: Number(scene.attempts || 0) + 1,
-        })
-        .eq("id", scene.id);
-
       const resultPath = `${orderId}/scenes/${sceneKey}.jpg`;
+      const existingPredictionId = asString(scene.replicate_prediction_id);
+      const resumeOnly = Boolean(existingPredictionId);
+      const attemptNumber = resumeOnly
+        ? Math.max(Number(scene.attempts || 1), 1)
+        : Number(scene.attempts || 0) + 1;
+      const isRetry = attemptNumber > 1;
+
+      if (!resumeOnly) {
+        await service
+          .from("christmas_v2_order_scenes")
+          .update({
+            status: "generating",
+            started_at: new Date().toISOString(),
+            last_error: null,
+            attempts: attemptNumber,
+          })
+          .eq("id", scene.id);
+      }
 
       try {
         if (generationMock()) {
+          const predictionId = existingPredictionId || `mock_${orderId}_${sceneKey}`;
           await copyObject(
             service,
             CHRISTMAS_SOURCE_BUCKET,
@@ -258,7 +272,7 @@ Deno.serve(async (req) => {
             .update({
               status: "succeeded",
               progress_percent: 100,
-              replicate_prediction_id: `mock_${orderId}_${sceneKey}`,
+              replicate_prediction_id: predictionId,
               result_bucket: CHRISTMAS_RESULT_BUCKET,
               result_path: resultPath,
               result_content_type: contentType,
@@ -266,33 +280,105 @@ Deno.serve(async (req) => {
               completed_at: new Date().toISOString(),
             })
             .eq("id", scene.id);
+          await recordChristmasV2ImageCost(service, {
+            predictionId,
+            orderId,
+            sceneId: asString(scene.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName: "mock",
+            isMock: true,
+            isRetry,
+          });
         } else {
-          const prompt = buildScenePrompt(def);
-          const prediction = await generateWithNanoBanana(prompt, signed.signedUrl);
-          const imgRes = await fetch(prediction.outputUrl);
-          if (!imgRes.ok) throw new Error(`Failed to download generated image (${imgRes.status})`);
-          const bytes = new Uint8Array(await imgRes.arrayBuffer());
+          let requestId = existingPredictionId;
+          let modelName = asString(scene.model_name) || undefined;
+          let statusUrl: string | undefined;
+          if (!requestId) {
+            const submitted = await submitSoulV2Image({
+              authorization: authorization!,
+              prompt: buildScenePrompt(def),
+              imageUrl: signed.signedUrl,
+              aspectRatio: "3:4",
+            });
+            requestId = submitted.requestId;
+            modelName = submitted.model;
+            statusUrl = submitted.statusUrl;
+            // Persist BEFORE polling — crash-safe anti double-charge.
+            await service
+              .from("christmas_v2_order_scenes")
+              .update({
+                replicate_prediction_id: requestId,
+                model_name: submitted.model,
+                status: "generating",
+                progress_percent: 20,
+              })
+              .eq("id", scene.id);
+          }
+
+          const polled = await pollHiggsfieldRequest(authorization!, requestId, {
+            maxAttempts: 48,
+            statusUrl,
+          });
+          if (!polled.done) throw new Error("Higgsfield Soul v2 timed out");
+          if (polled.failed || !polled.body) {
+            throw new Error(`provider_terminal:${polled.status || "failed"}`);
+          }
+          const outputUrl = extractHiggsfieldImageUrl(polled.body);
+          if (!outputUrl) throw new Error("Higgsfield Soul v2 returned no image URL");
+
+          const media = await fetchProviderMediaBytes(outputUrl, {
+            maxBytes: CHRISTMAS_MAX_IMAGE_BYTES,
+            kind: "image",
+          });
           const { error: upErr } = await service.storage
             .from(CHRISTMAS_RESULT_BUCKET)
-            .upload(resultPath, bytes, { contentType: "image/jpeg", upsert: true });
+            .upload(resultPath, media.bytes, {
+              contentType: media.contentType || "image/jpeg",
+              upsert: true,
+            });
           if (upErr) throw upErr;
           await service
             .from("christmas_v2_order_scenes")
             .update({
               status: "succeeded",
               progress_percent: 100,
-              replicate_prediction_id: prediction.predictionId,
+              replicate_prediction_id: requestId,
               result_bucket: CHRISTMAS_RESULT_BUCKET,
               result_path: resultPath,
-              result_content_type: "image/jpeg",
-              model_name: prediction.model,
+              result_content_type: media.contentType || "image/jpeg",
+              model_name: modelName,
               completed_at: new Date().toISOString(),
             })
             .eq("id", scene.id);
+          await recordChristmasV2ImageCost(service, {
+            predictionId: requestId,
+            orderId,
+            sceneId: asString(scene.id),
+            sceneKey,
+            attemptNumber,
+            productSku: asString(order.sku),
+            providerStatus: "succeeded",
+            modelName,
+            isMock: false,
+            isRetry,
+            costNotes: "estimate_catalog_not_provider_invoice",
+          });
         }
         started += 1;
       } catch (genErr) {
         const message = genErr instanceof Error ? genErr.message : String(genErr);
+        const persistedId = asString(
+          (
+            await service
+              .from("christmas_v2_order_scenes")
+              .select("replicate_prediction_id")
+              .eq("id", scene.id)
+              .maybeSingle()
+          ).data?.replicate_prediction_id,
+        );
         await service
           .from("christmas_v2_order_scenes")
           .update({
@@ -301,12 +387,31 @@ Deno.serve(async (req) => {
             completed_at: new Date().toISOString(),
           })
           .eq("id", scene.id);
+        await recordChristmasV2ImageCost(service, {
+          predictionId:
+            persistedId ||
+            christmasFailedPredictionId({
+              kind: "image",
+              orderId,
+              assetId: asString(scene.id),
+              attempt: attemptNumber,
+            }),
+          orderId,
+          sceneId: asString(scene.id),
+          sceneKey,
+          attemptNumber,
+          productSku: asString(order.sku),
+          providerStatus: "failed",
+          isMock: generationMock(),
+          isRetry,
+          costNotes: persistedId
+            ? "provider_or_postprocess_failed_with_request_id"
+            : "failed_attempt_estimated_consumption",
+        });
       }
     }
 
-    const finalized = await service.rpc("christmas_finalize_generation_if_done", {
-      p_order_id: orderId,
-    });
+    const finalized = await finalizeChristmasV2Generation(service, orderId);
     if (finalized.error) throw finalized.error;
     const finalData = (typeof finalized.data === "string"
       ? JSON.parse(finalized.data)
@@ -316,27 +421,17 @@ Deno.serve(async (req) => {
       failed?: number;
     };
 
-    if (finalData?.done && (finalData.succeeded || 0) > 0) {
+    const scenesReady =
+      Boolean(finalData?.done) ||
+      Boolean((finalData as { scenes_done?: boolean }).scenes_done) ||
+      Boolean((finalData as { awaiting_videos?: boolean }).awaiting_videos);
+
+    if (scenesReady && (finalData.succeeded || 0) > 0) {
       const { data: refreshed } = await service
         .from("christmas_v2_orders")
         .select("*")
         .eq("id", orderId)
         .maybeSingle();
-      const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
-      const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
-      if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
-        try {
-          await sendChristmasDeliveryEmail({
-            service,
-            orderId,
-            email: asString(refreshed.email),
-            publicToken,
-            packKey,
-          });
-        } catch (emailErr) {
-          console.error("christmas delivery email failed", emailErr);
-        }
-      }
 
       if (Number(refreshed?.video_count || 0) > 0) {
         waitUntil(
@@ -344,6 +439,29 @@ Deno.serve(async (req) => {
             console.error("christmas-generate-video enqueue failed", err);
           }),
         );
+      }
+
+      // Delivery email only when images + paid videos are finalized.
+      if (finalData?.done) {
+        const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+        const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+        if (
+          publicToken &&
+          refreshed?.email &&
+          (packKey === "starter" || packKey === "magic" || packKey === "ultimate")
+        ) {
+          try {
+            await sendChristmasDeliveryEmail({
+              service,
+              orderId,
+              email: asString(refreshed.email),
+              publicToken,
+              packKey,
+            });
+          } catch (emailErr) {
+            console.error("christmas delivery email failed", emailErr);
+          }
+        }
       }
     }
 

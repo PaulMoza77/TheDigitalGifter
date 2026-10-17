@@ -29,7 +29,7 @@ export async function sendChristmasDeliveryEmail(input: {
         : "starter_ready";
 
   const { data: existing } = await input.service
-    .from("christmas_email_deliveries")
+    .from("christmas_v2_email_deliveries")
     .select("id, status")
     .eq("order_id", input.orderId)
     .eq("kind", kind)
@@ -60,12 +60,12 @@ export async function sendChristmasDeliveryEmail(input: {
     process.env.CHRISTMAS_EMAIL_FROM || process.env.TRANSACTIONAL_EMAIL_FROM || process.env.PET_EMAIL_FROM,
   );
 
-  await input.service.from("christmas_email_deliveries").upsert(
+  // Match Edge ledger columns (no last_error/sent_at on christmas_v2_email_deliveries).
+  await input.service.from("christmas_v2_email_deliveries").upsert(
     {
       order_id: input.orderId,
       kind,
       status: apiKey && from ? "queued" : "skipped",
-      last_error: apiKey && from ? null : "email_provider_unconfigured",
     },
     { onConflict: "order_id,kind" },
   );
@@ -81,27 +81,24 @@ export async function sendChristmasDeliveryEmail(input: {
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });
   if (!res.ok) {
-    const providerError = (await res.text()).slice(0, 500);
     await input.service
-      .from("christmas_email_deliveries")
-      .update({ status: "failed", last_error: providerError || `resend_http_${res.status}` })
+      .from("christmas_v2_email_deliveries")
+      .update({ status: "failed" })
       .eq("order_id", input.orderId)
       .eq("kind", kind);
     throw new Error(`Christmas delivery email failed (${res.status})`);
   }
   const body = (await res.json()) as { id?: string };
   await input.service
-    .from("christmas_email_deliveries")
+    .from("christmas_v2_email_deliveries")
     .update({
       status: "sent",
       provider_message_id: asString(body.id),
-      last_error: null,
-      sent_at: new Date().toISOString(),
     })
     .eq("order_id", input.orderId)
     .eq("kind", kind);
   await input.service
-    .from("christmas_orders")
+    .from("christmas_v2_orders")
     .update({ delivery_email_sent_at: new Date().toISOString() })
     .eq("id", input.orderId);
   return { sent: true };

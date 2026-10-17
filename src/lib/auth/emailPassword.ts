@@ -36,3 +36,16 @@ export async function createAccountWithEmailPassword(
   }
   return { ok: true, needsConfirmation: false };
 }
+
+export async function requestPasswordReset(
+  client: SupabaseClient,
+  email: string,
+  redirectTo: string,
+): Promise<EmailAuthResult> {
+  const { error } = await client.auth.resetPasswordForEmail(cleanEmail(email), {
+    redirectTo,
+  });
+  if (error) return { ok: false, error: error.message };
+  // Generic success — Supabase may still reveal unknown emails via error codes; UI copy stays neutral.
+  return { ok: true };
+}

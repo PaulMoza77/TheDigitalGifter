@@ -8,6 +8,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 import { CHRISTMAS_PRODUCT_TYPE } from "./constants.ts";
 import { asInt, asString, isUuid } from "./crypto.ts";
 import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
+import { emitChristmasV2MetaPurchase } from "./metaCapi.ts";
 import { isPlannerProductKey } from "./plannerCommerce.ts";
 import { sendPlannerReadyEmail } from "./plannerEmail.ts";
 
@@ -327,12 +328,13 @@ export async function handleChristmasStripeEvent(input: {
     p_payment_status: paymentStatus || "paid",
     p_payment_intent_id: asString(input.obj.payment_intent),
     p_amount_cents: input.obj.amount_total == null ? null : asInt(input.obj.amount_total),
-    p_currency: asString(input.obj.currency) || "usd",
+    // Do not soft-default currency: fulfill RPC rejects empty/mismatched values.
+    p_currency: asString(input.obj.currency),
     p_order_id: orderId,
   });
   if (error) throw error;
 
-  const result = data as { status?: string; should_enqueue?: boolean };
+  const result = data as { status?: string; should_enqueue?: boolean; already_paid?: boolean };
   if (result?.should_enqueue) enqueueChristmasGenerate(orderId, "v2");
 
   const sessionId = asString(input.metadata.funnel_session_id);
@@ -345,6 +347,16 @@ export async function handleChristmasStripeEvent(input: {
       p_product: asString(input.metadata.sku),
       p_pathname: "/christmas-ai-photos",
     });
+  }
+
+  // Meta Purchase: after verified fulfill RPC only; claim/finalize dedupe races.
+  // Never blocks payment completion or generation enqueue.
+  if (isUuid(orderId)) {
+    waitUntil(
+      emitChristmasV2MetaPurchase(input.service, orderId).catch((err) => {
+        console.error("christmas_v2 meta purchase enqueue failed", err);
+      }),
+    );
   }
 
   return new Response(JSON.stringify({ ok: true, ...result }), {

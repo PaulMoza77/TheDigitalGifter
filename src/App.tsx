@@ -75,6 +75,7 @@ const Templates = lazy(() => import("@/pages/admin/Templates"));
 const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
 
 const PricingPage = lazy(() => import("@/pages/admin/PricingPage"));
+const CustomerCreditsPricingPage = lazy(() => import("@/pages/PricingPage"));
 const ChristmasMonetizationPage = lazy(
   () => import("@/pages/admin/ChristmasMonetizationPage"),
 );
@@ -657,6 +658,7 @@ function AppInner() {
             <Route path="/" element={<Index />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/pricing" element={<CustomerCreditsPricingPage />} />
 
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/generator" element={<GeneratorPage />} />
