@@ -7,10 +7,8 @@ import { occasionById, occasionHref, occasions } from "@/constants/occasions";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
-  landingBodyClass,
   landingEyebrowClass,
   landingPrimaryCtaClass,
-  landingSectionHeadingClass,
   landingTertiaryLinkClass,
 } from "@/domains/Landing/landingStyles";
 
@@ -493,7 +491,7 @@ export default function OccasionGrid() {
     <section
       id="categories"
       className="w-full border-t border-[var(--tdg-home-border)] bg-[var(--tdg-home-bg)] px-4 py-14 sm:px-6 lg:px-8"
-      aria-labelledby="occasions-heading"
+      aria-label="Categories"
     >
       <div className="mx-auto max-w-7xl">
         <motion.div
@@ -503,57 +501,45 @@ export default function OccasionGrid() {
           viewport={{ once: true }}
           transition={{ duration: 0.45 }}
         >
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
-              <p className={landingEyebrowClass}>What can I create?</p>
-              <h2
-                id="occasions-heading"
-                className={`mt-4 ${landingSectionHeadingClass}`}
+          <p className={landingEyebrowClass}>What can I create?</p>
+
+          <div className="mt-6 border-t border-[var(--tdg-home-border)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-7 gap-y-1 sm:gap-x-10">
+              <div
+                role="group"
+                aria-label="Categories"
+                className="flex flex-wrap gap-x-7 gap-y-1 sm:gap-x-10"
               >
-                Choose a category and occasion
-              </h2>
-              <p className={`mt-3 max-w-xl ${landingBodyClass}`}>
-                Cards, portraits, videos, and seasonal experiences. Start with
-                the moment, then make it personal.
-              </p>
-            </div>
+                {categoryTabs.map((tab) => {
+                  const isActive = selectedCategory === tab.key;
 
-            <button
-              type="button"
-              onClick={() => navigate("/templates")}
-              className={`${landingTertiaryLinkClass} inline-flex w-fit shrink-0 items-center gap-1.5 pb-1`}
-            >
-              View all
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => setSelectedCategory(tab.key)}
+                      className={cn(
+                        "-mb-px border-b-2 py-3.5 text-[15px] font-medium tracking-tight transition-colors sm:text-base",
+                        isActive
+                          ? "border-[var(--tdg-home-accent)] text-[var(--tdg-home-text)]"
+                          : "border-transparent text-[var(--tdg-home-text-muted)] hover:text-[var(--tdg-home-text)]"
+                      )}
+                    >
+                      {tab.title}
+                    </button>
+                  );
+                })}
+              </div>
 
-          <div className="mt-8 border-t border-[var(--tdg-home-border)]">
-            <div
-              role="group"
-              aria-label="Categories"
-              className="flex flex-wrap gap-x-7 gap-y-1 sm:gap-x-10"
-            >
-              {categoryTabs.map((tab) => {
-                const isActive = selectedCategory === tab.key;
-
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => setSelectedCategory(tab.key)}
-                    className={cn(
-                      "-mb-px border-b-2 py-3.5 text-[15px] font-medium tracking-tight transition-colors sm:text-base",
-                      isActive
-                        ? "border-[var(--tdg-home-accent)] text-[var(--tdg-home-text)]"
-                        : "border-transparent text-[var(--tdg-home-text-muted)] hover:text-[var(--tdg-home-text)]"
-                    )}
-                  >
-                    {tab.title}
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                onClick={() => navigate("/templates")}
+                className={`${landingTertiaryLinkClass} ml-auto inline-flex shrink-0 items-center gap-1.5 py-3.5`}
+              >
+                View all
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
             <p className="pt-3 text-sm text-[var(--tdg-home-text-muted)]">
               {categoryTabs.find((tab) => tab.key === selectedCategory)?.subtitle}

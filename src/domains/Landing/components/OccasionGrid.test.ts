@@ -14,5 +14,9 @@ describe("homepage occasion grid", () => {
     expect(src).not.toContain("h-64 bg-white/10");
     expect(src).toContain("abortSignal(controller.signal)");
     expect(src).toContain("Promise.allSettled");
+    expect(src).not.toContain("Choose a category and occasion");
+    expect(src).not.toContain("Start with\n                the moment");
+    expect(src).toContain('aria-label="Categories"');
+    expect(src).toContain("View all");
   });
 });
