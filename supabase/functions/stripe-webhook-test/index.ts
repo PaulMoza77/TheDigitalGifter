@@ -206,9 +206,12 @@ Deno.serve(async (req) => {
   const earlyObj = (event.data?.object || {}) as Record<string, unknown>;
   const earlyMeta = (earlyObj.metadata || {}) as Record<string, unknown>;
   if (String(earlyMeta.isolation || "") === "tdg_e2e") {
-    const orderId = String(earlyMeta.christmas_order_id || "");
+    const orderId = String(earlyMeta.christmas_order_id || "").trim();
     const sessionId = String(earlyObj.id || "");
     if (!orderId) return json({ error: "christmas_order_id required" }, 400);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+      return json({ ok: true, status: "ignored", reason: "invalid_order_id" });
+    }
     if (eventType.startsWith("checkout.session") && !sessionId.startsWith("cs_test_")) {
       return json({ error: "test session required", code: "isolation" }, 403);
     }
