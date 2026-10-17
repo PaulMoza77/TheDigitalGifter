@@ -37,6 +37,17 @@ function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function browserStorageUrl(req: Request, signedUrl: string): string {
+  const forwardedHost = (req.headers.get("x-forwarded-host") || "").split(",")[0].trim();
+  const host = forwardedHost || "supabase.thedigitalgifter.com";
+  const internal = host === "api-gw" || host.startsWith("localhost") || host.startsWith("127.");
+  const publicHost = internal ? "supabase.thedigitalgifter.com" : host;
+  const signed = new URL(signedUrl);
+  signed.protocol = "https:";
+  signed.host = publicHost;
+  return signed.toString();
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -267,7 +278,7 @@ Deno.serve(async (req) => {
           const signed = await service.storage
             .from(asset.storage_bucket)
             .createSignedUrl(asset.storage_path, 60 * 15);
-          resultUrl = signed.data?.signedUrl || null;
+          resultUrl = signed.data?.signedUrl ? browserStorageUrl(req, signed.data.signedUrl) : null;
         }
       }
 
