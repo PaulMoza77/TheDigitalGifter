@@ -60,6 +60,7 @@ function setCors(res: NodeApiResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "authorization, x-client-info, apikey, content-type");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("X-TDG-Checkout", "origin");
 }
 
 function parseBody(req: NodeApiRequest): Body {
