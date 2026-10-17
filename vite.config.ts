@@ -21,7 +21,8 @@ function christmasFactory200DevPlugin(): Plugin {
     name: "christmas-factory-200-dev",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const url = (req.url || "").split("?")[0];
+        const rawUrl = req.url || "";
+        const url = rawUrl.split("?")[0];
         if (!url.startsWith(prefix)) return next();
         const rel = decodeURIComponent(url.slice(prefix.length));
         const file = path.resolve(root, rel);
@@ -32,6 +33,11 @@ function christmasFactory200DevPlugin(): Plugin {
         }
         const stat = fs.statSync(file);
         const mime = types[path.extname(file).toLowerCase()] || "application/octet-stream";
+        const qs = rawUrl.includes("?") ? new URLSearchParams(rawUrl.slice(rawUrl.indexOf("?") + 1)) : null;
+        if (qs?.get("download") === "1") {
+          const filename = qs.get("filename") || path.basename(file);
+          res.setHeader("Content-Disposition", `attachment; filename="${filename.replace(/"/g, "")}"`);
+        }
         res.setHeader("Accept-Ranges", "bytes");
         res.setHeader("Content-Type", mime);
         const range = req.headers.range;

@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Check,
+  Download,
   Film,
   Library,
   Loader2,
@@ -28,7 +29,8 @@ import {
 } from "@/features/clip-factory/types";
 import PublishReelDrawer from "@/features/social-publisher/PublishReelDrawer";
 import { resolveDefaultTimezone } from "@/features/social-publisher/timezone";
-import type { LibraryVideo } from "@/features/admin-library/catalog";
+import { appendLibraryQueryParam, type LibraryVideo } from "@/features/admin-library/catalog";
+import { saveLibraryVideo } from "@/features/admin-library/saveLibraryVideo";
 
 const COUNT_CHIPS: Array<{ id: ClipFactoryOptions["clipCount"]; label: string }> = [
   { id: 10, label: "10" },
@@ -647,11 +649,38 @@ export default function AdminClipFactoryPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const urls = (job.renders || []).filter((r) => r.status === "completed" && r.playback_url).map((r) => r.playback_url as string);
-                    urls.forEach((href) => window.open(href, "_blank", "noopener,noreferrer"));
+                    const ready = (job.renders || []).filter((r) => r.status === "completed" && r.playback_url);
+                    if (!ready.length) {
+                      toast.error("No completed clips to download yet.");
+                      return;
+                    }
+                    void (async () => {
+                      for (const render of ready) {
+                        const card = (job.candidates || []).find((c) => c.id === render.candidate_id);
+                        const filename = `${(card?.title || "clip").replace(/[^\w.-]+/g, "_")}.mp4`;
+                        const url = render.playback_url as string;
+                        try {
+                          await saveLibraryVideo({
+                            url,
+                            downloadUrl: appendLibraryQueryParam(
+                              appendLibraryQueryParam(url, "download", "1"),
+                              "filename",
+                              filename,
+                            ),
+                            filename,
+                            kind: "reel",
+                          });
+                        } catch (error) {
+                          toast.error(error instanceof Error ? error.message : "Download failed");
+                          return;
+                        }
+                      }
+                      toast.success(`Downloading ${ready.length} clip${ready.length === 1 ? "" : "s"}`);
+                    })();
                   }}
-                  className="rounded-2xl border border-slate-700 px-4 py-2.5 text-sm"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 px-4 py-2.5 text-sm"
                 >
+                  <Download className="h-4 w-4" />
                   Download all
                 </button>
                 <button
@@ -747,9 +776,29 @@ export default function AdminClipFactoryPage() {
                                 </a>
                               ) : null}
                               {render.playback_url ? (
-                                <a className="rounded-xl border border-slate-700 px-3 py-2 text-sm" href={render.playback_url} download>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-3 py-2 text-sm"
+                                  onClick={() => {
+                                    const filename = `${card.title.replace(/[^\w.-]+/g, "_")}.mp4`;
+                                    const url = render.playback_url as string;
+                                    void saveLibraryVideo({
+                                      url,
+                                      downloadUrl: appendLibraryQueryParam(
+                                        appendLibraryQueryParam(url, "download", "1"),
+                                        "filename",
+                                        filename,
+                                      ),
+                                      filename,
+                                      kind: "reel",
+                                    })
+                                      .then(() => toast.success(`Downloading ${filename}`))
+                                      .catch((error: Error) => toast.error(error.message));
+                                  }}
+                                >
+                                  <Download className="h-4 w-4" />
                                   Download
-                                </a>
+                                </button>
                               ) : null}
                               {render.library_asset_id ? (
                                 <>

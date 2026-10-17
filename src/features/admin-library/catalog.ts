@@ -3900,6 +3900,28 @@ export function videosForCategory(
   return videos.filter((video) => video.category === categoryId);
 }
 
+function createdAtMs(video: LibraryVideo): number {
+  if (!video.createdAt) return Number.NaN;
+  const value = Date.parse(video.createdAt);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+/** Newest `createdAt` first. Items without a date keep their original relative order, after dated items. */
+export function sortLibraryNewestFirst(videos: LibraryVideo[]): LibraryVideo[] {
+  return videos
+    .map((video, index) => ({ video, index }))
+    .sort((a, b) => {
+      const aTime = createdAtMs(a.video);
+      const bTime = createdAtMs(b.video);
+      const aDated = Number.isFinite(aTime);
+      const bDated = Number.isFinite(bTime);
+      if (aDated && bDated && aTime !== bTime) return bTime - aTime;
+      if (aDated !== bDated) return aDated ? -1 : 1;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.video);
+}
+
 export function searchLibraryCatalog(
   videos: LibraryVideo[],
   query: string,
@@ -3909,13 +3931,15 @@ export function searchLibraryCatalog(
   const needle = query.trim().toLowerCase();
   let list = videosForCategory(categoryId, videos);
   if (kind !== "all") list = list.filter((item) => item.kind === kind);
-  if (!needle) return list;
-  return list.filter((video) =>
-    [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
-      .join(" ")
-      .toLowerCase()
-      .includes(needle),
-  );
+  if (needle) {
+    list = list.filter((video) =>
+      [video.title, video.description, video.filename, video.id, ...(video.tags || [])]
+        .join(" ")
+        .toLowerCase()
+        .includes(needle),
+    );
+  }
+  return sortLibraryNewestFirst(list);
 }
 
 export function searchLibraryVideos(
