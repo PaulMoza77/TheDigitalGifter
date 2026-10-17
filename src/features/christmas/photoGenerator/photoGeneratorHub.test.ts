@@ -65,7 +65,13 @@ describe("christmas photo generator hub rebuild", () => {
     const page = readSrc(
       "src/features/christmas/photoGenerator/ChristmasPhotoGeneratorExperience.tsx",
     );
-    expect(page).toContain("BeforeAfterSlider");
+    expect(page).toContain("HeroBeforeAfter");
+    const hero = readSrc("src/features/christmas/photoGenerator/HeroBeforeAfter.tsx");
+    const assets = readSrc("src/features/christmas/photoGenerator/assets.ts");
+    expect(hero).toContain("playsInline");
+    expect(hero).toContain("familyAfterVideo");
+    expect(assets).toContain("portrait_family_loop.mp4");
+    expect(assets).toContain("portrait_family_before");
     expect(page).toContain("subject.h2");
     expect(page).toContain("hero.cta");
     expect(page).toContain("/christmas/family");

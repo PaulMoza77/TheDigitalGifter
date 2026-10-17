@@ -12,13 +12,12 @@ import { useChristmasPortraitFunnel } from "../useChristmasPortraitFunnel";
 import type { ChristmasPortraitSubjectChoice } from "../portraitTypes";
 import {
   GALLERY_EXAMPLES,
-  HERO_EXAMPLES,
   PHOTO_GEN_ASSETS,
   STYLE_PREVIEW_BY_KEY,
   type ExampleCategory,
 } from "./assets";
 import { trackPhotoGeneratorEvent } from "./analytics";
-import { BeforeAfterSlider } from "./BeforeAfterSlider";
+import { HeroBeforeAfter } from "./HeroBeforeAfter";
 import {
   PHOTO_GEN_FAQS,
   photoGenDir,
@@ -85,7 +84,6 @@ export default function ChristmasPhotoGeneratorExperience() {
   const [category, setCategory] = useState<ExampleCategory>("family");
   const [dragOver, setDragOver] = useState(false);
   const [resultMode, setResultMode] = useState<"christmas" | "original">("christmas");
-  const hero = HERO_EXAMPLES[category];
 
   const funnel = useChristmasPortraitFunnel({
     vertical: VERTICAL,
@@ -249,16 +247,9 @@ export default function ChristmasPhotoGeneratorExperience() {
                 </div>
               </div>
               <div className="pg-hero__visual">
-                <BeforeAfterSlider
-                  key={category}
-                  beforeSrc={hero.before}
-                  afterSrc={hero.after}
-                  beforeAlt={hero.beforeAlt}
-                  afterAlt={hero.afterAlt}
+                <HeroBeforeAfter
                   beforeLabel={t("hero.beforeLabel")}
                   afterLabel={t("hero.afterLabel")}
-                  ariaLabel={t("hero.sliderAria")}
-                  eager
                 />
               </div>
             </header>
