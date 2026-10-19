@@ -4,6 +4,7 @@ import {
   CHRISTMAS_20_REELS,
 } from "./christmas20BatchCatalog";
 import { LIBRARY_MONTAGE_OCT11_REELS } from "./libraryMontageOct11Catalog";
+import { LIBRARY_MONTAGE_OCT15_REELS } from "./libraryMontageOct15Catalog";
 import { LIBRARY_MONTAGE_SEP28_REELS } from "./libraryMontageSep28Catalog";
 import {
   CHRISTMAS_MEMORIES_EUROPE_1990S_PHOTOS,
@@ -3831,6 +3832,8 @@ const CHRISTMAS_MARKETING: LibraryVideo[] = [
 ];
 
 export const LIBRARY_VIDEOS: LibraryVideo[] = [
+  // Newest Christmas cut reels first (admin Library → Christmas → Reels).
+  ...LIBRARY_MONTAGE_OCT15_REELS,
   ...LIBRARY_MONTAGE_OCT11_REELS,
   ...LIBRARY_MONTAGE_SEP28_REELS,
   ...CHRISTMAS_MEMORIES_EUROPE_1990S_REELS,
