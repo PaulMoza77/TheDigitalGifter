@@ -141,11 +141,65 @@ describe("christmas photo pricing + wiring", () => {
     );
   });
 
+  it("webhook can re-enqueue generation on already_paid when fulfillment incomplete", () => {
+    const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
+    expect(fulfill).toContain('result.status === "already_paid"');
+    expect(fulfill).toContain("needsGenerate");
+    expect(fulfill).toContain('fulfillment !== "completed"');
+    expect(fulfill).toContain('fulfillment !== "processing"');
+  });
+
+  it("portrait refunds are wired for full and partial via commerce RPC", () => {
+    const fulfill = readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts");
+    const migration = readSrc(
+      "supabase/migrations/20261015194500_christmas_portrait_refunds.sql",
+    );
+    const funnel = readSrc("supabase/functions/christmas-photo-funnel/index.ts");
+    const webhook = readSrc("supabase/functions/stripe-webhook/index.ts");
+    expect(fulfill).toContain("handleChristmasRefund");
+    expect(fulfill).toContain("refund_christmas_commerce_order");
+    expect(fulfill).toContain("refund_christmas_planner_order");
+    expect(fulfill).toContain("sendPortraitRefundedEmail");
+    expect(fulfill).toContain("charge_refunded_cumulative");
+    expect(migration).toContain("partially_refunded");
+    expect(migration).toContain("refunded_amount_cents");
+    expect(migration).toContain("portrait_refunded");
+    expect(funnel).toContain('payment_status === "partially_refunded"');
+    expect(funnel).toContain("download_revoked");
+    expect(webhook).toContain("charge.refunded");
+    expect(webhook).toContain("refund.created");
+  });
+
+  it("portrait delivery email uses ledger + Resend idempotency key", () => {
+    const generate = readSrc("supabase/functions/christmas-photo-generate/index.ts");
+    const email = readSrc("supabase/functions/_shared/christmas/portraitEmail.ts");
+    const migration = readSrc(
+      "supabase/migrations/20261015193000_christmas_portrait_email_kind.sql",
+    );
+    expect(generate).toContain("sendPortraitReadyEmail");
+    expect(generate).not.toContain("api.resend.com/emails");
+    expect(email).toContain('kind = "portrait_ready"');
+    expect(email).toContain("christmas_email_deliveries");
+    expect(email).toContain("Idempotency-Key");
+    expect(email).toContain("xmas-portrait-ready/");
+    expect(email).toContain("delivery_email_sent_at");
+    expect(migration).toContain("portrait_ready");
+  });
+
   it("claim RPC migration requires payment_status paid", () => {
     const sql = readSrc(
       "supabase/migrations/20260902150000_christmas_claim_requires_paid.sql",
     );
     expect(sql).toContain("payment_status <> 'paid'");
     expect(sql).toContain("payment_required");
+  });
+
+  it("claim RPC allows partially_refunded after refund migration", () => {
+    const sql = readSrc(
+      "supabase/migrations/20261015194500_christmas_portrait_refunds.sql",
+    );
+    expect(sql).toContain("partially_refunded");
+    expect(sql).toContain("claim_christmas_generation_job");
+    expect(sql).toContain("payment_status not in ('paid', 'partially_refunded')");
   });
 });

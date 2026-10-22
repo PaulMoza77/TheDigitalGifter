@@ -70,6 +70,7 @@ export async function sendChristmasDeliveryEmail(input: {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `xmas-v2-delivery/${input.orderId}/${kind}`,
     },
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });

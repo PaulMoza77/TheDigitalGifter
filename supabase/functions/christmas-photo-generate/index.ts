@@ -1,10 +1,8 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { kontextProInput, replicateOutputUrl } from "../_shared/pet/replicate.ts";
-import {
-  buildChristmasPortraitPrompt,
-  recoveryRouteForOrder,
-} from "../_shared/christmas/portraitPromptRegistry.ts";
+import { buildChristmasPortraitPrompt } from "../_shared/christmas/portraitPromptRegistry.ts";
+import { sendPortraitReadyEmail } from "../_shared/christmas/portraitEmail.ts";
 
 /**
  * Post-payment Christmas portrait generation (all verticals).
@@ -95,7 +93,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (order.payment_status !== "paid") {
+    if (order.payment_status !== "paid" && order.payment_status !== "partially_refunded") {
       return jsonResponse({ error: "payment_required", code: "payment_required" }, 402);
     }
     if (!order.source_path || !order.style_key) {
@@ -278,42 +276,26 @@ Deno.serve(async (req) => {
 
     try {
       const email = asString(order.email);
-      const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
-      const from = asString(
-        Deno.env.get("CHRISTMAS_EMAIL_FROM") || Deno.env.get("TRANSACTIONAL_EMAIL_FROM"),
-      );
       const tokenHint = asString(
         (order.metadata as Record<string, unknown> | null)?.public_token_hint,
       );
-      if (email && apiKey && from && tokenHint) {
-        const site = (
-          Deno.env.get("SITE_URL") ||
-          Deno.env.get("PUBLIC_APP_URL") ||
-          "https://www.thedigitalgifter.com"
-        ).replace(/\/$/, "");
-        const route = recoveryRouteForOrder({
+      if (email && tokenHint) {
+        const emailResult = await sendPortraitReadyEmail({
+          service,
+          orderId,
+          email,
+          publicToken: tokenHint,
           productKey: asString(order.product_key),
           species: asString(order.species) || null,
           sourceRoute: asString(order.source_route) || null,
           landingPath: asString(order.landing_path) || null,
         });
-        const link = `${site}${route}?token=${encodeURIComponent(tokenHint)}`;
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from,
-            to: [email],
-            subject: "Your Christmas portrait is ready",
-            html: `<p>Your personalized Christmas portrait is ready.</p><p><a href="${link}">Open your result</a></p><p>- The Digital Gifter</p>`,
-          }),
-        });
+        if (!emailResult.sent && emailResult.reason && emailResult.reason !== "already_sent") {
+          console.error("christmas portrait email not sent", emailResult.reason, orderId);
+        }
       }
-    } catch {
-      /* best-effort transactional email */
+    } catch (err) {
+      console.error("christmas portrait email failed", err);
     }
 
     return jsonResponse({
