@@ -79,9 +79,10 @@ async function materializeSource(media: { storage_backend?: string | null; local
   return dest;
 }
 
-async function publishArtifact(localPath: string, supabaseKey: string, vpsRel: string, contentType: string, prefer: "auto" | "vps" = "auto") {
+async function publishArtifact(localPath: string, supabaseKey: string, vpsRel: string, contentType: string, prefer: "auto" | "vps" = "vps") {
   const info = await fs.stat(localPath);
-  if (prefer !== "vps" && info.size <= SUPABASE_OBJECT_LIMIT_BYTES) {
+  const allowSupabase = prefer === "auto" && process.env.CLIP_FACTORY_STORAGE === "supabase";
+  if (allowSupabase && info.size <= SUPABASE_OBJECT_LIMIT_BYTES) {
     const bytes = await uploadBytes(localPath, supabaseKey, contentType);
     return { bytes, backend: "supabase" as const, path: supabaseKey, localRelpath: null as string | null };
   }
@@ -819,7 +820,7 @@ export async function renderClipFactoryCandidate(input: {
       thumbKey,
       renderRelpath(input.jobId, renderId, "jpg"),
       "image/jpeg",
-      videoStored.backend === "vps" ? "vps" : "auto",
+      "vps",
     );
     const videoBytes = videoStored.bytes;
     const filename = sanitizeFilename(`${candidate.title || "clip"}-${candidate.id.slice(0, 8)}.mp4`);
