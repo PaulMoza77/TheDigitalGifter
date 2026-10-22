@@ -29,7 +29,7 @@ jobs:
           for name in MOZAS_SSH_HOST MOZAS_SSH_PRIVATE_KEY MOZAS_SSH_USER; do
             eval "val=\${$name:-}"
             if [ -z "$val" ]; then
-              echo "::error::$name is missing in the Production environment."
+              echo "::error::$name is missing. Add it under GitHub → Settings → Environments → Production, or Repository secrets (Actions)."
               missing=1
             fi
           done
