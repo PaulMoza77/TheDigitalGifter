@@ -1,0 +1,154 @@
+{
+  "status": "INGESTED",
+  "project": "christmas_planner_mom_overwhelm_v2",
+  "count": 7,
+  "assets": [
+    {
+      "id": "ref_01_chaos",
+      "src": "01a0c5d0-c312-7e34-93e6-4fb3971de38e.jpg",
+      "filename": "ref_01_chaos_family_table.jpg",
+      "gen": "ref_01_chaos_1080x1920.png",
+      "shot": "shot_01_chaos",
+      "title": "Wide family chaos at the Christmas table",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_01_chaos_family_table.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_01_chaos_1080x1920.png",
+      "original_bytes": 438499,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4199034,
+      "created_at": "2026-09-21T21:19:10.608980+00:00"
+    },
+    {
+      "id": "ref_02_pressure",
+      "src": "01a0c5d0-c32e-7c50-9e10-23377408c3a6.jpg",
+      "filename": "ref_02_pressure_lists_son.jpg",
+      "gen": "ref_02_pressure_1080x1920.png",
+      "shot": "shot_02_pressure",
+      "title": "Pressure builds \u2014 paper lists, son, husband behind",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_02_pressure_lists_son.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_02_pressure_1080x1920.png",
+      "original_bytes": 467896,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4360703,
+      "created_at": "2026-09-21T21:19:10.921690+00:00"
+    },
+    {
+      "id": "ref_03_husband",
+      "src": "01a0c5d0-c35f-73be-89e3-21837eb69331.jpg",
+      "filename": "ref_03_husband_dinner.jpg",
+      "gen": "ref_03_husband_1080x1920.png",
+      "shot": "shot_03_husband",
+      "title": "Husband asks about Christmas dinner",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_03_husband_dinner.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_03_husband_1080x1920.png",
+      "original_bytes": 419435,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4094370,
+      "created_at": "2026-09-21T21:19:11.294124+00:00"
+    },
+    {
+      "id": "ref_04_breaking",
+      "src": "01a0c5d0-c37a-76e7-9457-0b5888dcc309.jpg",
+      "filename": "ref_04_breaking_point_closeup.jpg",
+      "gen": "ref_04_breaking_1080x1920.png",
+      "shot": "shot_04_breaking_point",
+      "title": "Lauren close-up, exhausted",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_04_breaking_point_closeup.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_04_breaking_1080x1920.png",
+      "original_bytes": 444391,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4261657,
+      "created_at": "2026-09-21T21:19:11.594350+00:00"
+    },
+    {
+      "id": "ref_05_phone",
+      "src": "01a0c5d0-c345-7e83-a596-3eb500210ef6.jpg",
+      "filename": "ref_05_friend_message_phone.jpg",
+      "gen": "ref_05_phone_1080x1920.png",
+      "shot": "shot_05_friend_message",
+      "title": "Lauren reads a friend message on her phone",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_05_friend_message_phone.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_05_phone_1080x1920.png",
+      "original_bytes": 418153,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4027882,
+      "created_at": "2026-09-21T21:19:11.884700+00:00"
+    },
+    {
+      "id": "ref_06_cookies",
+      "src": "01a0c5d0-c39d-7cc1-821f-aac583f1d3e2.jpg",
+      "filename": "ref_06_cookies_lauren_kids.jpg",
+      "gen": "ref_06_cookies_1080x1920.png",
+      "shot": "shot_07_payoff",
+      "title": "Cookie decorating with Lauren and the kids",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_06_cookies_lauren_kids.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_06_cookies_1080x1920.png",
+      "original_bytes": 477232,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4703259,
+      "created_at": "2026-09-21T21:19:12.186647+00:00"
+    },
+    {
+      "id": "ref_07_family_bake",
+      "src": "01a0c5d0-c3b6-734f-975c-50988551dfbb.jpg",
+      "filename": "ref_07_family_bake.jpg",
+      "gen": "ref_07_family_bake_1080x1920.png",
+      "shot": "shot_07_payoff_alt",
+      "title": "Family baking payoff with husband",
+      "original": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/stills/ref_07_family_bake.jpg",
+      "generation_still": "public/assets/christmas/christmas_planner_mom_overwhelm_v2/source/ref_07_family_bake_1080x1920.png",
+      "original_bytes": 489306,
+      "source_wh": [
+        941,
+        1672
+      ],
+      "output_wh": [
+        1080,
+        1920
+      ],
+      "bytes": 4633181,
+      "created_at": "2026-09-21T21:19:12.493272+00:00"
+    }
+  ]
+}

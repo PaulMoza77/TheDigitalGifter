@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=390, initial-scale=1"/>
+<title>Budget</title>
+<link rel="stylesheet" href="/src/features/christmas/planner/plannerApp.css"/>
+<style>
+  html,body { margin:0; background:#f6efe4; }
+  .tdg-planner-side { display:none !important; }
+  .capture-banner {
+    position: sticky; top:0; z-index:80;
+    background:#7a2430; color:#f7f0e4;
+    font: 600 11px/1.3 "Source Sans 3", sans-serif;
+    letter-spacing:.04em; text-transform:uppercase;
+    padding:6px 10px;
+  }
+  .tdg-planner-check {
+    width:22px; height:22px; border-radius:6px;
+    border:1.5px solid #143328; background:#fffdf8;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .tdg-planner-check.is-on { background:#143328; color:#f7f0e4; }
+</style>
+</head>
+<body>
+<div class="tdg-planner-app">
+<p class="capture-banner">Static source render · fictional data · not a signed-in session</p>
+<div class="tdg-planner-frame">
+<header class="tdg-planner-header">
+  <a class="tdg-planner-logo" href="#"><span>The Digital Gifter</span></a>
+  <div class="tdg-planner-header-meta"><span class="tdg-planner-ready-mini">38% ready</span></div>
+</header>
+<main class="tdg-planner-main">
+
+<div class="tdg-planner-page tdg-budget-page">
+  <header class="tdg-planner-page-head">
+    <h1>Christmas Budget</h1>
+    <p>Keep Christmas spending under control.</p>
+  </header>
+  <div class="tdg-planner-summary">
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">Total</span><strong>$1,200</strong><span>this season</span></div>
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">Spent</span><strong>$180</strong><span>so far</span></div>
+    <div class="tdg-planner-summary-cell"><span class="tdg-planner-kicker">Left</span><strong>$1,020</strong><span>remaining</span></div>
+  </div>
+  <div class="tdg-planner-bar" role="progressbar"><span style="width:15%"></span></div>
+  <section class="tdg-planner-section">
+    <div class="tdg-planner-section-head"><h2>Categories</h2></div>
+    <p>Gifts $600 · Food $250 · Other $350</p>
+  </section>
+</div>
+
+</main>
+
+<nav class="tdg-planner-nav" aria-label="Christmas planner">
+  <a class="" href="#today"><span>Today</span></a>
+  <a class="" href="#gifts"><span>Gifts</span></a>
+  <a class="" href="#meals"><span>Meals</span></a>
+  <a class="active" href="#more"><span>More</span></a>
+</nav>
+
+</div>
+</div>
+</body>
+</html>

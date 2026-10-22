@@ -1,0 +1,12 @@
+{
+  "status": "SOURCE_RENDER",
+  "authenticated_account_christmas": false,
+  "blocker": "No planner test login / VITE_SUPABASE_* in this Cloud Agent environment. Could not open live /account/christmas, /gifts, /food, /budget, or /plan.",
+  "what_was_captured": "9:16 pages using production plannerApp.css and the real Today / Gifts / Budget chrome, filled with fictional Lauren household data.",
+  "reel_actions": [
+    "Today: check off Buy Emma's gift",
+    "Gifts: Emma / Art set ordered",
+    "Budget remaining as optional third beat"
+  ],
+  "files": ["today.png", "gifts.png", "budget.png"]
+}
