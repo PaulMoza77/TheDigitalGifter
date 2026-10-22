@@ -4,40 +4,55 @@
  * origin cannot import Deno-flavored modules (esm.sh URLs, Deno.env, ...).
  */
 
+import {
+  CHRISTMAS_PACK_OFFERS,
+  CHRISTMAS_V2_CURRENCY,
+  CHRISTMAS_V2_OFFER_CATALOG_VERSION,
+  type ChristmasPackKey,
+} from "./offers";
+
 export const CHRISTMAS_SOURCE_BUCKET = "christmas-source-photos";
 export const CHRISTMAS_RESULT_BUCKET = "christmas-generated";
 export const CHRISTMAS_PRODUCT_TYPE = "christmas_portrait_pack";
 export const CHRISTMAS_SIGNED_UPLOAD_SECONDS = 60 * 15;
 export const CHRISTMAS_SIGNED_DOWNLOAD_SECONDS = 60 * 60;
 
+export { CHRISTMAS_V2_CURRENCY, CHRISTMAS_V2_OFFER_CATALOG_VERSION };
+export type { ChristmasPackKey };
+
+/** Active EUR pack catalog · amounts/entitlements are server-authoritative. */
 export const CHRISTMAS_PACKS = {
   starter: {
-    key: "starter",
-    sku: "christmas-starter-3",
-    name: "Christmas Starter Pack",
-    amountCents: 300,
-    imageCount: 3,
-    videoCount: 0,
+    key: "starter" as const,
+    sku: CHRISTMAS_PACK_OFFERS.starter.sku,
+    name: CHRISTMAS_PACK_OFFERS.starter.name,
+    amountCents: CHRISTMAS_PACK_OFFERS.starter.amountCents,
+    currency: CHRISTMAS_PACK_OFFERS.starter.currency,
+    imageCount: CHRISTMAS_PACK_OFFERS.starter.imageCount,
+    videoCount: CHRISTMAS_PACK_OFFERS.starter.videoCount,
+    catalogVersion: CHRISTMAS_PACK_OFFERS.starter.catalogVersion,
   },
   magic: {
-    key: "magic",
-    sku: "christmas-magic-8",
-    name: "Christmas Magic Pack",
-    amountCents: 800,
-    imageCount: 8,
-    videoCount: 1,
+    key: "magic" as const,
+    sku: CHRISTMAS_PACK_OFFERS.magic.sku,
+    name: CHRISTMAS_PACK_OFFERS.magic.name,
+    amountCents: CHRISTMAS_PACK_OFFERS.magic.amountCents,
+    currency: CHRISTMAS_PACK_OFFERS.magic.currency,
+    imageCount: CHRISTMAS_PACK_OFFERS.magic.imageCount,
+    videoCount: CHRISTMAS_PACK_OFFERS.magic.videoCount,
+    catalogVersion: CHRISTMAS_PACK_OFFERS.magic.catalogVersion,
   },
   ultimate: {
-    key: "ultimate",
-    sku: "christmas-ultimate-12",
-    name: "Ultimate Christmas Pack",
-    amountCents: 1200,
-    imageCount: 12,
-    videoCount: 2,
+    key: "ultimate" as const,
+    sku: CHRISTMAS_PACK_OFFERS.ultimate.sku,
+    name: CHRISTMAS_PACK_OFFERS.ultimate.name,
+    amountCents: CHRISTMAS_PACK_OFFERS.ultimate.amountCents,
+    currency: CHRISTMAS_PACK_OFFERS.ultimate.currency,
+    imageCount: CHRISTMAS_PACK_OFFERS.ultimate.imageCount,
+    videoCount: CHRISTMAS_PACK_OFFERS.ultimate.videoCount,
+    catalogVersion: CHRISTMAS_PACK_OFFERS.ultimate.catalogVersion,
   },
 } as const;
-
-export type ChristmasPackKey = keyof typeof CHRISTMAS_PACKS;
 
 export const PERSON_IDENTITY_LOCK =
   "CRITICAL: Preserve the exact facial features, age appearance, ethnicity, hair color, hair style, skin tone, and all defining physical characteristics of the uploaded person without ANY changes. Face and identity preservation is the absolute priority. Clothing, background, and lighting may change dramatically. The result must look like a professional Christmas photoshoot of the SAME recognizable person.";
@@ -175,6 +190,13 @@ export const STARTER_SCENE_KEYS = [
   "cozy-christmas",
 ] as const;
 
+/** Default scene keys sized to each active pack's imageCount. */
+export function defaultSceneKeysForPack(packKey: ChristmasPackKey): string[] {
+  const needed = CHRISTMAS_PACKS[packKey].imageCount;
+  const keys = CHRISTMAS_SCENES.map((s) => s.key);
+  return keys.slice(0, Math.min(needed, keys.length));
+}
+
 export function sceneByKey(key: string): ChristmasSceneDef | undefined {
   return CHRISTMAS_SCENES.find((s) => s.key === key);
 }
@@ -200,21 +222,36 @@ export function generationEnabled(): boolean {
   return raw !== "false" && raw !== "0" && raw !== "off";
 }
 
+/** Official Higgsfield Soul v2 image-to-image (docs.higgsfield.ai / open.higgsfield.ai). */
+export const CHRISTMAS_SOUL_V2_IMAGE_MODEL = "higgsfield-ai/soul/v2/image-to-image";
+/** Official Higgsfield Kling 3.0 Pro image-to-video (used by content-autopilot). */
+export const CHRISTMAS_KLING_3_PRO_VIDEO_MODEL = "kling-video/v3.0/pro/image-to-video";
+
 export function christmasImageModel(): string {
   return (
-    process.env.REPLICATE_NANO_BANANA_MODEL ||
-    process.env.REPLICATE_IMAGE_MODEL ||
-    "google/nano-banana"
+    process.env.CHRISTMAS_IMAGE_MODEL ||
+    process.env.CHRISTMAS_SOUL_V2_MODEL ||
+    CHRISTMAS_SOUL_V2_IMAGE_MODEL
   );
 }
 
 export function christmasVideoModel(): string {
-  return process.env.CHRISTMAS_VIDEO_MODEL || "bytedance/seedance-1-pro-fast";
+  return (
+    process.env.CHRISTMAS_VIDEO_MODEL ||
+    process.env.CHRISTMAS_KLING_MODEL ||
+    CHRISTMAS_KLING_3_PRO_VIDEO_MODEL
+  );
+}
+
+export function christmasImageProvider(): "higgsfield" {
+  return "higgsfield";
+}
+
+export function christmasVideoProvider(): "higgsfield" {
+  return "higgsfield";
 }
 
 export function videoGenerationEnabled(): boolean {
-  const raw = String(
-    process.env.CHRISTMAS_VIDEO_GENERATION_ENABLED ?? process.env.PET_VIDEO_GENERATION_ENABLED ?? "true",
-  ).toLowerCase();
+  const raw = String(process.env.CHRISTMAS_VIDEO_GENERATION_ENABLED ?? process.env.PET_VIDEO_GENERATION_ENABLED ?? "true").toLowerCase();
   return raw !== "false" && raw !== "0" && raw !== "off";
 }

@@ -177,14 +177,21 @@ async function postMetaCapi(
   return { sent: true, eventsReceived };
 }
 
-function customData(input: { amountCents: number; orderId?: string }): Record<string, unknown> {
+function customData(input: {
+  amountCents: number;
+  orderId?: string;
+  currency?: string;
+  sku?: string;
+}): Record<string, unknown> {
   const value = input.amountCents / 100;
+  const currency = (input.currency || "USD").toUpperCase();
+  const sku = input.sku || PET_SKU;
   const data: Record<string, unknown> = {
-    currency: "USD",
+    currency,
     value,
-    content_ids: [PET_SKU],
+    content_ids: [sku],
     content_type: "product",
-    contents: [{ id: PET_SKU, quantity: 1, item_price: value }],
+    contents: [{ id: sku, quantity: 1, item_price: value }],
     num_items: 1,
   };
   if (input.orderId) data.order_id = input.orderId;
@@ -199,6 +206,9 @@ export async function sendMetaCapiPurchase(input: {
   eventTime?: number;
   sourceUrl?: string;
   amountCents?: number;
+  /** ISO currency for custom_data · defaults to USD (pet). Christmas V2 passes EUR. */
+  currency?: string;
+  sku?: string;
   fbc?: string | null;
   fbp?: string | null;
   clientIpAddress?: string | null;
@@ -214,7 +224,12 @@ export async function sendMetaCapiPurchase(input: {
   }
 
   const hashedEmail = await hashCustomerEmailForMeta(input.email);
-  const data = customData({ amountCents: input.amountCents, orderId: input.orderId });
+  const data = customData({
+    amountCents: input.amountCents,
+    orderId: input.orderId,
+    currency: input.currency,
+    sku: input.sku,
+  });
   if (metaCustomDataHasForbiddenFields(data)) {
     return { sent: false, reason: "unsafe_custom_data" };
   }

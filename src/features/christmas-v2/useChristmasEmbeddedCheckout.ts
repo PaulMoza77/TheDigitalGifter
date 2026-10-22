@@ -4,6 +4,7 @@ import {
   captureFunnelAttribution,
 } from "../pet/funnelAttribution";
 import { isValidEmbeddedClientSecret, publishableKeyMatchesClientSecret } from "../pet/funnelGuards";
+import { getMetaCapiClickIds } from "../pet/metaCookies";
 import { trackChristmasV2Event } from "./analytics";
 import {
   christmasFunnelApi,
@@ -12,7 +13,6 @@ import {
 } from "./api";
 import {
   CHRISTMAS_PACKS,
-  CHRISTMAS_STARTER_SCENES,
   CHRISTMAS_V2_ORDER_ROUTE,
   CHRISTMAS_V2_ROUTE,
   type ChristmasPackKey,
@@ -53,7 +53,8 @@ export function useChristmasEmbeddedCheckout(input: {
   const [publicToken, setPublicToken] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
-  const [amountCents, setAmountCents] = useState(CHRISTMAS_PACKS.starter.priceCents);
+  const packKey = input.packKey || "starter";
+  const [amountCents, setAmountCents] = useState(CHRISTMAS_PACKS[packKey].priceCents);
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const bootRef = useRef(0);
@@ -61,26 +62,28 @@ export function useChristmasEmbeddedCheckout(input: {
   const bootstrap = useCallback(async () => {
     if (!input.active || !input.photo || !input.file) return;
     const bootId = ++bootRef.current;
+    const selectedPack = CHRISTMAS_PACKS[input.packKey || "starter"];
     setLoading(true);
     setInitError(null);
+    setAmountCents(selectedPack.priceCents);
     try {
       captureFunnelAttribution();
       const funnelSessionId = getChristmasV2SessionId();
       trackChristmasV2Event({
         eventName: "christmas_v2_checkout_started",
-        amountCents: CHRISTMAS_PACKS.starter.priceCents,
-        product: CHRISTMAS_PACKS.starter.sku,
+        amountCents: selectedPack.priceCents,
+        product: selectedPack.sku,
         attemptId: String(bootId),
       });
 
       const prepared = await prepareChristmasCheckoutUpload(input.file);
       const contactEmail = input.email.trim() || placeholderEmail(funnelSessionId);
+      // Omit sceneKeys so the server applies defaultSceneKeysForPack(packKey).
       const order = await christmasFunnelApi.createOrder({
         email: contactEmail,
         customerName: input.customerName.trim() || undefined,
         photo: prepared.meta,
-        packKey: input.packKey || "starter",
-        sceneKeys: CHRISTMAS_STARTER_SCENES.map((s) => s.key),
+        packKey: selectedPack.key,
         funnelSessionId,
       });
       if (bootId !== bootRef.current) return;
@@ -109,6 +112,7 @@ export function useChristmasEmbeddedCheckout(input: {
       }
 
       const origin = window.location.origin;
+      const metaClick = getMetaCapiClickIds();
       const checkout = await christmasFunnelApi.createStripeCheckout({
         orderId: order.orderId,
         publicToken: order.publicToken,
@@ -117,6 +121,9 @@ export function useChristmasEmbeddedCheckout(input: {
         cancelUrl: `${origin}${CHRISTMAS_V2_ROUTE}?checkout=canceled`,
         funnelSessionId,
         attribution: attributionParamsForInternal(),
+        fbc: metaClick.fbc,
+        fbp: metaClick.fbp,
+        metaClick: { fbc: metaClick.fbc, fbp: metaClick.fbp },
       });
       if (bootId !== bootRef.current) return;
 
@@ -134,7 +141,7 @@ export function useChristmasEmbeddedCheckout(input: {
       setClientSecret(checkout.clientSecret || null);
       setPublishableKey(checkout.publishableKey || null);
       setCheckoutUrl(checkout.checkoutUrl || null);
-      setAmountCents(checkout.amountCents || CHRISTMAS_PACKS.starter.priceCents);
+      setAmountCents(checkout.amountCents || selectedPack.priceCents);
     } catch (err) {
       if (bootId !== bootRef.current) return;
       const message =

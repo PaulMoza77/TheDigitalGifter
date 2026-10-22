@@ -30,19 +30,12 @@ export function bearerToken(req: Request): string {
   return authHeader.replace(/^Bearer\s+/i, "").trim();
 }
 
+/** Exact service-role key match only — never trust unsigned JWT `role` claims. */
 export function isServiceRoleRequest(req: Request): boolean {
   const token = bearerToken(req);
   if (!token) return false;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (serviceKey && token === serviceKey) return true;
-  try {
-    const payload = token.split(".")[1] || "";
-    const padded = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
-    const json = JSON.parse(atob(padded)) as { role?: string };
-    return json.role === "service_role";
-  } catch {
-    return false;
-  }
+  return Boolean(serviceKey) && token === serviceKey;
 }
 
 export async function getAuthUser(req: Request) {

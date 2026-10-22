@@ -2,7 +2,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { supabase } from "@/lib/supabase";
-import { createAccountWithEmailPassword, signInWithEmailPassword } from "@/lib/auth/emailPassword";
+import {
+  createAccountWithEmailPassword,
+  requestPasswordReset,
+  signInWithEmailPassword,
+} from "@/lib/auth/emailPassword";
 import { startGoogleSignIn } from "@/lib/auth/googleOAuth";
 import { authErrorMessage } from "@/lib/auth/oauthReturn";
 import { isSafeAuthReturnPath, rememberAuthReturnTo } from "@/lib/auth/returnTo";
@@ -61,7 +65,7 @@ export default function ChristmasAuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(authErrorMessage(params.get("auth_error")));
-  const [busy, setBusy] = useState<"signin" | "signup" | null>(null);
+  const [busy, setBusy] = useState<"signin" | "signup" | "reset" | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
 
   useEffect(() => {
@@ -102,6 +106,25 @@ export default function ChristmasAuthScreen() {
       return;
     }
     await finish();
+  }
+
+  async function onForgotPassword() {
+    setBusy("reset");
+    setMessage(null);
+    if (!email.trim()) {
+      setMessage("Enter your email above, then choose Forgot password.");
+      setBusy(null);
+      return;
+    }
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/login")}`;
+    const result = await requestPasswordReset(supabase, email, redirectTo);
+    setBusy(null);
+    // Neutral copy — do not confirm whether the email exists.
+    if (!result.ok) {
+      setMessage(result.error);
+      return;
+    }
+    setMessage("If an account exists for that email, a reset link is on its way. Check spam if needed.");
   }
 
   async function onGoogle() {
@@ -194,6 +217,16 @@ export default function ChristmasAuthScreen() {
               {busy === "signup" ? "Creating account…" : "Create account"}
             </button>
           </div>
+          <button
+            type="button"
+            className="tdg-planner-auth-hint"
+            style={{ marginTop: "0.75rem", background: "transparent", border: 0, color: "inherit", cursor: "pointer", textDecoration: "underline" }}
+            disabled={formBusy || googleBusy}
+            data-testid="auth-forgot-password"
+            onClick={() => void onForgotPassword()}
+          >
+            {busy === "reset" ? "Sending reset link…" : "Forgot password?"}
+          </button>
         </form>
       </div>
     </div>
