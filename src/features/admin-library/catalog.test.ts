@@ -494,10 +494,17 @@ describe("admin video library", () => {
     expect(page).toContain("Content Autopilot");
     expect(page).toContain("LibraryVideoCard");
     expect(page).toContain("CHRISTMAS_LIBRARY_KINDS");
+    expect(page).toContain('useState<LibraryKind | "all">("all")');
+    expect(page).toContain('label="All"');
+    expect(page).toContain("mapLibraryAssetCategory");
     expect(page).toContain("onShare");
     expect(page).toContain("Schedule batch");
     expect(page).not.toContain("download=");
     expect(page).not.toMatch(/Higgsfield|Budget USD|Assemble Reel from selected shorts/);
+    expect(readSrc("api/clip-factory.ts")).toContain("mapLibraryAssetCategory");
+    expect(readSrc("api/clip-factory.ts")).toContain("mapLibraryAssetKind");
+    expect(readSrc("api/clip-factory.ts")).toContain(".limit(500)");
+    expect(readSrc("api/clip-factory.ts")).toContain("resolveLibraryAssetSrc");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("playsInline");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("Save to Photos");
     expect(readSrc("src/features/admin-library/LibraryVideoCard.tsx")).toContain("isLibraryPhoto");

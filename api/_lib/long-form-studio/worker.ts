@@ -749,7 +749,7 @@ export async function listLibraryVideos() {
       .select("*")
       .eq("category", "long_form")
       .order("created_at", { ascending: false })
-      .limit(80);
+      .limit(500);
     if (error) throw new Error(error.message);
     return (data || []).map((row) => {
       const productionId = String((row.provenance as { production_id?: string } | null)?.production_id || row.id);

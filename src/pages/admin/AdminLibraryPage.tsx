@@ -7,12 +7,12 @@ import {
   CHRISTMAS_LIBRARY_KINDS,
   LIBRARY_CATEGORIES,
   LIBRARY_VIDEOS,
-  countChristmasKind,
   searchLibraryCatalog,
   type LibraryCategoryId,
   type LibraryKind,
   type LibraryVideo,
 } from "@/features/admin-library/catalog";
+import { mapLibraryAssetCategory, mapLibraryAssetKind } from "@/features/admin-library/mapLibraryAsset";
 import { clipFactoryApi } from "@/features/clip-factory/api";
 import { longFormApi } from "@/features/long-form-studio/api";
 import { youtubeLiveApi } from "@/features/youtube-live/api";
@@ -27,7 +27,7 @@ type CategoryFilter = LibraryCategoryId | "all";
 
 export default function AdminLibraryPage() {
   const [category, setCategory] = React.useState<CategoryFilter>("christmas_reels");
-  const [kind, setKind] = React.useState<LibraryKind>("reel");
+  const [kind, setKind] = React.useState<LibraryKind | "all">("all");
   const [query, setQuery] = React.useState("");
   const [playingId, setPlayingId] = React.useState<string | null>(null);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
@@ -62,19 +62,39 @@ export default function AdminLibraryPage() {
       clipFactoryApi.dynamicLibrary().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
       longFormApi.libraryVideos().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
     ]).then(([factory, longForm]) => {
-      const factoryRows = (factory.videos || []).map((row) => ({
-        id: String(row.id),
-        title: String(row.title || "Clip Factory"),
-        description: String(row.description || ""),
-        src: String(row.src || ""),
-        filename: String(row.filename || "clip.mp4"),
-        category: (row.category as LibraryCategoryId) || "clip_factory",
-        kind: (row.kind as LibraryKind) || "reel",
-        durationSeconds: typeof row.durationSeconds === "number" ? row.durationSeconds : undefined,
-        poster: typeof row.poster === "string" ? row.poster : undefined,
-        width: typeof row.width === "number" ? row.width : 1080,
-        height: typeof row.height === "number" ? row.height : 1920,
-      }));
+      const catalogIds = new Set(LIBRARY_VIDEOS.map((video) => video.id));
+      const factoryRows = (factory.videos || [])
+        .map((row) => {
+          const filename = String(row.filename || "clip.mp4");
+          const title = String(row.title || "Clip Factory");
+          const durationSeconds = typeof row.durationSeconds === "number" ? row.durationSeconds : undefined;
+          const catalogId = typeof row.catalogId === "string" ? row.catalogId : undefined;
+          return {
+            id: String(row.id),
+            title,
+            description: String(row.description || ""),
+            src: String(row.src || ""),
+            filename,
+            category: mapLibraryAssetCategory(
+              typeof row.category === "string" ? row.category : "clip_factory",
+              filename,
+              title,
+            ),
+            kind: mapLibraryAssetKind(
+              typeof row.kind === "string" ? row.kind : "reel",
+              filename,
+              durationSeconds,
+            ),
+            durationSeconds,
+            poster: typeof row.poster === "string" ? row.poster : undefined,
+            width: typeof row.width === "number" ? row.width : 1080,
+            height: typeof row.height === "number" ? row.height : 1920,
+            catalogId,
+          };
+        })
+        // Finish-pipeline copies already live in the static catalog — keep one card.
+        .filter((row) => !row.catalogId || !catalogIds.has(row.catalogId))
+        .map(({ catalogId: _catalogId, ...row }) => row);
       const longRows = (longForm.videos || []).map((row) => ({
         id: String(row.id),
         title: String(row.title || "Long-form"),
@@ -103,16 +123,27 @@ export default function AdminLibraryPage() {
       .catch(() => undefined);
   }, []);
 
-  const catalog = React.useMemo(() => [...factoryVideos, ...LIBRARY_VIDEOS], [factoryVideos]);
+  const catalog = React.useMemo(() => {
+    const seen = new Set<string>();
+    const merged: LibraryVideo[] = [];
+    for (const video of [...factoryVideos, ...LIBRARY_VIDEOS]) {
+      if (seen.has(video.id)) continue;
+      seen.add(video.id);
+      merged.push(video);
+    }
+    return merged;
+  }, [factoryVideos]);
   const kindFilter = category === "christmas_reels" ? kind : "all";
   const videos = React.useMemo(
     () => searchLibraryCatalog(catalog, query, category, kindFilter),
     [catalog, query, category, kindFilter],
   );
-  const christmasTotal = LIBRARY_VIDEOS.filter((item) => item.category === "christmas_reels").length;
+  const christmasTotal = catalog.filter((item) => item.category === "christmas_reels").length;
   const totalLabel =
     category === "christmas_reels"
-      ? `${videos.length} of ${christmasTotal} Christmas items`
+      ? kind === "all"
+        ? `${videos.length} of ${christmasTotal} Christmas items`
+        : `${videos.length} ${kind === "photo" ? "Photos" : kind === "short" ? "Shorts" : "Reels"} · ${christmasTotal} Christmas total`
       : `${videos.length} of ${catalog.length} items`;
   const selectedVideos = videos.filter((item) => item.kind === "reel" && selectedIds.includes(item.id));
 
@@ -155,7 +186,7 @@ export default function AdminLibraryPage() {
                 label={item.label}
                 onClick={() => {
                   setCategory(item.id);
-                  if (item.id === "christmas_reels") setKind("reel");
+                  if (item.id === "christmas_reels") setKind("all");
                 }}
               />
             ))}
@@ -174,12 +205,18 @@ export default function AdminLibraryPage() {
 
         {category === "christmas_reels" ? (
           <div className="mb-4 flex flex-wrap gap-2">
+            <KindBadge
+              active={kind === "all"}
+              label="All"
+              count={christmasTotal}
+              onClick={() => setKind("all")}
+            />
             {CHRISTMAS_LIBRARY_KINDS.map((item) => (
               <KindBadge
                 key={item.id}
                 active={kind === item.id}
                 label={item.label}
-                count={countChristmasKind(item.id)}
+                count={catalog.filter((video) => video.category === "christmas_reels" && video.kind === item.id).length}
                 onClick={() => setKind(item.id)}
               />
             ))}
@@ -189,7 +226,9 @@ export default function AdminLibraryPage() {
         {category !== "all" ? (
           <p className="mb-4 text-sm text-slate-400">
             {category === "christmas_reels"
-              ? CHRISTMAS_LIBRARY_KINDS.find((item) => item.id === kind)?.description
+              ? kind === "all"
+                ? "All Christmas Reels, Shorts, and Photos in one list."
+                : CHRISTMAS_LIBRARY_KINDS.find((item) => item.id === kind)?.description
               : LIBRARY_CATEGORIES.find((item) => item.id === category)?.description}
           </p>
         ) : null}
