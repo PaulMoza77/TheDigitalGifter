@@ -71,50 +71,44 @@ export default function AccountSidebar() {
           </p>
         </div>
 
-        <nav className="space-y-2">
-          {loading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
-              Loading menu...
-            </div>
-          ) : (
-            items.map((item) => {
-              const Icon = item.icon;
+        <nav className="space-y-2" aria-busy={loading || undefined}>
+          {items.map((item) => {
+            const Icon = item.icon;
 
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) => navClass(isActive)}
-                >
-                  {({ isActive }) => (
-                    <>
-                      <span
-                        className={[
-                          "flex h-10 w-10 items-center justify-center rounded-xl border transition-all",
-                          isActive
-                            ? "border-white/10 bg-white/10 text-white"
-                            : "border-white/10 bg-white/[0.03] text-zinc-400 group-hover:text-white",
-                        ].join(" ")}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => navClass(isActive)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={[
+                        "flex h-10 w-10 items-center justify-center rounded-xl border transition-all",
+                        isActive
+                          ? "border-white/10 bg-white/10 text-white"
+                          : "border-white/10 bg-white/[0.03] text-zinc-400 group-hover:text-white",
+                      ].join(" ")}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
 
-                      <span className="flex-1">{item.label}</span>
+                    <span className="flex-1">{item.label}</span>
 
-                      <ChevronRight
-                        className={[
-                          "h-4 w-4 transition-transform",
-                          isActive
-                            ? "translate-x-0 text-white"
-                            : "text-zinc-600 group-hover:text-zinc-300",
-                        ].join(" ")}
-                      />
-                    </>
-                  )}
-                </NavLink>
-              );
-            })
-          )}
+                    <ChevronRight
+                      className={[
+                        "h-4 w-4 transition-transform",
+                        isActive
+                          ? "translate-x-0 text-white"
+                          : "text-zinc-600 group-hover:text-zinc-300",
+                      ].join(" ")}
+                    />
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
     </aside>

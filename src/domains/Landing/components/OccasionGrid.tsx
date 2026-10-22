@@ -422,9 +422,14 @@ export default function OccasionGrid() {
       if (cancelled) return;
 
       if (occasionsResult.error) {
-        if (occasionsResult.error.name !== "AbortError") {
+        const aborted =
+          controller.signal.aborted ||
+          occasionsResult.error.name === "AbortError" ||
+          /aborted/i.test(String(occasionsResult.error.message || ""));
+        if (!aborted) {
           console.error("[OccasionGrid] occasions error:", occasionsResult.error);
         }
+        // Keep FALLBACK_OCCASIONS — never leave the grid empty on backend failure.
         return;
       }
 
@@ -445,7 +450,11 @@ export default function OccasionGrid() {
       if (cancelled) return;
 
       if (templatesResult.error) {
-        if (templatesResult.error.name !== "AbortError") {
+        const aborted =
+          controller.signal.aborted ||
+          templatesResult.error.name === "AbortError" ||
+          /aborted/i.test(String(templatesResult.error.message || ""));
+        if (!aborted) {
           console.error("[OccasionGrid] templates error:", templatesResult.error);
         }
         return;

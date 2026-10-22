@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { withTimeout } from "@/lib/withTimeout";
 
 export type AuthContextValue = {
   session: Session | null;
@@ -21,6 +22,9 @@ export type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Keep menus/CTAs usable if Supabase auth hangs (bad DNS/SSL/quota). */
+const AUTH_SESSION_TIMEOUT_MS = 4_000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,11 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 1) initial session
     (async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_SESSION_TIMEOUT_MS,
+          "auth.getSession",
+        );
         if (!mountedRef.current) return;
 
         if (error) console.error("[auth] getSession error:", error);
         setSession(data.session ?? null);
+      } catch (error) {
+        console.error("[auth] getSession failed:", error);
+        if (mountedRef.current) setSession(null);
       } finally {
         if (mountedRef.current) setLoading(false);
       }

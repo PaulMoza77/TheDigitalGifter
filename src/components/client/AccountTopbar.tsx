@@ -136,25 +136,28 @@ export default function AccountTopbar() {
             />
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex xl:gap-2">
-            {!loading &&
-              items.map((item) => {
-                const Icon = item.icon;
+          <nav
+            className="hidden items-center gap-1 lg:flex xl:gap-2"
+            aria-label="Account"
+            aria-busy={loading || undefined}
+          >
+            {items.map((item) => {
+              const Icon = item.icon;
 
-                return (
-                  <NavLink key={item.to} to={item.to}>
-                    {({ isActive }) => (
-                      <span className={desktopNavClass(isActive)}>
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span className="hidden xl:inline">{item.label}</span>
-                        <span className="xl:hidden">
-                          {item.label === "Admin Panel" ? "Admin" : item.label}
-                        </span>
+              return (
+                <NavLink key={item.to} to={item.to}>
+                  {({ isActive }) => (
+                    <span className={desktopNavClass(isActive)}>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="hidden xl:inline">{item.label}</span>
+                      <span className="xl:hidden">
+                        {item.label === "Admin Panel" ? "Admin" : item.label}
                       </span>
-                    )}
-                  </NavLink>
-                );
-              })}
+                    </span>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
 
@@ -266,23 +269,27 @@ export default function AccountTopbar() {
                     </button>
                   </div>
 
-                  <nav className="mt-5 space-y-2">
-                    {!loading &&
-                      items.map((item) => {
-                        const Icon = item.icon;
+                  <nav
+                    className="mt-5 space-y-2"
+                    aria-label="Account"
+                    aria-busy={loading || undefined}
+                    data-testid="account-topbar-mobile-nav"
+                  >
+                    {items.map((item) => {
+                      const Icon = item.icon;
 
-                        return (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            onClick={() => setMobileOpen(false)}
-                            className={({ isActive }) => mobileNavClass(isActive)}
-                          >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            <span>{item.label}</span>
-                          </NavLink>
-                        );
-                      })}
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setMobileOpen(false)}
+                          className={({ isActive }) => mobileNavClass(isActive)}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      );
+                    })}
                   </nav>
 
                   <div className="mt-7 border-t border-white/10 pt-5">
