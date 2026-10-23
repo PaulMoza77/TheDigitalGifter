@@ -212,6 +212,7 @@ export default function FunnelStyleSelect() {
   }, [slug, occasion, bucket, photoPath]);
 
   useEffect(() => {
+    void import("@/components/funnelVersion/FunnelPreview");
     let alive = true;
 
     async function fetchStyles() {
@@ -316,11 +317,11 @@ export default function FunnelStyleSelect() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      <div className="pt-10">
-        <div className="mx-auto max-w-5xl px-6">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F3EEE6] text-[#111827]">
+      <div className="pt-6 sm:pt-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div
-            className="text-center text-[34px] font-semibold tracking-tight"
+            className="text-center text-2xl font-semibold tracking-tight sm:text-[34px]"
             style={{ fontFamily: "ui-serif, Georgia, serif" }}
           >
             TheDigitalGifter
@@ -328,10 +329,10 @@ export default function FunnelStyleSelect() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-5xl px-4 pb-[max(4rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
-            className="text-[28px] leading-tight font-semibold sm:text-[40px] sm:leading-tight"
+            className="text-balance break-words text-2xl font-semibold leading-tight sm:text-[40px] sm:leading-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
             {header.title}
@@ -358,8 +359,8 @@ export default function FunnelStyleSelect() {
               <>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="rounded-[10px] border border-[#D7DEEA] bg-white/40 px-6 py-5">
-                    <div className="h-4 w-56 rounded bg-black/10" />
-                    <div className="mt-2 h-3 w-80 rounded bg-black/5" />
+                    <div className="h-4 w-40 max-w-full rounded bg-black/10 sm:w-56" />
+                    <div className="mt-2 h-3 w-full max-w-xs rounded bg-black/5" />
                   </div>
                 ))}
               </>
@@ -382,7 +383,7 @@ export default function FunnelStyleSelect() {
                     onClick={() => goNext(style)}
                     disabled={!photoPath}
                     className={cn(
-                      "w-full rounded-[10px] border px-6 py-5 text-left transition",
+                      "w-full rounded-[10px] border px-4 py-4 text-left transition sm:px-6 sm:py-5",
                       "border-[#D7DEEA] bg-[#F6F1E9] hover:bg-[#F8F4EE]",
                       "focus:outline-none focus:ring-2 focus:ring-[#0F3D2E]/20",
                       !photoPath && "cursor-not-allowed opacity-60"
@@ -391,8 +392,8 @@ export default function FunnelStyleSelect() {
                     <div className="flex items-start gap-3">
                       <div className="pt-[1px] text-[14px] leading-none">{emoji}</div>
                       <div className="min-w-0">
-                        <div className="text-[15px] font-semibold text-[#111827]">{style.name}</div>
-                        <div className="mt-1 text-[12px] leading-snug text-[#111827]/55">{desc}</div>
+                        <div className="break-words text-[15px] font-semibold text-[#111827]">{style.name}</div>
+                        <div className="mt-1 break-words text-[12px] leading-snug text-[#111827]/55">{desc}</div>
                       </div>
                     </div>
                   </button>

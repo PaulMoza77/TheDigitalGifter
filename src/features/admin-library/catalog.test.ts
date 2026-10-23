@@ -50,7 +50,7 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("Cut 2", "christmas_reels").some((video) => video.id === "reel-kling-1080p-cut2"),
     ).toBe(true);
-    expect(LIBRARY_VIDEOS[0]?.id).toBe("reel-lauren-overwhelm-master");
+    expect(LIBRARY_VIDEOS[0]?.id).toBe("tdg-christmas-meta-ad-v2-20261020");
     expect(
       searchLibraryVideos("Christmas Overwhelm", "christmas_reels", "reel").some(
         (video) => video.id === "reel-lauren-overwhelm-master",
@@ -122,6 +122,18 @@ describe("admin video library", () => {
     expect(
       searchLibraryVideos("ready-to-post", "christmas_reels", "reel").length,
     ).toBeGreaterThanOrEqual(8);
+    expect(searchLibraryVideos("", "christmas_reels", "reel").slice(-10).map((item) => item.id)).toEqual([
+      "reel-library-train-express",
+      "reel-library-santas-village",
+      "reel-library-santa-workshop",
+      "reel-library-kids-snow",
+      "reel-library-polar-village",
+      "reel-library-santa-sleigh",
+      "reel-library-workshop-children",
+      "reel-library-village-night",
+      "reel-library-train-window",
+      "reel-library-santa-and-kids",
+    ]);
     expect(
       searchLibraryVideos("recognizable-scene", "christmas_reels", "photo").some(
         (item) => item.id === "photo-home-alone-house",

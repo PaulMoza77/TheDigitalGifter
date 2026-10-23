@@ -114,6 +114,8 @@ export default function FunnelPreview() {
   }, [navigate]);
 
   useEffect(() => {
+    void import("@/components/funnelVersion/FunnelEmailCapture");
+    void import("@/components/funnelVersion/FunnelPayment");
     const ref = getStoredPhotoRef();
     const s = readSession() || {};
 
@@ -148,11 +150,11 @@ export default function FunnelPreview() {
   );
 
   return (
-    <div className="min-h-screen w-full" style={bg}>
-      <div className="pt-10">
-        <div className="mx-auto max-w-5xl px-6">
+    <div className="min-h-screen w-full overflow-x-hidden" style={bg}>
+      <div className="pt-6 sm:pt-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div
-            className="text-center text-[34px] font-semibold tracking-tight"
+            className="text-center text-2xl font-semibold tracking-tight sm:text-[34px]"
             style={{ fontFamily: "ui-serif, Georgia, serif" }}
           >
             TheDigitalGifter
@@ -160,10 +162,10 @@ export default function FunnelPreview() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 pb-20 pt-10">
+      <div className="mx-auto max-w-5xl px-4 pb-[max(4rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
-            className="text-[28px] leading-tight sm:text-[40px] sm:leading-tight font-semibold"
+            className="text-balance break-words text-2xl font-semibold leading-tight sm:text-[40px] sm:leading-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
             ✓ Your preview is ready
@@ -215,7 +217,7 @@ export default function FunnelPreview() {
                 </div>
 
                 <div className="mt-8 flex justify-center">
-                  <Button onClick={goNext} disabled={!hasPhoto} className="w-full max-w-[420px]">
+                  <Button onClick={goNext} disabled={!hasPhoto} className="h-12 w-full max-w-[420px] text-base">
                     Unlock Full Quality
                   </Button>
                 </div>

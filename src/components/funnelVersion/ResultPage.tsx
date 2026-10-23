@@ -935,26 +935,27 @@ export default function ResultPage() {
           Dashboard
         </Button>
 
-        <div className="text-sm text-zinc-600">{stepLabel}</div>
+        <div className="shrink-0 text-xs text-zinc-600 sm:text-sm">{stepLabel}</div>
       </div>
     );
   }
 
   if (!sessionId && !generationId && !checkoutSessionId) {
     return (
-      <div className="min-h-screen" style={pageBg}>
+      <div className="min-h-screen overflow-x-hidden" style={pageBg}>
         <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
             <Button
               variant="ghost"
-              className="text-zinc-700 hover:text-zinc-900"
+              className="shrink-0 px-2 text-zinc-700 hover:text-zinc-900 sm:px-4"
+              aria-label="Back"
               onClick={() => navigate(HOME_ROUTE)}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+              <ArrowLeft className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
 
-            <div className="select-none text-lg font-semibold tracking-wide text-[#0b3b2e] sm:text-xl">
+            <div className="min-w-0 truncate text-center text-base font-semibold tracking-wide text-[#0b3b2e] sm:text-xl">
               TheDigitalGifter
             </div>
 
@@ -968,7 +969,7 @@ export default function ResultPage() {
 
         <main className="mx-auto w-full max-w-4xl px-4 py-14 sm:px-6">
           <Card className="border-zinc-200 bg-white/80 shadow-sm">
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-5 text-center sm:p-8">
               <h1 className="text-3xl font-semibold text-[#0b3b2e] sm:text-4xl">
                 We couldn’t open your result
               </h1>
@@ -978,17 +979,17 @@ export default function ResultPage() {
               </p>
 
               <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button onClick={() => navigate(NEW_GIFT_ROUTE)}>
+                <Button className="w-full sm:w-auto" onClick={() => navigate(NEW_GIFT_ROUTE)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Start again
                 </Button>
 
-                <Button variant="outline" onClick={() => navigate(DASHBOARD_ROUTE)}>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate(DASHBOARD_ROUTE)}>
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   Dashboard
                 </Button>
 
-                <Button variant="outline" onClick={() => navigate(HOME_ROUTE)}>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => navigate(HOME_ROUTE)}>
                   <Home className="mr-2 h-4 w-4" />
                   Go home
                 </Button>
@@ -1001,19 +1002,20 @@ export default function ResultPage() {
   }
 
   return (
-    <div className="min-h-screen" style={pageBg}>
+    <div className="min-h-screen overflow-x-hidden" style={pageBg}>
       <header className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
           <Button
             variant="ghost"
-            className="text-zinc-700 hover:text-zinc-900"
+            className="shrink-0 px-2 text-zinc-700 hover:text-zinc-900 sm:px-4"
+            aria-label="Back"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Back</span>
           </Button>
 
-          <div className="select-none text-lg font-semibold tracking-wide text-[#0b3b2e] sm:text-xl">
+          <div className="min-w-0 truncate text-center text-base font-semibold tracking-wide text-[#0b3b2e] sm:text-xl">
             TheDigitalGifter
           </div>
 
@@ -1055,7 +1057,7 @@ export default function ResultPage() {
           {imageUrl ? (
             <div className="mx-auto mt-6 flex max-w-2xl flex-col justify-center gap-3 sm:flex-row">
               <Button
-                className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                className="w-full bg-[#0b3b2e] text-white hover:bg-[#082c22] sm:w-auto"
                 onClick={downloadCurrent}
                 disabled={!imageUrl || anyCheckoutLoading}
               >
@@ -1065,7 +1067,7 @@ export default function ResultPage() {
 
               <Button
                 variant="outline"
-                className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                className="w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900 sm:w-auto"
                 onClick={() => navigate(NEW_GIFT_ROUTE)}
                 disabled={anyCheckoutLoading}
               >
@@ -1075,7 +1077,7 @@ export default function ResultPage() {
 
               <Button
                 variant="outline"
-                className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                className="w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900 sm:w-auto"
                 onClick={() => navigate(DASHBOARD_ROUTE)}
                 disabled={anyCheckoutLoading}
               >
@@ -1109,7 +1111,7 @@ export default function ResultPage() {
                         type="button"
                         onClick={() => void handleCheckout("regenerate")}
                         disabled={!canBuy || checkoutLoading.regenerate}
-                        className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#0b3b2e] px-3 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:right-4 sm:top-4"
+                        className="absolute left-3 right-3 top-3 inline-flex items-center justify-center whitespace-normal rounded-full bg-[#0b3b2e] px-3 py-2 text-center text-xs font-semibold leading-snug text-white shadow-lg transition hover:bg-[#082c22] disabled:cursor-not-allowed disabled:opacity-60 sm:left-auto sm:right-4 sm:top-4 sm:max-w-[16rem]"
                       >
                         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                         {checkoutLoading.regenerate
@@ -1141,9 +1143,9 @@ export default function ResultPage() {
                 )}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button
-                  className="bg-[#0b3b2e] text-white hover:bg-[#082c22]"
+                  className="w-full bg-[#0b3b2e] text-white hover:bg-[#082c22] sm:w-auto"
                   onClick={() => navigate(DASHBOARD_ROUTE)}
                   disabled={anyCheckoutLoading}
                 >
@@ -1153,7 +1155,7 @@ export default function ResultPage() {
 
                 <Button
                   variant="outline"
-                  className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                  className="w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900 sm:w-auto"
                   onClick={() => navigate(NEW_GIFT_ROUTE)}
                   disabled={anyCheckoutLoading}
                 >
@@ -1163,7 +1165,7 @@ export default function ResultPage() {
 
                 <Button
                   variant="outline"
-                  className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                  className="w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900 sm:w-auto"
                   onClick={downloadCurrent}
                   disabled={!imageUrl || anyCheckoutLoading}
                 >
@@ -1173,7 +1175,7 @@ export default function ResultPage() {
 
                 <Button
                   variant="outline"
-                  className="border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900"
+                  className="w-full border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900 sm:w-auto"
                   onClick={() => window.location.reload()}
                   disabled={anyCheckoutLoading}
                 >
@@ -1233,7 +1235,7 @@ export default function ResultPage() {
                           <Icon className="h-5 w-5 text-[#0b3b2e]" />
                         </div>
 
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-zinc-900">
                               {offer.title}

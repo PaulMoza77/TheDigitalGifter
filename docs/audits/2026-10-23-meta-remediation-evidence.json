@@ -1,0 +1,460 @@
+{
+  "scope": "Mixed evidence: actual authorized Stripe TEST payment/webhook; local intercepted Pixel dispatch; mock AI output and local email transport. No production deployment.",
+  "stripeTestCheckout": {
+    "sessionMode": "test",
+    "livemode": false,
+    "paymentStatusObserved": "unpaid",
+    "amountCents": 700,
+    "currency": "eur",
+    "merchantDisplayed": "Volocar",
+    "accountAuthorization": "Explicitly authorized by user; acct_1R7edvGD87aY9yHx",
+    "utm": {
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "tdg_living_memory_us",
+      "utm_content": "grandma_family_video"
+    }
+  },
+  "fixtureDatabaseAndDelivery": [
+    {
+      "negative": {
+        "p_payment_status": "unpaid"
+      },
+      "rejected": true,
+      "status": 400
+    },
+    {
+      "negative": {
+        "p_amount_cents": 701
+      },
+      "rejected": true,
+      "status": 400
+    },
+    {
+      "negative": {
+        "p_currency": "usd"
+      },
+      "rejected": true,
+      "status": 400
+    },
+    {
+      "fixturePaid": {
+        "status": "already_paid",
+        "already_paid": true,
+        "meta_event_id": "christmas_purchase_6b4548e4-17eb-4cf0-86c9-b434323c3826",
+        "should_enqueue": false,
+        "christmas_order_id": "6b4548e4-17eb-4cf0-86c9-b434323c3826"
+      },
+      "fixtureRetry": {
+        "status": "already_paid",
+        "already_paid": true,
+        "meta_event_id": "christmas_purchase_6b4548e4-17eb-4cf0-86c9-b434323c3826",
+        "should_enqueue": false,
+        "christmas_order_id": "6b4548e4-17eb-4cf0-86c9-b434323c3826"
+      }
+    },
+    {
+      "mockGenerationHttp": 200,
+      "body": {
+        "ok": true,
+        "status": "mock_completed",
+        "started": 3,
+        "finalize": {
+          "done": true,
+          "failed": 0,
+          "status": "complete",
+          "succeeded": 3,
+          "photos_done": true
+        }
+      }
+    },
+    {
+      "poll": {
+        "status": "complete",
+        "paidAt": true,
+        "currency": "eur",
+        "amountCents": 700,
+        "scenes": [
+          {
+            "key": "by-the-christmas-tree",
+            "status": "succeeded",
+            "download": true
+          },
+          {
+            "key": "snowy-winter-portrait",
+            "status": "succeeded",
+            "download": true
+          },
+          {
+            "key": "cozy-christmas",
+            "status": "succeeded",
+            "download": true
+          }
+        ]
+      }
+    },
+    {
+      "downloadHttp": 200,
+      "downloadBytes": 2578414
+    },
+    {
+      "downloadHttp": 200,
+      "downloadBytes": 2578414
+    },
+    {
+      "downloadHttp": 200,
+      "downloadBytes": 2578414
+    }
+  ],
+  "fixtureWebhook": {
+    "scope": "locally signed synthetic payload; NOT a Stripe TEST webhook delivery",
+    "bad": {
+      "status": 400,
+      "body": {
+        "error": "Invalid Stripe signature"
+      }
+    },
+    "signed": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "status": "already_paid",
+        "already_paid": true,
+        "meta_event_id": "christmas_purchase_6b4548e4-17eb-4cf0-86c9-b434323c3826",
+        "should_enqueue": false,
+        "christmas_order_id": "6b4548e4-17eb-4cf0-86c9-b434323c3826"
+      }
+    },
+    "repeated": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "status": "already_processed",
+        "event_id": "evt_local_fixture_no_stripe_sale"
+      }
+    }
+  },
+  "browser": [
+    {
+      "mobile": false,
+      "beforeConsent": {
+        "calls": [],
+        "fbq": "undefined"
+      },
+      "afterConsent": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "ViewContent",
+          {
+            "content_ids": [
+              "christmas_photo"
+            ],
+            "content_type": "product"
+          }
+        ]
+      ],
+      "checkoutDispatch": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "ViewContent",
+          {
+            "content_ids": [
+              "christmas_photo"
+            ],
+            "content_type": "product"
+          }
+        ],
+        [
+          "track",
+          "InitiateCheckout",
+          {
+            "order_id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+            "value": 7,
+            "currency": "EUR",
+            "content_type": "product",
+            "content_ids": [
+              "christmas_photo"
+            ]
+          },
+          {
+            "eventID": "christmas_ic_ec8c6930-2ac7-4435-a2b8-54f39f4affd0"
+          }
+        ]
+      ],
+      "firstRealTestPaidOrderView": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "Purchase",
+          {
+            "order_id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+            "value": 7,
+            "currency": "EUR",
+            "content_type": "product",
+            "content_ids": [
+              "christmas_starter"
+            ]
+          },
+          {
+            "eventID": "christmas_purchase_ec8c6930-2ac7-4435-a2b8-54f39f4affd0"
+          }
+        ]
+      ],
+      "orderRefresh": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ]
+      ],
+      "upload": {
+        "fileInputs": 1,
+        "overflow": false
+      },
+      "pageErrors": []
+    },
+    {
+      "mobile": true,
+      "beforeConsent": {
+        "calls": [],
+        "fbq": "undefined"
+      },
+      "afterConsent": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "ViewContent",
+          {
+            "content_ids": [
+              "christmas_photo"
+            ],
+            "content_type": "product"
+          }
+        ]
+      ],
+      "checkoutDispatch": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "ViewContent",
+          {
+            "content_ids": [
+              "christmas_photo"
+            ],
+            "content_type": "product"
+          }
+        ],
+        [
+          "track",
+          "InitiateCheckout",
+          {
+            "order_id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+            "value": 7,
+            "currency": "EUR",
+            "content_type": "product",
+            "content_ids": [
+              "christmas_photo"
+            ]
+          },
+          {
+            "eventID": "christmas_ic_ec8c6930-2ac7-4435-a2b8-54f39f4affd0"
+          }
+        ]
+      ],
+      "firstRealTestPaidOrderView": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ],
+        [
+          "track",
+          "Purchase",
+          {
+            "order_id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+            "value": 7,
+            "currency": "EUR",
+            "content_type": "product",
+            "content_ids": [
+              "christmas_starter"
+            ]
+          },
+          {
+            "eventID": "christmas_purchase_ec8c6930-2ac7-4435-a2b8-54f39f4affd0"
+          }
+        ]
+      ],
+      "orderRefresh": [
+        [
+          "init",
+          "1673980440653322"
+        ],
+        [
+          "track",
+          "PageView"
+        ]
+      ],
+      "upload": {
+        "fileInputs": 1,
+        "overflow": false
+      },
+      "pageErrors": []
+    }
+  ],
+  "email": {
+    "transport": "local capture; no Resend or real inbox delivery",
+    "capturedMessages": 1,
+    "recipients": [
+      [
+        "audit@example.invalid"
+      ]
+    ],
+    "subjects": [
+      "Your Christmas photos are ready \ud83c\udf84"
+    ],
+    "localDeliveryLink": true
+  },
+  "metaEventsManager": {
+    "account": "TheDigitalGifter (1877103439548293)",
+    "visibleDataset": "TheDigitalGifter Pixel",
+    "visibleDatasetId": "1673980440653322",
+    "requestedDatasetId": "1673980440653322 (owner corrected original request)",
+    "totalEvents": 0,
+    "range": "2026-09-25 to 2026-10-22",
+    "integrations": "none observed",
+    "requestedDatasetDirectAccess": "content unavailable",
+    "testEventsWebsiteInstructionsAccessible": true,
+    "eventsReceivedVerified": false,
+    "authorizedDatasetId": "1673980440653322",
+    "localWebsiteTestAttempted": true,
+    "localWebsiteTestReceipt": "No received events appeared; fbevents.js script element present, but receipt unverified."
+  },
+  "realAuthorizedStripeTest": {
+    "scope": "Real authorized Stripe TEST payment + actual CLI webhook; generation mocked/email locally captured",
+    "session": {
+      "id": "cs_test_a1mmLpRYCa9cwzoBnd3hJPtSNLGxUJjm1jP3tHi9koXQkxTOp13mDWw1JE",
+      "livemode": false,
+      "paymentStatus": "paid",
+      "amountCents": 700,
+      "currency": "eur",
+      "metadata": {
+        "christmas_order_id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+        "pack_key": "starter",
+        "product_type": "christmas_portrait_pack",
+        "sku": "christmas-starter-3",
+        "utm_campaign": "tdg_living_memory_us",
+        "utm_content": "grandma_family_video",
+        "utm_medium": "paid_social",
+        "utm_source": "facebook"
+      }
+    },
+    "event": {
+      "id": "evt_1UTorZGD87aY9yHxxN405RZ2",
+      "type": "checkout.session.completed",
+      "livemode": false
+    },
+    "actualEventLocallyResignedReplay": {
+      "http": 200,
+      "ok": true,
+      "status": "already_processed",
+      "event_id": "evt_1UTorZGD87aY9yHxxN405RZ2"
+    },
+    "order": {
+      "id": "ec8c6930-2ac7-4435-a2b8-54f39f4affd0",
+      "status": "complete",
+      "paidAtPresent": true,
+      "amountCents": 700,
+      "currency": "eur"
+    },
+    "downloads": [
+      {
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "status": 200,
+        "bytes": 2578414
+      }
+    ]
+  },
+  "ownerConfirmations": {
+    "pixelId": "1673980440653322",
+    "VolocarStripeSandboxAuthorizedForTDG": true
+  },
+  "negativeAuthorizedStripeTest": {
+    "scope": "Actual authorized Stripe TEST decline, browser cancel navigation, then expired TEST session",
+    "sessionId": "cs_test_a196Dc3u1523fV8ye7kQ6jCnUmC83iYgUfIBgL9QywaRaPR9m7CPbiTQ0o",
+    "livemode": false,
+    "paymentStatus": "unpaid",
+    "paymentIntentStatus": "requires_payment_method",
+    "lastPaymentError": "card_declined",
+    "declineCode": "generic_decline",
+    "expiredStatus": "expired",
+    "order": {
+      "id": "02c2895f-8da9-4639-a17b-56f8c42e2628",
+      "status": "awaiting_payment",
+      "paidAt": null,
+      "currency": "eur",
+      "amountCents": 700
+    }
+  },
+  "negativeOrderBrowserPurchaseCounts": [
+    {
+      "mobile": false,
+      "firstOrderView": 0,
+      "refresh": 0
+    },
+    {
+      "mobile": true,
+      "firstOrderView": 0,
+      "refresh": 0
+    }
+  ]
+}

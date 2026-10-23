@@ -1,0 +1,13 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHmac} from 'node:crypto';
+const local='http://127.0.0.1:58421/functions/v1/stripe-webhook';
+const order=JSON.parse(readFileSync('/tmp/tdg-isolated-stripe/order.json','utf8'));
+const secret=readFileSync('/tmp/tdg-isolated-stripe/offline-signing-secret','utf8');
+const payload={id:'evt_local_fixture_no_stripe_sale',type:'checkout.session.completed',livemode:false,data:{object:{id:'cs_test_fixture_not_a_sale',payment_status:'paid',payment_intent:'pi_fixture_not_a_sale',amount_total:700,currency:'eur',metadata:{product_type:'christmas_portrait_pack',christmas_order_id:order.orderId,sku:'christmas-starter-3'}}}};
+const raw=JSON.stringify(payload);const t=Math.floor(Date.now()/1000);const sig=createHmac('sha256',secret).update(`${t}.${raw}`).digest('hex');
+const send=async(signature)=>{const r=await fetch(local,{method:'POST',headers:{'content-type':'application/json','stripe-signature':signature},body:raw});return{status:r.status,body:await r.json()};};
+const bad=await send('t='+t+',v1=invalid');if(bad.status!==400)throw new Error('Bad signature accepted');
+const signed=await send(`t=${t},v1=${sig}`);const repeated=await send(`t=${t},v1=${sig}`);
+if(signed.status!==200||repeated.body.status!=='already_processed')throw new Error('Signed local fixture webhook failed: '+JSON.stringify({signed,repeated}));
+const result={scope:'locally signed synthetic payload; NOT a Stripe TEST webhook delivery',bad,signed,repeated};
+writeFileSync('/tmp/tdg-isolated-stripe/webhook-fixture-results.json',JSON.stringify(result,null,2),{mode:0o600});console.log(JSON.stringify(result));

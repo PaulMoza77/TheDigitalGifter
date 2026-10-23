@@ -13,6 +13,7 @@ import {
 } from "../_shared/christmas/constants.ts";
 import { asString } from "../_shared/christmas/crypto.ts";
 import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import { generateChristmasHiggsfieldImage } from "../_shared/christmas/higgsfield.ts";
 
 type Body = { order_id?: string };
 
@@ -35,18 +36,7 @@ function decryptStoredToken(ciphertext: string | null | undefined): string | nul
   }
 }
 
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
-  }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
+const PORTRAIT_TEMPLATE_URL = "https://www.thedigitalgifter.com/assets/funnel/christmas-after.png";
 
 async function copyObject(
   service: ReturnType<typeof getServiceClient>,
@@ -70,49 +60,17 @@ async function generateWithNanoBanana(prompt: string, imageUrl: string): Promise
   outputUrl: string;
   model: string;
 }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasImageModel();
-  const input = {
+  const generated = await generateChristmasHiggsfieldImage(
+    Deno.env,
     prompt,
-    image: imageUrl,
-    image_input: [imageUrl],
+    imageUrl,
+    PORTRAIT_TEMPLATE_URL,
+  );
+  return {
+    predictionId: generated.predictionId,
+    outputUrl: generated.outputUrl,
+    model: generated.model,
   };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
-  });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate prediction failed");
-  }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 60
-  ) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no image URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
 }
 
 async function enqueueChristmasVideo(orderId: string) {
@@ -304,7 +262,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const finalized = await service.rpc("christmas_finalize_generation_if_done", {
+    const finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
       p_order_id: orderId,
     });
     if (finalized.error) throw finalized.error;

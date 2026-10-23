@@ -178,6 +178,12 @@ export default function ChristmasPortraitFunnelPage() {
           ) : null}
 
           <div className="pg-studio__card" style={{ marginTop: "1.25rem" }}>
+            {!["intro", "generating", "result"].includes(funnel.draft.step) && (
+              <nav aria-label="Creation navigation" style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.goBack}>← Back</button>
+                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.resetAnother}>Start over</button>
+              </nav>
+            )}
             {(funnel.draft.step === "intro" || funnel.draft.step === "upload") && (
               <section className="space-y-4">
                 {vertical.id === "pets" ? (

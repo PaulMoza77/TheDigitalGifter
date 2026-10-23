@@ -1,3 +1,5 @@
+import { christmasFunnelApi, uploadChristmasPhotoToSignedUrl } from "../christmas-v2/api";
+import { type ChristmasPackKey, type ChristmasSceneKey } from "../christmas-v2/config";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { captureFunnelAttribution, attributionParamsForInternal } from "@/features/pet/funnelAttribution";
@@ -27,6 +29,7 @@ import {
 } from "./portraitTypes";
 import type { ChristmasPortraitVertical } from "./portraitVerticals";
 import { enabledChristmasStyles, type ChristmasStyleDef } from "./styles";
+import { reachablePortraitStep, previousPortraitStep } from "./portraitNavigation";
 import { commerceForSubjectChoice } from "./subjectCommerce";
 
 function readDraft(key: string): ChristmasPortraitDraft {
@@ -82,7 +85,9 @@ export function useChristmasPortraitFunnel({
   onShare,
   onStyleRetry,
 }: UseChristmasPortraitFunnelOptions) {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
   const [draft, setDraft] = useState<ChristmasPortraitDraft>(() =>
     readDraft(vertical.draftStorageKey),
   );
@@ -130,6 +135,10 @@ export function useChristmasPortraitFunnel({
 
   const setStep = useCallback(
     (step: ChristmasPortraitStep, patch?: Partial<ChristmasPortraitDraft>) => {
+      const nextParams = new URLSearchParams(paramsRef.current);
+      if (step === "intro") nextParams.delete("step");
+      else nextParams.set("step", step);
+      setParams(nextParams, { replace: paramsRef.current.get("step") === step });
       setDraft((prev) => {
         const next = {
           ...prev,
@@ -141,8 +150,30 @@ export function useChristmasPortraitFunnel({
         return next;
       });
     },
-    [vertical.draftStorageKey],
+    [vertical.draftStorageKey, setParams],
   );
+
+  const urlStep = params.get("step");
+  const recoveryToken = params.get("token");
+  const recoverySession = params.get("session_id");
+  useEffect(() => {
+    // Payment return recovery owns its state until the order has been fetched.
+    if (recoveryToken) return;
+    const step = reachablePortraitStep(urlStep, draft, Boolean(checkout), Boolean(resultUrl));
+    if (step !== draft.step) {
+      setDraft((prev) => {
+        const next = { ...prev, step, lastError: null };
+        writeDraft(vertical.draftStorageKey, next);
+        return next;
+      });
+    }
+    if (urlStep && step !== urlStep) {
+      const next = new URLSearchParams(paramsRef.current);
+      if (step === "intro") next.delete("step");
+      else next.set("step", step);
+      setParams(next, { replace: true });
+    }
+  }, [urlStep, recoveryToken, vertical.draftStorageKey]);
 
   useEffect(() => {
     if (pageViewed.current) return;
@@ -249,7 +280,7 @@ export function useChristmasPortraitFunnel({
     return () => {
       cancelled = true;
     };
-  }, [params, setStep, vertical.draftStorageKey, onGenerationStarted]);
+  }, [recoveryToken, recoverySession, setStep, vertical.draftStorageKey, onGenerationStarted]);
 
   useEffect(() => {
     if (draft.step !== "generating" || !draft.publicToken) return;
@@ -363,8 +394,12 @@ export function useChristmasPortraitFunnel({
       const localUrl = URL.createObjectURL(file);
       fileBlobRef.current = file;
       // Show the photo immediately for conversion momentum; server upload follows.
-      setStep(mode === "hub" ? "subject" : "style", {
+      setStep(mode === "hub" ? "photo" : "style", {
         localPreviewUrl: localUrl,
+        subjectChoice: null,
+        styleKey: null,
+        sourcePath: null,
+        blurredPreviewUrl: null,
         softWarning,
         lastError: null,
         portraitType: vertical.portraitType,
@@ -385,7 +420,7 @@ export function useChristmasPortraitFunnel({
           throw new Error("Preview contract violated");
         }
         await uploadChristmasBlob(upload.signedUrl, upload.token, file, validation.contentType);
-        setStep(mode === "hub" ? "subject" : "style", {
+        setStep(mode === "hub" ? "photo" : "style", {
           localPreviewUrl: localUrl,
           uploadId: upload.uploadId,
           sourcePath: upload.path,
@@ -415,7 +450,7 @@ export function useChristmasPortraitFunnel({
             : msg.length > 160
               ? "We couldn’t upload this photo just now. Your selection is saved — please try again."
               : msg;
-        setStep(mode === "hub" ? "subject" : "upload", {
+        setStep("upload", {
           localPreviewUrl: localUrl,
           lastError: friendly,
         });
@@ -489,6 +524,28 @@ export function useChristmasPortraitFunnel({
       amountCents: catalogAmount,
       metadata: { portrait_type: activePortraitType, subject: draft.subjectChoice },
     });
+  }
+
+  async function startPackCheckout(packKey: ChristmasPackKey) {
+    setBusy(true);
+    try {
+      const blob = fileBlobRef.current || (draft.localPreviewUrl ? await fetch(draft.localPreviewUrl).then(r => r.blob()) : null);
+      if (!blob) throw new Error("Please upload your photo again.");
+      const email = draft.email.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter your email for your photos, clips and receipt.");
+      const sceneMap: Record<string, ChristmasSceneKey> = { cozy_fireplace: "cozy-christmas", winter_wonderland: "snowy-winter-portrait", classic_christmas: "by-the-christmas-tree" };
+      const scene = draft.styleKey ? sceneMap[draft.styleKey] : undefined;
+      const order = await christmasFunnelApi.createOrder({ email, photo: { fileName: "christmas-photo.jpg", contentType: blob.type || "image/jpeg", byteSize: blob.size }, packKey, sceneKeys: scene ? [scene] : undefined });
+      const signed = await christmasFunnelApi.getSignedUploadUrl({ orderId: order.orderId, publicToken: order.publicToken, contentType: blob.type || "image/jpeg", byteSize: blob.size, fileName: "christmas-photo.jpg" });
+      await uploadChristmasPhotoToSignedUrl(signed.uploadUrl, blob, blob.type || "image/jpeg");
+      await christmasFunnelApi.confirmUpload({ orderId: order.orderId, publicToken: order.publicToken, objectPath: signed.objectPath });
+      const result = await christmasFunnelApi.createStripeCheckout({ orderId: order.orderId, publicToken: order.publicToken, uiMode: "hosted", cancelUrl: `${window.location.origin}${vertical.routePath}?step=offer` });
+      if (!result.checkoutUrl) throw new Error("Payment link unavailable. Please try again.");
+      const paymentUrl = new URL(result.checkoutUrl);
+      if (paymentUrl.protocol !== "https:" || paymentUrl.hostname !== "checkout.stripe.com") throw new Error("Invalid payment destination.");
+      window.location.assign(paymentUrl.href);
+    } catch (error) { setStep("offer", { lastError: error instanceof Error ? error.message : "Checkout failed" }); }
+    finally { setBusy(false); }
   }
 
   async function startCheckout() {
@@ -619,6 +676,9 @@ export function useChristmasPortraitFunnel({
     const next = emptyPortraitDraft();
     writeDraft(vertical.draftStorageKey, next);
     setDraft(next);
+    const cleanParams = new URLSearchParams(paramsRef.current);
+    for (const key of ["step", "token", "session_id", "checkout"]) cleanParams.delete(key);
+    setParams(cleanParams);
     setResultUrl(null);
     setCheckout(null);
     fileBlobRef.current = null;
@@ -641,6 +701,7 @@ export function useChristmasPortraitFunnel({
     draft,
     setDraft,
     setStep,
+    goBack: () => setStep(previousPortraitStep(draft, mode === "hub")),
     busy,
     speciesHint,
     checkout,
@@ -660,6 +721,7 @@ export function useChristmasPortraitFunnel({
     onStylePick,
     goOffer,
     startCheckout,
+    startPackCheckout,
     downloadResult,
     shareResult,
     resetAnother,

@@ -79,7 +79,7 @@
           s = b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t, s);
         })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-        fbq("init", "1673980440655322");
+        fbq("init", "1673980440653322");
         fbq("track", "PageView");
         window.dispatchEvent(new Event("tdg-meta-ready"));
       }
@@ -270,6 +270,47 @@
         }
         if (document.body) paintBoot();
         else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
+    <!-- /funnel/homepage/christmas: fetch hero + gallery before the SPA boots.
+         Width rule matches src/components/funnelVersion/funnelPreload.ts -->
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (
+          path !== "/funnel" &&
+          path !== "/funnel/homepage" &&
+          path !== "/funnel/homepage/christmas"
+        ) {
+          return;
+        }
+
+        var width = window.matchMedia("(max-width: 767px)").matches ? 480 : 960;
+        document.documentElement.dataset.funnelWarm = String(width);
+        function href(name) {
+          return "/assets/funnel/" + name + "-" + width + ".webp";
+        }
+        function preload(name, priority) {
+          var url = href(name);
+          if (document.querySelector('link[data-funnel-preload="' + url + '"]')) return;
+          var el = document.createElement("link");
+          el.rel = "preload";
+          el.as = "image";
+          el.type = "image/webp";
+          el.href = url;
+          el.setAttribute("fetchpriority", priority);
+          el.setAttribute("data-funnel-preload", url);
+          document.head.appendChild(el);
+        }
+
+        preload("christmas-before", "high");
+        preload("christmas-after", "auto");
+        ["christmas-ex2-before", "christmas-ex2-after", "christmas-ex3-before", "christmas-ex3-after"].forEach(
+          function (name) {
+            fetch(href(name), { priority: "low", credentials: "same-origin" }).catch(function () {});
+          }
+        );
       })();
     </script>
 

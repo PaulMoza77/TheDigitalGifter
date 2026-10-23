@@ -16,7 +16,10 @@ function send(event: string, data: Record<string, unknown>, eventId?: string) {
   } catch { /* Tracking must never interrupt checkout or delivery. */ }
 }
 
+let viewTracked = false;
+
 export function trackChristmasPackView() {
+  if (viewTracked) return;
   if (typeof window === "undefined") return;
   if (readCookieConsent() !== "granted") {
     const pathname = window.location.pathname;
@@ -25,6 +28,12 @@ export function trackChristmasPackView() {
     }, { once: true });
     return;
   }
+  const fbq = (window as Window & { fbq?: unknown }).fbq;
+  if (typeof fbq !== "function") {
+    window.addEventListener("tdg-meta-ready", trackChristmasPackView, { once: true });
+    return;
+  }
+  viewTracked = true;
   send("ViewContent", { content_ids: ["christmas_photo"], content_type: "product" });
 }
 

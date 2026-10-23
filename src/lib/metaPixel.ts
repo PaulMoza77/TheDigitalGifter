@@ -1,6 +1,6 @@
 import { PET_PRODUCT_SKU } from "@/features/pet/types";
 
-export const TDG_META_PIXEL_ID = "1673980440655322";
+export const TDG_META_PIXEL_ID = "1673980440653322";
 
 type Fbq = ((...args: unknown[]) => void) & { loaded?: boolean };
 

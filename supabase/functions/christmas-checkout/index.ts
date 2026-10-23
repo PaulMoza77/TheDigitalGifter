@@ -593,6 +593,7 @@ Deno.serve(async (req) => {
       params.set("payment_intent_data[metadata][guest_token_hash]", guestTokenHash);
     }
 
+    const checkoutDigest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(params.toString())))).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 24);
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
@@ -601,7 +602,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/x-www-form-urlencoded",
         "Idempotency-Key": plannerFlow
           ? `xmas-planner-${orderId}-${packageKeyResolved}-${plannerAddonKeys.join(".")}-${amountCents}`
-          : `xmas-checkout-${orderId}`,
+          : `xmas-checkout-${orderId}-${checkoutDigest}`,
       },
       body: params,
     });

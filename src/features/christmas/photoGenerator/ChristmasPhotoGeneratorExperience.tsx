@@ -1,3 +1,4 @@
+import { CHRISTMAS_PACKS, type ChristmasPackKey } from "../../christmas-v2/config";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
@@ -9,7 +10,6 @@ import { FONT_HREF } from "../landing/assets";
 import "../landing/ChristmasLanding.css";
 import { CHRISTMAS_PORTRAIT_VERTICALS } from "../portraitVerticals";
 import { useChristmasPortraitFunnel } from "../useChristmasPortraitFunnel";
-import type { ChristmasPortraitSubjectChoice } from "../portraitTypes";
 import {
   GALLERY_EXAMPLES,
   PHOTO_GEN_ASSETS,
@@ -36,14 +36,6 @@ import {
 import { trackChristmasEvent } from "../analytics";
 
 const VERTICAL = CHRISTMAS_PORTRAIT_VERTICALS.photo;
-
-const SUBJECTS: ChristmasPortraitSubjectChoice[] = [
-  "family",
-  "couple",
-  "person",
-  "pet",
-  "person_pet",
-];
 
 function ensureFonts() {
   if (document.querySelector(`link[data-xmas-fonts="1"]`)) return;
@@ -81,8 +73,8 @@ export default function ChristmasPhotoGeneratorExperience() {
   ) as PhotoGenLocale;
   const t = useCallback((key: string) => photoGenT(key, locale), [locale]);
   const seo = useMemo(() => photoGeneratorSeo(locale), [locale]);
+  const [packKey, setPackKey] = useState<ChristmasPackKey>(() => { const saved = sessionStorage.getItem("tdg.generations.pack"); return saved === "starter" || saved === "ultimate" ? saved : "magic"; });
   const [category, setCategory] = useState<ExampleCategory>("family");
-  const [dragOver, setDragOver] = useState(false);
   const [resultMode, setResultMode] = useState<"christmas" | "original">("christmas");
 
   const funnel = useChristmasPortraitFunnel({
@@ -132,7 +124,7 @@ export default function ChristmasPhotoGeneratorExperience() {
 
   const showLanding =
     funnel.draft.step === "intro" ||
-    (funnel.draft.step === "upload" && !funnel.draft.localPreviewUrl);
+    funnel.draft.step === "upload";
 
   useEffect(() => {
     if (showLanding) return;
@@ -166,14 +158,6 @@ export default function ChristmasPhotoGeneratorExperience() {
     return raw;
   };
 
-  const scrollToExamples = () => {
-    document.getElementById("christmas-photo-examples")?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const scrollToCreate = () => {
-    document.getElementById("christmas-photo-create")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <>
       <ChristmasPageHead path="/christmas/photo-generator" image={seo.image} />
@@ -187,124 +171,33 @@ export default function ChristmasPhotoGeneratorExperience() {
           <>
             <header className="pg-hero">
               <div className="pg-hero__copy">
-                <nav aria-label="Breadcrumb">
-                  <ol className="pg-breadcrumbs">
-                    <li>
-                      <Link to="/christmas">{t("nav.hub")}</Link>
-                    </li>
-                    <li aria-hidden="true">/</li>
-                    <li>{t("seo.h1")}</li>
-                  </ol>
-                </nav>
-                <p className="xmas-kicker">{t("hero.kicker")}</p>
                 <h1>{t("seo.h1")}</h1>
-                <p
-                  className="xmas-display"
-                  style={{
-                    margin: "0.65rem 0 0",
-                    fontSize: "clamp(1.65rem, 3.8vw, 2.65rem)",
-                    lineHeight: 1.15,
-                    color: "#fffaf1",
-                  }}
-                >
-                  {t("hero.h1")}
-                </p>
                 <p className="xmas-lede">{t("hero.lede")}</p>
                 <div className="xmas-actions">
                   <button
                     type="button"
+                    id="christmas-photo-create"
                     className="xmas-btn xmas-btn--gold"
+                    disabled={funnel.busy}
                     onClick={() => {
-                      scrollToCreate();
                       funnel.openFilePicker();
                     }}
                   >
                     {t("hero.cta")}
                   </button>
-                  <button type="button" className="xmas-btn xmas-btn--ghost" onClick={scrollToExamples}>
-                    {t("hero.secondary")}
-                  </button>
                 </div>
-                <div className="xmas-tags" role="tablist" aria-label={t("category.aria")}>
-                  {(["family", "couples", "pets"] as ExampleCategory[]).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      role="tab"
-                      className="xmas-tag"
-                      aria-selected={category === key}
-                      aria-pressed={category === key}
-                      onClick={() => setCategory(key)}
-                    >
-                      {t(`category.${key}`)}
-                    </button>
-                  ))}
-                </div>
-                <div className="pg-trust" aria-label="Product facts">
-                  <span>{t("trust.fact1")}</span>
-                  <span>{t("trust.fact2")}</span>
-                  <span>{t("trust.fact3")}</span>
-                </div>
+                {funnel.draft.lastError ? <p className="pg-alert" role="alert">{friendlyError(funnel.draft.lastError)}</p> : null}
+                {funnel.busy ? <p role="status">{t("busy.uploading")}</p> : null}
               </div>
               <div className="pg-hero__visual">
                 <HeroBeforeAfter
+                  ariaLabel={t("hero.sliderAria")}
+                  hint={t("hero.sliderHint")}
                   beforeLabel={t("hero.beforeLabel")}
                   afterLabel={t("hero.afterLabel")}
                 />
               </div>
             </header>
-
-            <section className="pg-section" id="christmas-photo-create" aria-labelledby="upload-heading">
-              <div
-                className={`pg-upload ${dragOver ? "is-drag" : ""}`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  const file = e.dataTransfer.files?.[0] || null;
-                  void funnel.onFileChosen(file);
-                }}
-              >
-                <p className="xmas-kicker">{t("upload.kicker")}</p>
-                <h2 id="upload-heading">{t("upload.h2")}</h2>
-                <p className="xmas-lede">{t("upload.lede")}</p>
-                {funnel.draft.lastError ? (
-                  <p className="pg-alert" role="alert">
-                    {friendlyError(funnel.draft.lastError)}
-                  </p>
-                ) : null}
-                <div className="pg-upload__actions">
-                  <button
-                    type="button"
-                    className="xmas-btn xmas-btn--gold"
-                    disabled={funnel.busy}
-                    onClick={() => funnel.openFilePicker()}
-                  >
-                    {funnel.busy ? t("busy.uploading") : t("upload.choose")}
-                  </button>
-                  <span className="pg-upload__drop">{t("upload.drop")}</span>
-                </div>
-                <p className="xmas-lede" style={{ marginTop: "0.75rem", fontSize: "0.88rem" }}>
-                  {t("upload.hint")}
-                </p>
-                <p className="xmas-kicker" style={{ marginTop: "1.25rem" }}>
-                  {t("upload.guidanceTitle")}
-                </p>
-                <ul className="pg-guide">
-                  <li>{t("upload.g1")}</li>
-                  <li>{t("upload.g2")}</li>
-                  <li>{t("upload.g3")}</li>
-                  <li>{t("upload.g4")}</li>
-                </ul>
-                <p className="xmas-lede" style={{ marginTop: "1rem", fontSize: "0.88rem" }}>
-                  {t("upload.privacy")}
-                </p>
-              </div>
-            </section>
 
             <section
               className="pg-section"
@@ -313,7 +206,6 @@ export default function ChristmasPhotoGeneratorExperience() {
             >
               <p className="xmas-kicker">{t("hero.kicker")}</p>
               <h2 id="examples-heading">{t("examples.h2")}</h2>
-              <p className="xmas-lede">{t("examples.lede")}</p>
               <p className="xmas-lede" style={{ fontSize: "0.85rem" }}>
                 {t("examples.demoNote")}
               </p>
@@ -355,11 +247,6 @@ export default function ChristmasPhotoGeneratorExperience() {
               </div>
             </section>
 
-            <section className="pg-section" aria-labelledby="portrait-explain-heading">
-              <h2 id="portrait-explain-heading">{t("portraitExplain.h2")}</h2>
-              <p className="xmas-lede">{t("portraitExplain.body")}</p>
-            </section>
-
             <section className="pg-section" aria-labelledby="styles-heading">
               <h2 id="styles-heading">{t("style.h2")}</h2>
               <p className="xmas-lede">{t("style.lede")}</p>
@@ -370,7 +257,6 @@ export default function ChristmasPhotoGeneratorExperience() {
                     type="button"
                     className="pg-style"
                     onClick={() => {
-                      scrollToCreate();
                       funnel.openFilePicker();
                     }}
                   >
@@ -393,115 +279,6 @@ export default function ChristmasPhotoGeneratorExperience() {
               </div>
             </section>
 
-            <section className="pg-section" aria-labelledby="best-heading">
-              <h2 id="best-heading">{t("best.h2")}</h2>
-              <p className="xmas-lede">{t("best.body")}</p>
-            </section>
-
-            <section className="pg-section" aria-labelledby="ecosystem-heading">
-              <h2 id="ecosystem-heading">{t("ecosystem.h2")}</h2>
-              <p className="xmas-lede">{t("ecosystem.lede")}</p>
-              <div className="pg-eco" style={{ marginTop: "2rem" }}>
-                <div className="pg-eco__row">
-                  <div className="pg-eco__copy">
-                    <p className="xmas-kicker">{t("family.kicker")}</p>
-                    <h2 style={{ fontSize: "clamp(1.7rem, 3.5vw, 2.5rem)" }}>{t("family.h2")}</h2>
-                    <p className="xmas-lede">{t("family.lede")}</p>
-                    <div className="xmas-actions">
-                      <Link className="xmas-btn xmas-btn--gold" to="/christmas/family">
-                        {t("family.cta")}
-                      </Link>
-                    </div>
-                  </div>
-                  <img
-                    className="pg-eco__img"
-                    src={PHOTO_GEN_ASSETS.familyAfter}
-                    alt={t("family.h2")}
-                    loading="lazy"
-                  />
-                </div>
-                <div className="pg-eco__row pg-eco__row--rev">
-                  <div className="pg-eco__copy">
-                    <p className="xmas-kicker">{t("couples.kicker")}</p>
-                    <h2 style={{ fontSize: "clamp(1.7rem, 3.5vw, 2.5rem)" }}>{t("couples.h2")}</h2>
-                    <p className="xmas-lede">{t("couples.lede")}</p>
-                    <div className="xmas-actions">
-                      <Link className="xmas-btn xmas-btn--gold" to="/christmas/couples">
-                        {t("couples.cta")}
-                      </Link>
-                    </div>
-                  </div>
-                  <img
-                    className="pg-eco__img"
-                    src={PHOTO_GEN_ASSETS.coupleAfter}
-                    alt={t("couples.h2")}
-                    loading="lazy"
-                  />
-                </div>
-                <div className="pg-eco__row">
-                  <div className="pg-eco__copy">
-                    <p className="xmas-kicker">{t("pets.kicker")}</p>
-                    <h2 style={{ fontSize: "clamp(1.7rem, 3.5vw, 2.5rem)" }}>{t("pets.h2")}</h2>
-                    <p className="xmas-lede">{t("pets.lede")}</p>
-                    <div className="xmas-actions">
-                      <Link className="xmas-btn xmas-btn--gold" to="/christmas/pets">
-                        {t("pets.cta")}
-                      </Link>
-                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/dogs">
-                        {t("nav.dogs")}
-                      </Link>
-                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/cats">
-                        {t("nav.cats")}
-                      </Link>
-                      <Link className="xmas-btn xmas-btn--ghost" to="/christmas/cards">
-                        {t("nav.cards")}
-                      </Link>
-                    </div>
-                  </div>
-                  <img
-                    className="pg-eco__img"
-                    src={PHOTO_GEN_ASSETS.dogAfter}
-                    alt={t("pets.h2")}
-                    loading="lazy"
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section className="pg-section" aria-labelledby="how-heading">
-              <h2 id="how-heading">{t("how.h2")}</h2>
-              <div className="pg-how">
-                <div className="pg-how__item">
-                  <div className="pg-how__n">01</div>
-                  <h3>{t("how.1.title")}</h3>
-                  <p>{t("how.1.body")}</p>
-                </div>
-                <div className="pg-how__item">
-                  <div className="pg-how__n">02</div>
-                  <h3>{t("how.2.title")}</h3>
-                  <p>{t("how.2.body")}</p>
-                </div>
-                <div className="pg-how__item">
-                  <div className="pg-how__n">03</div>
-                  <h3>{t("how.3.title")}</h3>
-                  <p>{t("how.3.body")}</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="pg-section pg-geo" aria-labelledby="geo-heading">
-              <h2 id="geo-heading">{t("geo.h2")}</h2>
-              <p>{t("geo.body")}</p>
-              <dl>
-                <dt>{t("geo.best")}</dt>
-                <dd>{t("geo.bestBody")}</dd>
-                <dt>{t("geo.support")}</dt>
-                <dd>{t("geo.supportBody")}</dd>
-                <dt>{t("geo.privacy")}</dt>
-                <dd>{t("geo.privacyBody")}</dd>
-              </dl>
-            </section>
-
             <section className="pg-section pg-faq" aria-labelledby="faq-heading">
               <h2 id="faq-heading">{t("faq.h2")}</h2>
               {PHOTO_GEN_FAQS.map((item) => (
@@ -515,8 +292,14 @@ export default function ChristmasPhotoGeneratorExperience() {
         ) : null}
 
         {/* Creation studio — always mounted for file input; visible after upload */}
-        <div className={showLanding ? "sr-only" : "pg-studio"} aria-hidden={showLanding}>
+        <div className={showLanding ? "sr-only" : `pg-studio ${funnel.draft.step === "offer" ? "pg-studio--offer" : ""}`} aria-hidden={showLanding}>
           <div className="pg-studio__card">
+            {!["intro", "generating", "result"].includes(funnel.draft.step) && (
+              <nav aria-label="Creation navigation" style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.goBack}>← Back</button>
+                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.resetAnother}>Start over</button>
+              </nav>
+            )}
             {funnel.draft.lastError && !showLanding ? (
               <p className="pg-alert" role="alert">
                 {friendlyError(funnel.draft.lastError)}
@@ -524,49 +307,16 @@ export default function ChristmasPhotoGeneratorExperience() {
             ) : null}
             {funnel.draft.softWarning ? <p className="pg-warn">{t(funnel.draft.softWarning)}</p> : null}
 
-            {funnel.draft.step === "subject" && (
-              <section>
-                {funnel.draft.localPreviewUrl ? (
-                  <img
-                    className="pg-preview-thumb"
-                    src={funnel.draft.localPreviewUrl}
-                    alt=""
-                  />
-                ) : null}
-                <h2>{t("subject.h2")}</h2>
-                <p className="xmas-lede">{t("subject.lede")}</p>
-                <div className="pg-subject-grid">
-                  {SUBJECTS.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className="pg-subject"
-                      onClick={() => funnel.selectSubject(key)}
-                    >
-                      {t(`subject.${key}`)}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="xmas-btn xmas-btn--ghost"
-                  style={{ marginTop: "1rem" }}
-                  onClick={() => funnel.openFilePicker()}
-                >
-                  {t("upload.replace")}
-                </button>
+            {funnel.draft.step === "photo" && (
+              <section aria-label="Your uploaded photo">
+                {funnel.draft.localPreviewUrl ? <img className="pg-preview-thumb" src={funnel.draft.localPreviewUrl} alt="Your uploaded photo" /> : null}
+                <button type="button" className="xmas-btn xmas-btn--gold" disabled={funnel.busy || !funnel.draft.sourcePath} onClick={() => funnel.setStep("style")}>Next &gt;</button>
+                {funnel.busy ? <p role="status">{t("busy.uploading")}</p> : null}
               </section>
             )}
 
             {funnel.draft.step === "style" && (
               <section>
-                {funnel.draft.localPreviewUrl ? (
-                  <img
-                    className="pg-preview-thumb"
-                    src={funnel.draft.localPreviewUrl}
-                    alt=""
-                  />
-                ) : null}
                 <h2>{t("style.h2")}</h2>
                 <p className="xmas-lede">{t("style.lede")}</p>
                 <div className="pg-style-grid">
@@ -595,16 +345,6 @@ export default function ChristmasPhotoGeneratorExperience() {
                     </button>
                   ))}
                 </div>
-                {funnel.draft.subjectChoice ? (
-                  <button
-                    type="button"
-                    className="xmas-btn xmas-btn--ghost"
-                    style={{ marginTop: "1rem" }}
-                    onClick={() => funnel.setStep("subject")}
-                  >
-                    {t("style.back")}
-                  </button>
-                ) : null}
               </section>
             )}
 
@@ -628,15 +368,14 @@ export default function ChristmasPhotoGeneratorExperience() {
 
             {funnel.draft.step === "offer" && (
               <section>
-                <h2>{t("offer.h2")}</h2>
-                <ul className="pg-guide">
-                  <li>{funnel.styleName || funnel.draft.styleKey}</li>
-                  <li>{t("vertical.photo.deliverable")}</li>
-                  <li>{t("offer.ready")}</li>
-                  <li>{t("offer.private")}</li>
-                </ul>
+                <h2>Choose your Christmas pack</h2><p className="xmas-lede">Photos and short clips made from your photo. One-time payment. No subscription.</p>
+                <div role="group" aria-label="Photos and short clips" className="pg-pack-grid">
+                  {Object.values(CHRISTMAS_PACKS).map(pack => <button type="button" key={pack.key} className="pg-pack" aria-pressed={packKey === pack.key} onClick={() => { setPackKey(pack.key); sessionStorage.setItem("tdg.generations.pack", pack.key); }} style={{ borderColor: packKey === pack.key ? "#e8c675" : undefined }}>
+                    {pack.key === "magic" ? <span className="pg-pack__badge">Recommended</span> : null}<strong>{pack.name}</strong><span className="pg-pack__price">{pack.priceDisplay}</span><span>{pack.imageCount} photos{pack.videoCount ? ` + ${pack.videoCount} short clip${pack.videoCount === 1 ? "" : "s"}` : ""}</span>
+                  </button>)}
+                </div>
                 <label className="pg-email">
-                  {t("offer.email")}
+                  Email for your photos, clips and receipt
                   <input
                     type="email"
                     value={funnel.draft.email}
@@ -646,19 +385,7 @@ export default function ChristmasPhotoGeneratorExperience() {
                     autoComplete="email"
                   />
                 </label>
-                {funnel.purchasable && funnel.catalogAmount != null ? (
-                  <button
-                    type="button"
-                    className="xmas-btn xmas-btn--gold"
-                    style={{ marginTop: "1rem", width: "100%" }}
-                    disabled={funnel.busy}
-                    onClick={() => void funnel.startCheckout()}
-                  >
-                    {funnel.busy ? t("offer.busy") : t("offer.pay")}
-                  </button>
-                ) : (
-                  <p className="pg-warn">{t("offer.disabled")}</p>
-                )}
+                <button type="button" className="xmas-btn xmas-btn--gold" style={{marginTop:"1rem",width:"100%"}} disabled={funnel.busy} onClick={() => void funnel.startPackCheckout(packKey)}>{funnel.busy ? t("offer.busy") : `Continue to payment — ${CHRISTMAS_PACKS[packKey].priceDisplay}`}</button>
               </section>
             )}
 

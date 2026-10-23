@@ -12,7 +12,8 @@ import { prepareClipFactoryJob } from "../src/features/clip-factory/createJob";
 import { importDeviceOnline } from "../src/features/clip-factory/importDevice";
 import { isKnownInvalidMediaHash } from "../src/features/clip-factory/mediaQuality";
 import { LIBRARY_VIDEOS } from "../src/features/admin-library/catalog";
-import { streamLocalFile } from "./_lib/clip-factory/vpsMedia";
+import { streamAbsoluteFile, streamLocalFile } from "./_lib/clip-factory/vpsMedia";
+import { libraryAssetLocation, libraryAssetPlayback, resolveLibraryAssetPath } from "./_lib/clip-factory/libraryMedia";
 
 const BUCKET = "clip-factory";
 
@@ -96,7 +97,7 @@ async function streamStored(
   await streamStorage(res, storagePath, contentType, method);
 }
 
-async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string, method = "GET") {
+async function streamStorage(res: NodeApiResponse, storagePath: string, contentType: string, method = "GET", bucket = BUCKET) {
   if (method === "HEAD") {
     res.status(200);
     res.setHeader("Content-Type", contentType);
@@ -105,7 +106,7 @@ async function streamStorage(res: NodeApiResponse, storagePath: string, contentT
     return;
   }
   const service = getServiceClient();
-  const { data, error } = await service.storage.from(BUCKET).download(storagePath);
+  const { data, error } = await service.storage.from(bucket).download(storagePath);
   if (error || !data) {
     res.status(404).json({ error: "not_found", message: "Media is not available." });
     return;
@@ -135,6 +136,23 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       return apiError(res, 401, "unauthorized", "This media link has expired. Refresh the page.");
     }
     const service = getServiceClient();
+    if (kind === "asset" || kind === "asset-thumb") {
+      const { data, error } = await service.from("library_assets")
+        .select("id,storage_bucket,storage_path,thumbnail_path,provenance").eq("id", id).maybeSingle();
+      if (error) throw error;
+      const location = data && libraryAssetLocation(data, kind === "asset-thumb");
+      if (!location) return apiError(res, 404, "not_found", "Library media is not available.");
+      if (location.bucket === "vps") {
+        try {
+          streamAbsoluteFile(req, res, resolveLibraryAssetPath(location.path, location.root), location.contentType, req.method || "GET");
+        } catch {
+          return apiError(res, 404, "not_found", "Library media is not available.");
+        }
+      } else {
+        await streamStorage(res, location.path, location.contentType, req.method || "GET", location.bucket);
+      }
+      return;
+    }
     if (kind === "source") {
       const { data } = await service.from("clip_factory_media").select("storage_path,storage_backend,local_relpath").eq("id", id).maybeSingle();
       if (!data?.storage_path && !data?.local_relpath) return apiError(res, 404, "not_found", "Source video is not available.");
@@ -280,29 +298,14 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         id: row.id,
         title: row.title,
         description: row.description,
-        src: signedPlaybackPath("render", row.provenance?.candidate_id ? String(row.id) : row.id),
+        ...libraryAssetPlayback(row),
         filename: row.filename,
         category: "clip_factory",
         kind: row.kind,
         durationSeconds: row.duration_seconds,
-        poster: row.thumbnail_path ? signedPlaybackPath("thumb", row.id) : undefined,
         width: row.width,
         height: row.height,
       }));
-      const { data: renders } = videos.length
-        ? await service
-            .from("clip_factory_renders")
-            .select("id,library_asset_id,thumbnail_path")
-            .in("library_asset_id", videos.map((r) => r.id))
-        : { data: [] as Array<{ id: string; library_asset_id: string; thumbnail_path: string | null }> };
-      const byAsset = new Map((renders || []).map((r) => [r.library_asset_id, r]));
-      for (const video of videos) {
-        const render = byAsset.get(video.id);
-        if (render) {
-          video.src = signedPlaybackPath("render", render.id);
-          video.poster = signedPlaybackPath("thumb", render.id);
-        }
-      }
       return res.status(200).json({ videos });
     }
 
