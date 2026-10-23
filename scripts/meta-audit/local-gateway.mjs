@@ -1,6 +1,12 @@
 import { createServer } from 'node:http';
 import { appendFileSync } from 'node:fs';
-const routes = { 'christmas-funnel':58441, 'stripe-webhook':58442, 'christmas-generate':58443, 'christmas-v2-funnel-event':58444 };
+const routes = {
+  'christmas-funnel': 58441,
+  'stripe-webhook': 58442,
+  'christmas-generate': 58443,
+  'christmas-v2-funnel-event': 58444,
+  'christmas-generate-video': 58445,
+};
 const body = async(req)=>{const a=[];for await(const c of req)a.push(c);return Buffer.concat(a);};
 createServer(async(req,res)=>{
  try {

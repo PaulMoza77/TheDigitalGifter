@@ -27,7 +27,27 @@ const env={PATH:process.env.PATH,HOME:homedir(),DENO_TLS_CA_STORE:'system',TDG_I
 const children=[];
 function start(bin,args,name,childEnv=env){const log=openSync(`/tmp/tdg-isolated-stripe/${name}.log`,'a',0o600);const child=spawn(bin,args,{cwd:process.cwd(),env:childEnv,stdio:['ignore',log,log]});children.push(child);child.on('exit',code=>{if(code)console.log(`${name} exited ${code}`);});return child;}
 start('node',['scripts/meta-audit/local-gateway.mjs'],'gateway');
-for(const [port,name,target] of [[58441,'funnel','supabase/functions/christmas-funnel/index.ts'],[58442,'webhook','supabase/functions/stripe-webhook/index.ts'],[58443,'generation','supabase/functions/christmas-generate/index.ts'],[58444,'events','supabase/functions/_christmas_v2_6d533ec7a8cac492/christmas-v2-funnel-event/index.ts']])start('deno',['run','--allow-env','--allow-read','--allow-net=127.0.0.1,api.stripe.com','scripts/meta-audit/serve-function.ts',String(port),target],name);
+for (const [port, name, target] of [
+  [58441, 'funnel', 'supabase/functions/christmas-funnel/index.ts'],
+  [58442, 'webhook', 'supabase/functions/stripe-webhook/index.ts'],
+  [58443, 'generation', 'supabase/functions/christmas-generate/index.ts'],
+  [58444, 'events', 'supabase/functions/_christmas_v2_6d533ec7a8cac492/christmas-v2-funnel-event/index.ts'],
+  [58445, 'generation-video', 'supabase/functions/christmas-generate-video/index.ts'],
+]) {
+  start(
+    'deno',
+    [
+      'run',
+      '--allow-env',
+      '--allow-read',
+      '--allow-net=127.0.0.1,api.stripe.com',
+      'scripts/meta-audit/serve-function.ts',
+      String(port),
+      target,
+    ],
+    name,
+  );
+}
 if(!offline) start('stripe',['listen','--events','checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.expired','--forward-to','http://127.0.0.1:58421/functions/v1/stripe-webhook'],'stripe-listener',stripeEnv);
 console.log(offline?'Local fixture mode: Stripe network blocked; no real payments or Meta receipt claimed.':'Authorized Stripe TEST listener started.');
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{for(const child of children)child.kill('SIGTERM');process.exit(0);});

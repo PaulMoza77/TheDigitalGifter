@@ -1,0 +1,267 @@
+{
+  "scope": "Isolated Magic authorized Stripe TEST + webhook + mocked Higgsfield/video",
+  "startedAt": "2026-10-23T22:21:02.491Z",
+  "checks": {
+    "videoJobsAtCreate": {
+      "http": 200,
+      "count": 1,
+      "rows": [
+        {
+          "id": "18d11ee9-1258-0f05-badb-4da669309333",
+          "source_scene_key": "by-the-christmas-tree",
+          "status": "queued"
+        }
+      ]
+    },
+    "videoJobCounts": {
+      "starter": {
+        "amountCents": 700,
+        "videoCount": 0,
+        "jobs": 0
+      },
+      "magic": {
+        "amountCents": 1700,
+        "videoCount": 1,
+        "jobs": 1
+      },
+      "ultimate": {
+        "amountCents": 2700,
+        "videoCount": 3,
+        "jobs": 3
+      }
+    },
+    "paymentPageInit": {
+      "http": 200,
+      "id": "ppage_1UTqphGD87aY9yHx4jFjTVGJ",
+      "error": null
+    },
+    "paymentMethod": {
+      "id": "pm_1UTqpiGD87aY9yHx5YrFtrKl",
+      "livemode": false
+    },
+    "paymentPageConfirm": {
+      "http": 200,
+      "status": "complete",
+      "error": null,
+      "payment_intent": {
+        "id": "pi_3UTqpiGD87aY9yHx1CoJZwDO",
+        "object": "payment_intent",
+        "allowed_payment_method_types": null,
+        "amount": 1700,
+        "amount_details": {
+          "tip": {}
+        },
+        "automatic_payment_methods": null,
+        "canceled_at": null,
+        "cancellation_reason": null,
+        "capture_method": "automatic_async",
+        "client_secret": "pi_3UTqpiGD87aY9yHx1CoJZwDO_secret_pccHPZBBinPZEELj67ty917gL",
+        "confirmation_method": "automatic",
+        "created": 1792794066,
+        "currency": "eur",
+        "description": null,
+        "excluded_payment_method_types": null,
+        "last_payment_error": null,
+        "livemode": false,
+        "next_action": null,
+        "payment_method": "pm_1UTqpiGD87aY9yHx5YrFtrKl",
+        "payment_method_configuration_details": null,
+        "payment_method_types": [
+          "card"
+        ],
+        "processing": null,
+        "receipt_email": null,
+        "setup_future_usage": null,
+        "shipping": null,
+        "source": null,
+        "status": "succeeded"
+      }
+    },
+    "webhookPaid": {
+      "attempt": 4,
+      "status": "paid",
+      "amountCents": 1700,
+      "currency": "eur"
+    },
+    "stripeSession": {
+      "id": "cs_test_a1AzR0qsMWgpFLH8izLWEIPWQJFAeGQ0xPF1Pgu2EOddAcb9LrrlGCHdrv",
+      "livemode": false,
+      "paymentStatus": "paid",
+      "amountTotal": 1700,
+      "currency": "eur"
+    },
+    "imageGeneration": {
+      "http": 200,
+      "body": {
+        "ok": true,
+        "status": "mock_completed",
+        "started": 0,
+        "finalize": {
+          "done": true,
+          "total": 5,
+          "failed": 0,
+          "status": "complete",
+          "succeeded": 5,
+          "images_done": true,
+          "videos_done": true,
+          "video_failed": 0,
+          "video_expected": 1,
+          "ready_for_email": true,
+          "video_succeeded": 1,
+          "should_enqueue_video": false
+        }
+      }
+    },
+    "imageFinalize": {
+      "done": true,
+      "total": 5,
+      "failed": 0,
+      "status": "complete",
+      "succeeded": 5,
+      "images_done": true,
+      "videos_done": true,
+      "video_failed": 0,
+      "video_expected": 1,
+      "ready_for_email": true,
+      "video_succeeded": 1,
+      "should_enqueue_video": false
+    },
+    "videoGeneration": {
+      "http": 200,
+      "body": {
+        "status": "already_completed_via_waitUntil_enqueue"
+      }
+    },
+    "videosAfter": [
+      {
+        "id": "18d11ee9-1258-0f05-badb-4da669309333",
+        "source_scene_key": "by-the-christmas-tree",
+        "status": "succeeded",
+        "result_path": "676cc043-82ad-4d32-aa66-29ab4a09034b/videos/18d11ee9-1258-0f05-badb-4da669309333.mp4",
+        "model_name": "mock",
+        "completed_at": "2026-10-23T22:21:12.718+00:00"
+      }
+    ],
+    "poll": {
+      "status": "complete",
+      "paidAt": true,
+      "amountCents": 1700,
+      "currency": "eur",
+      "scenes": [
+        {
+          "key": "by-the-christmas-tree",
+          "status": "succeeded",
+          "download": true
+        },
+        {
+          "key": "snowy-winter-portrait",
+          "status": "succeeded",
+          "download": true
+        },
+        {
+          "key": "cozy-christmas",
+          "status": "succeeded",
+          "download": true
+        },
+        {
+          "key": "grand-evergreen",
+          "status": "succeeded",
+          "download": true
+        },
+        {
+          "key": "festive-dinner",
+          "status": "succeeded",
+          "download": true
+        }
+      ],
+      "videos": [
+        {
+          "key": "by-the-christmas-tree",
+          "status": "succeeded",
+          "download": true
+        }
+      ]
+    },
+    "downloads": [
+      {
+        "type": "image",
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "type": "image",
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "type": "image",
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "type": "image",
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "type": "image",
+        "status": 200,
+        "bytes": 2578414
+      },
+      {
+        "type": "video",
+        "status": 200,
+        "bytes": 24
+      }
+    ],
+    "emailAfterVideos": [
+      {
+        "id": "2f249788-4aa8-48ec-8fa9-48097881cb4e",
+        "order_id": "676cc043-82ad-4d32-aa66-29ab4a09034b",
+        "kind": "magic_ready",
+        "provider_message_id": "local-email-capture",
+        "status": "sent",
+        "created_at": "2026-10-23T22:21:12.782358+00:00"
+      }
+    ],
+    "emailAfterVideoOrdering": {
+      "videoCompletedAt": "2026-10-23T22:21:12.718+00:00",
+      "emailCreatedAt": "2026-10-23T22:21:12.782358+00:00",
+      "emailAfterVideo": true
+    },
+    "emailSinkTail": [
+      {
+        "to": [
+          "stripe-e2e@example.invalid"
+        ],
+        "subject": "Your Christmas photos are ready 🎄"
+      },
+      {
+        "to": [
+          "magic-rc-1792794003102@example.invalid"
+        ],
+        "subject": "Your Christmas Magic Pack is ready"
+      },
+      {
+        "to": [
+          "magic-rc-1792794062492@example.invalid"
+        ],
+        "subject": "Your Christmas Magic Pack is ready"
+      }
+    ]
+  },
+  "order": {
+    "orderId": "676cc043-82ad-4d32-aa66-29ab4a09034b",
+    "packKey": "magic",
+    "amountCents": 1700,
+    "videoCount": 1
+  },
+  "checkout": {
+    "sessionId": "cs_test_a1AzR0qsMWgpFLH8izLWEIPWQJFAeGQ0xPF1Pgu2EOddAcb9LrrlGCHdrv",
+    "amountCents": 1700,
+    "currency": "eur"
+  },
+  "paymentPath": "stripe_test_payment_pages_confirm_plus_listen_webhook",
+  "finishedAt": "2026-10-23T22:21:13.567Z",
+  "ok": true
+}
