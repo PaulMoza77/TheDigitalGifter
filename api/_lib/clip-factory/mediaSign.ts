@@ -18,7 +18,7 @@ export function verifyMediaSignature(id: string, exp: string | number, sig: stri
   return timingSafeEqual(a, b);
 }
 
-export function signedPlaybackPath(kind: "source" | "render" | "thumb", id: string, ttlSec = 60 * 60 * 12): string {
+export function signedPlaybackPath(kind: "source" | "render" | "thumb" | "asset" | "asset-thumb", id: string, ttlSec = 60 * 60 * 12): string {
   const exp = Math.floor(Date.now() / 1000) + ttlSec;
   const sig = signMedia(`${kind}:${id}`, exp);
   return `/api/clip-factory?action=media&kind=${kind}&id=${encodeURIComponent(id)}&exp=${exp}&sig=${sig}`;

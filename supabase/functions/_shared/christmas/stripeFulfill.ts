@@ -10,6 +10,8 @@ import { asInt, asString, isUuid } from "./crypto.ts";
 import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
 import { isPlannerProductKey } from "./plannerCommerce.ts";
 import { sendPlannerReadyEmail } from "./plannerEmail.ts";
+import { isPortraitProductKey } from "./portraitPromptRegistry.ts";
+import { sendPortraitRefundedEmail } from "./portraitRefundEmail.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
@@ -85,7 +87,7 @@ export async function handleChristmasStripeEvent(input: {
     input.eventType === "charge.dispute.created" ||
     input.eventType === "charge.dispute.funds_withdrawn"
   ) {
-    return handleChristmasPlannerRefund(input);
+    return handleChristmasRefund(input);
   }
 
   if (!isChristmasCheckoutMetadata(input.metadata)) return null;
@@ -221,95 +223,102 @@ export async function handleChristmasStripeEvent(input: {
       }
     }
 
-    if (result.ok === true && result.status === "paid") {
+    if (result.ok === true && (result.status === "paid" || result.status === "already_paid")) {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
+      const firstPaid = result.status === "paid";
 
       if (isPlannerProductKey(productKey)) {
         // Entitlements + email handled above (including webhook replay).
       } else if (productKey === "christmas_gift_tree") {
-        const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
-          || (packageKey === "open_5"
-            ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
-            : undefined);
-        const opens = paid?.opens_granted ?? 0;
-        if (opens > 0) {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("user_id,email,metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const meta = (ord?.metadata || {}) as Record<string, unknown>;
-          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
-          const email = asString(ord?.email) || asString(input.metadata.email);
-          await input.service.rpc("christmas_gift_tree_grant_opens", {
-            p_season_year: 2026,
-            p_opens: opens,
-            p_source: "purchase",
-            p_source_ref: `stripe_order:${orderId}`,
-            p_user_id: ord?.user_id || null,
-            p_guest_token_hash: guestHash || null,
-            p_email_normalized: email ? email.trim().toLowerCase() : null,
-            p_metadata: {
-              package_key: packageKey,
-              stripe_session_id: sessionId,
-              christmas_order_id: orderId,
-            },
-          });
-        }
-      } else {
-        {
-          const { data: ordMeta } = await input.service
-            .from("christmas_orders")
-            .select("metadata")
-            .eq("id", orderId)
-            .maybeSingle();
-          const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
-          const entId =
-            asString(input.metadata.gift_tree_entitlement_id) ||
-            asString(meta.gift_tree_entitlement_id);
-          if (entId) {
-            await input.service
-              .from("christmas_reward_entitlements")
-              .update({
-                redeemed_at: new Date().toISOString(),
-                status: "redeemed",
-                metadata: {
-                  redeemed_via: "stripe_webhook",
-                  christmas_order_id: orderId,
-                  stripe_session_id: sessionId,
-                },
-              })
-              .eq("id", entId)
-              .is("redeemed_at", null);
+        // Grant opens only on the first paid transition (idempotent source_ref protects duplicates).
+        if (firstPaid) {
+          const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
+            || (packageKey === "open_5"
+              ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
+              : undefined);
+          const opens = paid?.opens_granted ?? 0;
+          if (opens > 0) {
+            const { data: ord } = await input.service
+              .from("christmas_orders")
+              .select("user_id,email,metadata")
+              .eq("id", orderId)
+              .maybeSingle();
+            const meta = (ord?.metadata || {}) as Record<string, unknown>;
+            const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
+            const email = asString(ord?.email) || asString(input.metadata.email);
+            await input.service.rpc("christmas_gift_tree_grant_opens", {
+              p_season_year: 2026,
+              p_opens: opens,
+              p_source: "purchase",
+              p_source_ref: `stripe_order:${orderId}`,
+              p_user_id: ord?.user_id || null,
+              p_guest_token_hash: guestHash || null,
+              p_email_normalized: email ? email.trim().toLowerCase() : null,
+              p_metadata: {
+                package_key: packageKey,
+                stripe_session_id: sessionId,
+                christmas_order_id: orderId,
+              },
+            });
           }
         }
+      } else {
+        const { data: ordMeta } = await input.service
+          .from("christmas_orders")
+          .select("metadata,fulfillment_status,product_key")
+          .eq("id", orderId)
+          .maybeSingle();
+        const meta = (ordMeta?.metadata || {}) as Record<string, unknown>;
+        const entId =
+          asString(input.metadata.gift_tree_entitlement_id) ||
+          asString(meta.gift_tree_entitlement_id);
+        if (entId && firstPaid) {
+          await input.service
+            .from("christmas_reward_entitlements")
+            .update({
+              redeemed_at: new Date().toISOString(),
+              status: "redeemed",
+              metadata: {
+                redeemed_via: "stripe_webhook",
+                christmas_order_id: orderId,
+                stripe_session_id: sessionId,
+              },
+            })
+            .eq("id", entId)
+            .is("redeemed_at", null);
+        }
         let mode: "commerce" | "santa" = "commerce";
-        if (productKey === "christmas_santa_video") {
+        const resolvedProductKey = productKey || asString(ordMeta?.product_key);
+        if (resolvedProductKey === "christmas_santa_video") {
           mode = "santa";
-        } else if (!productKey) {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("product_key")
-            .eq("id", orderId)
-            .maybeSingle();
-          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
-          const { data: ord } = await input.service
-            .from("christmas_orders")
-            .select("user_id,email,commercial_snapshot")
-            .eq("id", orderId)
-            .maybeSingle();
-          await input.service.rpc("grant_christmas_bundle_entitlements", {
-            p_order_id: orderId,
-            p_user_id: ord?.user_id || null,
-            p_email: ord?.email || null,
-            p_snapshot: ord?.commercial_snapshot || {},
-          });
+        if (resolvedProductKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+          if (firstPaid) {
+            const { data: ord } = await input.service
+              .from("christmas_orders")
+              .select("user_id,email,commercial_snapshot")
+              .eq("id", orderId)
+              .maybeSingle();
+            await input.service.rpc("grant_christmas_bundle_entitlements", {
+              p_order_id: orderId,
+              p_user_id: ord?.user_id || null,
+              p_email: ord?.email || null,
+              p_snapshot: ord?.commercial_snapshot || {},
+            });
+          }
         } else {
-          enqueueChristmasGenerate(orderId, mode);
+          const fulfillment = asString(ordMeta?.fulfillment_status) || "not_started";
+          const needsGenerate =
+            firstPaid ||
+            fulfillment === "not_started" ||
+            fulfillment === "failed" ||
+            fulfillment === "queued";
+          // Skip completed / in-progress order fulfillment on webhook replay.
+          if (needsGenerate && fulfillment !== "completed" && fulfillment !== "processing") {
+            enqueueChristmasGenerate(orderId, mode);
+          }
         }
       }
     }
@@ -352,23 +361,25 @@ export async function handleChristmasStripeEvent(input: {
   });
 }
 
-async function handleChristmasPlannerRefund(input: {
+async function resolveChristmasOrderIdFromRefund(input: {
   service: SupabaseClient;
-  eventId: string;
-  eventType: string;
   obj: Record<string, unknown>;
   metadata: Record<string, unknown>;
-}): Promise<Response | null> {
-  const meta = {
-    ...input.metadata,
-    ...(((input.obj.payment_intent as { metadata?: Record<string, unknown> } | undefined)?.metadata) ||
-      {}),
-  };
+}): Promise<string | null> {
+  const piMeta =
+    typeof input.obj.payment_intent === "object" && input.obj.payment_intent
+      ? ((input.obj.payment_intent as { metadata?: Record<string, unknown> }).metadata || {})
+      : {};
+  const meta = { ...input.metadata, ...piMeta };
   let orderId = isUuid(asString(meta.christmas_order_id))
     ? asString(meta.christmas_order_id)
     : "";
+
   const paymentIntentId = asString(
-    input.obj.payment_intent ||
+    (typeof input.obj.payment_intent === "string" ? input.obj.payment_intent : "") ||
+      (typeof input.obj.payment_intent === "object" && input.obj.payment_intent
+        ? (input.obj.payment_intent as { id?: string }).id
+        : "") ||
       (typeof input.obj.charge === "object" && input.obj.charge
         ? (input.obj.charge as { payment_intent?: string }).payment_intent
         : "") ||
@@ -378,7 +389,7 @@ async function handleChristmasPlannerRefund(input: {
   if (!orderId && paymentIntentId) {
     const { data: byPi } = await input.service
       .from("christmas_orders")
-      .select("id, product_key")
+      .select("id")
       .eq("stripe_payment_intent_id", paymentIntentId)
       .maybeSingle();
     if (byPi?.id) orderId = byPi.id;
@@ -394,26 +405,111 @@ async function handleChristmasPlannerRefund(input: {
       if (bySession?.id) orderId = bySession.id;
     }
   }
+  return orderId || null;
+}
+
+/**
+ * Routes Christmas refunds:
+ * - planner → refund_christmas_planner_order
+ * - portrait / santa commerce → refund_christmas_commerce_order (full + partial)
+ */
+async function handleChristmasRefund(input: {
+  service: SupabaseClient;
+  eventId: string;
+  eventType: string;
+  obj: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+}): Promise<Response | null> {
+  const orderId = await resolveChristmasOrderIdFromRefund(input);
   if (!orderId) return null;
 
   const { data: ord } = await input.service
     .from("christmas_orders")
-    .select("id, product_key")
+    .select(
+      "id, product_key, email, amount_cents, charged_amount_cents, currency, payment_status, refunded_amount_cents",
+    )
     .eq("id", orderId)
     .maybeSingle();
   if (!ord) return null;
+
   const productKey = asString(ord.product_key);
-  if (!productKey.startsWith("christmas_planner") && !isPlannerProductKey(productKey)) {
-    return null;
+  const isPlanner =
+    productKey.startsWith("christmas_planner") || isPlannerProductKey(productKey);
+  const isCommercePortrait =
+    isPortraitProductKey(productKey) || productKey === "christmas_santa_video";
+
+  if (!isPlanner && !isCommercePortrait) return null;
+
+  if (isPlanner) {
+    await input.service.rpc("refund_christmas_planner_order", { p_order_id: orderId });
+    await input.service.from("processed_stripe_events").insert({
+      event_id: input.eventId,
+      event_type: input.eventType,
+      result: { status: "planner_refunded", order_id: orderId },
+    });
+    return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
-  await input.service.rpc("refund_christmas_planner_order", { p_order_id: orderId });
+  // Portrait / santa commerce refunds
+  const isChargeRefunded = input.eventType === "charge.refunded";
+  const refundAmount = isChargeRefunded
+    ? asInt(input.obj.amount_refunded)
+    : asInt(input.obj.amount);
+  const chargeAmount = isChargeRefunded
+    ? asInt(input.obj.amount)
+    : asInt(
+        (typeof input.obj.charge === "object" && input.obj.charge
+          ? (input.obj.charge as { amount?: number }).amount
+          : 0) ||
+          ord.charged_amount_cents ||
+          ord.amount_cents,
+      );
+  const stripeRefundId = isChargeRefunded
+    ? asString(
+        (input.obj.refunds as { data?: Array<{ id?: string }> } | undefined)?.data?.[0]?.id,
+      ) || `charge_refunded:${asString(input.obj.id)}:${refundAmount}`
+    : asString(input.obj.id);
+
+  const { data, error } = await input.service.rpc("refund_christmas_commerce_order", {
+    p_order_id: orderId,
+    p_refund_amount_cents: refundAmount,
+    p_charge_amount_cents: chargeAmount || null,
+    p_stripe_refund_id: stripeRefundId || null,
+    p_stripe_event_id: input.eventId,
+    p_reason: isChargeRefunded ? "charge_refunded_cumulative" : input.eventType,
+  });
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const result = (data || {}) as Record<string, unknown>;
   await input.service.from("processed_stripe_events").insert({
     event_id: input.eventId,
     event_type: input.eventType,
-    result: { status: "planner_refunded", order_id: orderId },
+    result: { ...result, product_key: productKey },
   });
-  return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
+
+  if (result.ok === true && result.download_revoked === true && result.status !== "already_applied") {
+    const email = asString(ord.email);
+    if (email) {
+      waitUntil(
+        sendPortraitRefundedEmail({
+          service: input.service,
+          orderId,
+          email,
+          refundedAmountCents: asInt(result.refunded_amount_cents) || refundAmount,
+          currency: asString(ord.currency) || "eur",
+        }).catch((err) => console.error("portrait refund email failed", err)),
+      );
+    }
+  }
+
+  return new Response(JSON.stringify({ ok: true, christmas_refund: result }), {
     headers: { "Content-Type": "application/json" },
   });
 }

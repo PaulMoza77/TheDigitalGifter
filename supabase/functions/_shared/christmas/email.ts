@@ -32,7 +32,10 @@ export async function sendChristmasDeliveryEmail(input: {
     .maybeSingle();
   if (existing?.status === "sent") return { sent: false, reason: "already_sent" };
 
-  const pack = CHRISTMAS_PACKS[input.packKey];
+  const { data: order, error: orderError } = await input.service.from("christmas_v2_orders").select("image_count,video_count,amount_cents,currency,pack_snapshot").eq("id", input.orderId).single();
+  if (orderError || !order) throw new Error("Cannot resolve purchased pack for delivery email");
+  const pack = { ...CHRISTMAS_PACKS[input.packKey], imageCount: order.image_count, videoCount: order.video_count };
+  const total = new Intl.NumberFormat("en", {style:"currency", currency:order.currency}).format(order.amount_cents / 100);
   const url = `${siteOrigin()}/christmas-ai-photos/order?token=${encodeURIComponent(input.publicToken)}`;
   const subject =
     input.packKey === "magic"
@@ -47,7 +50,7 @@ export async function sendChristmasDeliveryEmail(input: {
     <p style="line-height:1.6;opacity:.9">${escapeHtml(pack.name)} includes ${pack.imageCount} Christmas photos${
       pack.videoCount ? ` and ${pack.videoCount} short AI video${pack.videoCount > 1 ? "s" : ""}` : ""
     }.</p>
-    <p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1B4332;color:#F7F0E4;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">View your results</a></p>
+    <p>One-time payment: ${escapeHtml(total)}</p><p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1B4332;color:#F7F0E4;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">View your results</a></p>
     <p style="font-size:12px;opacity:.55">Digital Gifter · No subscription</p>
   </div></body></html>`;
 
@@ -70,6 +73,7 @@ export async function sendChristmasDeliveryEmail(input: {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `christmas-delivery-${input.orderId}-${kind}`,
     },
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });

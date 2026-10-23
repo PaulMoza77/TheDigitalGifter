@@ -1,11 +1,12 @@
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import { generateSantaScript, mockSantaScript } from "../_shared/christmas/santaScript.ts";
-import { mockSantaSpeech, synthesizeSantaSpeech } from "../_shared/christmas/santaTts.ts";
 import {
   generateSantaStill,
   generateSantaTalkingVideo,
   santaStillPrompt,
+  santaVideoModel,
+  santaVideoPrompt,
 } from "../_shared/christmas/santaVideo.ts";
 
 /**
@@ -157,48 +158,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ---- TTS ----
-    if (job.audio_status !== "ready" || !job.source_audio_path) {
+    // Higgsfield Kling video is silent image-to-video. Speech audio is not part of that contract.
+    if (job.audio_status === "pending") {
       await service
         .from("christmas_santa_video_jobs")
-        .update({ audio_status: "running", job_status: "audio_queued" })
+        .update({
+          audio_status: "ready",
+          provider_tts: "not_required",
+          model_tts: santaVideoModel(),
+        })
         .eq("order_id", orderId);
-      try {
-        const tts = mock
-          ? mockSantaSpeech()
-          : await synthesizeSantaSpeech(String(job.script_text), perso.language);
-        costs.tts = tts.estimatedCostUsd;
-        latencies.tts = tts.latencyMs;
-        const audioPath = `santa/${orderId}/speech.mp3`;
-        const { error: upErr } = await service.storage.from(RESULT_BUCKET).upload(audioPath, tts.bytes, {
-          contentType: tts.contentType,
-          upsert: true,
-        });
-        if (upErr) throw upErr;
-        await service
-          .from("christmas_santa_video_jobs")
-          .update({
-            audio_status: "ready",
-            job_status: "audio_ready",
-            source_audio_bucket: RESULT_BUCKET,
-            source_audio_path: audioPath,
-            provider_tts: mock ? "mock" : tts.provider,
-            model_tts: tts.model,
-            cost_tts_usd: tts.estimatedCostUsd,
-            latency_tts_ms: tts.latencyMs,
-            metadata: {
-              ...(typeof job.metadata === "object" && job.metadata ? job.metadata : {}),
-              tts_voice: tts.voice,
-            },
-          })
-          .eq("order_id", orderId);
-        job.source_audio_path = audioPath;
-        job.source_audio_bucket = RESULT_BUCKET;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        await failJob(service, orderId, "tts_failed", message.slice(0, 200), "audio");
-        return jsonResponse({ ok: false, code: "tts_failed", error: message }, 502);
-      }
+      job.audio_status = "ready";
     }
 
     // ---- SANTA STILL ----
@@ -274,19 +244,36 @@ Deno.serve(async (req) => {
           // Minimal ISO BMFF-ish placeholder — not a real playable deliverable for PASS proofs
           videoBytes = new TextEncoder().encode("tdg-santa-mock-mp4");
         } else {
-          const imageSigned = await service.storage
+          const stillBlob = await service.storage
             .from(job.santa_still_bucket || SOURCE_BUCKET)
-            .createSignedUrl(job.santa_still_path!, 60 * 30);
-          const audioSigned = await service.storage
-            .from(job.source_audio_bucket || RESULT_BUCKET)
-            .createSignedUrl(job.source_audio_path!, 60 * 30);
-          if (!imageSigned.data?.signedUrl || !audioSigned.data?.signedUrl) {
-            throw new Error("could_not_sign_media");
-          }
+            .download(job.santa_still_path!);
+          if (stillBlob.error || !stillBlob.data) throw new Error("could_not_read_still");
+          const stillVideoBytes = new Uint8Array(await stillBlob.data.arrayBuffer());
+          const priorRequest = asString(
+            (job.metadata && typeof job.metadata === "object"
+              ? (job.metadata as Record<string, unknown>).video_request_id
+              : "") || job.provider_job_id,
+          );
           const video = await generateSantaTalkingVideo({
-            imageUrl: imageSigned.data.signedUrl,
-            audioUrl: audioSigned.data.signedUrl,
+            imageUrl: "",
+            imageBytes: { bytes: stillVideoBytes, contentType: "image/jpeg" },
             orderId,
+            prompt: santaVideoPrompt(String(job.script_text || "")),
+            requestId: priorRequest && priorRequest !== "cache" ? priorRequest : null,
+            onSubmitted: async (requestId, model) => {
+              await service
+                .from("christmas_santa_video_jobs")
+                .update({
+                  provider_job_id: requestId,
+                  model_video: model,
+                  provider_video: "higgsfield",
+                  metadata: {
+                    ...(typeof job.metadata === "object" && job.metadata ? job.metadata : {}),
+                    video_request_id: requestId,
+                  },
+                })
+                .eq("order_id", orderId);
+            },
           });
           videoMeta = video;
           costs.video = video.estimatedCostUsd;
@@ -337,11 +324,7 @@ Deno.serve(async (req) => {
             result_video_bucket: RESULT_BUCKET,
             result_video_path: videoPath,
             result_asset_id: asset.id,
-            provider_video: mock
-              ? "mock"
-              : videoMeta.mode === "still_audio_mux"
-              ? "ffmpeg_compose"
-              : "replicate",
+            provider_video: mock ? "mock" : "higgsfield",
             model_video: videoMeta.model,
             provider_job_id: videoMeta.predictionId,
             cost_video_usd: videoMeta.estimatedCostUsd,

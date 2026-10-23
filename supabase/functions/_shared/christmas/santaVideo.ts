@@ -1,10 +1,12 @@
 /**
- * Compose Santa still + TTS audio into one MP4.
- * Prefers talking-head models; falls back to Replicate Seedance is insufficient for speech length.
- * Primary V1 path: server compose endpoint (ffmpeg) when configured, else inline note.
+ * Santa still + video through the production Higgsfield client.
+ * Video uses the verified Kling image-to-video contract (duration 5, sound off).
  */
 
-import { replicateOutputUrl } from "../pet/replicate.ts";
+import {
+  generateChristmasHiggsfieldImage,
+  generateChristmasHiggsfieldVideo,
+} from "./higgsfield.ts";
 
 export type SantaVideoResult = {
   outputUrl: string;
@@ -12,15 +14,19 @@ export type SantaVideoResult = {
   model: string;
   estimatedCostUsd: number;
   latencyMs: number;
-  mode: "lipsync" | "still_audio_mux";
+  mode: "higgsfield_video";
 };
+
+const SANTA_REFERENCE_URL =
+  "https://www.thedigitalgifter.com/assets/christmas/santa/santa-static.png";
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
 export function santaVideoModel(): string {
-  return asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL")) || "cjwbw/sadtalker";
+  return asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL")) ||
+    "kling-video/v3.0/pro/image-to-video";
 }
 
 export function santaStillPrompt(templateKey: string): string {
@@ -42,196 +48,80 @@ export function santaStillPrompt(templateKey: string): string {
   }
 }
 
-async function pollPrediction(token: string, id: string): Promise<Record<string, unknown>> {
-  let current: Record<string, unknown> = { id, status: "starting" };
-  let guard = 0;
-  while (
-    current?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(current.status)) &&
-    guard < 120
-  ) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    current = await poll.json();
-    guard += 1;
+async function withRetries<T>(label: string, run: () => Promise<T>): Promise<T> {
+  let last: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await run();
+    } catch (err) {
+      last = err instanceof Error ? err : new Error(String(err));
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+    }
   }
-  return current;
+  throw last || new Error(label);
 }
 
 export async function generateSantaStill(input: {
   prompt: string;
 }): Promise<{ bytes: Uint8Array; predictionId: string; model: string; latencyMs: number; estimatedCostUsd: number }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = asString(Deno.env.get("CHRISTMAS_SANTA_STILL_MODEL")) || "black-forest-labs/flux-schnell";
   const started = Date.now();
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input: {
-        prompt: input.prompt,
-        aspect_ratio: "1:1",
-        output_format: "jpg",
-      },
-    }),
-  });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "santa_still_failed");
-  }
-  prediction = await pollPrediction(token, String(prediction.id));
-  if (String(prediction.status) !== "succeeded") {
-    throw new Error(asString(prediction.error) || `still_${prediction.status}`);
-  }
-  const url = replicateOutputUrl(prediction.output);
-  if (!url) throw new Error("still_missing_url");
-  const dl = await fetch(url);
+  const generated = await withRetries("santa_still_failed", () =>
+    generateChristmasHiggsfieldImage(
+      Deno.env,
+      input.prompt,
+      SANTA_REFERENCE_URL,
+      SANTA_REFERENCE_URL,
+    ));
+  const dl = await fetch(generated.outputUrl);
   if (!dl.ok) throw new Error("still_download_failed");
   return {
     bytes: new Uint8Array(await dl.arrayBuffer()),
-    predictionId: asString(prediction.id),
-    model,
+    predictionId: generated.predictionId,
+    model: generated.model,
     latencyMs: Date.now() - started,
-    estimatedCostUsd: 0.003,
+    estimatedCostUsd: 0.04,
   };
 }
 
-async function tryLipsync(input: {
-  imageUrl: string;
-  audioUrl: string;
-}): Promise<SantaVideoResult | null> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) return null;
-  const models = [
-    asString(Deno.env.get("CHRISTMAS_SANTA_VIDEO_MODEL")),
-    "cjwbw/sadtalker",
-    "camenduru/sadtalker",
-    "pixverse/lipsync",
-  ].filter(Boolean);
-  const started = Date.now();
-  for (const model of models) {
-    try {
-      const bodyInput: Record<string, unknown> = {
-        source_image: input.imageUrl,
-        driven_audio: input.audioUrl,
-        still: true,
-        use_enhancer: false,
-        preprocess: "crop",
-        image: input.imageUrl,
-        audio: input.audioUrl,
-      };
-      const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input: bodyInput }),
-      });
-      let prediction = await createRes.json();
-      if (!createRes.ok) continue;
-      prediction = await pollPrediction(token, String(prediction.id));
-      if (String(prediction.status) !== "succeeded") continue;
-      const outputUrl = replicateOutputUrl(prediction.output);
-      if (!outputUrl) continue;
-      return {
-        outputUrl,
-        predictionId: asString(prediction.id),
-        model,
-        estimatedCostUsd: 0.12,
-        latencyMs: Date.now() - started,
-        mode: "lipsync",
-      };
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
-
-/**
- * V1 coherent deliverable: still portrait + full personalized TTS in one MP4.
- * Invokes origin compose endpoint (ffmpeg) when CHRISTMAS_SANTA_COMPOSE_URL is set,
- * otherwise returns null so caller can fail clearly.
- */
-export async function composeStillAudioViaOrigin(input: {
-  imageUrl: string;
-  audioUrl: string;
-  orderId: string;
-}): Promise<SantaVideoResult> {
-  const site = (
-    Deno.env.get("SITE_URL") ||
-    Deno.env.get("PUBLIC_APP_URL") ||
-    Deno.env.get("CHRISTMAS_PUBLIC_ORIGIN") ||
-    "https://www.thedigitalgifter.com"
-  ).replace(/\/$/, "");
-  const composeUrl =
-    asString(Deno.env.get("CHRISTMAS_SANTA_COMPOSE_URL")) ||
-    `${site}/api/christmas-santa-compose`;
-  const composeSecret = asString(Deno.env.get("CHRISTMAS_SANTA_COMPOSE_SECRET"));
-  const serviceKey = asString(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
-  const auth = composeSecret || serviceKey;
-  if (!auth) {
-    throw new Error("santa_compose_auth_missing");
-  }
-  const started = Date.now();
-  let res: Response;
-  try {
-    res = await fetch(composeUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth}`,
-        ...(composeSecret
-          ? {
-            "X-TDG-Compose-Secret": composeSecret,
-            "X-Christmas-Santa-Compose-Secret": composeSecret,
-          }
-          : {}),
-      },
-      body: JSON.stringify({
-        image_url: input.imageUrl,
-        audio_url: input.audioUrl,
-        order_id: input.orderId,
-      }),
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`santa_compose_fetch_failed:${message.slice(0, 160)}`);
-  }
-  let json: Record<string, unknown> = {};
-  try {
-    json = await res.json();
-  } catch {
-    throw new Error(`santa_compose_bad_json:http_${res.status}`);
-  }
-  if (!res.ok || !json?.output_url) {
-    throw new Error(
-      `santa_compose_failed:http_${res.status}:${asString(json.error || json).slice(0, 200)}`,
-    );
-  }
-  return {
-    outputUrl: String(json.output_url),
-    predictionId: `compose_${input.orderId}`,
-    model: "ffmpeg_still_audio_mux",
-    estimatedCostUsd: 0,
-    latencyMs: Date.now() - started,
-    mode: "still_audio_mux",
-  };
+export function santaVideoPrompt(script: string): string {
+  const spoken = asString(script).replace(/\s+/g, " ").slice(0, 400);
+  return [
+    "Photoreal cinematic 5 second Christmas video of this exact Santa portrait.",
+    "Santa looks at the camera with a warm smile, subtle natural head movement and breathing.",
+    "Soft fireplace bokeh, gentle snowfall. Preserve the face, beard, suit, and background.",
+    "No morphing, no extra people, no readable text, no watermark, no captions.",
+    spoken ? `Greeting mood from this message: ${spoken}` : "",
+  ].filter(Boolean).join(" ");
 }
 
 export async function generateSantaTalkingVideo(input: {
   imageUrl: string;
-  audioUrl: string;
+  imageBytes?: { bytes: Uint8Array; contentType: string };
+  audioUrl?: string;
   orderId: string;
+  prompt?: string;
+  requestId?: string | null;
+  onSubmitted?: (id: string, model: string) => Promise<void>;
 }): Promise<SantaVideoResult> {
-  const lipsync = await tryLipsync(input);
-  if (lipsync) return lipsync;
-  return await composeStillAudioViaOrigin(input);
+  const started = Date.now();
+  const prompt = asString(input.prompt) || santaVideoPrompt("");
+  const generated = await withRetries("santa_video_failed", () =>
+    generateChristmasHiggsfieldVideo(
+      Deno.env,
+      input.imageUrl,
+      prompt,
+      {
+        requestId: input.requestId || null,
+        onSubmitted: input.onSubmitted,
+      },
+      input.imageBytes,
+    ));
+  return {
+    outputUrl: generated.outputUrl,
+    predictionId: generated.predictionId,
+    model: generated.model,
+    estimatedCostUsd: 0.28,
+    latencyMs: Date.now() - started,
+    mode: "higgsfield_video",
+  };
 }

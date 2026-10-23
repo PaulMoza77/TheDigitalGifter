@@ -879,6 +879,10 @@ function buildSeoShell(entry, options = {}) {
   const depthWave = depth?.wave || (depthHtml ? "content" : "");
   const depthAttr = depthWave ? ` data-tdg-depth="${escapeAttr(depthWave)}"` : "";
 
+  if (basePath === "/christmas/photo-generator" && locale === "en") {
+    return `<div id="tdg-christmas-seo" data-tdg-seo="christmas" data-path="${escapeAttr(entry.path)}"><header class="tdg-boot-hero"><div><h1>A Christmas photo worth keeping.</h1><p>Made from your photo. For the people you love.</p><a class="tdg-boot-cta" href="#christmas-photo-create">Create My Christmas Photo</a></div><img src="/assets/christmas/photo-to-video/family-before.jpeg" width="1024" height="1024" fetchpriority="high" alt="Christmas family portrait" /></header><details><summary>Christmas photo examples and questions</summary>${depthHtml}</details></div>`;
+  }
+
   return (
     `<div id="tdg-christmas-seo" data-tdg-seo="christmas"${depthAttr} data-path="${escapeAttr(entry.path)}" data-locale="${escapeAttr(locale)}">` +
     `<nav aria-label="Breadcrumb">${crumbs}</nav>` +
@@ -978,6 +982,11 @@ export function applyChristmasSeo(html, pathname) {
   );
   next = next.replace(/<\/head>/i, `${ldBlock}  </head>`);
 
+  // Critical styles live in HTML so the semantic shell never paints as raw text.
+  if (!next.includes('id="tdg-seo-critical"')) {
+    const critical = `<style id="tdg-seo-critical">html,body{margin:0;background:#170d0d;color:#fffaf1}#tdg-christmas-seo{box-sizing:border-box;max-width:1120px;margin:auto;padding:64px 24px;font:18px/1.6 system-ui,sans-serif}#tdg-christmas-seo h1{font:600 clamp(36px,5vw,64px)/1.1 Georgia,serif;max-width:720px;margin:24px 0}#tdg-christmas-seo h2{font:600 28px/1.2 Georgia,serif;margin-top:40px}#tdg-christmas-seo a{color:#e8c675}#tdg-christmas-seo nav{font-size:14px}#tdg-christmas-seo p{max-width:720px}#tdg-christmas-seo li{margin:8px 0}.tdg-boot-hero{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:70vh}.tdg-boot-hero img{width:100%;max-height:620px;object-fit:cover;border-radius:12px}.tdg-boot-cta{display:inline-block;padding:12px 24px;background:#e8c675;color:#170d0d!important;border-radius:32px;text-decoration:none;font-weight:600}@media(max-width:700px){.tdg-boot-hero{grid-template-columns:1fr;gap:24px}.tdg-boot-hero img{max-height:45vh}#tdg-christmas-seo{padding-top:24px}}</style>`;
+    next = next.replace(/<\/head>/i, critical + "</head>");
+  }
   const shell = buildSeoShell(entry, { depthOverride, locale, basePath });
   if (/id="tdg-christmas-seo"/.test(next)) {
     next = replaceChristmasSeoShell(next, shell);

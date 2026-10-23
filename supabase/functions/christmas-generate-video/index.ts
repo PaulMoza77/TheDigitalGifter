@@ -8,75 +8,28 @@ import {
   videoGenerationEnabled,
 } from "../_shared/christmas/constants.ts";
 import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+import { generateChristmasHiggsfieldVideo } from "../_shared/christmas/higgsfield.ts";
 
 type Body = { order_id?: string };
 
 const CHRISTMAS_VIDEO_PROMPT =
   "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
 
-function replicateOutputUrl(output: unknown): string | null {
-  if (typeof output === "string" && output.startsWith("http")) return output;
-  if (Array.isArray(output)) {
-    const first = output.find((item) => typeof item === "string" && item.startsWith("http"));
-    if (typeof first === "string") return first;
-  }
-  if (output && typeof output === "object") {
-    const rec = output as Record<string, unknown>;
-    if (typeof rec.url === "string") return rec.url;
-  }
-  return null;
-}
-
 async function generateSeedanceVideo(imageUrl: string): Promise<{
   predictionId: string;
   outputUrl: string;
   model: string;
 }> {
-  const token = asString(Deno.env.get("REPLICATE_API_TOKEN"));
-  if (!token) throw new Error("REPLICATE_API_TOKEN is not configured");
-  const model = christmasVideoModel();
-  const input = {
-    prompt: CHRISTMAS_VIDEO_PROMPT,
-    image: imageUrl,
-    duration: 5,
-    resolution: "720p",
-    camera_fixed: false,
+  const generated = await generateChristmasHiggsfieldVideo(
+    Deno.env,
+    imageUrl,
+    CHRISTMAS_VIDEO_PROMPT,
+  );
+  return {
+    predictionId: generated.predictionId,
+    outputUrl: generated.outputUrl,
+    model: generated.model,
   };
-
-  const createRes = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input }),
-  });
-  let prediction = await createRes.json();
-  if (!createRes.ok) {
-    throw new Error(asString(prediction?.detail || prediction?.error) || "Replicate video prediction failed");
-  }
-
-  let guard = 0;
-  while (
-    prediction?.status &&
-    !["succeeded", "failed", "canceled"].includes(String(prediction.status)) &&
-    guard < 90
-  ) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const poll = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    prediction = await poll.json();
-    guard += 1;
-  }
-
-  if (prediction.status !== "succeeded") {
-    throw new Error(asString(prediction?.error) || `Video generation ${prediction?.status || "failed"}`);
-  }
-  const outputUrl = replicateOutputUrl(prediction.output);
-  if (!outputUrl) throw new Error("Replicate returned no video URL");
-  return { predictionId: asString(prediction.id), outputUrl, model };
 }
 
 Deno.serve(async (req) => {

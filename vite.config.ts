@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
   },
   build: {
     target: "es2020",
+    manifest: true,
     cssCodeSplit: true,
     sourcemap: false,
     rollupOptions: {

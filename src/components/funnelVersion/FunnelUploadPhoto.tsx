@@ -199,6 +199,7 @@ export default function FunnelUploadPhoto() {
 
     localStorage.setItem("tdg_funnel_slug", slug);
     localStorage.setItem("tdg_funnel_occasion", occasion);
+    void import("@/components/funnelVersion/FunnelStyleSelect");
   }, [initial.email, initial.templateId, slug, occasion]);
 
   useEffect(() => {
@@ -360,36 +361,36 @@ export default function FunnelUploadPhoto() {
   }, [uploaded, occasion, slug, navigate, initial.email, initial.templateId]);
 
   return (
-    <div className="min-h-screen w-full bg-[#F3EEE6] text-[#111827]">
-      <div className="pt-10">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F3EEE6] text-[#111827]">
+      <div className="pt-6 sm:pt-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
             <button
               type="button"
-              className="text-sm text-black/60 transition hover:text-black/80"
+              className="shrink-0 text-sm text-black/60 transition hover:text-black/80"
               onClick={() => navigate(-1)}
             >
               Back
             </button>
 
             <div
-              className="select-none text-[34px] font-semibold tracking-tight"
+              className="min-w-0 truncate text-center text-xl font-semibold tracking-tight sm:text-[34px]"
               style={{ fontFamily: "ui-serif, Georgia, serif" }}
             >
               TheDigitalGifter
             </div>
 
-            <div className="text-sm text-black/60">{stepLabel}</div>
+            <div className="shrink-0 text-xs text-black/60 sm:text-sm">{stepLabel}</div>
           </div>
 
           <div className="mt-6 h-px w-full bg-black/10" />
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-5xl px-6 pb-20 pt-10">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-[max(5rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:pb-20 sm:pt-10">
         <div className="mx-auto max-w-2xl text-center">
           <h1
-            className="text-[30px] font-semibold leading-tight sm:text-[44px] sm:leading-tight"
+            className="text-balance break-words text-[1.7rem] font-semibold leading-tight sm:text-[44px] sm:leading-tight"
             style={{ fontFamily: "ui-serif, Georgia, serif", color: "#0F3D2E" }}
           >
             {header.title}
@@ -402,10 +403,10 @@ export default function FunnelUploadPhoto() {
 
         <div className="mx-auto mt-10 w-full max-w-[720px]">
           <div className="rounded-[18px] border border-black/10 bg-white/55 shadow-[0_16px_40px_-26px_rgba(0,0,0,0.35)]">
-            <div className="p-6 sm:p-8">
+            <div className="p-4 sm:p-8">
               <div
                 className={cn(
-                  "relative rounded-[18px] border border-black/10 bg-white/40 p-6 transition shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)] sm:p-8",
+                  "relative rounded-[18px] border border-black/10 bg-white/40 p-4 transition shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)] sm:p-8",
                   dragActive && "bg-[#0F3D2E]/5 ring-2 ring-[#0F3D2E]/25"
                 )}
                 onDrop={onDrop}
@@ -502,7 +503,7 @@ export default function FunnelUploadPhoto() {
                           removeUpload();
                         }}
                         disabled={isUploading}
-                        className="rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm font-semibold text-black/70 transition hover:bg-white disabled:opacity-60"
+                        className="shrink-0 rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm font-semibold text-black/70 transition hover:bg-white disabled:opacity-60"
                       >
                         Remove
                       </button>
@@ -512,7 +513,7 @@ export default function FunnelUploadPhoto() {
                       <img
                         src={uploaded.localUrl}
                         alt="Uploaded preview"
-                        className="h-64 w-full object-cover"
+                        className="h-56 w-full object-cover sm:h-64"
                       />
                     </div>
 
