@@ -11,7 +11,13 @@ import { resolveVideoSourceSceneKeys } from "./videoPrompts";
 describe("Christmas V2 video fulfillment contracts (mock/isolated)", () => {
   it("primary createOrder paths insert video rows for paid packs", () => {
     const apiFunnel = readFileSync("api/christmas-funnel.ts", "utf8");
-    const edgeFunnel = readFileSync("supabase/functions/christmas-funnel/index.ts", "utf8");
+    // #374 pins Edge funnel via wrapper → reconciled production bundle.
+    const edgeWrapper = readFileSync("supabase/functions/christmas-funnel/index.ts", "utf8");
+    expect(edgeWrapper).toContain("_christmas_v2_6d533ec7a8cac492/christmas-funnel");
+    const edgeFunnel = readFileSync(
+      "supabase/functions/_christmas_v2_6d533ec7a8cac492/christmas-funnel/index.ts",
+      "utf8",
+    );
     for (const src of [apiFunnel, edgeFunnel]) {
       expect(src).toContain("resolveVideoSourceSceneKeys");
       expect(src).toContain("insertVideos(service, data.id, videoSourceSceneKeys)");

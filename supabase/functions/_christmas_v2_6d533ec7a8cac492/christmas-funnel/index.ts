@@ -22,6 +22,7 @@ import {
   sha256Hex,
 } from "../_shared/christmas/crypto.ts";
 import { enqueueChristmasGenerate, enqueueChristmasGenerateVideo } from "../_shared/christmas/stripeFulfill.ts";
+import { resolveVideoSourceSceneKeys } from "../_shared/christmas/videoPrompts.ts";
 
 type Body = Record<string, unknown>;
 
@@ -289,6 +290,7 @@ Deno.serve(async (req) => {
       }
 
       const sceneKeys = resolveSceneKeys(packKey, body.sceneKeys);
+      const videoSourceSceneKeys = resolveVideoSourceSceneKeys(sceneKeys, pack.videoCount);
       const requestToken = asString(body.requestToken);
       if (requestToken && !/^[a-f0-9]{64}$/.test(requestToken)) {
         return apiError( "INVALID_REQUEST", "Invalid checkout attempt.");
@@ -316,7 +318,7 @@ Deno.serve(async (req) => {
         meta_event_id: `pending_${crypto.randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
-        video_source_scene_keys: sceneKeys.slice(0, pack.videoCount),
+        video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: false,
       };
       let { data, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
@@ -331,7 +333,7 @@ Deno.serve(async (req) => {
       const metaEventId = `christmas_purchase_${data.id}`;
       await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
       await insertScenes(service, data.id, sceneKeys);
-      await insertVideos(service, data.id, sceneKeys.slice(0, pack.videoCount));
+      await insertVideos(service, data.id, videoSourceSceneKeys);
 
       return jsonResponse({
         orderId: data.id,
@@ -576,7 +578,7 @@ Deno.serve(async (req) => {
             .map((k) => asString(k))
             .filter((k) => Boolean(sceneByKey(k)))
             .slice(0, pack.videoCount)
-        : sceneKeys.slice(0, pack.videoCount);
+        : resolveVideoSourceSceneKeys(sceneKeys, pack.videoCount);
       const surpriseMe = body.surpriseMe === true;
       const uiMode = normalizeUiMode(asString(body.uiMode || body.ui_mode) || "hosted");
       const funnelSessionId = isUuid(body.funnelSessionId)
