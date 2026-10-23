@@ -37,6 +37,7 @@ import {
 } from "./_lib/christmas/crypto";
 import { getAuthUser, getServiceClient } from "./_lib/christmas/supabaseClient";
 import { invokeChristmasGenerate, resolveSiteOriginFromRequest } from "./_lib/christmas/stripeFulfill";
+import { resolveVideoSourceSceneKeys } from "./_lib/christmas/videoPrompts";
 
 type Body = Record<string, unknown>;
 
@@ -165,6 +166,11 @@ async function insertScenes(service: SupabaseClient, orderId: string, sceneKeys:
 
 async function insertVideos(service: SupabaseClient, orderId: string, sourceSceneKeys: string[]) {
   if (!sourceSceneKeys.length) return;
+  const { count } = await service
+    .from("christmas_v2_order_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("order_id", orderId);
+  if ((count ?? 0) > 0) return;
   const rows = sourceSceneKeys.map((key) => ({
     order_id: orderId,
     source_scene_key: key,
@@ -325,6 +331,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
 
       const sceneKeys = resolveSceneKeys(packKey, body.sceneKeys);
+      const videoSourceSceneKeys = resolveVideoSourceSceneKeys(sceneKeys, pack.videoCount);
       const publicToken = generatePublicToken();
       const publicTokenHash = await sha256Hex(publicToken);
       const insert = {
@@ -349,7 +356,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         meta_event_id: `pending_${randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
-        video_source_scene_keys: sceneKeys.slice(0, pack.videoCount),
+        video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: false,
       };
       const { data, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
@@ -358,6 +365,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       const metaEventId = `christmas_purchase_${data.id}`;
       await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
       await insertScenes(service, data.id, sceneKeys);
+      await insertVideos(service, data.id, videoSourceSceneKeys);
 
       return res.status(200).json({
         orderId: data.id,

@@ -209,7 +209,11 @@ export function christmasImageModel(): string {
 }
 
 export function christmasVideoModel(): string {
-  return process.env.CHRISTMAS_VIDEO_MODEL || "bytedance/seedance-1-pro-fast";
+  return (
+    process.env.CHRISTMAS_VIDEO_MODEL ||
+    process.env.CHRISTMAS_HIGGSFIELD_VIDEO_MODEL ||
+    "kling-video/v3.0/pro/image-to-video"
+  );
 }
 
 export function videoGenerationEnabled(): boolean {

@@ -1,33 +1,73 @@
-import {
-  generateChristmasHiggsfieldVideo,
-  HiggsfieldTerminalFailure,
-} from "../_shared/christmas/higgsfield.ts";
-import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
-import {
-  getServiceClient,
-  isServiceRoleRequest,
-  readJson,
-} from "../_shared/supabase.ts";
+import { getServiceClient, isServiceRoleRequest, readJson } from "../_shared/supabase.ts";
 import {
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
   generationMock,
   videoGenerationEnabled,
+  type ChristmasPackKey,
 } from "../_shared/christmas/constants.ts";
 import { asString, isUuid } from "../_shared/christmas/crypto.ts";
+import { sendChristmasDeliveryEmail } from "../_shared/christmas/email.ts";
+import { generateChristmasHiggsfieldVideo } from "../_shared/christmas/higgsfield.ts";
+import { buildChristmasVideoPrompt } from "../_shared/christmas/videoPrompts.ts";
 
 type Body = { order_id?: string };
 
-const CHRISTMAS_VIDEO_PROMPT =
-  "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.";
+function decryptStoredToken(ciphertext: string | null | undefined): string | null {
+  if (!ciphertext) return null;
+  try {
+    return atob(ciphertext);
+  } catch {
+    return null;
+  }
+}
+
+async function maybeSendDeliveryEmail(
+  service: ReturnType<typeof getServiceClient>,
+  orderId: string,
+) {
+  const finalized = await service.rpc("christmas_v2_finalize_generation_if_done", {
+    p_order_id: orderId,
+  });
+  if (finalized.error) throw finalized.error;
+  const finalData = (typeof finalized.data === "string"
+    ? JSON.parse(finalized.data)
+    : finalized.data) as {
+    done?: boolean;
+    ready_for_email?: boolean;
+    status?: string;
+  };
+
+  if (!finalData?.done || !finalData.ready_for_email) return finalData;
+
+  const { data: refreshed } = await service
+    .from("christmas_v2_orders")
+    .select("*")
+    .eq("id", orderId)
+    .maybeSingle();
+  const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
+  const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
+  if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
+    try {
+      await sendChristmasDeliveryEmail({
+        service,
+        orderId,
+        email: asString(refreshed.email),
+        publicToken,
+        packKey,
+      });
+    } catch (emailErr) {
+      console.error("christmas delivery email failed", emailErr);
+    }
+  }
+  return finalData;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
-  if (req.method !== "POST")
-    return jsonResponse({ error: "Method not allowed" }, 405);
-  if (!isServiceRoleRequest(req))
-    return jsonResponse({ error: "Forbidden" }, 403);
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (!isServiceRoleRequest(req)) return jsonResponse({ error: "Forbidden" }, 403);
 
   try {
     const body = await readJson<Body>(req);
@@ -42,14 +82,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (error) throw error;
     if (!order) return jsonResponse({ error: "order not found" }, 404);
-    if (!order.paid_at)
-      return jsonResponse(
-        { error: "Payment required", code: "PAYMENT_REQUIRED" },
-        402,
-      );
+    if (!order.paid_at) {
+      return jsonResponse({ error: "Payment required", code: "PAYMENT_REQUIRED" }, 402);
+    }
 
     if (!videoGenerationEnabled() && !generationMock()) {
       return jsonResponse({ ok: true, status: "held", started: 0 });
+    }
+
+    const expectedVideos = Number(order.video_count || 0);
+    if (expectedVideos <= 0) {
+      return jsonResponse({ ok: true, status: "nothing_to_do", started: 0 });
     }
 
     const [{ data: scenes }, { data: videos }] = await Promise.all([
@@ -57,10 +100,7 @@ Deno.serve(async (req) => {
         .from("christmas_v2_order_scenes")
         .select("id, scene_key, status, result_path, result_bucket")
         .eq("order_id", orderId),
-      service
-        .from("christmas_v2_order_videos")
-        .select("*")
-        .eq("order_id", orderId),
+      service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId),
     ]);
 
     // Upsell child packs may reference starter scene keys that live on the parent order.
@@ -82,18 +122,40 @@ Deno.serve(async (req) => {
       }
     }
 
-    const targets = (videos ?? []).filter((video) =>
+    // Recover missing video rows from order.video_source_scene_keys (idempotent).
+    let videoRows = videos ?? [];
+    if (videoRows.length < expectedVideos) {
+      const fromOrder = Array.isArray(order.video_source_scene_keys)
+        ? order.video_source_scene_keys.map((k: unknown) => asString(k)).filter(Boolean)
+        : [];
+      const existingKeys = new Set(videoRows.map((v) => asString(v.source_scene_key)));
+      const missing = fromOrder
+        .filter((key) => !existingKeys.has(key))
+        .slice(0, expectedVideos - videoRows.length);
+      if (missing.length) {
+        const { data: inserted } = await service
+          .from("christmas_v2_order_videos")
+          .insert(missing.map((key) => ({ order_id: orderId, source_scene_key: key, status: "queued" })))
+          .select("*");
+        videoRows = [...videoRows, ...(inserted ?? [])];
+      }
+    }
+
+    const targets = videoRows.filter((video) =>
       ["queued", "failed"].includes(asString(video.status)),
     );
-    if (!targets.length)
-      return jsonResponse({ ok: true, status: "nothing_to_do", started: 0 });
+    if (!targets.length) {
+      const finalize = await maybeSendDeliveryEmail(service, orderId);
+      return jsonResponse({ ok: true, status: "nothing_to_do", started: 0, finalize });
+    }
 
     let started = 0;
 
     for (const video of targets) {
+      const sourceSceneKey = asString(video.source_scene_key);
       const source = sceneRows.find(
         (scene) =>
-          asString(scene.scene_key) === asString(video.source_scene_key) &&
+          asString(scene.scene_key) === sourceSceneKey &&
           ["succeeded", "ready"].includes(asString(scene.status)) &&
           scene.result_path,
       );
@@ -109,25 +171,25 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const claimRow = await service
+      await service
         .from("christmas_v2_order_videos")
         .update({
           status: "generating",
           last_error: null,
           attempts: Number(video.attempts || 0) + 1,
         })
-        .eq("id", video.id)
-        .in("status", ["queued", "failed"])
-        .lt("attempts", 3)
-        .select("id")
-        .maybeSingle();
-      if (claimRow.error) throw claimRow.error;
-      if (!claimRow.data) continue;
+        .eq("id", video.id);
 
       const resultPath = `${orderId}/videos/${video.id}.mp4`;
+      const prompt = buildChristmasVideoPrompt(sourceSceneKey);
 
       try {
         if (generationMock()) {
+          // Persist a tiny valid-ish placeholder path marker only in mock mode.
+          const mockBytes = new TextEncoder().encode("tdg-mock-christmas-video");
+          await service.storage
+            .from(CHRISTMAS_RESULT_BUCKET)
+            .upload(resultPath, mockBytes, { contentType: "video/mp4", upsert: true });
           await service
             .from("christmas_v2_order_videos")
             .update({
@@ -142,46 +204,36 @@ Deno.serve(async (req) => {
             })
             .eq("id", video.id);
         } else {
-          const bucket =
-            asString(source.result_bucket) || CHRISTMAS_RESULT_BUCKET;
+          const bucket = asString(source.result_bucket) || CHRISTMAS_RESULT_BUCKET;
           const { data: signed } = await service.storage
             .from(bucket)
-            .createSignedUrl(
-              source.result_path,
-              CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
-            );
-          if (!signed?.signedUrl)
-            throw new Error("Could not sign source scene image");
+            .createSignedUrl(source.result_path, CHRISTMAS_SIGNED_DOWNLOAD_SECONDS);
+          if (!signed?.signedUrl) throw new Error("Could not sign source scene image");
 
           const prediction = await generateChristmasHiggsfieldVideo(
             Deno.env,
             signed.signedUrl,
-            CHRISTMAS_VIDEO_PROMPT,
+            prompt,
             {
-              // Legacy column name; value is a Higgsfield request ID, never a Replicate call.
-              requestId:
-                video.model_name === "kling-video/v3.0/pro/image-to-video"
-                  ? video.replicate_prediction_id
-                  : null,
+              requestId: asString(video.replicate_prediction_id) || null,
               onSubmitted: async (id, model) => {
-                const { error } = await service
+                await service
                   .from("christmas_v2_order_videos")
-                  .update({ replicate_prediction_id: id, model_name: model })
+                  .update({
+                    replicate_prediction_id: id,
+                    model_name: model,
+                  })
                   .eq("id", video.id);
-                if (error) throw error;
               },
             },
           );
           const videoRes = await fetch(prediction.outputUrl);
-          if (!videoRes.ok)
-            throw new Error(`Failed to download video (${videoRes.status})`);
+          if (!videoRes.ok) throw new Error(`Failed to download video (${videoRes.status})`);
           const bytes = new Uint8Array(await videoRes.arrayBuffer());
+          if (bytes.byteLength < 1000) throw new Error("Downloaded video is too small to be valid");
           const { error: upErr } = await service.storage
             .from(CHRISTMAS_RESULT_BUCKET)
-            .upload(resultPath, bytes, {
-              contentType: "video/mp4",
-              upsert: true,
-            });
+            .upload(resultPath, bytes, { contentType: "video/mp4", upsert: true });
           if (upErr) throw upErr;
 
           await service
@@ -212,61 +264,29 @@ Deno.serve(async (req) => {
               p_pathname: "/christmas-ai-photos",
             });
           } catch (eventErr) {
-            console.error(
-              "christmas_v2_video_generated event failed",
-              eventErr,
-            );
+            console.error("christmas_v2_video_generated event failed", eventErr);
           }
         }
       } catch (genErr) {
-        const message =
-          genErr instanceof Error ? genErr.message : String(genErr);
+        const message = genErr instanceof Error ? genErr.message : String(genErr);
         await service
           .from("christmas_v2_order_videos")
           .update({
             status: "failed",
             last_error: message.slice(0, 500),
-            ...(genErr instanceof HiggsfieldTerminalFailure
-              ? { replicate_prediction_id: null }
-              : {}),
             completed_at: new Date().toISOString(),
           })
           .eq("id", video.id);
       }
     }
 
-    const finalized = await service.rpc(
-      "christmas_v2_finalize_generation_if_done",
-      { p_order_id: orderId },
-    );
-    if (finalized.error) throw finalized.error;
-    const finalData =
-      typeof finalized.data === "string"
-        ? JSON.parse(finalized.data)
-        : finalized.data;
-    if (
-      finalData?.done &&
-      asString(order.email) &&
-      finalData.status !== "failed"
-    ) {
-      const publicToken = atob(asString(order.public_token_ciphertext));
-      const packKey = asString(order.pack_key) as
-        "starter" | "magic" | "ultimate";
-      if (publicToken && ["starter", "magic", "ultimate"].includes(packKey)) {
-        await sendChristmasDeliveryEmail({
-          service,
-          orderId,
-          email: asString(order.email),
-          publicToken,
-          packKey,
-        });
-      }
-    }
+    const finalize = await maybeSendDeliveryEmail(service, orderId);
 
     return jsonResponse({
       ok: true,
       started,
       status: generationMock() ? "mock_completed" : "completed",
+      finalize,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

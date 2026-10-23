@@ -30,8 +30,8 @@ export const CHRISTMAS_UPLOAD_MAX_EDGE = 2048;
 /** Approximate Replicate COGS (nano-banana ~$0.04/img, Seedance ~$0.08/5s clip). */
 export const CHRISTMAS_COGS_ESTIMATE = {
   starter: { images: 3, videos: 0, imageUsd: 0.04, videoUsd: 0.08, totalUsd: 0.12 },
-  magic: { images: 8, videos: 1, imageUsd: 0.04, videoUsd: 0.08, totalUsd: 0.4 },
-  ultimate: { images: 12, videos: 2, imageUsd: 0.04, videoUsd: 0.08, totalUsd: 0.64 },
+  magic: { images: 5, videos: 1, imageUsd: 0.04, videoUsd: 0.08, totalUsd: 0.28 },
+  ultimate: { images: 10, videos: 3, imageUsd: 0.04, videoUsd: 0.08, totalUsd: 0.64 },
 } as const;
 
 export type ChristmasSceneKey =

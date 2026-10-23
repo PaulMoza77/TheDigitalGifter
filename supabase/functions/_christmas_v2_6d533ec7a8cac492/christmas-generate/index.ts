@@ -320,7 +320,7 @@ Deno.serve(async (req) => {
     }
 
     const finalized = await service.rpc(
-      "christmas_finalize_generation_if_done",
+      "christmas_v2_finalize_generation_if_done",
       {
         p_order_id: orderId,
       },
@@ -332,26 +332,44 @@ Deno.serve(async (req) => {
         : finalized.data
     ) as {
       done?: boolean;
-      photos_done?: boolean;
+      images_done?: boolean;
+      ready_for_email?: boolean;
+      should_enqueue_video?: boolean;
       succeeded?: number;
       failed?: number;
     };
 
+    const { data: refreshed } = await service
+      .from("christmas_v2_orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    // Enqueue videos as soon as images finish — never email Magic/Ultimate before videos.
     if (
-      (finalData?.photos_done || finalData?.done) &&
+      finalData?.should_enqueue_video ||
+      (finalData?.images_done &&
+        Number(refreshed?.video_count || 0) > 0 &&
+        !finalData?.done)
+    ) {
+      waitUntil(
+        enqueueChristmasVideo(orderId).catch((err) => {
+          console.error("christmas-generate-video enqueue failed", err);
+        }),
+      );
+    }
+
+    // Starter (0 videos) or fully complete packs: send delivery email once.
+    if (
+      finalData?.done &&
+      finalData.ready_for_email &&
       (finalData.succeeded || 0) > 0
     ) {
-      const { data: refreshed } = await service
-        .from("christmas_v2_orders")
-        .select("*")
-        .eq("id", orderId)
-        .maybeSingle();
       const publicToken = decryptStoredToken(
         asString(refreshed?.public_token_ciphertext),
       );
       const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
       if (
-        !Number(refreshed?.video_count || 0) &&
         publicToken &&
         refreshed?.email &&
         (packKey === "starter" || packKey === "magic" || packKey === "ultimate")
@@ -367,14 +385,6 @@ Deno.serve(async (req) => {
         } catch (emailErr) {
           console.error("christmas delivery email failed", emailErr);
         }
-      }
-
-      if (Number(refreshed?.video_count || 0) > 0) {
-        waitUntil(
-          enqueueChristmasVideo(orderId).catch((err) => {
-            console.error("christmas-generate-video enqueue failed", err);
-          }),
-        );
       }
     }
 

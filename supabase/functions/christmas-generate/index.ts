@@ -270,16 +270,30 @@ Deno.serve(async (req) => {
       ? JSON.parse(finalized.data)
       : finalized.data) as {
       done?: boolean;
+      images_done?: boolean;
+      ready_for_email?: boolean;
+      should_enqueue_video?: boolean;
       succeeded?: number;
       failed?: number;
     };
 
-    if (finalData?.done && (finalData.succeeded || 0) > 0) {
-      const { data: refreshed } = await service
-        .from("christmas_v2_orders")
-        .select("*")
-        .eq("id", orderId)
-        .maybeSingle();
+    const { data: refreshed } = await service
+      .from("christmas_v2_orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    // Enqueue videos as soon as images finish — never email Magic/Ultimate before videos.
+    if (finalData?.should_enqueue_video || (finalData?.images_done && Number(refreshed?.video_count || 0) > 0 && !finalData?.done)) {
+      waitUntil(
+        enqueueChristmasVideo(orderId).catch((err) => {
+          console.error("christmas-generate-video enqueue failed", err);
+        }),
+      );
+    }
+
+    // Starter (0 videos) or fully complete packs: send delivery email once.
+    if (finalData?.done && finalData.ready_for_email && (finalData.succeeded || 0) > 0) {
       const publicToken = decryptStoredToken(asString(refreshed?.public_token_ciphertext));
       const packKey = asString(refreshed?.pack_key) as ChristmasPackKey;
       if (publicToken && refreshed?.email && (packKey === "starter" || packKey === "magic" || packKey === "ultimate")) {
@@ -294,14 +308,6 @@ Deno.serve(async (req) => {
         } catch (emailErr) {
           console.error("christmas delivery email failed", emailErr);
         }
-      }
-
-      if (Number(refreshed?.video_count || 0) > 0) {
-        waitUntil(
-          enqueueChristmasVideo(orderId).catch((err) => {
-            console.error("christmas-generate-video enqueue failed", err);
-          }),
-        );
       }
     }
 

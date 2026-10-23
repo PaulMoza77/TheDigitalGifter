@@ -2,7 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "codex/meta-purchase-audit": false
+      "codex/meta-purchase-audit": false,
+      "fix/christmas-video-fulfillment": false,
+      "release/christmas-374-375-rc": false
     }
   }
 }
