@@ -2,7 +2,7 @@ import { PET_SKU, siteOrigin } from "./constants.ts";
 import { sha256Hex } from "./crypto.ts";
 import { metaPurchaseShouldEmit } from "./guards.ts";
 
-export const TDG_META_PIXEL_ID = "1581639566935542";
+export const TDG_META_PIXEL_ID = "1673980440655322";
 
 function asString(value: unknown): string {
   return String(value ?? "").trim();

@@ -1,3 +1,4 @@
+import { trackChristmasPackView } from "../../christmas-v2/meta";
 import { trackChristmasEvent } from "../analytics";
 import type { ChristmasFunnelEventName } from "../funnelEventContract";
 
@@ -33,6 +34,7 @@ export async function trackPhotoGeneratorEvent(
     metadata?: Record<string, unknown> | null;
   },
 ): Promise<void> {
+  if (eventName === "christmas_photo_generator_page_view") trackChristmasPackView();
   const metadata: Record<string, unknown> = {
     surface: "christmas_photo_generator",
     ...(extra?.subject ? { subject: extra.subject } : {}),

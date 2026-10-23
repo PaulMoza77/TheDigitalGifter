@@ -228,6 +228,8 @@ async function buildOrderResults(
       status: asString(order.status),
       packKey: asString(order.pack_key) as ChristmasPackKey,
       amountCents: asInt(order.amount_cents),
+      currency: asString(order.currency),
+      paidAt: asString(order.paid_at) || null,
       imageCount: asInt(order.image_count),
       videoCount: asInt(order.video_count),
       email: asString(order.email) || undefined,
@@ -518,6 +520,7 @@ Deno.serve(async (req) => {
         checkoutUrl: asString(session.url) || null,
         expiresAt: session.expires_at ?? null,
         amountCents,
+        currency: asString(session.currency) || asString(order.currency),
         status: "open",
       });
     }
