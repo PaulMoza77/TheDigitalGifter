@@ -456,5 +456,17 @@
       "firstOrderView": 0,
       "refresh": 0
     }
-  ]
+  ],
+  "automaticPreviewIncident": {
+    "source": "existing Vercel Git integration on PR push",
+    "manuallyRequested": false,
+    "stateObserved": "both pending",
+    "cancelAccess": "403 API / Not Found browser for tdg6",
+    "productionChanged": false,
+    "branchAutoDeploymentDisabledInConfig": true,
+    "deployments": [
+      "https://vercel.com/tdg6/the-digital-gifter/3JC9QrWtegCyd59WTkB3ienTanjz",
+      "https://vercel.com/tdg6/the-digital-gifter-d5vu/GbXj6wzbeNeg9rRsmXbPiJhdW4dm"
+    ]
+  }
 }
