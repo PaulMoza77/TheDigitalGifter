@@ -102,7 +102,11 @@ export async function dropPartial(rel: string): Promise<void> {
 }
 
 export function streamLocalFile(req: IncomingMessage, res: ServerResponse, rel: string, contentType: string, method: string): void {
-  const abs = resolveMediaPath(rel);
+  streamAbsoluteFile(req, res, resolveMediaPath(rel), contentType, method);
+}
+
+/** The caller must resolve and confine abs to its own media volume. */
+export function streamAbsoluteFile(req: IncomingMessage, res: ServerResponse, abs: string, contentType: string, method: string): void {
   const info: Stats = statSync(abs);
   const size = info.size;
   res.setHeader("Accept-Ranges", "bytes");

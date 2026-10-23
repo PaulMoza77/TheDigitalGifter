@@ -1,9 +1,8 @@
 import React, { JSX, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
@@ -44,17 +43,6 @@ function writeSession(next: FunnelSession): void {
   }
 }
 
-type FunnelLeadUpsert = {
-  email: string;
-  occasion: string | null;
-  style_id: string | null;
-  funnel_slug: string;
-};
-
-type FunnelLeadRow = {
-  id: string | number;
-};
-
 type SupabaseLikeError = {
   message?: string;
   error_description?: string;
@@ -80,6 +68,7 @@ export default function FunnelEmailCapture(): JSX.Element {
         : "";
 
   useEffect((): void => {
+    void import("@/components/funnelVersion/FunnelPayment");
     const s = readSession();
     const photo =
       String(s?.photo_path || "").trim() ||
@@ -168,74 +157,87 @@ export default function FunnelEmailCapture(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F6F5FF] text-slate-900">
-      <div className="relative mx-auto w-full max-w-2xl px-5 py-12 sm:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="mx-auto text-center"
-        >
-          <h1 className="text-3xl font-semibold sm:text-5xl">Where should we send it?</h1>
-          <p className="mt-4 text-sm text-slate-600 sm:text-base">Enter your email to continue.</p>
-        </motion.div>
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F6F0E6] text-[#10221B]">
+      <header className="px-4 pb-7 pt-8 text-center sm:px-5 sm:pt-12">
+        <div className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-[#10221B]">
+          thedigitalgifter
+        </div>
+      </header>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="mx-auto mt-10"
-        >
-          <Card className="overflow-hidden rounded-[28px] border-slate-200 bg-white/80 shadow-[0_12px_40px_-18px_rgba(17,24,39,0.35)] backdrop-blur">
-            <CardHeader>
-              <div className="text-sm font-semibold">Email</div>
-              <div className="text-xs text-slate-500">We’ll never spam you.</div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div
-                className={cn(
-                  "rounded-2xl border bg-white px-4 py-3",
-                  emailError ? "border-red-300" : "border-slate-200"
-                )}
-              >
-                <input
-                  value={email}
-                  onChange={(ev: React.ChangeEvent<HTMLInputElement>) => setEmail(ev.target.value)}
-                  onBlur={(): void => setTouched(true)}
-                  onKeyDown={(ev: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (ev.key === "Enter") void handleContinue();
-                  }}
-                  placeholder="you@example.com"
-                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  inputMode="email"
-                  autoComplete="email"
-                  type="email"
-                  required
-                  pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
-                  aria-invalid={emailError ? true : false}
-                />
-              </div>
-
-              {emailError ? <div className="text-xs text-red-600">{emailError}</div> : null}
-
-              <button
-                type="button"
-                onClick={(): void => void handleContinue()}
-                disabled={saving || !emailOk}
-                className={cn(
-                  "w-full rounded-2xl px-6 py-3 font-semibold transition",
-                  saving || !emailOk
-                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                    : "bg-[#6D5EF7] text-white shadow-lg shadow-black/10 hover:brightness-105 active:brightness-95"
-                )}
-              >
-                {saving ? "Saving..." : "Continue"}
-              </button>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="bg-[#F3D35B] px-4 py-3.5 text-center sm:py-4">
+        <p className="mx-auto flex max-w-3xl items-start justify-center gap-2 text-sm font-medium leading-snug text-[#10221B] sm:text-[15px]">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#1B3A30]" strokeWidth={3} aria-hidden />
+          <span>
+            You&apos;re eligible to redeem a <span className="font-bold">special offer</span> in the next
+            step and save up to <span className="font-bold">65%</span> on your order.
+          </span>
+        </p>
       </div>
+
+      <main className="mx-auto w-full max-w-xl px-4 pb-[max(4rem,env(safe-area-inset-bottom))] pt-10 sm:px-5 sm:pt-16">
+        <h1 className="mx-auto max-w-md text-balance break-words text-center text-[1.35rem] font-semibold leading-snug text-[#1B3A30] sm:text-[1.65rem]">
+          Enter your email to start creating and viewing your animated memories
+        </h1>
+
+        <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#1B3A30]">
+          <span className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[3px] bg-[#1B3A30] text-white">
+            <Check className="h-3 w-3" strokeWidth={3.5} aria-hidden />
+          </span>
+          Make sure it&apos;s correct, so your moments reach you safely!
+        </p>
+
+        <form
+          className="mx-auto mt-5 w-full max-w-md"
+          onSubmit={(ev: React.FormEvent<HTMLFormElement>) => {
+            ev.preventDefault();
+            void handleContinue();
+          }}
+        >
+          <input
+            value={email}
+            onChange={(ev: React.ChangeEvent<HTMLInputElement>) => setEmail(ev.target.value)}
+            onBlur={(): void => setTouched(true)}
+            placeholder="Email"
+            className={cn(
+              "h-12 w-full rounded-lg border bg-white px-4 text-base text-[#10221B] outline-none placeholder:text-[#10221B]/40",
+              emailError ? "border-red-400" : "border-[#1B3A30]/70"
+            )}
+            inputMode="email"
+            autoComplete="email"
+            type="email"
+            required
+            pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+            aria-invalid={emailError ? true : false}
+            aria-describedby={emailError ? "funnel-email-error" : undefined}
+          />
+
+          {emailError ? (
+            <div id="funnel-email-error" className="mt-2 text-center text-xs text-red-600">
+              {emailError}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className={cn(
+              "mt-4 h-12 w-full rounded-full bg-[#1B3A30] text-base font-semibold text-white transition hover:brightness-110 active:brightness-95",
+              saving && "cursor-wait opacity-80"
+            )}
+          >
+            {saving ? "Saving..." : "Continue"}
+          </button>
+        </form>
+
+        <p className="mx-auto mt-5 max-w-md text-center text-[11px] leading-relaxed text-[#10221B]/55 sm:text-xs">
+          We respect your privacy. We will never sell, rent or share your email address. That&apos;s
+          more than a{" "}
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-[#10221B]">
+            policy
+          </Link>
+          , it&apos;s our personal guarantee.
+        </p>
+      </main>
     </div>
   );
 }

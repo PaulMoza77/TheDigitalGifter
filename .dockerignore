@@ -18,4 +18,5 @@ convert.js
 convert_*.cjs
 export_*.cjs
 **/*.test.ts
+**/*.test.tsx
 **/*.test.mjs

@@ -688,24 +688,24 @@ export default function FunnelPayment(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F6F0E6] text-[#10221B]">
-      <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#F6F0E6] text-[#10221B]">
+      <div className="mx-auto w-full max-w-3xl px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 sm:px-5 sm:py-14">
         <div className="text-center">
           <div className="text-2xl font-semibold tracking-tight">
             thedigitalgifter
           </div>
 
-          <div className="mx-auto mt-6 flex max-w-xl items-center justify-center gap-4">
-            <div className="flex items-end gap-3 rounded-2xl bg-transparent px-4 py-3">
-              <div className="text-4xl font-semibold tabular-nums leading-none">
+          <div className="mx-auto mt-6 flex max-w-xl flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="flex items-end gap-2 rounded-2xl bg-transparent px-2 py-3 sm:gap-3 sm:px-4">
+              <div className="text-3xl font-semibold tabular-nums leading-none sm:text-4xl">
                 {formattedTimer[0]}
               </div>
-              <div className="pb-1 text-4xl font-semibold leading-none">:</div>
-              <div className="text-4xl font-semibold tabular-nums leading-none">
+              <div className="pb-1 text-3xl font-semibold leading-none sm:text-4xl">:</div>
+              <div className="text-3xl font-semibold tabular-nums leading-none sm:text-4xl">
                 {formattedTimer[1]}
               </div>
-              <div className="ml-2 pb-1 text-xs uppercase tracking-wide text-[#10221B]/55">
-                minutes&nbsp;&nbsp;&nbsp;seconds
+              <div className="ml-1 pb-1 text-[10px] uppercase tracking-wide text-[#10221B]/55 sm:ml-2 sm:text-xs">
+                min&nbsp;&nbsp;sec
               </div>
             </div>
 
@@ -727,7 +727,7 @@ export default function FunnelPayment(): JSX.Element {
             </button>
           </div>
 
-          <h1 className="mx-auto mt-10 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
+          <h1 className="mx-auto mt-8 max-w-2xl text-balance break-words text-3xl font-semibold leading-tight sm:mt-10 sm:text-4xl">
             Bring your memories to life
           </h1>
 
@@ -738,14 +738,16 @@ export default function FunnelPayment(): JSX.Element {
         </div>
 
         <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-black/10 bg-white/55 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-black/5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-sm font-medium">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/5">
                 %
               </span>
-              {promoApplied
-                ? `Promo applied (${normalizePromoCode(promo)})`
-                : "Have a promo code?"}
+              <span className="min-w-0 break-words">
+                {promoApplied
+                  ? `Promo applied (${normalizePromoCode(promo)})`
+                  : "Have a promo code?"}
+              </span>
             </div>
 
             {promoApplied ? (
@@ -759,36 +761,38 @@ export default function FunnelPayment(): JSX.Element {
             ) : null}
           </div>
 
-          <div className="mt-3 flex gap-3">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               value={promo}
               onChange={(event) => setPromo(event.target.value)}
               placeholder="Enter code"
-              className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm outline-none placeholder:text-black/35"
+              className="h-12 w-full min-w-0 rounded-xl border border-black/10 bg-white px-4 text-base outline-none placeholder:text-black/35"
               disabled={promoApplied || applyingPromo}
             />
 
-            <button
-              type="button"
-              onClick={() => void applyPromo()}
-              className={cn(
-                "h-11 rounded-xl px-4 text-sm font-semibold transition",
-                promoApplied || applyingPromo
-                  ? "bg-black/5 text-black/45"
-                  : "bg-[#1B3A30] text-white hover:brightness-105"
-              )}
-              disabled={promoApplied || applyingPromo}
-            >
-              {applyingPromo ? "Checking..." : promoApplied ? "Applied" : "Apply"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void applyPromo()}
+                className={cn(
+                  "h-12 flex-1 rounded-xl px-4 text-sm font-semibold transition sm:flex-none",
+                  promoApplied || applyingPromo
+                    ? "bg-black/5 text-black/45"
+                    : "bg-[#1B3A30] text-white hover:brightness-105"
+                )}
+                disabled={promoApplied || applyingPromo}
+              >
+                {applyingPromo ? "Checking..." : promoApplied ? "Applied" : "Apply"}
+              </button>
 
-            <div
-              className={cn(
-                "flex h-11 min-w-[92px] items-center justify-center rounded-xl px-3 text-sm font-semibold",
-                expired ? "bg-black/5 text-black/45" : "bg-black/5 text-black/70"
-              )}
-            >
-              {expired ? "Expired" : "Active"}
+              <div
+                className={cn(
+                  "flex h-12 min-w-[92px] shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold",
+                  expired ? "bg-black/5 text-black/45" : "bg-black/5 text-black/70"
+                )}
+              >
+                {expired ? "Expired" : "Active"}
+              </div>
             </div>
           </div>
 
@@ -836,11 +840,11 @@ export default function FunnelPayment(): JSX.Element {
                     </div>
                   ) : null}
 
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <div
                         className={cn(
-                          "mt-1 flex h-5 w-5 items-center justify-center rounded-full border",
+                          "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
                           active ? "border-[#D44B4B]" : "border-black/15"
                         )}
                       >
@@ -849,8 +853,8 @@ export default function FunnelPayment(): JSX.Element {
                         ) : null}
                       </div>
 
-                      <div>
-                        <div className="text-lg font-semibold">{plan.title}</div>
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold sm:text-lg">{plan.title}</div>
                         <div className="mt-0.5 text-sm text-[#10221B]/65">
                           {plan.subtitle} • ({plan.generations} generations)
                         </div>
@@ -863,7 +867,7 @@ export default function FunnelPayment(): JSX.Element {
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="shrink-0 text-right">
                       {uiPrice.showWasOverride ? (
                         <div className="text-xs text-[#10221B]/45 line-through">
                           {uiPrice.wasOverride}
@@ -895,7 +899,7 @@ export default function FunnelPayment(): JSX.Element {
               onClick={() => void onCheckout()}
               disabled={isPaying || expired}
               className={cn(
-                "h-12 w-full rounded-full text-sm font-semibold transition",
+                "h-auto min-h-12 w-full whitespace-normal rounded-full px-4 py-3 text-center text-sm font-semibold leading-snug transition",
                 isPaying || expired
                   ? "cursor-not-allowed bg-black/10 text-black/45"
                   : "bg-[#F3D35B] text-[#10221B] hover:brightness-105 active:brightness-95"
@@ -910,14 +914,14 @@ export default function FunnelPayment(): JSX.Element {
                     : "Claim my plan"}
             </button>
 
-            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-[#10221B]/65">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 text-center text-xs text-[#10221B]/65">
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-black/10 bg-white">
                 ✓
               </span>
               Secure checkout • Monthly reset • Cancel anytime
             </div>
 
-            <div className="mt-4 flex items-center justify-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               {["MC", "VISA", "Pay", "GPay"].map((label) => (
                 <div
                   key={label}
@@ -933,7 +937,7 @@ export default function FunnelPayment(): JSX.Element {
             </div>
           </div>
 
-          <div className="pt-6 text-center text-[11px] text-[#10221B]/35">
+          <div className="break-all px-1 pt-6 text-center text-[11px] leading-relaxed text-[#10221B]/35">
             Selected: {selectedPlan.id} • Credits: {selectedPlan.credits} •
             Promo: {promoApplied ? normalizePromoCode(promo) : "none"} • Style:{" "}
             {funnel.styleId || "missing"} • Template:{" "}

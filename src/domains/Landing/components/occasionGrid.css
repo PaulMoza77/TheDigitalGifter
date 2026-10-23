@@ -1,0 +1,10 @@
+/* Recovered homepage design tokens, confined to the occasion chooser. */
+#categories {
+  --tdg-home-bg: #090909;
+  --tdg-home-surface: #15110f;
+  --tdg-home-text: #fff6e8;
+  --tdg-home-text-muted: rgba(255, 246, 232, 0.62);
+  --tdg-home-accent: #e8c675;
+  --tdg-home-accent-hover: #f0d59a;
+  --tdg-home-border: rgba(255, 246, 232, 0.12);
+}

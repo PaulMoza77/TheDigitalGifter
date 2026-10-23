@@ -15,6 +15,7 @@ import { waitUntil } from "./_lib/nodeHandler";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   CHRISTMAS_PACKS,
+  CHRISTMAS_SCENES,
   CHRISTMAS_PRODUCT_TYPE,
   CHRISTMAS_RESULT_BUCKET,
   CHRISTMAS_SIGNED_DOWNLOAD_SECONDS,
@@ -36,6 +37,7 @@ import {
 } from "./_lib/christmas/crypto";
 import { getAuthUser, getServiceClient } from "./_lib/christmas/supabaseClient";
 import { invokeChristmasGenerate, resolveSiteOriginFromRequest } from "./_lib/christmas/stripeFulfill";
+import { resolveVideoSourceSceneKeys } from "./_lib/christmas/videoPrompts";
 
 type Body = Record<string, unknown>;
 
@@ -100,7 +102,7 @@ function normalizeUiMode(raw: string): "hosted" | "elements" {
 function packKeyOrDefault(value: unknown): ChristmasPackKey {
   const key = asString(value);
   if (key === "magic" || key === "ultimate" || key === "starter") return key;
-  return "starter";
+  throw new Error("Invalid Christmas pack");
 }
 
 function resolveSceneKeys(packKey: ChristmasPackKey, requested: unknown): string[] {
@@ -109,9 +111,7 @@ function resolveSceneKeys(packKey: ChristmasPackKey, requested: unknown): string
     : [];
   const pack = CHRISTMAS_PACKS[packKey];
   if (fromBody.length >= pack.imageCount) return fromBody.slice(0, pack.imageCount);
-  if (packKey === "starter") return [...STARTER_SCENE_KEYS];
-  if (fromBody.length) return fromBody;
-  return [...STARTER_SCENE_KEYS];
+  return [...new Set([...fromBody, ...STARTER_SCENE_KEYS, ...CHRISTMAS_SCENES.map(s => s.key)])].slice(0, pack.imageCount);
 }
 
 function decryptStoredToken(ciphertext: string | null | undefined): string | null {
@@ -127,7 +127,7 @@ async function requireOrder(service: SupabaseClient, orderId: string, publicToke
   if (!isUuid(orderId) || !publicToken) return null;
   const hash = await sha256Hex(publicToken);
   const { data, error } = await service
-    .from("christmas_orders")
+    .from("christmas_v2_orders")
     .select("*")
     .eq("id", orderId)
     .eq("public_token_hash", hash)
@@ -140,7 +140,7 @@ async function findOrderByToken(service: SupabaseClient, publicToken: string) {
   if (!publicToken) return null;
   const hash = await sha256Hex(publicToken);
   const { data, error } = await service
-    .from("christmas_orders")
+    .from("christmas_v2_orders")
     .select("*")
     .eq("public_token_hash", hash)
     .maybeSingle();
@@ -160,18 +160,23 @@ async function insertScenes(service: SupabaseClient, orderId: string, sceneKeys:
       status: "queued",
     };
   });
-  const { error } = await service.from("christmas_order_scenes").insert(rows);
+  const { error } = await service.from("christmas_v2_order_scenes").insert(rows);
   if (error) throw error;
 }
 
 async function insertVideos(service: SupabaseClient, orderId: string, sourceSceneKeys: string[]) {
   if (!sourceSceneKeys.length) return;
+  const { count } = await service
+    .from("christmas_v2_order_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("order_id", orderId);
+  if ((count ?? 0) > 0) return;
   const rows = sourceSceneKeys.map((key) => ({
     order_id: orderId,
     source_scene_key: key,
     status: "queued",
   }));
-  const { error } = await service.from("christmas_order_videos").insert(rows);
+  const { error } = await service.from("christmas_v2_order_videos").insert(rows);
   if (error) throw error;
 }
 
@@ -190,11 +195,11 @@ async function buildOrderResults(
   const orderId = asString(order.id);
   const [{ data: scenes }, { data: videos }] = await Promise.all([
     service
-      .from("christmas_order_scenes")
+      .from("christmas_v2_order_scenes")
       .select("*")
       .eq("order_id", orderId)
       .order("scene_number", { ascending: true }),
-    service.from("christmas_order_videos").select("*").eq("order_id", orderId).order("created_at"),
+    service.from("christmas_v2_order_videos").select("*").eq("order_id", orderId).order("created_at"),
   ]);
 
   const sceneRows = scenes ?? [];
@@ -254,6 +259,8 @@ async function buildOrderResults(
       status: asString(order.status),
       packKey: asString(order.pack_key) as ChristmasPackKey,
       amountCents: asInt(order.amount_cents),
+      currency: asString(order.currency),
+      paidAt: asString(order.paid_at) || null,
       imageCount: asInt(order.image_count),
       videoCount: asInt(order.video_count),
       email: asString(order.email) || undefined,
@@ -324,6 +331,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
 
       const sceneKeys = resolveSceneKeys(packKey, body.sceneKeys);
+      const videoSourceSceneKeys = resolveVideoSourceSceneKeys(sceneKeys, pack.videoCount);
       const publicToken = generatePublicToken();
       const publicTokenHash = await sha256Hex(publicToken);
       const insert = {
@@ -337,8 +345,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         product_type: CHRISTMAS_PRODUCT_TYPE,
         amount_cents: pack.amountCents,
         charged_amount_cents: pack.amountCents,
-        currency: "usd",
+        currency: "eur",
         status: "awaiting_upload",
+        pack_snapshot: { version: "2026-10-22-eur", key: pack.key, name: pack.name, amountCents: pack.amountCents, currency: "eur", imageCount: pack.imageCount, videoCount: pack.videoCount },
         image_count: pack.imageCount,
         video_count: pack.videoCount,
         photo_file_name: asString(photo.fileName).slice(0, 180) || "photo.jpg",
@@ -347,15 +356,16 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         meta_event_id: `pending_${randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
-        video_source_scene_keys: [],
+        video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: false,
       };
-      const { data, error } = await service.from("christmas_orders").insert(insert).select("*").single();
+      const { data, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
       if (error) throw error;
 
       const metaEventId = `christmas_purchase_${data.id}`;
-      await service.from("christmas_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
+      await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
       await insertScenes(service, data.id, sceneKeys);
+      await insertVideos(service, data.id, videoSourceSceneKeys);
 
       return res.status(200).json({
         orderId: data.id,
@@ -385,7 +395,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       const { data, error } = await service.storage.from(CHRISTMAS_SOURCE_BUCKET).createSignedUploadUrl(objectPath);
       if (error || !data?.signedUrl) throw error || new Error("Could not create upload URL");
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({
           photo_bucket: CHRISTMAS_SOURCE_BUCKET,
           photo_path: objectPath,
@@ -417,7 +427,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         return apiError(res, "UPLOAD_FAILED", "Photo was not found in storage.", 400);
       }
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({
           status: "awaiting_payment",
           photo_confirmed_at: new Date().toISOString(),
@@ -444,7 +454,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         return apiError(res, "INVALID_REQUEST", "A valid email is required.");
       }
       const { error } = await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({ email, email_normalized: email, customer_name: customerName })
         .eq("id", order.id);
       if (error) throw error;
@@ -490,12 +500,12 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
       params.set("customer_email", asString(order.email));
       params.set("client_reference_id", asString(order.id));
-      params.set("line_items[0][price_data][currency]", "usd");
+      params.set("line_items[0][price_data][currency]", asString(order.currency) || "eur");
       params.set("line_items[0][price_data][unit_amount]", String(amountCents));
       params.set("line_items[0][price_data][product_data][name]", pack.name);
       params.set(
         "line_items[0][price_data][product_data][description]",
-        `${pack.imageCount} Christmas AI photos${pack.videoCount ? ` + ${pack.videoCount} video${pack.videoCount > 1 ? "s" : ""}` : ""}. No subscription.`,
+        `${order.image_count} Christmas AI photos${order.video_count ? ` + ${order.video_count} short clip${order.video_count > 1 ? "s" : ""}` : ""}. One-time payment. No subscription.`,
       );
       params.set("line_items[0][quantity]", "1");
       params.set("metadata[product_type]", CHRISTMAS_PRODUCT_TYPE);
@@ -532,14 +542,14 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
       const sessionId = asString(session.id);
       await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .update({
           stripe_checkout_session_id: sessionId,
           funnel_session_id: funnelSessionId || order.funnel_session_id,
           updated_at: new Date().toISOString(),
         })
         .eq("id", order.id);
-      await service.from("christmas_checkout_sessions").insert({
+      await service.from("christmas_v2_checkout_sessions").insert({
         order_id: order.id,
         stripe_session_id: sessionId,
       });
@@ -553,6 +563,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         checkoutUrl: asString(session.url) || null,
         expiresAt: session.expires_at ?? null,
         amountCents,
+        currency: asString(session.currency) || asString(order.currency),
         status: "open",
       });
     }
@@ -598,8 +609,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         product_type: CHRISTMAS_PRODUCT_TYPE,
         amount_cents: pack.amountCents,
         charged_amount_cents: pack.amountCents,
-        currency: "usd",
+        currency: "eur",
         status: "awaiting_payment",
+        pack_snapshot: { version: "2026-10-22-eur", key: pack.key, name: pack.name, amountCents: pack.amountCents, currency: "eur", imageCount: pack.imageCount, videoCount: pack.videoCount },
         image_count: pack.imageCount,
         video_count: pack.videoCount,
         parent_order_id: parent.id,
@@ -615,11 +627,11 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
         video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: surpriseMe,
       };
-      const { data: child, error } = await service.from("christmas_orders").insert(insert).select("*").single();
+      const { data: child, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
       if (error) throw error;
 
       const metaEventId = `christmas_purchase_${child.id}`;
-      await service.from("christmas_orders").update({ meta_event_id: metaEventId }).eq("id", child.id);
+      await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", child.id);
       await insertScenes(service, child.id, sceneKeys);
       await insertVideos(service, child.id, videoSourceSceneKeys);
 
@@ -647,7 +659,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
       params.set("customer_email", asString(child.email));
       params.set("client_reference_id", asString(child.id));
-      params.set("line_items[0][price_data][currency]", "usd");
+      params.set("line_items[0][price_data][currency]", "eur");
       params.set("line_items[0][price_data][unit_amount]", String(pack.amountCents));
       params.set("line_items[0][price_data][product_data][name]", pack.name);
       params.set(
@@ -679,13 +691,13 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       });
       const session = (await stripeRes.json()) as StripeCheckoutSessionResponse;
       if (!stripeRes.ok) {
-        await service.from("christmas_orders").delete().eq("id", child.id);
+        await service.from("christmas_v2_orders").delete().eq("id", child.id);
         return apiError(res, "INVALID_REQUEST", asString(session?.error?.message) || "Stripe checkout failed", 502);
       }
 
       const sessionId = asString(session.id);
-      await service.from("christmas_orders").update({ stripe_checkout_session_id: sessionId }).eq("id", child.id);
-      await service.from("christmas_checkout_sessions").insert({
+      await service.from("christmas_v2_orders").update({ stripe_checkout_session_id: sessionId }).eq("id", child.id);
+      await service.from("christmas_v2_checkout_sessions").insert({
         order_id: child.id,
         stripe_session_id: sessionId,
       });
@@ -736,7 +748,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
 
       const amountTotal = session?.amount_total == null ? null : asInt(session.amount_total);
-      const { data, error } = await service.rpc("fulfill_christmas_order_payment", {
+      const { data, error } = await service.rpc("fulfill_christmas_v2_order_payment", {
         p_event_id: `confirm:${sessionId}`,
         p_session_id: sessionId,
         p_event_type: "checkout.session.completed",
@@ -795,7 +807,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       }
 
       const { data: orders, error } = await service
-        .from("christmas_orders")
+        .from("christmas_v2_orders")
         .select("*")
         .eq("email_normalized", accountEmail)
         .in("status", [...PAID_STATUSES])

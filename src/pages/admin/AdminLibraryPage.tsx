@@ -21,9 +21,10 @@ import { socialPublisherApi } from "@/features/social-publisher/api";
 import { resolveDefaultTimezone } from "@/features/social-publisher/timezone";
 
 type CategoryFilter = LibraryCategoryId | "all";
+const LIBRARY_PAGE_SIZE = 12;
 
 export default function AdminLibraryPage() {
-  const [category, setCategory] = React.useState<CategoryFilter>("christmas_reels");
+  const [category, setCategory] = React.useState<CategoryFilter>("all");
   const [kind, setKind] = React.useState<LibraryKind>("reel");
   const [query, setQuery] = React.useState("");
   const [playingId, setPlayingId] = React.useState<string | null>(null);
@@ -31,6 +32,10 @@ export default function AdminLibraryPage() {
   const [publisher, setPublisher] = React.useState<LibraryVideo | null>(null);
   const [bulkOpen, setBulkOpen] = React.useState(false);
   const [factoryVideos, setFactoryVideos] = React.useState<LibraryVideo[]>([]);
+  const [libraryLoading, setLibraryLoading] = React.useState(true);
+  const [libraryErrors, setLibraryErrors] = React.useState<string[]>([]);
+  const [loadAttempt, setLoadAttempt] = React.useState(0);
+  const [page, setPage] = React.useState({ filter: "", count: LIBRARY_PAGE_SIZE });
   const [timezone, setTimezone] = React.useState(() =>
     resolveDefaultTimezone({
       browserTimezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
@@ -54,10 +59,20 @@ export default function AdminLibraryPage() {
   }, []);
 
   React.useEffect(() => {
-    void Promise.all([
-      clipFactoryApi.dynamicLibrary().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
-      longFormApi.libraryVideos().catch(() => ({ videos: [] as Array<Record<string, unknown>> })),
-    ]).then(([factory, longForm]) => {
+    let cancelled = false;
+    setLibraryLoading(true);
+    setLibraryErrors([]);
+    void Promise.allSettled([
+      clipFactoryApi.dynamicLibrary(),
+      longFormApi.libraryVideos(),
+    ]).then(([factoryResult, longFormResult]) => {
+      if (cancelled) return;
+      const factory = factoryResult.status === "fulfilled" ? factoryResult.value : { videos: [] };
+      const longForm = longFormResult.status === "fulfilled" ? longFormResult.value : { videos: [] };
+      setLibraryErrors([
+        ...(factoryResult.status === "rejected" ? ["Clip Factory"] : []),
+        ...(longFormResult.status === "rejected" ? ["Long-form"] : []),
+      ]);
       const factoryRows = (factory.videos || []).map((row) => ({
         id: String(row.id),
         title: String(row.title || "Clip Factory"),
@@ -85,8 +100,10 @@ export default function AdminLibraryPage() {
         height: typeof row.height === "number" ? row.height : 1080,
       }));
       setFactoryVideos([...longRows, ...factoryRows]);
+      setLibraryLoading(false);
     });
-  }, []);
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
 
   const catalog = React.useMemo(() => [...factoryVideos, ...LIBRARY_VIDEOS], [factoryVideos]);
   const kindFilter = category === "christmas_reels" ? kind : "all";
@@ -100,6 +117,9 @@ export default function AdminLibraryPage() {
       ? `${videos.length} of ${christmasTotal} Christmas items`
       : `${videos.length} of ${catalog.length} items`;
   const selectedVideos = videos.filter((item) => item.kind === "reel" && selectedIds.includes(item.id));
+  const filterKey = JSON.stringify([category, kindFilter, query]);
+  const visibleCount = page.filter === filterKey ? page.count : LIBRARY_PAGE_SIZE;
+  const visibleVideos = videos.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen overflow-y-auto bg-slate-950 px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -123,6 +143,16 @@ export default function AdminLibraryPage() {
             <p className="text-sm text-slate-400">{totalLabel}</p>
           </div>
         </header>
+
+        {libraryLoading ? (
+          <p role="status" className="mb-4 text-sm text-slate-400">Loading saved videos…</p>
+        ) : null}
+        {libraryErrors.length > 0 ? (
+          <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            <p>Could not load {libraryErrors.join(" and ")}. Some saved videos may be missing.</p>
+            <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)} className="rounded-lg border border-amber-300/40 px-3 py-2 font-semibold">Retry</button>
+          </div>
+        ) : null}
 
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -192,7 +222,7 @@ export default function AdminLibraryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {videos.map((video) => (
+            {visibleVideos.map((video) => (
               <LibraryVideoCard
                 key={video.id}
                 video={video}
@@ -214,6 +244,20 @@ export default function AdminLibraryPage() {
             ))}
           </div>
         )}
+        {videos.length > 0 ? (
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <p className="text-sm text-slate-400">Showing {visibleVideos.length} of {videos.length} matching items</p>
+            {visibleVideos.length < videos.length ? (
+              <button
+                type="button"
+                onClick={() => setPage({ filter: filterKey, count: visibleCount + LIBRARY_PAGE_SIZE })}
+                className="rounded-xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+              >
+                Load more
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {publisher ? (

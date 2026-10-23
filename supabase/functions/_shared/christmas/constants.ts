@@ -9,7 +9,7 @@ export const CHRISTMAS_PACKS = {
     key: "starter",
     sku: "christmas-starter-3",
     name: "Christmas Starter Pack",
-    amountCents: 300,
+    amountCents: 700,
     imageCount: 3,
     videoCount: 0,
   },
@@ -17,17 +17,17 @@ export const CHRISTMAS_PACKS = {
     key: "magic",
     sku: "christmas-magic-8",
     name: "Christmas Magic Pack",
-    amountCents: 800,
-    imageCount: 8,
+    amountCents: 1700,
+    imageCount: 5,
     videoCount: 1,
   },
   ultimate: {
     key: "ultimate",
     sku: "christmas-ultimate-12",
     name: "Ultimate Christmas Pack",
-    amountCents: 1200,
-    imageCount: 12,
-    videoCount: 2,
+    amountCents: 2700,
+    imageCount: 10,
+    videoCount: 3,
   },
 } as const;
 
@@ -203,7 +203,11 @@ export function christmasImageModel(): string {
 }
 
 export function christmasVideoModel(): string {
-  return Deno.env.get("CHRISTMAS_VIDEO_MODEL") || "bytedance/seedance-1-pro-fast";
+  return (
+    Deno.env.get("CHRISTMAS_VIDEO_MODEL") ||
+    Deno.env.get("CHRISTMAS_HIGGSFIELD_VIDEO_MODEL") ||
+    "kling-video/v3.0/pro/image-to-video"
+  );
 }
 
 export function videoGenerationEnabled(): boolean {

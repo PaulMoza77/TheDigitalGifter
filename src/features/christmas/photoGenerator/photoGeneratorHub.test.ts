@@ -1,12 +1,12 @@
 import { christmasSitemapPaths } from "../../../../server/christmasIndexing.mjs";
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PHOTO_GEN_COPY_KEYS, photoGenT } from "./copy";
 import { photoGeneratorSeo, photoGeneratorJsonLd } from "./seo";
 import { commerceForSubjectChoice } from "../subjectCommerce";
 import { enabledChristmasStyles } from "../styles";
-import { GALLERY_EXAMPLES, HERO_EXAMPLES } from "./assets";
+import { GALLERY_EXAMPLES, HERO_EXAMPLES, PHOTO_GEN_ASSETS } from "./assets";
 import { CHRISTMAS_FUNNEL_ALLOWED_EVENTS } from "../funnelEventContract";
 
 function readSrc(path: string) {
@@ -65,8 +65,17 @@ describe("christmas photo generator hub rebuild", () => {
     const page = readSrc(
       "src/features/christmas/photoGenerator/ChristmasPhotoGeneratorExperience.tsx",
     );
-    expect(page).toContain("BeforeAfterSlider");
-    expect(page).toContain("subject.h2");
+    expect(page).toContain("HeroBeforeAfter");
+    const hero = readSrc("src/features/christmas/photoGenerator/HeroBeforeAfter.tsx");
+    const assets = readSrc("src/features/christmas/photoGenerator/assets.ts");
+    expect(readSrc("src/features/christmas/photoGenerator/BeforeAfterSlider.tsx")).toContain("playsInline");
+    expect(hero).toContain("photo-to-video/family-after.mp4");
+    expect(assets).toContain("portrait_family_loop.mp4");
+    expect(PHOTO_GEN_ASSETS.familyBefore).not.toBe(PHOTO_GEN_ASSETS.familyAfter);
+    expect(existsSync(resolve(process.cwd(), "public", PHOTO_GEN_ASSETS.familyBefore.replace(/^\//, "").split("?")[0]))).toBe(true);
+    expect(page).not.toContain('t("subject.h2")');
+    expect(page).not.toContain("scrollToCreate");
+    expect(page).not.toContain('id="upload-heading"');
     expect(page).toContain("hero.cta");
     expect(page).toContain("/christmas/family");
     expect(page).toContain("/christmas/couples");
@@ -80,7 +89,7 @@ describe("christmas photo generator hub rebuild", () => {
   it("keeps pre-pay blur preview and never trusts client prompts in hub path", () => {
     const hook = readSrc("src/features/christmas/useChristmasPortraitFunnel.ts");
     expect(hook).toContain("createBlurredOriginalPreview");
-    expect(hook).toContain('mode === "hub" ? "subject" : "style"');
+    expect(hook).not.toContain('mode === "hub" ? "subject" : "style"');
     expect(hook).not.toContain("replicate.com");
   });
 });

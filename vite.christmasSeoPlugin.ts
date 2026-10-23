@@ -23,7 +23,27 @@ export function christmasSeoPrerenderPlugin(): Plugin {
       const baseHtml = readFileSync(indexPath, "utf8");
       const paths = listChristmasSeoPaths();
       for (const routePath of paths) {
-        const html = applyChristmasSeo(baseHtml, routePath);
+        let html = applyChristmasSeo(baseHtml, routePath);
+        if (/\/christmas\/photo-generator$/.test(routePath)) {
+          const manifestPath = join(distDir, ".vite/manifest.json");
+          if (existsSync(manifestPath)) {
+            const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+            const visited = new Set<string>();
+            const hints = new Set<string>();
+            const visit = (key: string) => {
+              if (visited.has(key)) return;
+              visited.add(key);
+              const chunk = manifest[key];
+              if (!chunk) return;
+              if (chunk.file?.endsWith(".js")) hints.add(`<link rel="modulepreload" crossorigin href="/${chunk.file}">`);
+              for (const css of chunk.css || []) hints.add(`<link rel="stylesheet" href="/${css}">`);
+              for (const dep of chunk.imports || []) visit(dep);
+            };
+            visit("src/features/christmas/ChristmasPhotoGeneratorPage.tsx");
+            for (const image of ["photo-to-video/family-before.jpeg"]) hints.add(`<link rel="preload" as="image" href="/assets/christmas/${image}" fetchpriority="high">`);
+            html = html.replace("</head>", [...hints].join("\n") + "</head>");
+          }
+        }
         const outFile =
           routePath === "/"
             ? indexPath

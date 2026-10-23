@@ -18,6 +18,12 @@ import {
   toFunnelUploadSlug,
   type FunnelOccasionConfig,
 } from "@/components/funnelVersion/occasions";
+import {
+  christmasFunnelImageUrl,
+  isChristmasFunnelVariant,
+  prefetchChristmasFunnelRoutes,
+  warmChristmasFunnelImages,
+} from "@/components/funnelVersion/funnelPreload";
 
 /**
  * TDG — AliveMoment-inspired landing
@@ -133,11 +139,11 @@ function LogoMark() {
         <span className="relative text-sm font-semibold tracking-tight">TDG</span>
       </div>
 
-      <div className="leading-tight">
-        <div className="text-sm font-semibold tracking-tight text-emerald-950">
+      <div className="min-w-0 leading-tight">
+        <div className="truncate text-sm font-semibold tracking-tight text-emerald-950">
           TheDigitalGifter
         </div>
-        <div className="text-[11px] text-emerald-950/60">
+        <div className="hidden text-[11px] text-emerald-950/60 sm:block">
           Moving gifts from your photos
         </div>
       </div>
@@ -185,6 +191,7 @@ function PhotoMock({
   label,
   labelTone,
   footer,
+  priority = "auto",
 }: {
   variant?: string;
   className?: string;
@@ -192,6 +199,7 @@ function PhotoMock({
   label?: string;
   labelTone?: "sun" | "mint" | "ink";
   footer?: string;
+  priority?: "high" | "low" | "auto";
 }) {
   const tone = String(variant || "warm").toLowerCase();
   const bg =
@@ -211,7 +219,7 @@ function PhotoMock({
   return (
     <div
       className={
-        "group relative overflow-hidden border border-emerald-950/10 bg-white/55 shadow-[0_20px_60px_rgba(6,78,59,0.08)] transition-transform duration-300 hover:scale-[1.02] " +
+        "group relative overflow-hidden border border-emerald-950/10 bg-white/55 shadow-[0_20px_60px_rgba(6,78,59,0.08)] transition-transform duration-300 md:hover:scale-[1.02] " +
         rounded +
         " " +
         className
@@ -223,21 +231,31 @@ function PhotoMock({
 
       <div className="relative aspect-[4/5] w-full">
         {label ? (
-          <div className="absolute bottom-4 left-4 z-10">
+          <div className="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)] sm:bottom-4 sm:left-4">
             <Pill tone={labelTone || "sun"}>{label}</Pill>
           </div>
         ) : null}
 
         <img
-          src={`/assets/funnel/${variant}.png`}
+          src={
+            isChristmasFunnelVariant(variant)
+              ? christmasFunnelImageUrl(variant)
+              : `/assets/funnel/${variant}.png`
+          }
           alt={label || variant}
+          width={1024}
+          height={1536}
+          decoding="async"
+          fetchPriority={priority}
           className="h-full w-full object-cover"
           onError={(e) => {
             const img = e.currentTarget as HTMLImageElement;
-            const src = img.src;
-            if (src.endsWith(".png")) img.src = `/assets/funnel/${variant}.svg`;
-            else if (src.endsWith(".svg")) img.src = `/assets/funnel/${variant}.jpg`;
-            else img.src = `/assets/funnel/warm.png`;
+            if (img.dataset.fallback === "png") {
+              img.src = "/assets/funnel/warm.png";
+              return;
+            }
+            img.dataset.fallback = "png";
+            img.src = `/assets/funnel/${variant}.png`;
           }}
         />
       </div>
@@ -333,7 +351,7 @@ function ConnectorOverlay({
 
   return (
     <svg
-      className="pointer-events-none absolute inset-0"
+      className="pointer-events-none absolute inset-0 hidden md:block"
       width={size.w}
       height={size.h}
       viewBox={`0 0 ${size.w} ${size.h}`}
@@ -383,7 +401,7 @@ function RatingStar({ fill }: { fill: number }) {
 
 function StarRow() {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm">
       <div className="inline-flex items-center gap-2">
         <span className="text-emerald-950/70">Excellent</span>
         <div
@@ -418,7 +436,7 @@ function SectionTitle({
   return (
     <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
       {eyebrow ? <div className="mb-3 text-sm text-emerald-950/70">{eyebrow}</div> : null}
-      <h2 className="text-balance font-serif text-3xl tracking-tight text-emerald-950 sm:text-4xl md:text-5xl">
+      <h2 className="text-balance break-words font-serif text-3xl leading-tight tracking-tight text-emerald-950 sm:text-4xl md:text-5xl">
         {title}
       </h2>
       {subtitle ? (
@@ -439,7 +457,7 @@ function Nav() {
 
   return (
     <div className="sticky top-0 z-40 border-b border-emerald-950/10 bg-[#F6F2EA]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:py-4">
         <a href="#top" className="rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/30">
           <LogoMark />
         </a>
@@ -480,7 +498,7 @@ function CTAButton({
     <Button
       onClick={() => navigate(to)}
       className={
-        "rounded-full bg-emerald-950 px-6 py-6 text-base font-semibold text-emerald-50 shadow-[0_12px_30px_rgba(6,78,59,0.22)] hover:bg-emerald-900 active:translate-y-[1px] " +
+        "h-auto w-full whitespace-normal rounded-full bg-emerald-950 px-5 py-3.5 text-center text-base font-semibold leading-snug text-emerald-50 shadow-[0_12px_30px_rgba(6,78,59,0.22)] hover:bg-emerald-900 active:translate-y-[1px] sm:w-auto " +
         className
       }
     >
@@ -522,13 +540,13 @@ function Hero({
     <section id="top" className="relative overflow-hidden bg-[#F6F2EA]">
       <SoftBg />
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 md:grid-cols-2 md:py-20">
-        <div className="flex flex-col justify-center">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-8 sm:gap-10 sm:py-12 md:grid-cols-2 md:py-20">
+        <div className="flex min-w-0 flex-col justify-center">
           <div className="mb-5">
             <StarRow />
           </div>
 
-          <h1 className="text-balance font-serif text-4xl tracking-tight text-emerald-950 sm:text-5xl md:text-6xl">
+          <h1 className="max-w-full text-balance break-words font-serif text-[1.7rem] leading-[1.15] tracking-tight text-emerald-950 min-[380px]:text-4xl sm:text-5xl md:text-6xl">
             {cfg.heroTitle}
           </h1>
 
@@ -538,11 +556,11 @@ function Hero({
 
           <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
             <CTAButton to={uploadTo} label={ctaLabel} />
-            <div className="flex items-center gap-2 text-sm text-emerald-950/70">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
+            <div className="flex min-w-0 items-start gap-2 text-sm text-emerald-950/70">
+              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-950/10">
                 ✓
               </span>
-              100% private — your memories are yours
+              <span className="min-w-0">100% private — your memories are yours</span>
             </div>
           </div>
 
@@ -553,33 +571,35 @@ function Hero({
           </div>
         </div>
 
-        <div ref={rootRef} className="relative">
-          <ConnectorOverlay rootRef={rootRef} links={links} />
+        <div ref={rootRef} className="relative min-w-0">
+          <ConnectorOverlay rootRef={rootRef} links={links} simplifiedOnMobile={false} />
 
-          <Card className="mx-auto max-w-[560px] rounded-[32px] border-emerald-950/10 bg-white/55 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur">
-            <CardContent className="p-4 sm:p-5">
-              <div className="mb-3 flex items-center justify-between">
+          <Card className="mx-auto w-full max-w-[560px] rounded-[28px] border-emerald-950/10 bg-white/55 shadow-[0_30px_90px_rgba(6,78,59,0.12)] backdrop-blur sm:rounded-[32px]">
+            <CardContent className="p-3 sm:p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <Pill tone="sun">Before → After</Pill>
                 <span className="text-xs text-emerald-950/60">a single photo, transformed</span>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-                <div ref={beforeRef} className="relative">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <div ref={beforeRef} className="relative min-w-0">
                   <PhotoMock
                     variant={beforeVariant}
                     label="Your photo"
                     labelTone="sun"
-                    rounded="rounded-[28px]"
+                    rounded="rounded-2xl sm:rounded-[28px]"
+                    priority="high"
                   />
                 </div>
 
-                <div ref={afterRef} className="relative">
+                <div ref={afterRef} className="relative min-w-0">
                   <PhotoMock
                     variant={afterVariant}
                     label="TDG result ✨"
                     labelTone="ink"
-                    rounded="rounded-[28px]"
+                    rounded="rounded-2xl sm:rounded-[28px]"
                     footer="Brought beautifully to life ✨"
+                    priority="auto"
                     className="shadow-[0_40px_120px_rgba(6,78,59,0.16)]"
                   />
                 </div>
@@ -666,9 +686,9 @@ function HowItWorks({
           <ConnectorOverlay rootRef={rootRef} links={links} />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-            <div ref={s1} className="relative">
+            <div ref={s1} className="relative min-w-0">
               <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">
                       STEP 1
@@ -684,16 +704,21 @@ function HowItWorks({
                     Choose a photo that fits this occasion — one clear moment is enough.
                   </p>
 
-                  <div className="mt-5">
-                    <PhotoMock variant={cfg.heroBeforeVariant} label="Your photo" labelTone="sun" />
+                  <div className="mx-auto mt-5 max-w-[280px]">
+                    <PhotoMock
+                      variant={cfg.heroBeforeVariant}
+                      label="Your photo"
+                      labelTone="sun"
+                      priority="low"
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div ref={s2} className="relative">
+            <div ref={s2} className="relative min-w-0">
               <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">
                       STEP 2
@@ -709,7 +734,7 @@ function HowItWorks({
                     Pick a style made for this occasion — soft motion, premium finish.
                   </p>
 
-                  <div className="mt-5">
+                  <div className="mx-auto mt-5 max-w-[280px]">
                     <PhotoMock
                       variant={
                         cfg.heroAfterVariant.replace(/-after$/, "-ex2-after") ||
@@ -717,15 +742,16 @@ function HowItWorks({
                       }
                       label="Style preview"
                       labelTone="mint"
+                      priority="low"
                     />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div ref={s3} className="relative">
+            <div ref={s3} className="relative min-w-0">
               <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <Badge className="rounded-full bg-yellow-200 text-emerald-950 hover:bg-yellow-200">
                       STEP 3
@@ -741,8 +767,13 @@ function HowItWorks({
                     Save your animated memory and send it to someone who matters.
                   </p>
 
-                  <div className="mt-5">
-                    <PhotoMock variant={cfg.heroAfterVariant} label="TDG result ✨" labelTone="ink" />
+                  <div className="mx-auto mt-5 max-w-[280px]">
+                    <PhotoMock
+                      variant={cfg.heroAfterVariant}
+                      label="TDG result ✨"
+                      labelTone="ink"
+                      priority="low"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -833,11 +864,11 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {items.map((it) => (
-              <div key={it.name} className="relative">
+              <div key={it.name} className="relative min-w-0">
                 <Card className="rounded-[28px] border-emerald-950/10 bg-white/60 shadow-[0_22px_70px_rgba(6,78,59,0.08)]">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
                         <div className="text-sm font-semibold text-emerald-950">
                           {it.name}
                         </div>
@@ -853,23 +884,25 @@ function Examples({ cfg }: { cfg: FunnelOccasionConfig }) {
                       </div>
                     </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div ref={it.refs.a} className="relative">
+                    <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3">
+                      <div ref={it.refs.a} className="relative min-w-0">
                         <PhotoMock
                           variant={it.beforeVariant}
                           label="Before"
                           labelTone="sun"
-                          rounded="rounded-3xl"
+                          rounded="rounded-2xl sm:rounded-3xl"
+                          priority="low"
                         />
                       </div>
 
-                      <div ref={it.refs.b} className="relative">
+                      <div ref={it.refs.b} className="relative min-w-0">
                         <PhotoMock
                           variant={it.afterVariant}
                           label="After"
                           labelTone="ink"
-                          rounded="rounded-3xl"
+                          rounded="rounded-2xl sm:rounded-3xl"
                           footer="TDG result ✨"
+                          priority="low"
                         />
                       </div>
                     </div>
@@ -941,7 +974,7 @@ function ValueTrio({
           {items.map((it) => (
             <div key={it.title} className="text-center">
               <div className="mx-auto mb-6 max-w-[320px]">
-                <PhotoMock variant={it.variant} rounded="rounded-[34px]" />
+                <PhotoMock variant={it.variant} rounded="rounded-[28px] sm:rounded-[34px]" priority="low" />
               </div>
 
               <div className="font-serif text-xl tracking-tight text-emerald-950">
@@ -982,7 +1015,7 @@ function ResultsBand() {
     <section className="bg-emerald-950 py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4">
         <div className="max-w-2xl">
-          <h3 className="font-serif text-4xl tracking-tight text-emerald-50 md:text-5xl">
+          <h3 className="text-balance break-words font-serif text-3xl tracking-tight text-emerald-50 sm:text-4xl md:text-5xl">
             Results You Can Feel
           </h3>
           <p className="mt-3 text-base leading-relaxed text-emerald-100/80">
@@ -1124,17 +1157,22 @@ function useOccasionSlug() {
 }
 
 export default function FunnelHomePage() {
+  const cfg = useOccasionConfig();
+
   useEffect(() => {
     runSmokeChecks();
-  }, []);
+    if (cfg.key === "christmas") {
+      warmChristmasFunnelImages();
+      prefetchChristmasFunnelRoutes();
+    }
+  }, [cfg.key]);
 
-  const cfg = useOccasionConfig();
   const occasionSlug = useOccasionSlug();
   const uploadTo = useMemo(() => buildUploadHref(occasionSlug), [occasionSlug]);
   const ctaLabel = cfg.ctaLabel || DEFAULT_CTA_LABEL;
 
   return (
-    <div className="min-h-screen bg-[#F6F2EA] text-emerald-950">
+    <div className="min-h-screen overflow-x-hidden bg-[#F6F2EA] text-emerald-950">
       <Nav />
       <Hero cfg={cfg} uploadTo={uploadTo} />
       <HowItWorks cfg={cfg} uploadTo={uploadTo} ctaLabel={ctaLabel} />

@@ -185,7 +185,7 @@ export default function LibraryVideoCard({
     >
       <div className="relative aspect-[9/16] w-full bg-slate-950 sm:aspect-video">
         {photo ? (
-          <img src={href} alt={video.title} className="absolute inset-0 h-full w-full bg-black object-cover" />
+            visible ? <img src={href} alt={video.title} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full bg-black object-cover" /> : null
         ) : (
           <>
             {visible ? (
@@ -203,7 +203,7 @@ export default function LibraryVideoCard({
                 poster={video.poster}
                 playsInline
                 muted
-                preload="metadata"
+                preload={video.poster ? "none" : "metadata"}
                 controls={false}
                 onLoadedMetadata={paintFirstFrame}
                 onLoadedData={paintFirstFrame}
@@ -215,10 +215,12 @@ export default function LibraryVideoCard({
                 onEnded={() => onPlayingChange(false)}
               />
             ) : null}
-            {stillSrc && !playing ? (
+            {visible && stillSrc && !playing ? (
               <img
                 src={stillSrc}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute inset-0 z-[5] h-full w-full object-cover"
               />
             ) : null}

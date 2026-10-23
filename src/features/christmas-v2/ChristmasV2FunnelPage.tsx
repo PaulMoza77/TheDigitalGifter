@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { PageHead } from "@/components/PageHead";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
-import { trackMetaInitiateCheckout } from "@/lib/metaPixel";
 import { trackChristmasV2Event } from "./analytics";
 import {
   christmasFunnelApi,
@@ -202,13 +201,7 @@ export function ChristmasV2FunnelPage() {
                 product: CHRISTMAS_PACKS.starter.sku,
               })
             }
-            onPaymentInteraction={() => {
-              trackMetaInitiateCheckout({
-                eventId: checkout.sessionId || checkout.orderId || `cv2_${Date.now()}`,
-                valueCents: checkout.amountCents,
-                orderId: checkout.orderId || undefined,
-              });
-            }}
+            onPaymentInteraction={() => { /* Tracked from the verified checkout response. */ }}
             onSubmit={() =>
               trackChristmasV2Event({
                 eventName: "christmas_v2_payment_submitted",

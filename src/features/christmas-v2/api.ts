@@ -1,3 +1,5 @@
+import { trackChristmasPackCheckout, trackChristmasPackPurchase } from "./meta";
+import { attributionParamsForInternal } from "../pet/funnelAttribution";
 import { getPublicSupabaseConfig } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 import type { ChristmasPackKey, ChristmasSceneKey } from "./config";
@@ -18,6 +20,8 @@ export type ChristmasOrderSummary = {
   status: string;
   packKey: ChristmasPackKey;
   amountCents: number;
+  currency?: string;
+  paidAt?: string | null;
   imageCount: number;
   videoCount: number;
   email?: string;
@@ -53,6 +57,8 @@ type CheckoutResult = {
   checkoutUrl?: string | null;
   expiresAt?: number | null;
   amountCents: number;
+  currency?: string;
+  paidAt?: string | null;
   status?: string;
 };
 
@@ -193,7 +199,10 @@ export const christmasFunnelApi = {
     cancelUrl?: string;
     funnelSessionId?: string;
     attribution?: Record<string, string | null | undefined>;
-  }) => callChristmasFunnel<CheckoutResult>("createStripeCheckout", input as unknown as Record<string, unknown>),
+  }) => callChristmasFunnel<CheckoutResult>("createStripeCheckout", { ...input, attribution: input.attribution ?? attributionParamsForInternal() }).then((result) => {
+    trackChristmasPackCheckout(result);
+    return result;
+  }),
 
   createUpsellCheckout: (input: {
     parentOrderId: string;
@@ -221,7 +230,10 @@ export const christmasFunnelApi = {
     callChristmasFunnel<ChristmasOrderResults>("getOrderByPublicToken", input),
 
   pollGenerationProgress: (input: { publicToken: string }) =>
-    callChristmasFunnel<ChristmasOrderResults>("pollGenerationProgress", input),
+    callChristmasFunnel<ChristmasOrderResults>("pollGenerationProgress", input).then((result) => {
+      trackChristmasPackPurchase(result.order);
+      return result;
+    }),
 
   listMyChristmasGalleries: () =>
     callChristmasFunnel<

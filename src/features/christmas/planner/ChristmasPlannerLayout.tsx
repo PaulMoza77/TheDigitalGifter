@@ -8,6 +8,7 @@ import {
   Gift,
   Home,
   LayoutList,
+  Menu,
   MoreHorizontal,
   Search,
   ShoppingBag,
@@ -62,6 +63,7 @@ function PlannerAppShell() {
   const copilot = useCopilotUi();
   const [readiness, setReadiness] = useState<number | null>(null);
   const [sideCollapsed, setSideCollapsed] = useState(false);
+  const [sideOpen, setSideOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -129,16 +131,32 @@ function PlannerAppShell() {
     };
   }, [profile, location.pathname]);
 
+  useEffect(() => {
+    setSideOpen(false);
+  }, [location.pathname]);
+
   return (
     <>
       <PageHead title="Christmas Planner" description="Your private Christmas command center." noindex nofollow exactTitle />
       <div className={`tdg-planner-frame${sideCollapsed ? " is-side-collapsed" : ""}`}>
         <header className="tdg-planner-header">
-          <a className="tdg-planner-logo" href="/account/christmas" aria-label="Christmas Planner">
+          <div className="tdg-planner-header-start">
+            <button
+              type="button"
+              className="tdg-planner-side-launch"
+              aria-label="Open menu"
+              aria-expanded={sideOpen}
+              aria-controls="planner-side-nav"
+              onClick={() => setSideOpen(true)}
+            >
+              <Menu size={20} strokeWidth={1.8} aria-hidden />
+            </button>
+            <a className="tdg-planner-logo" href="/account/christmas" aria-label="Christmas Planner">
             <img src="/TheDigitalGifter.png" alt="" width={36} height={36} decoding="async" />
             <PlannerGiftMark size={34} />
             <span>Christmas Planner</span>
-          </a>
+            </a>
+          </div>
           <p className="tdg-planner-header-count">
             {daysLeft > 1 ? (
               <>
@@ -161,7 +179,10 @@ function PlannerAppShell() {
             <PlannerAccountChrome />
           </div>
         </header>
-        <aside className="tdg-planner-side" aria-label="Planner modules">
+        {sideOpen ? (
+          <button type="button" className="tdg-planner-side-backdrop" aria-label="Close menu" onClick={() => setSideOpen(false)} />
+        ) : null}
+        <aside className={`tdg-planner-side${sideOpen ? " is-open" : ""}`} aria-label="Planner modules">
           <div className="tdg-planner-side-head">
             <a className="tdg-planner-side-home" href="/account/christmas" aria-label="Christmas Planner home">
               <PlannerGiftMark size={sideCollapsed ? 28 : 40} />

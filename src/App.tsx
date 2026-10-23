@@ -395,13 +395,11 @@ function GtagPageViewTracker() {
 
 function MetaSpaPageViewTracker() {
   const location = useLocation();
-  const skipInitialHtmlPageView = useRef(true);
+  const skipInitialHtmlPageView = useRef(location.pathname);
 
   useEffect(() => {
-    if (skipInitialHtmlPageView.current) {
-      skipInitialHtmlPageView.current = false;
-      return;
-    }
+    if (skipInitialHtmlPageView.current === location.pathname) return;
+    skipInitialHtmlPageView.current = location.pathname;
     trackMetaSpaPageView(location.pathname);
   }, [location.pathname]);
 
@@ -448,7 +446,7 @@ function WebsiteLayout() {
 
 function FunnelLayout() {
   return (
-    <div className="min-h-screen w-full bg-black text-white">
+    <div className="min-h-screen w-full overflow-x-hidden bg-black text-white">
       <Outlet />
     </div>
   );
