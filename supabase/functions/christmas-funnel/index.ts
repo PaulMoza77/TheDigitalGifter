@@ -22,6 +22,7 @@ import {
   sha256Hex,
 } from "../_shared/christmas/crypto.ts";
 import { enqueueChristmasGenerate } from "../_shared/christmas/stripeFulfill.ts";
+import { resolveVideoSourceSceneKeys } from "../_shared/christmas/videoPrompts.ts";
 
 type Body = Record<string, unknown>;
 
@@ -134,6 +135,11 @@ async function insertVideos(
   sourceSceneKeys: string[],
 ) {
   if (!sourceSceneKeys.length) return;
+  const { count } = await service
+    .from("christmas_v2_order_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("order_id", orderId);
+  if ((count ?? 0) > 0) return;
   const rows = sourceSceneKeys.map((key) => ({
     order_id: orderId,
     source_scene_key: key,
@@ -228,6 +234,8 @@ async function buildOrderResults(
       status: asString(order.status),
       packKey: asString(order.pack_key) as ChristmasPackKey,
       amountCents: asInt(order.amount_cents),
+      currency: asString(order.currency),
+      paidAt: asString(order.paid_at) || null,
       imageCount: asInt(order.image_count),
       videoCount: asInt(order.video_count),
       email: asString(order.email) || undefined,
@@ -283,6 +291,7 @@ Deno.serve(async (req) => {
       }
 
       const sceneKeys = resolveSceneKeys(packKey, body.sceneKeys);
+      const videoSourceSceneKeys = resolveVideoSourceSceneKeys(sceneKeys, pack.videoCount);
       const publicToken = generatePublicToken();
       const publicTokenHash = await sha256Hex(publicToken);
       const insert = {
@@ -296,7 +305,7 @@ Deno.serve(async (req) => {
         product_type: CHRISTMAS_PRODUCT_TYPE,
         amount_cents: pack.amountCents,
         charged_amount_cents: pack.amountCents,
-        currency: "usd",
+        currency: "eur",
         status: "awaiting_upload",
         image_count: pack.imageCount,
         video_count: pack.videoCount,
@@ -306,7 +315,7 @@ Deno.serve(async (req) => {
         meta_event_id: `pending_${crypto.randomUUID()}`,
         funnel_session_id: funnelSessionId,
         scene_keys: sceneKeys,
-        video_source_scene_keys: [],
+        video_source_scene_keys: videoSourceSceneKeys,
         surprise_me: false,
       };
       const { data, error } = await service.from("christmas_v2_orders").insert(insert).select("*").single();
@@ -315,6 +324,7 @@ Deno.serve(async (req) => {
       const metaEventId = `christmas_purchase_${data.id}`;
       await service.from("christmas_v2_orders").update({ meta_event_id: metaEventId }).eq("id", data.id);
       await insertScenes(service, data.id, sceneKeys);
+      await insertVideos(service, data.id, videoSourceSceneKeys);
 
       return jsonResponse({
         orderId: data.id,
@@ -518,6 +528,7 @@ Deno.serve(async (req) => {
         checkoutUrl: asString(session.url) || null,
         expiresAt: session.expires_at ?? null,
         amountCents,
+        currency: asString(session.currency) || asString(order.currency),
         status: "open",
       });
     }
