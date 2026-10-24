@@ -1,0 +1,15 @@
+{
+  "api/_lib/christmas/videoPrompts.ts": "269fef9ab6ae65ef97fa78a0a1e4bd6a31b982963d2616c92929db9a0f98bdf3",
+  "src/features/christmas-v2/ChristmasV2FunnelPage.tsx": "8559fb16703f425cd85e978d51a45b9520d34000d26a0e9424f921998fdcfb9a",
+  "src/features/christmas-v2/config.ts": "73ed6ae110db860263916ebec7f6c88f43c7ff11734d689c3f477c77372a2c1d",
+  "src/features/christmas-v2/screens/ResultsScreen.tsx": "7fb3fbf784b1019b3bf43f98375c3f7248e15ef8e83a6d876f84b7b8fd9af5d0",
+  "src/features/christmas/portraitStyles.ts": "3e40e27028ef5e7a760e73a75564450be3fcb0d6dd9a62944bac4a7423334803",
+  "src/features/christmas/styles.ts": "99b261537cb56b8a2caaee1996f4b93ce4b900bc7081b337cd535e65abb9313c",
+  "src/features/christmas/useChristmasPortraitFunnel.ts": "ae35fc2fb7d1b9179cee6c511685063a2f528e94a7fc9e7b1d072575f9515a4b",
+  "src/components/client/ChristmasGenerations.tsx": "5c5924dd6ff5bba247c8037bf29db706e7396efe7e2216ade6f7e6da5d819a55",
+  "edge/christmas-generate/index.ts": "a5cc433398d712c799865f246cd3f629fbfaa9761a4394a670f21ecc76e52d08",
+  "edge/christmas-generate-video/index.ts": "d7327931d8851d15c9635d4dec9647f077fff2861e9a8eca5d62ac9bafe4ef7a",
+  "edge/christmas-funnel/index.ts": "d75e9bd80d92f51a54deb0ae446faebbf4263218cdaf1f0fed3e6db726701853",
+  "edge/_shared/christmas/email.ts": "8fd318265e014a5e622541a24c9490487cc5742a43c569c161d5cb7f4018e115",
+  "edge/_shared/christmas/higgsfield.ts": "8c4225b89c472c4d3e70e99fb2ad95952ac564888b07c380ef7613f222293ac2"
+}

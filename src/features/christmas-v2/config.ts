@@ -17,9 +17,9 @@ export const CHRISTMAS_STARTER_SKU = "christmas-starter-3" as const;
 export const CHRISTMAS_MAGIC_SKU = "christmas-magic-8" as const;
 export const CHRISTMAS_ULTIMATE_SKU = "christmas-ultimate-12" as const;
 
-export const CHRISTMAS_STARTER_PRICE_CENTS = 300 as const;
-export const CHRISTMAS_MAGIC_PRICE_CENTS = 800 as const;
-export const CHRISTMAS_ULTIMATE_PRICE_CENTS = 1200 as const;
+export const CHRISTMAS_STARTER_PRICE_CENTS = 700 as const;
+export const CHRISTMAS_MAGIC_PRICE_CENTS = 1700 as const;
+export const CHRISTMAS_ULTIMATE_PRICE_CENTS = 2700 as const;
 
 export const CHRISTMAS_PRODUCT_TYPE = "christmas_portrait_pack" as const;
 export const CHRISTMAS_FUNNEL_VARIANT = "christmas_v2" as const;
@@ -313,7 +313,7 @@ export const CHRISTMAS_PACKS: Record<ChristmasPackKey, ChristmasPackDef> = {
     sku: CHRISTMAS_STARTER_SKU,
     name: "Christmas Starter Pack",
     priceCents: CHRISTMAS_STARTER_PRICE_CENTS,
-    priceDisplay: "$3",
+    priceDisplay: "€7",
     imageCount: 3,
     videoCount: 0,
     cta: "Create My 3 Christmas Photos",
@@ -324,23 +324,23 @@ export const CHRISTMAS_PACKS: Record<ChristmasPackKey, ChristmasPackDef> = {
     sku: CHRISTMAS_MAGIC_SKU,
     name: "Christmas Magic Pack",
     priceCents: CHRISTMAS_MAGIC_PRICE_CENTS,
-    priceDisplay: "$8",
-    imageCount: 8,
+    priceDisplay: "€17",
+    imageCount: 5,
     videoCount: 1,
-    cta: "Get 8 Photos + 1 Video — $8",
-    description: "8 Christmas Photos + 1 AI Video",
+    cta: "Get 5 Photos + 1 Video — €17",
+    description: "5 Christmas Photos + 1 AI Video",
   },
   ultimate: {
     key: "ultimate",
     sku: CHRISTMAS_ULTIMATE_SKU,
     name: "Ultimate Christmas Pack",
     priceCents: CHRISTMAS_ULTIMATE_PRICE_CENTS,
-    priceDisplay: "$12",
-    imageCount: 12,
-    videoCount: 2,
-    cta: "Get 12 Photos + 2 Videos — $12",
+    priceDisplay: "€27",
+    imageCount: 10,
+    videoCount: 3,
+    cta: "Get 10 Photos + 3 Videos — €27",
     badge: "BEST VALUE",
-    description: "12 Christmas Photos + 2 AI Videos",
+    description: "10 Christmas Photos + 3 AI Videos",
   },
 };
 

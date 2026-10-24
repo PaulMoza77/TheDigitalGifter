@@ -16,6 +16,8 @@ export const PHOTO_GEN_ASSETS = {
   heroRoom: LANDING_ASSETS.hero,
   familyBefore: LANDING_ASSETS.portraitFamilyBefore,
   familyAfter: LANDING_ASSETS.portraitFamily,
+  /** Animated Christmas version of the framed family portrait. */
+  familyAfterVideo: "/assets/christmas/portrait_family_loop.mp4",
   /** Demo everyday photo stand-in until a dedicated couple-before webp ships */
   coupleBefore: LANDING_ASSETS.portraitFamilyBefore,
   coupleAfter: LANDING_ASSETS.portraitCouple,

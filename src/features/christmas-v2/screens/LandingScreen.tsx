@@ -29,7 +29,7 @@ export function ChristmasLandingScreen({
           className="inline-flex items-center gap-2 rounded-full border border-[#C9A227]/45 bg-[#C9A227]/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#F3D98A]"
         >
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-          $3 Only
+          €7 · one-time payment
         </motion.div>
 
         <motion.h1
@@ -47,7 +47,7 @@ export function ChristmasLandingScreen({
           transition={{ duration: 0.5, delay: 0.12 }}
           className="max-w-md text-base leading-7 text-[#F7F0E4]/78 sm:text-lg"
         >
-          Get 3 AI Christmas portraits for just $3
+          Get 3 AI Christmas portraits for €7
         </motion.p>
 
         <p className="text-sm text-[#F7F0E4]/55">

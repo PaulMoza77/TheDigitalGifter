@@ -270,6 +270,8 @@ function normalizeOccasionId(value: string | null | undefined) {
 export function occasionHref(id: string | null | undefined): string {
   const slug = normalizeOccasionId(id);
 
+  if (slug === "christmas") return "/christmas/photo-generator";
+
   if (slug === "dogs" || slug === "dog") return "/pet/dog";
   if (slug === "cats" || slug === "cat") return "/pet/cat";
   if (slug === "other-pets" || slug === "other") return "/pet/other";

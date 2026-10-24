@@ -1,0 +1,20 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {createHmac} from 'node:crypto';
+import {homedir} from 'node:os';
+const key=readFileSync(homedir()+'/.config/tdg/stripe-test.key','utf8').trim();if(!key.startsWith('sk_test_'))throw new Error('TEST key required');
+const checkout=JSON.parse(readFileSync('/tmp/tdg-isolated-stripe/checkout.json','utf8'));if(!checkout.sessionId.startsWith('cs_test_'))throw new Error('TEST session required');
+const headers={authorization:'Bearer '+key};
+const session=await fetch('https://api.stripe.com/v1/checkout/sessions/'+checkout.sessionId,{headers}).then(r=>r.json());
+if(session.livemode!==false||session.payment_status!=='paid')throw new Error('No successful TEST payment');
+const events=await fetch('https://api.stripe.com/v1/events?type=checkout.session.completed&limit=20',{headers}).then(r=>r.json());
+const event=events.data.find(e=>e.data.object.id===checkout.sessionId);if(!event||event.livemode!==false)throw new Error('Stripe event not found');
+const secret=execFileSync('stripe',['listen','--print-secret'],{env:{PATH:process.env.PATH,HOME:homedir(),STRIPE_API_KEY:key},encoding:'utf8'}).trim();
+const raw=JSON.stringify(event),t=Math.floor(Date.now()/1000),signature=createHmac('sha256',secret).update(`${t}.${raw}`).digest('hex');
+const replay=await fetch('http://127.0.0.1:58421/functions/v1/stripe-webhook',{method:'POST',headers:{'content-type':'application/json','stripe-signature':`t=${t},v1=${signature}`},body:raw});const replayBody=await replay.json();
+if(replayBody.status!=='already_processed')throw new Error('Real event replay was not deduplicated');
+const order=JSON.parse(readFileSync('/tmp/tdg-isolated-stripe/order.json','utf8'));
+const poll=await fetch('http://127.0.0.1:58421/functions/v1/christmas-funnel',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'pollGenerationProgress',publicToken:order.publicToken})}).then(r=>r.json());
+const downloads=[];for(const scene of poll.scenes){if(!scene.imageUrl)continue;const r=await fetch(scene.imageUrl);downloads.push({status:r.status,bytes:(await r.arrayBuffer()).byteLength});}
+const result={scope:'Real authorized Stripe TEST payment + actual CLI webhook; generation mocked/email locally captured',session:{id:session.id,livemode:session.livemode,paymentStatus:session.payment_status,amountCents:session.amount_total,currency:session.currency,metadata:Object.fromEntries(Object.entries(session.metadata).filter(([k])=>k!=='email_hash'))},event:{id:event.id,type:event.type,livemode:event.livemode},actualEventLocallyResignedReplay:{http:replay.status,...replayBody},order:{id:poll.order.orderId,status:poll.order.status,paidAtPresent:!!poll.order.paidAt,amountCents:poll.order.amountCents,currency:poll.order.currency},downloads};
+writeFileSync('/tmp/tdg-isolated-stripe/real-test-evidence.json',JSON.stringify(result,null,2),{mode:0o600});console.log(JSON.stringify(result));

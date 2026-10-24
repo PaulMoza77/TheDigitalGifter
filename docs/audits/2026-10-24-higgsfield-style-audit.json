@@ -1,0 +1,1022 @@
+[
+  {
+    "group": "Portrait style",
+    "id": "cozy_fireplace",
+    "name": "Cozy Christmas",
+    "imagePrompt": "Transform this photo into a photoreal cozy fireplace Christmas portrait. Preserve exact facial identity and likeness. Warm fireplace glow, soft knit textures, intimate holiday atmosphere. Natural skin, shallow depth of field, no text, no watermark, no extra limbs.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "cozy-christmas",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "winter_wonderland",
+    "name": "Winter Wonderland",
+    "imagePrompt": "Transform this photo into a photoreal winter wonderland Christmas portrait. Preserve exact facial identity and likeness. Soft falling snow, evergreen trees, cool blue-hour light mixed with warm lantern glow. Natural skin, cinematic but realistic, no text, no watermark, no extra people.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "snowy-winter-portrait",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "vintage_christmas",
+    "name": "Luxury Christmas",
+    "imagePrompt": "Transform this photo into a photoreal vintage Christmas portrait with gentle film grain and warm nostalgic tones. Preserve exact facial identity and likeness. Mid-century holiday décor cues, soft vignette, natural skin, no text, no watermark, no heavy filters that hide the face.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "christmas_movie",
+    "name": "Christmas Morning",
+    "imagePrompt": "Transform this photo into a photoreal Christmas-movie cinematic portrait. Preserve exact facial identity and likeness. Soft anamorphic bokeh, warm practical lights, storybook holiday street or porch. Film still aesthetic, no logos, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "north_pole",
+    "name": "Snowy Cabin",
+    "imagePrompt": "Transform this photo into a photoreal North Pole Christmas portrait. Preserve exact facial identity and likeness. Soft aurora sky, snow crystals, magical but realistic atmosphere. Natural face detail, no text, no watermark, no deformed anatomy.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "classic_christmas",
+    "name": "Classic Christmas",
+    "imagePrompt": "Transform this photo into a photoreal classic Christmas portrait. Preserve the exact face identity, age, and likeness of every person. Place them in a timeless Christmas living-room scene with a decorated tree, soft warm lights, and gentle bokeh. Natural skin texture, flattering portrait lighting, no text, no watermark, no extra people, no deformed hands.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "by-the-christmas-tree",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "elegant_christmas",
+    "name": "Elegant White Christmas",
+    "imagePrompt": "Transform this photo into a photoreal elegant Christmas evening portrait. Preserve exact facial identity and likeness. Tasteful gold accents, formal soft lighting, upscale holiday backdrop. Photoreal fashion-portrait quality, no text, no watermark, no extra people.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "santas_workshop",
+    "name": "Christmas Market",
+    "imagePrompt": "Transform this photo into a photoreal Santa's workshop Christmas portrait. Preserve exact facial identity and likeness. Background of wooden toys, warm workshop lamps, subtle festive props. Keep the person as the hero subject. Natural proportions, no text, no watermark, no costume forced onto face.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "classic_family_christmas",
+    "name": "Classic Family Christmas",
+    "imagePrompt": "Transform this family photo into a photoreal classic Christmas family portrait. Preserve the exact facial identity, approximate age, and likeness of every person. Keep the same number of people — do not add, remove, or clone anyone. Cohesive group posing near a decorated Christmas tree, soft warm lights, natural skin, no text, no watermark, no deformed hands.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_cozy_fireplace",
+    "name": "Cozy Fireplace",
+    "imagePrompt": "Transform this family photo into a photoreal cozy fireplace Christmas portrait. Preserve every person's exact identity and keep the same headcount. Warm fireplace glow, soft knit textures, natural grouping, no text, no watermark, no extra limbs.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_winter_wonderland",
+    "name": "Winter Wonderland",
+    "imagePrompt": "Transform this family photo into a photoreal winter wonderland Christmas portrait. Preserve exact identities and the same number of people. Soft snow, evergreens, cool blue-hour light with warm lanterns. Natural proportions, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_elegant_christmas",
+    "name": "Elegant Christmas",
+    "imagePrompt": "Transform this family photo into a photoreal elegant Christmas evening portrait. Preserve every face identity and keep the same number of people. Tasteful gold accents, formal soft lighting, upscale holiday backdrop. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_christmas_morning",
+    "name": "Christmas Morning",
+    "imagePrompt": "Transform this family photo into a photoreal Christmas morning portrait. Preserve exact identities and headcount. Soft daylight, subtle wrapping-paper tones, calm festive living room. Natural skin, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_luxury_christmas",
+    "name": "Luxury Christmas",
+    "imagePrompt": "Transform this family photo into a photoreal luxury Christmas portrait. Preserve exact identities and the same number of people. Refined décor, soft cinematic lighting, magazine-portrait quality without plastic skin. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_christmas_movie",
+    "name": "Christmas Movie",
+    "imagePrompt": "Transform this family photo into a photoreal Christmas-movie cinematic still. Preserve exact identities and headcount. Soft anamorphic bokeh, warm practical lights, storybook porch or living room. No logos, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "family_vintage_christmas",
+    "name": "Vintage Family Christmas",
+    "imagePrompt": "Transform this family photo into a photoreal vintage Christmas family portrait with gentle film grain. Preserve exact identities and the same number of people. Mid-century holiday décor cues, soft vignette, natural skin. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "romantic_snowfall",
+    "name": "Romantic Snowfall",
+    "imagePrompt": "Transform this couple photo into a photoreal romantic Christmas snowfall portrait. Preserve both people's exact facial identities. Keep exactly two people — do not merge, clone, or drop either person. Soft falling snow, warm lantern glow, intimate pose, natural skin, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_cozy_fireplace",
+    "name": "Cozy Fireplace",
+    "imagePrompt": "Transform this couple photo into a photoreal cozy fireplace Christmas portrait. Preserve both identities exactly and keep two people only. Warm fireplace glow, soft textures, romantic but natural pose. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_christmas_movie",
+    "name": "Christmas Movie",
+    "imagePrompt": "Transform this couple photo into a photoreal Christmas-movie cinematic portrait. Preserve both faces exactly; keep two people. Soft bokeh, warm practical lights, storybook holiday street. No logos, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_elegant_christmas",
+    "name": "Elegant Christmas",
+    "imagePrompt": "Transform this couple photo into a photoreal elegant Christmas evening portrait. Preserve both identities; keep exactly two people. Tasteful gold accents, soft formal lighting. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_winter_city",
+    "name": "Winter City",
+    "imagePrompt": "Transform this couple photo into a photoreal winter-city Christmas portrait. Preserve both identities; keep two people. Soft city bokeh, festive lights, realistic winter clothing. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_christmas_market",
+    "name": "Christmas Market",
+    "imagePrompt": "Transform this couple photo into a photoreal Christmas market portrait. Preserve both identities; keep exactly two people. Warm stall lights, subtle festive atmosphere, natural skin. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_classic_portrait",
+    "name": "Classic Portrait",
+    "imagePrompt": "Transform this couple photo into a photoreal classic Christmas couple portrait. Preserve both facial identities exactly; keep two people. Soft portrait lighting, subtle tree bokeh. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "couple_vintage_christmas",
+    "name": "Vintage Christmas",
+    "imagePrompt": "Transform this couple photo into a photoreal vintage Christmas portrait with gentle film grain. Preserve both identities; keep two people. Mid-century holiday cues, soft vignette. No text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "santa_pet",
+    "name": "Santa Pet",
+    "imagePrompt": "Transform this pet photo into a photoreal Santa Christmas pet portrait. Preserve the exact species, coat colors, markings, and facial characteristics. Do not change the animal into a different species or add extra animals. Subtle festive Santa-hat or scarf prop only if it does not hide the face. Soft warm Christmas lighting, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_cozy_christmas",
+    "name": "Cozy Christmas",
+    "imagePrompt": "Transform this pet photo into a photoreal cozy Christmas pet portrait. Preserve exact species, coat pattern, and face. Fireplace glow, soft textures, no extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_north_pole",
+    "name": "North Pole",
+    "imagePrompt": "Transform this pet photo into a photoreal North Pole Christmas pet portrait. Preserve species, coat, and facial identity. Soft snow and aurora accents that stay realistic. No extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_christmas_sweater",
+    "name": "Christmas Sweater",
+    "imagePrompt": "Transform this pet photo into a photoreal Christmas sweater pet portrait. Preserve exact species, markings, and face. A tasteful holiday sweater that does not obscure the face. Soft studio lighting, no extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_snow_portrait",
+    "name": "Snow Portrait",
+    "imagePrompt": "Transform this pet photo into a photoreal snow Christmas pet portrait. Preserve species, coat colors, and facial traits. Soft snowfall, evergreen bokeh, natural fur detail. No extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_christmas_card",
+    "name": "Christmas Card",
+    "imagePrompt": "Transform this pet photo into a photoreal Christmas-card pet portrait. Preserve exact species and likeness. Clean festive backdrop suitable for a card, but no readable text, logos, or watermarks in the image. No extra animals.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_royal_christmas",
+    "name": "Royal Christmas",
+    "imagePrompt": "Transform this pet photo into a photoreal royal Christmas pet portrait. Preserve species, coat pattern, and face. Tasteful regal Christmas accents without distorting anatomy. No extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Portrait style",
+    "id": "pet_vintage_christmas",
+    "name": "Vintage Christmas",
+    "imagePrompt": "Transform this pet photo into a photoreal vintage Christmas pet portrait with gentle film grain. Preserve exact species, markings, and facial identity. Soft vignette, warm nostalgic tones. No extra animals, no text, no watermark.",
+    "videoPromptQuality": "FAIL",
+    "persistence": "FAIL — original style ID absent from pack order",
+    "mapping": "Default pack scenes; selected style ignored",
+    "reason": "Only a still-image prompt is defined; production video worker uses one generic Christmas motion prompt. No dedicated selected-style motion, duration in prompt, or explicit locked camera.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "by-the-christmas-tree",
+    "name": "By the Christmas Tree",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "snowy-winter-portrait",
+    "name": "Snowy Winter Portrait",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "cozy-christmas",
+    "name": "Cozy Christmas",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "grand-evergreen",
+    "name": "Grand Evergreen",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "festive-dinner",
+    "name": "Festive Dinner Table",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "red-gold-card",
+    "name": "Red & Gold Card",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "by-the-hearth",
+    "name": "By the Hearth",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "choosing-the-star",
+    "name": "Choosing the Star",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "story-time",
+    "name": "Story Time",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "sweater-weather",
+    "name": "Sweater Weather",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "sledding-hill",
+    "name": "Sledding Hill",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "snowfall-portrait",
+    "name": "Snowfall Portrait",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "mistletoe-kiss",
+    "name": "Mistletoe Moment",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "sleigh-ride",
+    "name": "Sleigh Ride",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "winter-proposal",
+    "name": "Winter Proposal",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "santa-holiday",
+    "name": "Santa Workshop",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "hot-chocolate",
+    "name": "Hot Chocolate",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "winter-outside",
+    "name": "Winter Outside",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  },
+  {
+    "group": "Pack scene",
+    "id": "skiing-winter",
+    "name": "Skiing in Winter",
+    "imagePrompt": "",
+    "videoPromptQuality": "FAIL in production; RC has dedicated prompt",
+    "persistence": "Scene key retained; runtime source association unverified",
+    "mapping": "source_scene_key → scene result (worker currently wrong order schema)",
+    "reason": "Production uses generic motion. Integrated RC defines scene-specific motion plus 5 seconds, face preservation, locked camera, no cuts/morphing/text; textual quality passes for this scene only, output remains unverified.",
+    "result": "FAIL",
+    "resolvedProductionVideoPrompt": "Subtle cinematic Christmas motion of this exact portrait. Soft fairy-light shimmer, gentle snowfall or fireplace glow, slight natural head movement and breathing. Preserve the exact face, clothing, and background. No morphing, no identity drift, no aggressive camera moves.",
+    "model": "kling-video/v3.0/pro/image-to-video",
+    "parameters": {
+      "duration": 5,
+      "sound": "off",
+      "image_url": "signed generated scene image URL"
+    },
+    "sourceImage": "Generated portrait selected by source_scene_key, not original upload directly; active worker queries wrong commerce tables",
+    "realGeneration": "BLOCKED — costs denied"
+  }
+]

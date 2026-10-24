@@ -15,14 +15,14 @@ describe("christmas-v2 config", () => {
   });
 
   it("defines starter/magic/ultimate packs with required economics", () => {
-    expect(CHRISTMAS_PACKS.starter.priceCents).toBe(300);
+    expect(CHRISTMAS_PACKS.starter.priceCents).toBe(700);
     expect(CHRISTMAS_PACKS.starter.imageCount).toBe(3);
-    expect(CHRISTMAS_PACKS.magic.priceCents).toBe(800);
-    expect(CHRISTMAS_PACKS.magic.imageCount).toBe(8);
+    expect(CHRISTMAS_PACKS.magic.priceCents).toBe(1700);
+    expect(CHRISTMAS_PACKS.magic.imageCount).toBe(5);
     expect(CHRISTMAS_PACKS.magic.videoCount).toBe(1);
-    expect(CHRISTMAS_PACKS.ultimate.priceCents).toBe(1200);
-    expect(CHRISTMAS_PACKS.ultimate.imageCount).toBe(12);
-    expect(CHRISTMAS_PACKS.ultimate.videoCount).toBe(2);
+    expect(CHRISTMAS_PACKS.ultimate.priceCents).toBe(2700);
+    expect(CHRISTMAS_PACKS.ultimate.imageCount).toBe(10);
+    expect(CHRISTMAS_PACKS.ultimate.videoCount).toBe(3);
   });
 
   it("maps starter scenes to existing Christmas style concepts", () => {

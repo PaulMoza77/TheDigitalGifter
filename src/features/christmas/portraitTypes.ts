@@ -2,6 +2,7 @@ export const CHRISTMAS_PORTRAIT_STEPS = [
   "intro",
   "upload",
   "subject",
+  "photo",
   "style",
   "preview",
   "offer",

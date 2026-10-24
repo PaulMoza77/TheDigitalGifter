@@ -1,0 +1,14 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {homedir} from 'node:os';
+const key=readFileSync(homedir()+'/.config/tdg/stripe-test.key','utf8').trim();if(!key.startsWith('sk_test_'))throw new Error('TEST only');
+const checkout=JSON.parse(readFileSync('/tmp/tdg-isolated-stripe/negative-checkout.json','utf8'));if(!checkout.sessionId.startsWith('cs_test_'))throw new Error('TEST only');
+const headers={authorization:'Bearer '+key};
+const url='https://api.stripe.com/v1/checkout/sessions/'+checkout.sessionId;
+const session=await fetch(url+'?expand[]=payment_intent',{headers}).then(r=>r.json());
+const pi=session.payment_intent;
+const expired=await fetch(url+'/expire',{method:'POST',headers}).then(r=>r.json());
+const order=JSON.parse(readFileSync('/tmp/tdg-isolated-stripe/negative-order.json','utf8'));
+const polled=await fetch('http://127.0.0.1:58421/functions/v1/christmas-funnel',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'pollGenerationProgress',publicToken:order.publicToken})}).then(r=>r.json());
+const result={scope:'Actual authorized Stripe TEST decline, browser cancel navigation, then expired TEST session',sessionId:session.id,livemode:session.livemode,paymentStatus:session.payment_status,paymentIntentStatus:pi?.status,lastPaymentError:pi?.last_payment_error?.code,declineCode:pi?.last_payment_error?.decline_code,expiredStatus:expired.status,order:{id:polled.order.orderId,status:polled.order.status,paidAt:polled.order.paidAt,currency:polled.order.currency,amountCents:polled.order.amountCents}};
+if(result.livemode!==false||result.paymentStatus!=='unpaid'||result.order.paidAt)throw new Error('Negative TEST flow unexpectedly paid');
+writeFileSync('/tmp/tdg-isolated-stripe/negative-test-evidence.json',JSON.stringify(result,null,2),{mode:0o600});console.log(JSON.stringify(result));

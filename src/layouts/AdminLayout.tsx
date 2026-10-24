@@ -348,14 +348,14 @@ const AdminLayout: React.FC = () => {
   }, [collapsed]);
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-slate-950 font-sans text-slate-50">
-      <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 md:hidden">
+    <div className="flex h-svh max-h-svh w-full overflow-hidden bg-slate-950 font-sans text-slate-50">
+      <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 lg:hidden">
         <div className="flex items-center gap-3">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="rounded-lg p-2 transition-colors hover:bg-slate-800"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-slate-800"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5 text-slate-200" />
@@ -364,9 +364,9 @@ const AdminLayout: React.FC = () => {
 
             <SheetContent
               side="left"
-              className="w-72 border-slate-800 bg-slate-950 p-0"
+              className="z-[80] h-svh max-h-svh w-[min(20rem,88vw)] overflow-y-auto overscroll-contain border-slate-800 bg-slate-950 p-0 sm:max-w-none"
             >
-              <div className="h-full overflow-y-auto px-5 py-6">
+              <div className="min-h-full px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-14">
                 <SidebarNavigation
                   collapsed={false}
                   isActive={isActive}
@@ -384,7 +384,7 @@ const AdminLayout: React.FC = () => {
 
       <aside
         className={cx(
-          "hidden h-full min-h-0 shrink-0 flex-col border-r border-slate-800 bg-slate-950 md:flex",
+          "hidden h-full min-h-0 shrink-0 flex-col border-r border-slate-800 bg-slate-950 lg:flex",
           "transition-[width] duration-200 ease-out",
           collapsed ? "w-[72px]" : "w-72"
         )}
@@ -404,7 +404,7 @@ const AdminLayout: React.FC = () => {
           <button
             type="button"
             onClick={() => setCollapsed((value) => !value)}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-800 text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand" : "Collapse"}
           >
@@ -418,7 +418,7 @@ const AdminLayout: React.FC = () => {
 
         <nav
           className={cx(
-            "min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain",
+            "min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain",
             collapsed ? "px-2 py-4" : "px-3 py-4"
           )}
         >
@@ -432,7 +432,7 @@ const AdminLayout: React.FC = () => {
         </nav>
       </aside>
 
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-950 pt-14 md:pt-0">
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-950 pt-14 lg:pt-0">
         <Outlet />
       </main>
     </div>
