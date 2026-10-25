@@ -1,0 +1,132 @@
+{
+  "sha": "169d322d0997e03033b256cdfad43a7f5da00134",
+  "at": "2026-10-25T07:22:22.016Z",
+  "market": "us",
+  "currency": "usd",
+  "accessToken_hint": "3f33c912…",
+  "call_url": "https://www.thedigitalgifter.com/_qa/santa-private/santa/call/3f33c912acea47028a91819ce83c6309d120c6c9a3454880bfb79f9f97c79910",
+  "checks": [
+    {
+      "name": "preflight_secrets",
+      "status": "PASS"
+    },
+    {
+      "name": "stripe_test_webhook_secret",
+      "status": "PASS"
+    },
+    {
+      "name": "us_initial_checkout",
+      "amountCents": 1299,
+      "currency": "usd",
+      "market": "us",
+      "http": 200,
+      "status": "PASS"
+    },
+    {
+      "name": "us_session_id",
+      "prefix": "cs_test_a1s0",
+      "status": "PASS"
+    },
+    {
+      "name": "us_initial_payment_intent",
+      "mode": "standalone_pi",
+      "status": "PASS",
+      "amount": 1299,
+      "currency": "usd"
+    },
+    {
+      "name": "us_signed_webhook_initial",
+      "webhook_status": "fulfilled",
+      "fulfill_ok": true,
+      "status": "PASS"
+    },
+    {
+      "name": "us_duplicate_webhook",
+      "webhook_status": "already_processed",
+      "status": "PASS"
+    },
+    {
+      "name": "us_order_stamps",
+      "currency": "usd",
+      "amount_cents": "1299",
+      "locale": "en",
+      "market": "us",
+      "status": "PASS"
+    },
+    {
+      "name": "us_email_language",
+      "locale": "en",
+      "note": "Email copy language follows profile/order locale (EN for US path)",
+      "status": "PASS"
+    },
+    {
+      "name": "us_entitlement_180",
+      "remaining": 180,
+      "language": "en",
+      "status": "PASS"
+    },
+    {
+      "name": "us_awaiting_extension",
+      "resolve_code": "awaiting_extension",
+      "status": "PASS"
+    },
+    {
+      "name": "us_extension_checkout",
+      "amountCents": 999,
+      "currency": "usd",
+      "market": "us",
+      "status": "PASS"
+    },
+    {
+      "name": "us_extension_payment_intent",
+      "mode": "standalone_pi",
+      "amount": 999,
+      "currency": "usd",
+      "status": "PASS"
+    },
+    {
+      "name": "us_signed_webhook_extension",
+      "webhook_status": "fulfilled",
+      "fulfill": {
+        "ok": true,
+        "reason": "activated",
+        "remaining_seconds": 300
+      },
+      "status": "PASS"
+    },
+    {
+      "name": "us_entitlement_300",
+      "remaining_seconds": 300,
+      "status": "PASS"
+    },
+    {
+      "name": "us_never_ron",
+      "parent": "usd|1299|en|us",
+      "extension": "usd|999|us",
+      "status": "PASS"
+    },
+    {
+      "name": "us_second_extension_blocked",
+      "code": "extension_unavailable",
+      "http": 403,
+      "status": "PASS"
+    },
+    {
+      "name": "us_cancel_session_created",
+      "status": "PASS"
+    },
+    {
+      "name": "us_failed_payment_declined",
+      "failPiStatus": "card_declined",
+      "status": "PASS"
+    },
+    {
+      "name": "us_resume_start_ash",
+      "http": 200,
+      "voice": "ash",
+      "provider": "openai_realtime",
+      "status": "PASS"
+    }
+  ],
+  "pass": true
+}

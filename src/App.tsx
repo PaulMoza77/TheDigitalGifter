@@ -89,6 +89,9 @@ const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
+const SantaCallAdminPage = lazy(
+  () => import("@/pages/admin/christmas/SantaCallAdminPage"),
+);
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
 const ChristmasFactoryReviewPage = lazy(() => import("@/pages/admin/ChristmasFactoryReviewPage"));
 const AdminClipFactoryPage = lazy(() => import("@/pages/admin/AdminClipFactoryPage"));
@@ -145,6 +148,13 @@ const ChristmasShellRoute = lazy(() =>
 const ChristmasSantaVideoPage = lazy(
   () => import("@/features/christmas/ChristmasSantaVideoPage"),
 );
+const ChristmasSantaCallPage = lazy(
+  () => import("@/features/christmas/ChristmasSantaCallPage"),
+);
+const SantaCallRoomPage = lazy(
+  () => import("@/features/christmas/SantaCallRoomPage"),
+);
+
 const ChristmasTreePage = lazy(
   () => import("@/features/christmas/ChristmasTreePage"),
 );
@@ -683,7 +693,9 @@ function AppInner() {
             <Route path="/christmas/pets" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/dogs" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/cats" element={<ChristmasPortraitFunnelPage />} />
-            <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
+            <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />
+            <Route path="/christmas/santa-call" element={<ChristmasSantaCallPage />} />
+            <Route path="/santa/call/:token" element={<SantaCallRoomPage />} />} />
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
             <Route path="/christmas/advent" element={<ChristmasAdventPage />} />
@@ -728,6 +740,7 @@ function AppInner() {
                 { path: "/christmas/dogs", element: <ChristmasPortraitFunnelPage /> },
                 { path: "/christmas/cats", element: <ChristmasPortraitFunnelPage /> },
                 { path: "/christmas/santa-video", element: <ChristmasSantaVideoPage /> },
+                { path: "/christmas/santa-call", element: <ChristmasSantaCallPage /> },
                 { path: "/christmas/tree", element: <ChristmasTreePage /> },
                 { path: "/christmas/tree/:shareId", element: <ChristmasTreePage /> },
                 { path: "/christmas/advent", element: <ChristmasAdventPage /> },
@@ -1033,7 +1046,8 @@ function AppInner() {
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="pet-orders" element={<PetOrdersPage />} />
-            <Route path="christmas" element={<ChristmasAdminLayout />}>
+            <Route path="christmas" element={<ChristmasAdminLayout />
+              <Route path="santa-call" element={<SantaCallAdminPage />} />}>
               <Route index element={<ChristmasDashboardPage />} />
               <Route path="analytics" element={<ChristmasAnalyticsPage />} />
               <Route path="orders" element={<ChristmasOrdersPage />} />

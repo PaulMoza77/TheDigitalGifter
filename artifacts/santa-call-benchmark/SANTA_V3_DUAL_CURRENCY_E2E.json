@@ -1,0 +1,31 @@
+{
+  "sha": "0e0878211b639220e9313e5b3eb185cd274e0d2e",
+  "at": "2026-10-24T19:37:19.746Z",
+  "checks": [
+    {
+      "name": "preflight_secrets",
+      "status": "PASS"
+    },
+    {
+      "name": "qa_checkout_ro",
+      "orderId": "441dbf73-ed91-4490-9507-fb0ee21caa6e",
+      "amountCents": 5900,
+      "currency": "ron",
+      "market": "ro",
+      "stripeAmountOk": true,
+      "livemode": false,
+      "status": "PASS"
+    },
+    {
+      "name": "qa_checkout_us",
+      "orderId": "40fe0c49-95c1-40df-82bc-34b6274570c5",
+      "amountCents": 1299,
+      "currency": "usd",
+      "market": "us",
+      "stripeAmountOk": true,
+      "livemode": false,
+      "status": "PASS"
+    }
+  ],
+  "pass": true
+}

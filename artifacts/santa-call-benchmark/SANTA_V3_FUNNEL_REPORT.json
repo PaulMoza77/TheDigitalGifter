@@ -1,0 +1,59 @@
+{
+  "mission": "Santa Commercial Funnel V3 — RO/EN + RON/USD + landing",
+  "base_sha": "0e0878211b639220e9313e5b3eb185cd274e0d2e",
+  "working_tree": "uncommitted Funnel V3 changes on top of base SHA (git worktree metadata broken locally)",
+  "verdict": "NO-GO for public Meta Ads / LIVE sales",
+  "ready_for": "private QA preview + Stripe TEST dual-currency",
+  "gates_intact": {
+    "CHRISTMAS_LIVE_PRODUCTS": "empty on Contabo",
+    "VITE_SANTA_CALL_LANDING_PUBLIC": "unset/false (soft gate)",
+    "landing_preview": "/christmas/santa-call?preview=1",
+    "Stripe_LIVE": "unchanged",
+    "DNS": "unchanged"
+  },
+  "pricing": {
+    "ro": { "initial": "5900 bani (59.00 RON)", "extension": "4900 bani (49.00 RON)" },
+    "us": { "initial": "1299 cents ($12.99)", "extension": "999 cents ($9.99)" },
+    "fx": "none — fixed presentment maps"
+  },
+  "dual_currency_e2e": "artifacts/santa-call-benchmark/SANTA_V3_DUAL_CURRENCY_E2E.json PASS",
+  "localization_inventory": "artifacts/santa-call-benchmark/LOCALIZATION_INVENTORY_V3.md",
+  "screenshots": {
+    "mobile_ro": "artifacts/santa-call-benchmark/SANTA_V3_LANDING_RO_MOBILE.png",
+    "desktop_en": "artifacts/santa-call-benchmark/SANTA_V3_LANDING_EN_DESKTOP.jpg"
+  },
+  "seo": {
+    "registry": "/christmas/santa-call in christmasSeoCore + RO i18n",
+    "hreflang_locales": ["en", "ro"],
+    "noindex": true,
+    "og_image": "/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg"
+  },
+  "meta_pixel": {
+    "consent_aware": true,
+    "events": ["ViewContent", "InitiateCheckout", "Purchase"],
+    "purchase_dedupe": "sessionStorage by order id",
+    "no_child_pii": true
+  },
+  "qa": {
+    "typescript": "PASS",
+    "build": "PASS",
+    "vitest_santa_call_pool_forks": "PASS (11)",
+    "stripe_test_ro_us_sessions": "PASS"
+  },
+  "remaining_blockers": [
+    "Frontend SPA not deployed to production CDN (local preview only)",
+    "Public landing gated until VITE_SANTA_CALL_LANDING_PUBLIC=true AND launch approval",
+    "Commercial checkout requires christmas_santa_voice_call in CHRISTMAS_LIVE_PRODUCTS",
+    "Full paid webhook→email→call E2E not re-run in this pass for both currencies (session creation verified)",
+    "Extension dual-currency inherit tested in code; full Stripe pay+webhook for USD extension still recommended before GO"
+  ],
+  "commercial_launch_checklist": [
+    "Approve final RO/EN copy and screenshots",
+    "Deploy SPA with VITE_SANTA_CALL_LANDING_PUBLIC=true",
+    "Set noindex=false on santa-call SEO entry",
+    "Add christmas_santa_voice_call to CHRISTMAS_LIVE_PRODUCTS (TEST first if needed)",
+    "Confirm Stripe LIVE price IDs / mode switch only after approval",
+    "Fire Meta Ads to /christmas/santa-call with UTM",
+    "Monitor first paid RO + US orders end-to-end"
+  ]
+}
