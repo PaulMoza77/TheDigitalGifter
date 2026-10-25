@@ -3,9 +3,9 @@
 **Verdict: GO for visual approval / controlled commercial activation prep. Remains private until explicit authorization.**
 
 ## 1. Final SHA
-`7cda7acab4791ad73e0d2f9f7f38347bd6bc8423`  
-Branch: `feature/santa-voice-call`  
-Message: *Add Santa Call V3 bilingual funnel with dual-currency TEST checkout.*
+`4e83cba8186eb6ff1a87680953fab077d96d1a4b` (branch tip)  
+Code commit: `7cda7acab4791ad73e0d2f9f7f38347bd6bc8423` — *Add Santa Call V3 bilingual funnel with dual-currency TEST checkout.*  
+Branch: `feature/santa-voice-call` (local; not pushed)
 
 ## 2. Private preview URL
 https://www.thedigitalgifter.com/_qa/santa-private/christmas/santa-call
