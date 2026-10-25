@@ -4,7 +4,7 @@
 
 ## Identity
 - Branch: `feature/santa-voice-call`
-- Deployment SHA: _(fill after commit completes)_
+- Deployment SHA: `7cda7acab4791ad73e0d2f9f7f38347bd6bc8423`
 - Private preview: `https://www.thedigitalgifter.com/_qa/santa-private/christmas/santa-call`
 - Public URL (post-launch): `https://www.thedigitalgifter.com/christmas/santa-call`
 
