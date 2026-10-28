@@ -22,6 +22,7 @@ import {
   resolveSantaStripeCredentials,
   resolveSantaStripeModeEnv,
   stripeFormPost,
+  stripeGet,
   type SantaStripeMode,
 } from "../_shared/christmas/santaStripe.ts";
 import {
@@ -145,11 +146,12 @@ Deno.serve(async (req) => {
     const service = serviceClient();
     const ip = clientIp(req);
 
-    if (santaCallKillSwitchActive() && !["stats", "resolve"].includes(action)) {
-      // resolve still allowed so UI can show disabled/expired states for paid links
-      if (action !== "resolve") {
-        return json({ error: "Santa Call is temporarily disabled", code: "kill_switch" }, 503);
-      }
+    if (
+      santaCallKillSwitchActive() &&
+      !["stats", "resolve", "confirm_checkout", "poll_extension"].includes(action)
+    ) {
+      // resolve/confirm still allowed so paid Safari returns can recover entitlements
+      return json({ error: "Santa Call is temporarily disabled", code: "kill_switch" }, 503);
     }
 
     if (action === "resolve") {
@@ -917,6 +919,153 @@ Deno.serve(async (req) => {
         p_access_token_hash: hash,
       });
       return json(resolved);
+    }
+
+    /**
+     * Safari return recovery: verify Checkout Session with Stripe server-side and fulfill
+     * if paid. Idempotent with webhook. Never trusts client "success" alone.
+     * Covers initial + extension TEST/LIVE using the parent order's stripe_mode stamp.
+     */
+    if (action === "confirm_checkout") {
+      const token = asString(body.access_token);
+      if (!token || token.length < 24) return json({ ok: false, code: "invalid_token" }, 400);
+      const okRl = await assertRateLimit(service, `santa_call_confirm:${ip}`, 30, 60);
+      if (!okRl) return json({ error: "rate_limited", code: "rate_limited" }, 429);
+
+      const hash = await sha256Hex(token);
+      const { data: ent } = await service
+        .from("christmas_santa_call_entitlements")
+        .select("id,status,order_id,remaining_seconds")
+        .eq("access_token_hash", hash)
+        .maybeSingle();
+      if (!ent) return json({ ok: false, code: "invalid_token" }, 404);
+
+      // Already usable — no Stripe round-trip required.
+      if (["ready", "in_progress"].includes(asString(ent.status)) && Number(ent.remaining_seconds) > 0) {
+        const { data: resolved } = await service.rpc("resolve_christmas_santa_call_access", {
+          p_access_token_hash: hash,
+        });
+        return json({ ok: true, status: "already_ready", resolve: resolved });
+      }
+
+      const sessionIdHint = asString(body.session_id) || asString(body.checkout_session_id);
+
+      // Prefer the entitlement's own order; for extensions also accept the paid extension session.
+      let orderId = asString(ent.order_id);
+      let { data: order } = await service
+        .from("christmas_orders")
+        .select("id,payment_status,product_key,metadata,amount_cents,currency,stripe_checkout_session_id")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (!order) return json({ ok: false, code: "missing_order" }, 404);
+
+      // Extension return: session_id may belong to a child extension order.
+      if (sessionIdHint.startsWith("cs_")) {
+        const { data: bySession } = await service
+          .from("christmas_orders")
+          .select("id,payment_status,product_key,metadata,amount_cents,currency,stripe_checkout_session_id")
+          .eq("stripe_checkout_session_id", sessionIdHint)
+          .maybeSingle();
+        if (bySession) {
+          const meta = (bySession.metadata || {}) as Record<string, unknown>;
+          const parentEnt = asString(meta.parent_entitlement_id);
+          if (
+            asString(bySession.product_key) === EXTENSION_PRODUCT_KEY &&
+            parentEnt &&
+            parentEnt === asString(ent.id)
+          ) {
+            order = bySession;
+            orderId = asString(bySession.id);
+          } else if (asString(bySession.id) === asString(ent.order_id)) {
+            order = bySession;
+            orderId = asString(bySession.id);
+          }
+        }
+      }
+
+      const ordMeta = (order.metadata || {}) as Record<string, unknown>;
+      const stripeMode: SantaStripeMode =
+        isSantaStripeTestOrderMeta(ordMeta) || resolveSantaStripeModeEnv() === "test" ? "test" : "live";
+      const stripe = resolveSantaStripeCredentials(stripeMode);
+      if (!stripe.ok) return json({ ok: false, code: stripe.code, message: stripe.message }, 503);
+
+      const sessionId = sessionIdHint.startsWith("cs_")
+        ? sessionIdHint
+        : asString(order.stripe_checkout_session_id);
+      if (!sessionId.startsWith("cs_")) {
+        return json({ ok: false, code: "missing_checkout_session", status: asString(ent.status) }, 409);
+      }
+
+      const retrieved = await stripeGet(stripe.creds.secretKey, `/checkout/sessions/${encodeURIComponent(sessionId)}`);
+      if (!retrieved.ok) {
+        return json({ ok: false, code: "stripe_session_retrieve_failed", status: retrieved.status }, 502);
+      }
+      const session = retrieved.body;
+      if (stripeMode === "test" && session.livemode === true) {
+        return json({ ok: false, code: "stripe_mode_mismatch" }, 403);
+      }
+      if (stripeMode === "live" && session.livemode !== true) {
+        return json({ ok: false, code: "stripe_mode_mismatch" }, 403);
+      }
+
+      const meta = (session.metadata || {}) as Record<string, unknown>;
+      const metaOrderId = asString(meta.christmas_order_id);
+      if (metaOrderId && metaOrderId !== orderId) {
+        return json({ ok: false, code: "session_order_mismatch" }, 403);
+      }
+      const paymentStatus = asString(session.payment_status);
+      if (paymentStatus !== "paid" && paymentStatus !== "no_payment_required") {
+        const { data: resolved } = await service.rpc("resolve_christmas_santa_call_access", {
+          p_access_token_hash: hash,
+        });
+        return json({
+          ok: false,
+          code: "payment_not_completed",
+          payment_status: paymentStatus || "unknown",
+          stripe_status: asString(session.status),
+          resolve: resolved,
+        });
+      }
+
+      // Mark paid then fulfill (idempotent with webhook path).
+      if (asString(order.payment_status) !== "paid") {
+        await service
+          .from("christmas_orders")
+          .update({
+            payment_status: "paid",
+            paid_at: new Date().toISOString(),
+            stripe_checkout_session_id: sessionId,
+            stripe_payment_intent_id: asString(session.payment_intent) || null,
+            charged_amount_cents: Number(session.amount_total) || order.amount_cents,
+          })
+          .eq("id", orderId);
+      }
+
+      const productKey = asString(order.product_key) || asString(meta.product_key);
+      let fulfillResult: Record<string, unknown> = {};
+      if (productKey === EXTENSION_PRODUCT_KEY) {
+        fulfillResult = await fulfillSantaVoiceCallExtensionOrder({
+          service,
+          orderId,
+          stripeCheckoutSessionId: sessionId,
+          stripePaymentIntentId: asString(session.payment_intent),
+        }) as unknown as Record<string, unknown>;
+      } else {
+        fulfillResult = await fulfillSantaVoiceCallOrder({ service, orderId }) as unknown as Record<string, unknown>;
+      }
+
+      const { data: resolved } = await service.rpc("resolve_christmas_santa_call_access", {
+        p_access_token_hash: hash,
+      });
+      const resolvedObj = (resolved || {}) as Record<string, unknown>;
+      return json({
+        ok: resolvedObj.ok === true,
+        status: "reconciled",
+        fulfill: fulfillResult,
+        resolve: resolved,
+        stripe_session_id: sessionId,
+        stripe_mode: stripeMode,
+      }, resolvedObj.ok === true || resolvedObj.code === "awaiting_extension" ? 200 : 409);
     }
 
     // Internal: fulfill extension (service role) — webhook also calls shared fulfill directly.

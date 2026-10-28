@@ -1,0 +1,66 @@
+{
+  "all_pass": true,
+  "checks": [
+    {
+      "name": "create_checkout",
+      "ok": true,
+      "status": 200,
+      "orderId": "cf250789-82ad-491f-a3fb-01d4a490c1bf"
+    },
+    {
+      "name": "session_id",
+      "ok": true,
+      "sessionId": "cs_test_a1SOQD5efV1V5jxC"
+    },
+    {
+      "name": "confirm_rejects_unpaid",
+      "ok": true,
+      "code": "payment_not_completed",
+      "payment_status": "unpaid"
+    },
+    {
+      "name": "stripe_webhook_test_santa_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true
+    },
+    {
+      "name": "resolve_ready",
+      "ok": true,
+      "remaining": 180,
+      "child": "Matei"
+    },
+    {
+      "name": "confirm_after_fulfill",
+      "ok": true,
+      "status": "already_ready"
+    },
+    {
+      "name": "start_realtime",
+      "ok": true,
+      "provider": "openai_realtime",
+      "hasSecret": true,
+      "sessionId": "3af2928b-03b9-4986-8bcd-a8c00f1d0ed7"
+    },
+    {
+      "name": "end_keep",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "name": "recover_real_paid_session_confirm",
+      "ok": true,
+      "status": "already_ready",
+      "remaining": 180,
+      "child": "Grace"
+    },
+    {
+      "name": "stripe_session_still_paid",
+      "ok": true,
+      "payment_status": "paid"
+    }
+  ],
+  "matei_order_id": "cf250789-82ad-491f-a3fb-01d4a490c1bf",
+  "grace_token_hint": "607e39d7…"
+}

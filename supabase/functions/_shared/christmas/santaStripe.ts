@@ -118,3 +118,18 @@ export async function stripeFormPost(
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: res.ok, status: res.status, body };
 }
+
+/** Stripe GET (Checkout Session retrieve, etc.). */
+export async function stripeGet(
+  secretKey: string,
+  path: string,
+): Promise<{ ok: boolean; status: number; body: Record<string, unknown> }> {
+  const res = await fetch(`https://api.stripe.com/v1${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+    },
+  });
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  return { ok: res.ok, status: res.status, body };
+}

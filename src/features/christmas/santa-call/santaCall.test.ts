@@ -240,10 +240,25 @@ describe("Santa Voice Call V2 product wiring", () => {
     expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
       'action === "create_extension_checkout"',
     );
-    expect(readSrc("src/features/christmas/SantaCallRoomPage.tsx")).toContain("upsellTitle");
-    expect(readSrc("src/features/christmas/SantaCallRoomPage.tsx")).toContain("NorthPoleScene");
-    expect(readSrc("src/features/christmas/SantaCallRoomPage.tsx")).toContain('variant="immersive"');
-    expect(readSrc("src/features/christmas/SantaCallRoomPage.tsx")).toContain("santa-cta-start");
+    expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
+      'action === "confirm_checkout"',
+    );
+    expect(readSrc("supabase/functions/stripe-webhook-test/index.ts")).toContain(
+      "christmas_santa_voice_call",
+    );
+    expect(readSrc("src/features/christmas/santa-call/santaCallApi.ts")).toContain(
+      "confirmSantaCallCheckout",
+    );
+    const room = readSrc("src/features/christmas/SantaCallRoomPage.tsx");
+    expect(room).toContain("confirmSantaCallCheckout");
+    expect(room).toContain('params.get("extension") !== "return"');
+    expect(room).toContain("paymentConfirmFailed");
+    expect(room).toContain("upsellTitle");
+    expect(room).toContain("NorthPoleScene");
+    expect(room).toContain('variant="immersive"');
+    expect(room).toContain("santa-cta-start");
+    expect(SANTA_CALL_COPY.ro.paymentConfirmRetry).toBeTruthy();
+    expect(SANTA_CALL_COPY.en.paymentConfirmRetry).toBeTruthy();
     expect(readSrc("src/features/christmas/santa-call/NorthPoleScene.tsx")).toContain(
       "prefers-reduced-motion",
     );

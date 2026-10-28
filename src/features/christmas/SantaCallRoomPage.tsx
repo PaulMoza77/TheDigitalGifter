@@ -6,6 +6,7 @@ import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeChec
 import { connectOpenAiRealtimeWebRtc, type RealtimeSessionHandle } from "@/features/christmas/santa-call/openaiRealtimeWebRtc";
 import { NorthPoleScene } from "@/features/christmas/santa-call/NorthPoleScene";
 import {
+  confirmSantaCallCheckout,
   createSantaCallExtensionCheckout,
   endSantaCall,
   getOrCreateCallFingerprint,
@@ -14,6 +15,7 @@ import {
   resolveSantaCall,
   startSantaCall,
 } from "@/features/christmas/santa-call/santaCallApi";
+import { readSantaQaPageAccessToken } from "@/features/christmas/santa-call/santaCallPublic";
 import {
   SANTA_CALL_COPY,
   SANTA_CALL_MAX_SECONDS,
@@ -94,6 +96,8 @@ export default function SantaCallRoomPage() {
   } | null>(null);
   const [extensionBusy, setExtensionBusy] = useState(false);
   const [extensionPolling, setExtensionPolling] = useState(false);
+  const [paymentConfirming, setPaymentConfirming] = useState(false);
+  const [paymentConfirmFailed, setPaymentConfirmFailed] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   const handleRef = useRef<RealtimeSessionHandle | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -144,6 +148,12 @@ export default function SantaCallRoomPage() {
       setError("invalid_token");
       return;
     }
+    const returningFromCheckout =
+      params.get("checkout") === "success" ||
+      params.get("extension") === "return" ||
+      Boolean(params.get("session_id"));
+    // Avoid flashing "failed" for pending_payment while Safari return reconcile runs.
+    if (returningFromCheckout) return;
     void resolveSantaCall(token).then(({ data }) => {
       if (cancelled) return;
       applyResolve((data || {}) as Record<string, unknown>);
@@ -151,17 +161,68 @@ export default function SantaCallRoomPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, applyResolve]);
+  }, [token, params, applyResolve]);
 
-  // After Stripe redirect back to Safari, poll until webhook activates extension.
+  // Initial Stripe return: reconcile Checkout Session server-side (never treat as extension).
   useEffect(() => {
     if (!token) return;
-    if (params.get("extension") !== "return" && !params.get("session_id")) return;
+    const extensionReturn = params.get("extension") === "return";
+    const initialReturn =
+      params.get("checkout") === "success" ||
+      (Boolean(params.get("session_id")) && !extensionReturn && params.get("extension") !== "cancel");
+    if (!initialReturn || extensionReturn) return;
+
+    let cancelled = false;
+    setPaymentConfirming(true);
+    setPaymentConfirmFailed(false);
+    setUpsellOpen(false);
+    setExtensionPolling(false);
+    let tries = 0;
+    const sessionId = params.get("session_id");
+
+    const tick = async () => {
+      const { data } = await confirmSantaCallCheckout({
+        accessToken: token,
+        sessionId,
+      });
+      if (cancelled) return;
+      const payload = (data || {}) as Record<string, unknown>;
+      const resolved = (payload.resolve || payload) as Record<string, unknown>;
+      if (resolved.ok === true && Number(resolved.remaining_seconds) > 0) {
+        setPaymentConfirming(false);
+        applyResolve(resolved);
+        return;
+      }
+      tries += 1;
+      if (tries < 24) {
+        const delay = Math.min(4000, 900 + tries * 250);
+        window.setTimeout(() => void tick(), delay);
+        return;
+      }
+      setPaymentConfirming(false);
+      setPaymentConfirmFailed(true);
+      applyResolve(resolved);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, params, applyResolve]);
+
+  // Extension Stripe return only — never triggered by initial session_id alone.
+  useEffect(() => {
+    if (!token) return;
+    if (params.get("extension") !== "return") return;
     let cancelled = false;
     setExtensionPolling(true);
     setUpsellOpen(true);
+    setPaymentConfirming(false);
     let tries = 0;
+    const sessionId = params.get("session_id");
     const tick = async () => {
+      // Prefer server reconcile (handles delayed webhook), then resolve.
+      await confirmSantaCallCheckout({ accessToken: token, sessionId });
+      if (cancelled) return;
       const { data } = await pollSantaCallExtension(token);
       if (cancelled) return;
       const obj = (data || {}) as Record<string, unknown>;
@@ -171,8 +232,8 @@ export default function SantaCallRoomPage() {
         return;
       }
       tries += 1;
-      if (tries < 20) {
-        window.setTimeout(() => void tick(), 1500);
+      if (tries < 24) {
+        window.setTimeout(() => void tick(), Math.min(4000, 900 + tries * 250));
       } else {
         setExtensionPolling(false);
         applyResolve(obj);
@@ -391,11 +452,33 @@ export default function SantaCallRoomPage() {
     }
   }
 
+  async function retryPaymentConfirm() {
+    if (!token) return;
+    setPaymentConfirmFailed(false);
+    setPaymentConfirming(true);
+    setError(null);
+    const sessionId = params.get("session_id");
+    const { data } = await confirmSantaCallCheckout({ accessToken: token, sessionId });
+    const payload = (data || {}) as Record<string, unknown>;
+    const resolved = (payload.resolve || payload) as Record<string, unknown>;
+    if (resolved.ok === true && Number(resolved.remaining_seconds) > 0) {
+      setPaymentConfirming(false);
+      applyResolve(resolved);
+      return;
+    }
+    setPaymentConfirming(false);
+    setPaymentConfirmFailed(true);
+    setError(String(resolved.code || payload.code || "payment_not_completed"));
+  }
+
   async function onBuyExtension() {
     setExtensionBusy(true);
     setError(null);
     try {
-      const successUrl = `${window.location.origin}${window.location.pathname}?extension=return`;
+      const access = readSantaQaPageAccessToken(window.location.search);
+      const accessQs = access ? `&access=${encodeURIComponent(access)}` : "";
+      const successUrl =
+        `${window.location.origin}${window.location.pathname}?extension=return${accessQs}&session_id={CHECKOUT_SESSION_ID}`;
       const { ok, data } = await createSantaCallExtensionCheckout({ accessToken: token, successUrl });
       if (!ok || data?.ok !== true) {
         setError(String(data?.code || "extension_checkout_failed"));
@@ -444,7 +527,9 @@ export default function SantaCallRoomPage() {
 
   const copy = SANTA_CALL_COPY[lang];
   const label = STATUS_LABEL[ui][lang];
-  const canStart = ui === "ready" || (ui === "failed" && error === "microphone_denied");
+  const canStart =
+    !paymentConfirming &&
+    (ui === "ready" || (ui === "failed" && error === "microphone_denied"));
   const inCall = ["connecting", "connected", "listening", "speaking", "reconnecting"].includes(ui);
   const showWave = ui === "listening" || ui === "speaking" || ui === "connecting";
   const totalBudget = Math.max(allotted, remaining, SANTA_CALL_MAX_SECONDS);
@@ -502,7 +587,23 @@ export default function SantaCallRoomPage() {
               </div>
             ) : null}
 
-            {error ? (
+            {paymentConfirming ? (
+              <p className="santa-status-pill" role="status" aria-live="polite">
+                <span className="santa-status-dot" aria-hidden />
+                <span className="santa-status-label">{copy.paymentConfirming}</span>
+              </p>
+            ) : null}
+
+            {paymentConfirmFailed ? (
+              <div className="santa-room-recover">
+                <p className="santa-room-error">{copy.paymentConfirmFailed}</p>
+                <button type="button" className="santa-cta-start" onClick={() => void retryPaymentConfirm()}>
+                  {copy.paymentConfirmRetry}
+                </button>
+              </div>
+            ) : null}
+
+            {error && !paymentConfirming && !paymentConfirmFailed ? (
               <p className="santa-room-error">
                 {error === "microphone_denied"
                   ? copy.micDenied
@@ -792,17 +893,23 @@ export default function SantaCallRoomPage() {
             border: 1px solid rgba(255,120,120,0.35); background: rgba(80,10,16,0.72);
             color: #ffb4b4; font-size: 0.82rem; text-align: center;
           }
+          .santa-room-recover {
+            display: flex; flex-direction: column; align-items: center; gap: 0.75rem; width: min(100%, 22rem);
+          }
           .santa-room-dock {
             display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding-top: 0.25rem;
+            width: 100%; max-width: 100%;
           }
           .santa-cta-start {
             width: min(100%, 20rem); border: 0; border-radius: 999px; padding: 0.95rem 1.25rem;
             font-size: 1.05rem; font-weight: 700; color: #F7F0E4;
             background: linear-gradient(180deg, #1a5a42 0%, #0f3d2e 100%);
             box-shadow: 0 12px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+            -webkit-tap-highlight-color: transparent;
           }
           .santa-controls {
-            display: flex; align-items: flex-end; justify-content: center; gap: 1.1rem; width: 100%;
+            display: flex; align-items: flex-end; justify-content: center; gap: clamp(0.55rem, 4vw, 1.1rem);
+            width: 100%; max-width: 100%; padding: 0 0.25rem; box-sizing: border-box;
           }
           .santa-ctrl {
             display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
@@ -854,6 +961,13 @@ export default function SantaCallRoomPage() {
           .santa-done-link {
             display: inline-block; margin-top: 0.85rem; border-radius: 999px;
             border: 1px solid rgba(232,197,71,0.4); padding: 0.55rem 1.1rem; font-size: 0.85rem;
+          }
+          @media (max-width: 390px) {
+            .santa-room-ui { padding-left: 0.85rem; padding-right: 0.85rem; }
+            .santa-ctrl-icon { width: 3rem; height: 3rem; }
+            .santa-ctrl-end .santa-ctrl-icon { width: 3.65rem; height: 3.65rem; }
+            .santa-status-label { font-size: 0.8rem; white-space: normal; text-align: left; }
+            .santa-upsell-sheet { padding: 1rem; }
           }
           @media (prefers-reduced-motion: reduce) {
             .santa-wave i { animation: none; }

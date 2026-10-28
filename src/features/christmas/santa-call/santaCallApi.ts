@@ -92,6 +92,19 @@ export async function pollSantaCallExtension(accessToken: string) {
   return { ok: res.ok, data };
 }
 
+/** Server-side Stripe Checkout reconcile after Safari return (initial or extension). */
+export async function confirmSantaCallCheckout(input: {
+  accessToken: string;
+  sessionId?: string | null;
+}) {
+  const { res, data } = await post({
+    action: "confirm_checkout",
+    access_token: input.accessToken,
+    session_id: input.sessionId || undefined,
+  });
+  return { ok: res.ok, status: res.status, data };
+}
+
 /** Parent iPhone QA: Stripe TEST checkout gated by page access token (not QA automation secret). */
 export async function createSantaCallParentTestCheckout(input: {
   pageAccess: string;
