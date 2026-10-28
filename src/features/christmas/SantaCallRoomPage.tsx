@@ -837,7 +837,7 @@ export default function SantaCallRoomPage() {
             padding:
               max(0.75rem, env(safe-area-inset-top))
               1.1rem
-              max(0.85rem, env(safe-area-inset-bottom));
+              calc(max(0.85rem, env(safe-area-inset-bottom)) + var(--tdg-cookie-offset, 0px));
             box-sizing: border-box;
           }
           .santa-room-top { text-align: center; text-shadow: 0 2px 16px rgba(0,0,0,0.55); }

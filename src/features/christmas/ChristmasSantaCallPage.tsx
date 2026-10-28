@@ -162,6 +162,10 @@ export default function ChristmasSantaCallPage() {
     () => formatSantaCallMoney(prices.initialMinor, prices.currency),
     [prices.currency, prices.initialMinor],
   );
+  const priceHero = useMemo(() => {
+    if (market === "ro") return `${Math.round(prices.initialMinor / 100)} lei / ${copy.priceDuration}`;
+    return `${priceLabel} / ${copy.priceDuration}`;
+  }, [copy.priceDuration, market, priceLabel, prices.initialMinor]);
   const extensionLabel = useMemo(
     () => formatSantaCallMoney(prices.extensionMinor, prices.currency),
     [prices.currency, prices.extensionMinor],
@@ -388,17 +392,10 @@ export default function ChristmasSantaCallPage() {
           <section className="sc-hero">
             <h1 className="santa-call-display sc-title">{copy.title}</h1>
             <p className="sc-sub">{copy.subtitle}</p>
-            <p className="sc-price">
-              {priceLabel}
-              <span className="sc-price-ext">
-                {lang === "ro" ? "Prelungire opțională" : "Optional extension"} {extensionLabel}
-              </span>
-            </p>
+            <p className="sc-price">{priceHero}</p>
             <p className="sc-trust">{copy.trust}</p>
             {!purchasable && !qaCheckout ? <p className="sc-soon">{copy.comingSoon}</p> : null}
-            {qaCheckout ? (
-              <p className="sc-soon">QA TEST · Stripe TEST only · not a public sale</p>
-            ) : null}
+            {qaCheckout ? <p className="sc-soon sc-soon-qa">QA TEST · Stripe TEST only</p> : null}
             {successNote ? <p className="sc-success">{copy.successNote}</p> : null}
             {!showForm ? (
               <button type="button" className="sc-cta" onClick={openForm}>
@@ -417,43 +414,51 @@ export default function ChristmasSantaCallPage() {
               }}
             >
               <div className="sc-form">
+                <p className="sc-form-lead">{copy.previewBody}</p>
                 <label>
                   <span>{copy.name} *</span>
                   <input
                     autoComplete="given-name"
+                    enterKeyHint="next"
                     value={form.childFirstName}
                     maxLength={40}
                     onChange={(e) => setForm((f) => ({ ...f, childFirstName: e.target.value }))}
                   />
                 </label>
-                <label>
-                  <span>{copy.age}</span>
-                  <input
-                    inputMode="numeric"
-                    value={form.age}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, age: e.target.value.replace(/[^\d]/g, "").slice(0, 2) }))
-                    }
-                  />
-                </label>
+                <div className="sc-form-row">
+                  <label>
+                    <span>{copy.age}</span>
+                    <input
+                      inputMode="numeric"
+                      enterKeyHint="next"
+                      value={form.age}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, age: e.target.value.replace(/[^\d]/g, "").slice(0, 2) }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    <span>{copy.emailRequired} *</span>
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      enterKeyHint="next"
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    />
+                  </label>
+                </div>
                 <label>
                   <span>{copy.interests}</span>
                   <textarea
-                    maxLength={160}
+                    maxLength={120}
+                    rows={2}
+                    enterKeyHint="done"
                     value={interestsValue}
                     onChange={(e) => {
-                      const v = e.target.value.slice(0, 160);
+                      const v = e.target.value.slice(0, 120);
                       setForm((f) => ({ ...f, hobbies: v, christmasWish: "" }));
                     }}
-                  />
-                </label>
-                <label>
-                  <span>{copy.emailRequired} *</span>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   />
                 </label>
                 <label className="sc-check">
@@ -484,13 +489,12 @@ export default function ChristmasSantaCallPage() {
                     disabled={busy || !purchasable}
                     onClick={() => void onCheckout()}
                   >
-                    {busy ? "…" : `${copy.continueCheckout} · ${priceLabel}`}
+                    {busy ? "…" : `${copy.continueCheckout} · ${priceHero}`}
                   </button>
                 ) : (
                   <div className="sc-stripe">
                     <p className="sc-charge">
-                      {formatSantaCallMoney(checkout.amountCents, checkout.currency)} ·{" "}
-                      {checkout.currency.toUpperCase()}
+                      {formatSantaCallMoney(checkout.amountCents, checkout.currency)}
                     </p>
                     {checkout.clientSecret && checkout.publishableKey ? (
                       <CustomStripeCheckout
@@ -520,10 +524,11 @@ export default function ChristmasSantaCallPage() {
                     <p>{item.a}</p>
                   </div>
                 ))}
+                <p className="sc-ext-note">{copy.extensionHint.replace(/^Prelungire opțională:\s*/i, "").replace(/^Optional extension:\s*/i, "")}</p>
               </div>
             </details>
             <p className="sc-fine">
-              {copy.ai} {copy.parents} {copy.policy}
+              {copy.ai} {copy.parents}
             </p>
             <p className="sc-links">
               <Link to="/privacy">{copy.privacyLink}</Link>
@@ -535,7 +540,7 @@ export default function ChristmasSantaCallPage() {
         {!showForm ? (
           <div className="sc-sticky">
             <button type="button" className="sc-cta sc-cta-sticky" onClick={openForm}>
-              {copy.ctaSticky} · {priceLabel}
+              {copy.ctaSticky} · {priceHero}
             </button>
           </div>
         ) : null}
@@ -597,27 +602,27 @@ const pageCss = `
   .sc-main {
     position: relative; z-index: 2;
     max-width: 26rem; margin: 0 auto;
-    padding: 0.35rem 0.85rem calc(5.5rem + env(safe-area-inset-bottom));
+    padding: 0.35rem 0.85rem calc(5.75rem + env(safe-area-inset-bottom) + var(--tdg-cookie-offset, 0px));
     width: 100%; box-sizing: border-box;
   }
   .sc-hero {
-    min-height: min(58dvh, 28rem);
+    min-height: min(56dvh, 26rem);
     display: flex; flex-direction: column; justify-content: flex-end;
-    padding-top: max(4.5rem, 12dvh);
+    padding-top: max(3.75rem, 10dvh);
     text-shadow: 0 2px 18px rgba(0,0,0,.55);
   }
-  .sc-title { margin: 0; font-size: clamp(1.65rem, 7.2vw, 2.85rem); line-height: 1.08; font-weight: 700; }
+  .sc-title { margin: 0; font-size: clamp(1.7rem, 7vw, 2.7rem); line-height: 1.08; font-weight: 700; }
   .sc-sub { margin: 0.55rem 0 0; font-size: 0.98rem; line-height: 1.4; max-width: 22rem; opacity: 0.95; }
-  .sc-price { margin: 0.85rem 0 0; font-size: 1.45rem; font-weight: 700; color: #E8C547; }
-  .sc-price-ext { display: block; margin-top: 0.15rem; font-size: 0.84rem; font-weight: 500; color: #F7F0E4; opacity: 0.88; }
-  .sc-trust { margin: 0.55rem 0 0; font-size: 0.8rem; letter-spacing: 0.01em; opacity: 0.85; }
+  .sc-price { margin: 0.8rem 0 0; font-size: 1.35rem; font-weight: 700; color: #E8C547; }
+  .sc-trust { margin: 0.45rem 0 0; font-size: 0.8rem; letter-spacing: 0.01em; opacity: 0.85; }
   .sc-soon, .sc-success {
-    margin-top: 0.75rem; padding: 0.65rem 0.8rem; border-radius: 0.85rem; font-size: 0.82rem; line-height: 1.4;
+    margin-top: 0.65rem; padding: 0.55rem 0.75rem; border-radius: 0.85rem; font-size: 0.78rem; line-height: 1.35;
     border: 1px solid rgba(232,197,71,0.35); background: rgba(10,6,8,0.55);
   }
+  .sc-soon-qa { border-color: rgba(120,180,255,0.35); }
   .sc-cta {
-    margin-top: 0.85rem; border: 0; border-radius: 999px; padding: 0.9rem 1.1rem;
-    font-size: 1.02rem; font-weight: 700; color: #F7F0E4; cursor: pointer;
+    margin-top: 0.9rem; border: 0; border-radius: 999px; padding: 0.95rem 1.1rem;
+    font-size: 1.05rem; font-weight: 700; color: #F7F0E4; cursor: pointer;
     background: linear-gradient(180deg, #1a5a42 0%, #0f3d2e 100%);
     box-shadow: 0 12px 28px rgba(0,0,0,0.35);
     text-decoration: none; display: inline-block; text-align: center;
@@ -625,35 +630,39 @@ const pageCss = `
     -webkit-tap-highlight-color: transparent;
   }
   .sc-cta:disabled { opacity: 0.5; cursor: not-allowed; }
-  .sc-ai { margin: 0.65rem 0 0; font-size: 0.74rem; line-height: 1.35; opacity: 0.8; max-width: 22rem; }
-  .sc-section { margin-top: 1rem; scroll-margin-top: 1rem; }
+  .sc-ai { margin: 0.55rem 0 0; font-size: 0.72rem; line-height: 1.35; opacity: 0.78; max-width: 22rem; }
+  .sc-section { margin-top: 0.85rem; scroll-margin-top: calc(1rem + env(safe-area-inset-top)); }
   .sc-form {
-    display: grid; gap: 0.7rem;
-    padding: 0.9rem; border-radius: 1.15rem;
+    display: grid; gap: 0.65rem;
+    padding: 0.85rem; border-radius: 1.15rem;
     background: rgba(26, 8, 12, 0.78); border: 1px solid rgba(232,197,71,0.22);
     backdrop-filter: blur(10px);
     width: 100%; box-sizing: border-box;
   }
-  .sc-form label { display: grid; gap: 0.28rem; font-size: 0.86rem; }
+  .sc-form-lead { margin: 0; font-size: 0.82rem; line-height: 1.4; opacity: 0.9; }
+  .sc-form-row { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.55rem; }
+  .sc-form label { display: grid; gap: 0.28rem; font-size: 0.84rem; }
   .sc-form input, .sc-form textarea {
     border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.16);
     background: rgba(0,0,0,0.28); color: inherit; padding: 0.7rem 0.75rem; outline: none;
     font: inherit; font-size: 16px; width: 100%; box-sizing: border-box;
   }
-  .sc-form textarea { min-height: 3.4rem; resize: vertical; }
+  .sc-form textarea { min-height: 2.8rem; resize: vertical; }
   .sc-check { display: flex !important; align-items: flex-start; gap: 0.6rem; }
-  .sc-check input { margin-top: 0.2rem; }
+  .sc-check input { margin-top: 0.2rem; width: auto; }
   .sc-error { margin: 0; color: #ffb4b4; font-size: 0.86rem; }
   .sc-charge { margin: 0 0 0.55rem; font-weight: 600; color: #E8C547; }
-  .sc-legal { margin-top: 2rem; opacity: 0.9; }
+  .sc-legal { margin-top: 1.5rem; opacity: 0.9; padding-bottom: 0.5rem; }
   .sc-legal summary { cursor: pointer; font-weight: 600; color: #E8C547; }
   .sc-faq { margin-top: 0.65rem; display: grid; gap: 0.65rem; font-size: 0.86rem; line-height: 1.45; }
   .sc-faq p { margin: 0.25rem 0 0; opacity: 0.88; }
-  .sc-fine { margin-top: 0.85rem; font-size: 0.74rem; line-height: 1.45; opacity: 0.72; }
+  .sc-ext-note { margin: 0.35rem 0 0 !important; font-size: 0.8rem; opacity: 0.8; }
+  .sc-fine { margin-top: 0.75rem; font-size: 0.72rem; line-height: 1.45; opacity: 0.72; }
   .sc-links { display: flex; gap: 1rem; margin-top: 0.55rem; }
   .sc-links a { color: #E8C547; }
   .sc-sticky {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    position: fixed; left: 0; right: 0; z-index: 70;
+    bottom: var(--tdg-cookie-offset, 0px);
     padding: 0.55rem 0.85rem max(0.65rem, env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent, rgba(8,3,5,0.92) 35%);
     display: flex; justify-content: center;
@@ -661,15 +670,16 @@ const pageCss = `
   }
   .sc-cta-sticky { width: min(100%, 22rem); margin-top: 0; }
   @media (max-width: 390px) {
-    .sc-hero { min-height: min(52dvh, 24rem); padding-top: max(3.5rem, 9dvh); }
-    .sc-title { font-size: clamp(1.55rem, 7vw, 2.1rem); }
+    .sc-hero { min-height: min(50dvh, 22rem); padding-top: max(3.25rem, 8dvh); }
+    .sc-title { font-size: clamp(1.55rem, 7vw, 2.05rem); }
     .sc-seg button { padding: 0.26rem 0.55rem; font-size: 0.7rem; }
+    .sc-form-row { grid-template-columns: 1fr; }
   }
   @media (min-width: 900px) {
     .sc-sticky { display: none; }
     .sc-main { max-width: 28rem; }
-    .sc-hero { min-height: min(78vh, 38rem); }
-    .sc-cta { width: auto; }
+    .sc-hero { min-height: min(72vh, 36rem); }
+    .sc-cta { width: auto; max-width: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .sc-cta { box-shadow: none; }
