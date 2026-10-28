@@ -78,17 +78,17 @@ export function CookieConsentBanner() {
             </Link>
           </p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0">
           <button
             type="button"
-            className="min-h-10 flex-1 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 sm:flex-none sm:px-4"
+            className="min-h-10 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 sm:px-4"
             onClick={() => choose("denied")}
           >
             Reject
           </button>
           <button
             type="button"
-            className="min-h-10 flex-1 rounded-full bg-[#ffd976] px-3 py-2 text-sm font-semibold text-[#1a1a1a] hover:brightness-110 sm:flex-none sm:px-4"
+            className="min-h-10 rounded-full bg-[#ffd976] px-3 py-2 text-sm font-semibold text-[#1a1a1a] hover:brightness-110 sm:px-4"
             onClick={() => choose("granted")}
           >
             Accept
