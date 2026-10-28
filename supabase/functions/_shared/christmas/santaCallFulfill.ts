@@ -21,7 +21,14 @@ export async function fulfillSantaVoiceCallOrder(input: {
   service: SupabaseClient;
   orderId: string;
   forceResendEmail?: boolean;
-}): Promise<{ ok: boolean; reason?: string; accessToken?: string }> {
+}): Promise<{
+  ok: boolean;
+  reason?: string;
+  accessToken?: string;
+  email_sent?: boolean;
+  email_reason?: string;
+  email_provider_message_id?: string;
+}> {
   const { data: order } = await input.service
     .from("christmas_orders")
     .select("id,payment_status,product_key,email,metadata,amount_cents,currency,locale")
@@ -105,21 +112,38 @@ export async function fulfillSantaVoiceCallOrder(input: {
   ) as SantaCallLanguage;
   const expiresAt = asString(result.expires_at) || new Date(Date.now() + ttlDays * 86400000).toISOString();
 
+  let emailResult: { sent?: boolean; reason?: string; providerMessageId?: string } | null = null;
   if (email) {
-    waitUntil(
-      sendSantaCallReadyEmail({
-        service: input.service,
-        orderId: input.orderId,
-        email,
-        accessToken,
-        language,
-        expiresAt,
-        resend: Boolean(input.forceResendEmail),
-        amountCents: Number(order.amount_cents) || undefined,
-        currency: asString(order.currency) || undefined,
-        childFirstName: asString(profile.child_first_name) || undefined,
-      }).catch((err) => console.error("santa call email failed", err)),
-    );
+    const previewBanner = meta.email_preview_test === true || meta.email_preview_test === "true"
+      ? asString(meta.email_preview_banner) ||
+        "EMAIL PREVIEW TEST — noncommercial entitlement (not a LIVE customer charge)"
+      : "";
+    // Await email on force-resend / preview so callers get delivery evidence; webhook path stays non-blocking.
+    const sendPromise = sendSantaCallReadyEmail({
+      service: input.service,
+      orderId: input.orderId,
+      email,
+      accessToken,
+      language,
+      expiresAt,
+      resend: Boolean(input.forceResendEmail),
+      amountCents: Number(order.amount_cents) || undefined,
+      currency: asString(order.currency) || undefined,
+      childFirstName: asString(profile.child_first_name) || undefined,
+      previewBanner: previewBanner || null,
+    }).then((result) => {
+      emailResult = result;
+      return result;
+    }).catch((err) => {
+      console.error("santa call email failed", err);
+      // Paid entitlement remains active even if email delivery fails.
+      return { sent: false, reason: err instanceof Error ? err.message : String(err) };
+    });
+    if (input.forceResendEmail || previewBanner) {
+      emailResult = await sendPromise;
+    } else {
+      waitUntil(sendPromise);
+    }
   }
 
   await input.service.from("christmas_santa_call_events").insert({
@@ -129,7 +153,18 @@ export async function fulfillSantaVoiceCallOrder(input: {
     event_payload: { expires_at: expiresAt },
   });
 
-  return { ok: true, accessToken };
+  return {
+    ok: true,
+    accessToken,
+    ...(emailResult
+      ? {
+          email_sent: Boolean((emailResult as { sent?: boolean }).sent),
+          email_reason: asString((emailResult as { reason?: string }).reason) || undefined,
+          email_provider_message_id:
+            asString((emailResult as { providerMessageId?: string }).providerMessageId) || undefined,
+        }
+      : {}),
+  };
 }
 
 /**
