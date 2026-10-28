@@ -12,7 +12,10 @@ import {
   trackSantaCallMetaPurchase,
   trackSantaCallMetaViewContent,
 } from "@/features/christmas/santa-call/santaCallMeta";
-import { createSantaCallParentTestCheckout } from "@/features/christmas/santa-call/santaCallApi";
+import {
+  confirmSantaCallCommercialCheckout,
+  createSantaCallParentTestCheckout,
+} from "@/features/christmas/santa-call/santaCallApi";
 import {
   formatSantaCallMoney,
   pricesForSantaCallMarket,
@@ -103,16 +106,36 @@ export default function ChristmasSantaCallPage() {
     if (params.get("checkout") === "success") {
       setSuccessNote(true);
       setShowForm(true);
-      const orderId = params.get("order_id") || params.get("orderId") || "";
-      if (orderId) {
-        trackSantaCallMetaPurchase({
-          orderId,
-          amountCents: prices.initialMinor,
-          currency: prices.currency,
-        });
-      }
     }
   }, [params, prices.currency, prices.initialMinor]);
+
+  // Server-verified payment recovery (email works even if this fails / browser closed).
+  useEffect(() => {
+    if (params.get("checkout") !== "success") return;
+    if (qaCheckout) return;
+    const sessionId = String(params.get("session_id") || "").trim();
+    if (!sessionId.startsWith("cs_")) return;
+    let cancelled = false;
+    void (async () => {
+      const { ok, data } = await confirmSantaCallCommercialCheckout(sessionId);
+      if (cancelled) return;
+      if (!ok || data?.ok !== true) return;
+      const orderId = String(data.orderId || "");
+      const amountCents = Number(data.amountCents) || prices.initialMinor;
+      const currency = String(data.currency || prices.currency);
+      // Meta Purchase only after LIVE server confirmation — never for TEST.
+      if (orderId && data.livemode === true && data.stripe_mode === "live") {
+        trackSantaCallMetaPurchase({ orderId, amountCents, currency });
+      }
+      const callPath = String(data.callPath || "");
+      if (callPath.startsWith("/santa/call/")) {
+        window.location.assign(`${callPath}?lang=${lang}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [params, qaCheckout, prices.currency, prices.initialMinor, lang]);
 
   useEffect(() => {
     storeSantaCallMarket(market);

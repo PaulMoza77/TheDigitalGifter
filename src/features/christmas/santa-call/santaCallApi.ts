@@ -105,6 +105,15 @@ export async function confirmSantaCallCheckout(input: {
   return { ok: res.ok, status: res.status, data };
 }
 
+/** Commercial landing return: reconcile LIVE session without a pre-minted access token. */
+export async function confirmSantaCallCommercialCheckout(sessionId: string) {
+  const { res, data } = await post({
+    action: "confirm_commercial_checkout",
+    session_id: sessionId,
+  });
+  return { ok: res.ok, status: res.status, data };
+}
+
 /** Parent iPhone QA: Stripe TEST checkout gated by page access token (not QA automation secret). */
 export async function createSantaCallParentTestCheckout(input: {
   pageAccess: string;

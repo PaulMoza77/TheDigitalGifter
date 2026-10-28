@@ -258,6 +258,32 @@ async function handle(req, res) {
       return;
     }
 
+    // Commercial Santa LIVE bridge: clean public URLs served from isolated overlay SPA
+    // (assets under /_qa/santa-live/) without rebuilding the whole commercial image.
+    {
+      const santaLiveIndex = join(distDir, "_qa/santa-live/index.html");
+      const wantsSantaLive =
+        existsSync(santaLiveIndex) &&
+        (url.pathname === "/christmas/santa-call" ||
+          url.pathname.startsWith("/christmas/santa-call/") ||
+          url.pathname === "/santa/call" ||
+          url.pathname.startsWith("/santa/call/"));
+      if (wantsSantaLive) {
+        const html = readFileSync(santaLiveIndex, "utf8");
+        const body = Buffer.from(html);
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
+        // Call tokens stay noindex; landing is indexable for Meta Ads.
+        if (url.pathname.startsWith("/santa/call")) {
+          res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+        }
+        res.setHeader("Content-Length", String(body.length));
+        res.end(body);
+        return;
+      }
+    }
+
     if (should404UnknownChristmasPath(url.pathname)) {
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -288,10 +314,11 @@ async function handle(req, res) {
       }
     }
 
-    // Isolated Santa QA overlays — SPA shells under /_qa/* without touching commercial routes.
+    // Isolated Santa overlays — SPA shells under /_qa/* without touching commercial image routes.
     // santa-private: internal QA. santa-preview: public landing (checkout off).
     // santa-qa: parent TEST call (requires ?access= / cookie; Stripe TEST only).
-    for (const qaSlug of ["santa-private", "santa-preview", "santa-qa"]) {
+    // santa-live: commercial LIVE assets (clean URLs bridged above when present).
+    for (const qaSlug of ["santa-private", "santa-preview", "santa-qa", "santa-live"]) {
       const prefix = `/_qa/${qaSlug}`;
       if (url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)) {
         if (qaSlug === "santa-qa") {

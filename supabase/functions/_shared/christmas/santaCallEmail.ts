@@ -46,38 +46,44 @@ export async function sendSantaCallReadyEmail(input: {
   resend?: boolean;
   amountCents?: number;
   currency?: string;
+  childFirstName?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   const kind = input.resend ? "santa_call_resent" : "santa_call_ready";
   const langQs = input.language === "en" ? "?lang=en" : "?lang=ro";
   const callUrl = `${siteOrigin()}/santa/call/${encodeURIComponent(input.accessToken)}${langQs}`;
   const supportUrl = `${siteOrigin()}/support`;
   const paidLabel = formatMoney(input.amountCents, input.currency, input.language);
+  const child = asString(input.childFirstName).trim().slice(0, 40);
 
   const copy =
     input.language === "ro"
       ? {
-          subject: "Moș Crăciun te așteaptă! 🎅",
-          title: "Moș Crăciun te așteaptă!",
+          subject: child ? `Moș Crăciun îl așteaptă pe ${child}! 🎅` : "Moș Crăciun te așteaptă! 🎅",
+          title: child ? `Moș Crăciun îl așteaptă pe ${child}!` : "Moș Crăciun te așteaptă!",
           product: "Sună-l pe Moș Crăciun",
-          body: "Achiziția ta este confirmată. Ai o conversație magică de 3 minute cu Moș Crăciun (personaj AI), personalizată pentru copilul tău.",
-          cta: "Deschide apelul privat",
+          body: child
+            ? `Achiziția ta este confirmată. ${child} are o conversație magică de 3 minute cu Moș Crăciun (personaj AI), personalizată.`
+            : "Achiziția ta este confirmată. Ai o conversație magică de 3 minute cu Moș Crăciun (personaj AI), personalizată pentru copilul tău.",
+          cta: "Începe apelul",
           mic: "Permite accesul la microfon când ți se cere. Folosește un spațiu liniștit, fără zgomot puternic.",
           expiry: `Accesul expiră pe ${formatExpiry(input.expiresAt, "ro")}.`,
           ai: "Moșul este un personaj AI. Nu promite livrarea cadourilor și nu înlocuiește supravegherea unui adult.",
-          support: "Ai nevoie de ajutor?",
+          support: "Ai nevoie de ajutor? Răspunde la acest email sau scrie-ne pe pagina de suport.",
           paid: paidLabel ? `Sumă plătită: ${paidLabel}.` : "",
           duration: "3 minute",
         }
       : {
-          subject: "Santa Claus is waiting for your call! 🎅",
-          title: "Santa Claus is waiting for your call!",
+          subject: child ? `Santa is waiting for ${child}! 🎅` : "Santa Claus is waiting for your call! 🎅",
+          title: child ? `Santa is waiting for ${child}!` : "Santa Claus is waiting for your call!",
           product: "Call Santa Claus",
-          body: "Your purchase is confirmed. You have a magical 3-minute realtime conversation with AI Santa, personalized for your child.",
-          cta: "Open private call",
+          body: child
+            ? `Your purchase is confirmed. ${child} has a magical 3-minute realtime conversation with AI Santa, personalized just for them.`
+            : "Your purchase is confirmed. You have a magical 3-minute realtime conversation with AI Santa, personalized for your child.",
+          cta: "Start the call",
           mic: "Allow microphone access when prompted. Use a quiet space with minimal background noise.",
           expiry: `Access expires on ${formatExpiry(input.expiresAt, "en")}.`,
           ai: "Santa is an AI character. He does not promise gift delivery and does not replace adult supervision.",
-          support: "Need help?",
+          support: "Need help? Reply to this email or visit our support page.",
           paid: paidLabel ? `Amount paid: ${paidLabel}.` : "",
           duration: "3 minutes",
         };
@@ -100,6 +106,11 @@ export async function sendSantaCallReadyEmail(input: {
     Deno.env.get("CHRISTMAS_EMAIL_FROM") ||
       Deno.env.get("TRANSACTIONAL_EMAIL_FROM") ||
       Deno.env.get("PET_EMAIL_FROM"),
+  );
+  const replyTo = asString(
+    Deno.env.get("CHRISTMAS_EMAIL_REPLY_TO") ||
+      Deno.env.get("SUPPORT_EMAIL") ||
+      "support@thedigitalgifter.com",
   );
 
   // Prefer commerce email deliveries table when present; otherwise entitlement metadata.
@@ -127,7 +138,13 @@ export async function sendSantaCallReadyEmail(input: {
       "Content-Type": "application/json",
       "Idempotency-Key": `santa-call-${kind}-${input.orderId}`,
     },
-    body: JSON.stringify({ from, to: [input.email], subject: copy.subject, html }),
+    body: JSON.stringify({
+      from,
+      to: [input.email],
+      subject: copy.subject,
+      html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
 
   if (!res.ok) {

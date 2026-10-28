@@ -13,6 +13,29 @@ export const SANTA_CALL_MARKET_PRICES: Record<
   us: { currency: "usd", initialMinor: 1299, extensionMinor: 999 },
 };
 
+/** Stripe LIVE Catalog Price IDs (sk_live_ account). Never accept client-supplied IDs. */
+export const SANTA_CALL_LIVE_PRICE_IDS: Record<
+  SantaCallMarket,
+  { initial: string; extension: string }
+> = {
+  ro: {
+    initial: "price_1UVXfHGD87aY9yHxPJcj9CIz",
+    extension: "price_1UVXfIGD87aY9yHxsPbf8lRt",
+  },
+  us: {
+    initial: "price_1UVXfIGD87aY9yHxuT9GYyyt",
+    extension: "price_1UVXfJGD87aY9yHx6nzxfXA1",
+  },
+};
+
+export function santaCallLivePriceId(
+  market: SantaCallMarket,
+  kind: "initial" | "extension",
+): string {
+  const row = SANTA_CALL_LIVE_PRICE_IDS[normalizeSantaCallMarket(market)];
+  return kind === "initial" ? row.initial : row.extension;
+}
+
 export function normalizeSantaCallMarket(value: unknown, fallback: SantaCallMarket = "ro"): SantaCallMarket {
   const raw = String(value || "")
     .trim()

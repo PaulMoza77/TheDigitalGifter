@@ -21,8 +21,15 @@ import {
 import { GIFT_TREE_PAID_OFFERS } from "../_shared/christmas/giftTreeRewards.ts";
 import {
   marketFromCheckoutBody,
+  normalizeSantaCallMarket,
   resolveSantaCallCharge,
+  santaCallLivePriceId,
 } from "../_shared/christmas/santaCallPricing.ts";
+import { resolveSantaStripeModeEnv } from "../_shared/christmas/santaStripe.ts";
+
+function normalizeMarketFromSnapshot(snap: Record<string, unknown>) {
+  return normalizeSantaCallMarket(snap.santa_call_market || snap.market || "ro");
+}
 
 /**
  * Christmas checkout seam (Custom Checkout Elements compatible).
@@ -338,6 +345,13 @@ Deno.serve(async (req) => {
 
       // Santa Call: fixed RO/US presentment map (no FX). Overrides single-row pricing_items seed.
       if (resolvedProductKey === "christmas_santa_voice_call" || commercialKey === "xmas_santa_voice_call") {
+        // Commercial Santa checkout is LIVE-only; TEST isolation uses christmas-santa-call QA actions.
+        if (resolveSantaStripeModeEnv() !== "live") {
+          return jsonResponse(
+            { error: "Santa LIVE checkout is not enabled", code: "checkout_disabled" },
+            403,
+          );
+        }
         const market = marketFromCheckoutBody(body as Record<string, unknown>);
         const charge = resolveSantaCallCharge({
           market,
@@ -356,6 +370,8 @@ Deno.serve(async (req) => {
           currency: charge.currency,
           market: charge.market,
           santa_call_market: charge.market,
+          stripe_mode: "live",
+          stripe_price_id: santaCallLivePriceId(charge.market, "initial"),
         };
       }
       const productMeta = (product?.metadata || {}) as Record<string, unknown>;
@@ -578,6 +594,8 @@ Deno.serve(async (req) => {
                     (commercialSnapshot as Record<string, unknown>)?.market ||
                     null,
                   market: (commercialSnapshot as Record<string, unknown>)?.market || null,
+                  stripe_mode: "live",
+                  stripe_price_id: (commercialSnapshot as Record<string, unknown>)?.stripe_price_id || null,
                 }
               : {}),
             ...(plannerFlow
@@ -669,14 +687,27 @@ Deno.serve(async (req) => {
       : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
     params.set("return_url", returnUrl);
     if (email) params.set("customer_email", email);
+    const santaLivePriceId =
+      resolvedProductKey === "christmas_santa_voice_call"
+        ? asString((commercialSnapshot as Record<string, unknown>)?.stripe_price_id) ||
+          santaCallLivePriceId(
+            normalizeMarketFromSnapshot(commercialSnapshot as Record<string, unknown>),
+            "initial",
+          )
+        : "";
     const items = plannerFlow && plannerLineItems.length
       ? plannerLineItems
       : [{ packageKey: packageKeyResolved, name: productName, amountCents }];
     items.forEach((item, index) => {
       params.set(`line_items[${index}][quantity]`, "1");
-      params.set(`line_items[${index}][price_data][currency]`, currency);
-      params.set(`line_items[${index}][price_data][unit_amount]`, String(item.amountCents));
-      params.set(`line_items[${index}][price_data][product_data][name]`, item.name);
+      if (santaLivePriceId && index === 0 && !plannerFlow) {
+        // Catalog LIVE Price — amount/currency authoritative from Stripe Price object.
+        params.set(`line_items[${index}][price]`, santaLivePriceId);
+      } else {
+        params.set(`line_items[${index}][price_data][currency]`, currency);
+        params.set(`line_items[${index}][price_data][unit_amount]`, String(item.amountCents));
+        params.set(`line_items[${index}][price_data][product_data][name]`, item.name);
+      }
     });
     params.set("metadata[product_family]", "christmas");
     params.set("metadata[product_type]", "christmas");
@@ -690,10 +721,13 @@ Deno.serve(async (req) => {
         (commercialSnapshot as Record<string, unknown>)?.santa_call_market ||
           (commercialSnapshot as Record<string, unknown>)?.market,
       );
+      params.set("metadata[stripe_mode]", "live");
+      if (santaLivePriceId) params.set("metadata[stripe_price_id]", santaLivePriceId);
       if (m) {
         params.set("metadata[santa_call_market]", m);
         params.set("metadata[market]", m);
         params.set("payment_intent_data[metadata][santa_call_market]", m);
+        params.set("payment_intent_data[metadata][stripe_mode]", "live");
       }
     }
     if (plannerFlow) {

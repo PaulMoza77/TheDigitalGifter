@@ -28,6 +28,7 @@ import {
 import {
   normalizeSantaCallMarket,
   resolveSantaCallCharge,
+  santaCallLivePriceId,
   type SantaCallMarket,
 } from "../_shared/christmas/santaCallPricing.ts";
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
@@ -483,9 +484,15 @@ Deno.serve(async (req) => {
       }
       if (email) params.set("customer_email", email);
       params.set("line_items[0][quantity]", "1");
-      params.set("line_items[0][price_data][currency]", currency);
-      params.set("line_items[0][price_data][unit_amount]", String(amountCents));
-      params.set("line_items[0][price_data][product_data][name]", "Santa Call +5 minutes");
+      if (creds.mode === "live") {
+        const livePrice = santaCallLivePriceId(market, "extension");
+        params.set("line_items[0][price]", livePrice);
+        params.set("metadata[stripe_price_id]", livePrice);
+      } else {
+        params.set("line_items[0][price_data][currency]", currency);
+        params.set("line_items[0][price_data][unit_amount]", String(amountCents));
+        params.set("line_items[0][price_data][product_data][name]", "Santa Call +5 minutes");
+      }
       params.set("metadata[product_family]", "christmas");
       params.set("metadata[product_type]", "christmas");
       params.set("metadata[product_key]", EXTENSION_PRODUCT_KEY);
@@ -919,6 +926,88 @@ Deno.serve(async (req) => {
         p_access_token_hash: hash,
       });
       return json(resolved);
+    }
+
+    /**
+     * Commercial landing return (christmas-checkout): reconcile by Stripe session_id.
+     * Access token is minted only after paid fulfill — never trust client success alone.
+     */
+    if (action === "confirm_commercial_checkout") {
+      const sessionId = asString(body.session_id) || asString(body.checkout_session_id);
+      if (!sessionId.startsWith("cs_")) {
+        return json({ ok: false, code: "missing_checkout_session" }, 400);
+      }
+      const okRl = await assertRateLimit(service, `santa_call_confirm_commercial:${ip}`, 20, 60);
+      if (!okRl) return json({ error: "rate_limited", code: "rate_limited" }, 429);
+
+      const { data: order } = await service
+        .from("christmas_orders")
+        .select("id,payment_status,product_key,metadata,amount_cents,currency,stripe_checkout_session_id")
+        .eq("stripe_checkout_session_id", sessionId)
+        .maybeSingle();
+      if (!order) return json({ ok: false, code: "order_not_found" }, 404);
+      if (asString(order.product_key) !== INITIAL_PRODUCT_KEY) {
+        return json({ ok: false, code: "wrong_product" }, 403);
+      }
+      const ordMeta = (order.metadata || {}) as Record<string, unknown>;
+      if (isSantaStripeTestOrderMeta(ordMeta)) {
+        return json({ ok: false, code: "test_order_use_qa_confirm" }, 403);
+      }
+      if (resolveSantaStripeModeEnv() !== "live") {
+        return json({ ok: false, code: "live_mode_required" }, 403);
+      }
+      const stripe = resolveSantaStripeCredentials("live");
+      if (!stripe.ok) return json({ ok: false, code: stripe.code, message: stripe.message }, 503);
+
+      const retrieved = await stripeGet(stripe.creds.secretKey, `/checkout/sessions/${encodeURIComponent(sessionId)}`);
+      if (!retrieved.ok) {
+        return json({ ok: false, code: "stripe_session_retrieve_failed", status: retrieved.status }, 502);
+      }
+      const session = retrieved.body;
+      if (session.livemode !== true) {
+        return json({ ok: false, code: "stripe_mode_mismatch" }, 403);
+      }
+      const meta = (session.metadata || {}) as Record<string, unknown>;
+      const metaOrderId = asString(meta.christmas_order_id);
+      if (metaOrderId && metaOrderId !== asString(order.id)) {
+        return json({ ok: false, code: "session_order_mismatch" }, 403);
+      }
+      const paymentStatus = asString(session.payment_status);
+      if (paymentStatus !== "paid" && paymentStatus !== "no_payment_required") {
+        return json({
+          ok: false,
+          code: "payment_not_completed",
+          payment_status: paymentStatus || "unknown",
+        });
+      }
+
+      if (asString(order.payment_status) !== "paid") {
+        await service
+          .from("christmas_orders")
+          .update({
+            payment_status: "paid",
+            paid_at: new Date().toISOString(),
+            stripe_checkout_session_id: sessionId,
+            stripe_payment_intent_id: asString(session.payment_intent) || null,
+            charged_amount_cents: Number(session.amount_total) || order.amount_cents,
+          })
+          .eq("id", order.id);
+      }
+
+      const fulfillResult = await fulfillSantaVoiceCallOrder({ service, orderId: asString(order.id) });
+      const accessToken = asString(fulfillResult.accessToken) || asString(ordMeta.santa_call_token_hint);
+      return json({
+        ok: fulfillResult.ok === true,
+        status: "reconciled",
+        orderId: order.id,
+        amountCents: Number(session.amount_total) || Number(order.amount_cents) || 0,
+        currency: asString(session.currency) || asString(order.currency) || "ron",
+        accessToken: accessToken || null,
+        callPath: accessToken ? `/santa/call/${accessToken}` : null,
+        fulfill: fulfillResult,
+        stripe_mode: "live",
+        livemode: true,
+      }, fulfillResult.ok === true ? 200 : 409);
     }
 
     /**

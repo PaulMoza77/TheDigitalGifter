@@ -38,7 +38,7 @@ export async function fulfillSantaVoiceCallOrder(input: {
 
   const { data: profile } = await input.service
     .from("christmas_santa_call_profiles")
-    .select("id,language")
+    .select("id,language,child_first_name")
     .eq("order_id", input.orderId)
     .maybeSingle();
   if (!profile) return { ok: false, reason: "missing_profile" };
@@ -117,6 +117,7 @@ export async function fulfillSantaVoiceCallOrder(input: {
         resend: Boolean(input.forceResendEmail),
         amountCents: Number(order.amount_cents) || undefined,
         currency: asString(order.currency) || undefined,
+        childFirstName: asString(profile.child_first_name) || undefined,
       }).catch((err) => console.error("santa call email failed", err)),
     );
   }
