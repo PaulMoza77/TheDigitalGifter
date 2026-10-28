@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-10-24T18:52:00Z",
+  "base_sha": "f7fd9723",
+  "design": "PRESERVED \u2014 immersive fullscreen layout unchanged aside from video source + upsell portal",
+  "video_audit": {
+    "blur_root_cause": "Immersive UI played north_pole_santa_reel_preview.mp4 at 540\u00d7960 (~0.76 Mbps), upscaled on iPhone Retina; CSS scale(1.06) added soft upsample. Not a missing 4K master.",
+    "native_max": "1080\u00d71920 \u2014 Kling I2V from 1080\u00d71920 stills (no 4K source exists)",
+    "sources": {
+      "preview_before": {
+        "path": "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel_preview.mp4",
+        "resolution": "540\u00d7960",
+        "bitrate_kbps": 762.5,
+        "codec": "h264",
+        "fps": 30,
+        "duration_s": 13.37,
+        "size_mb": 1.274
+      },
+      "full_reel": {
+        "path": "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel.mp4",
+        "resolution": "1080\u00d71920",
+        "bitrate_kbps": 17788.5,
+        "codec": "h264",
+        "fps": 30,
+        "duration_s": 13.37,
+        "size_mb": 29.722
+      },
+      "masters": "public/assets/christmas/north-pole-santa/masters/santa_0{1-4}_*.mp4 \u2014 each 1080\u00d71920 ~23\u201329 Mbps, 5s, 24fps",
+      "mobile_after": {
+        "path": "public/assets/christmas/north-pole-santa/final/north_pole_santa_reel_mobile.mp4",
+        "resolution": "1080\u00d71920",
+        "bitrate_kbps": 4082,
+        "codec": "h264 yuv420p faststart",
+        "fps": 30,
+        "duration_s": 13.37,
+        "size_mb": 6.82
+      },
+      "poster_hq": "public/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg (1080\u00d71920)"
+    },
+    "css": "Removed scale(1.04/1.06); object-fit:cover; object-position center 18%",
+    "evidence_frames": {
+      "before": "artifacts/santa-call-benchmark/video-qc/before_540p.jpg",
+      "after": "artifacts/santa-call-benchmark/video-qc/after_1080p.jpg",
+      "ssim_upscaled540_vs_native1080": "All:0.875 \u2014 frames differ; native 1080 retains more detail than upscaled 540"
+    },
+    "no_paid_regen": "Not required \u2014 authorized 1080 masters already exist; lost 4K detail cannot be invented"
+  },
+  "upsell_root_cause": {
+    "primary": "heartbeat_christmas_santa_call_session set entitlement status=completed at remaining<=0 instead of awaiting_extension",
+    "secondary": "Upsell modal lived inside .santa-room { overflow:hidden; position:fixed }, which can clip position:fixed overlays on iOS Safari",
+    "fixes": [
+      "Migration 20261024190000_santa_call_heartbeat_awaiting_extension.sql",
+      "createPortal(upsell) \u2192 document.body",
+      "Heartbeat client opens offer when force_end / extension_available",
+      "QA action qa_force_awaiting_extension (secret-gated, no free minutes)"
+    ]
+  },
+  "extension_e2e": {
+    "report": "SANTA_V2_EXTENSION_UPSELL_E2E.json",
+    "summary": {
+      "pass": 15,
+      "fail": 0,
+      "blocked": 1
+    },
+    "blocked": "Playwright Chromium not installed locally \u2014 modal captured via Cursor browser instead",
+    "proofs": {
+      "modal_screenshot": "artifacts/santa-call-benchmark/SANTA_V2_EXTENSION_UPSELL_MODAL.png",
+      "stripe_test_checkout_screenshot": "artifacts/santa-call-benchmark/SANTA_V2_EXTENSION_STRIPE_TEST_CHECKOUT.png",
+      "checkout": "cs_test_* 4900 RON livemode:false Sandbox",
+      "webhook": "signed STRIPE_TEST_WEBHOOK_SECRET \u2192 fulfill remaining 300",
+      "resume": "ash + resumeMode + empty openingLine",
+      "second_extension": "blocked 403"
+    }
+  },
+  "validation": {
+    "tsc_b": "PASS",
+    "vite_build": "PASS",
+    "vitest_santaCall_pool_forks": "PASS (6)",
+    "extension_upsell_e2e": "PASS",
+    "LIVE_PRODUCTS": "empty",
+    "commercial_santa_route": "still 404"
+  },
+  "safari_qa": {
+    "url_file": "/tmp/tdg-santa-safari-qa-url",
+    "qr_file": "/tmp/tdg-santa-safari-qa-qr.png",
+    "upsell_awaiting_url_file": "/tmp/tdg-santa-upsell-awaiting-url",
+    "steps": "artifacts/santa-call-benchmark/SANTA_V2_SAFARI_IPHONE_QA.md"
+  },
+  "remaining_blockers": [
+    "Physical iPhone re-check of 1080 mobile reel sharpness + full 180s\u2192upsell after heartbeat fix",
+    "QA overlay still mounts inside commercial site chrome (nav/footer) \u2014 out of scope for this polish"
+  ],
+  "verdict": {
+    "video_clarity_fix": "GO (1080 mobile from authorized reel; not claimed as 4K)",
+    "extension_upsell_e2e": "GO",
+    "commercial_launch": "NO-GO",
+    "overall": "GO_FOR_IPHONE_RETEST"
+  },
+  "deliverable_sha": "39fcf8e6"
+}

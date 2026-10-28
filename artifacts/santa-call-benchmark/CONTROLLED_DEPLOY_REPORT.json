@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-10-24T14:47:21.386304+00:00",
+  "branch": "feature/santa-voice-call",
+  "sha": "15bc5edf",
+  "sha_full": "15bc5edf878550cb335a4d5b93d462b3f5e22c36",
+  "deploy": "PASS",
+  "santa_function": "PASS",
+  "browser_qa": "BLOCKED",
+  "cost_measured_ron_180s_server": 0.182,
+  "verdict": "NO-GO",
+  "details": {
+    "LIVE_PRODUCTS": "EMPTY",
+    "backup": "/opt/supabase/tdg/backups/santa-call-20261024T144050Z",
+    "device_qa_doc": "artifacts/santa-call-benchmark/DEVICE_QA.md",
+    "private_token_file": "/tmp/tdg-santa-qa-token-live"
+  }
+}

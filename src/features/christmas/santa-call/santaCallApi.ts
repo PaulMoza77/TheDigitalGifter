@@ -92,6 +92,43 @@ export async function pollSantaCallExtension(accessToken: string) {
   return { ok: res.ok, data };
 }
 
+/** Parent iPhone QA: Stripe TEST checkout gated by page access token (not QA automation secret). */
+export async function createSantaCallParentTestCheckout(input: {
+  pageAccess: string;
+  childFirstName: string;
+  language: "en" | "ro";
+  market: "ro" | "us";
+  email: string;
+  age?: string;
+  christmasWish?: string;
+  hobbies?: string;
+  successUrl?: string;
+  cancelUrl?: string;
+}) {
+  const res = await fetch(CALL_URL, {
+    method: "POST",
+    headers: {
+      ...(await anonHeaders()),
+      "X-Santa-QA-Page-Access": input.pageAccess,
+    },
+    body: JSON.stringify({
+      action: "create_parent_test_checkout",
+      page_access: input.pageAccess,
+      child_first_name: input.childFirstName,
+      language: input.language,
+      market: input.market,
+      email: input.email,
+      age: input.age,
+      christmas_wish: input.christmasWish,
+      hobbies: input.hobbies,
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
 export function getOrCreateCallFingerprint(): string {
   const key = "tdg_santa_call_fp";
   try {

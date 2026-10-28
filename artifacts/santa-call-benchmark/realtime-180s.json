@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "elapsed_ms": 182339,
+  "max_ms": 180000,
+  "model": "gpt-realtime",
+  "session_id_prefix": "sess_EcWz1QP",
+  "turns": 4,
+  "audio_delta_events": 83,
+  "transcript_preview": "Salut | , |  Io | ana | ! |  Ce |  mai |  faci | ? | Sig | ur | , |  ce |  culo | are |  are |  pă | pu | șa |  pe |  care |  o |  v | rea | ? | Î | mi |  cer |  sc | uze | , |  nu |  vă | d |  n | icio |  pă | pu | ș | ă |  în |  imagine | . |  Po | ți |  să | -mi |  sp | ui |  mai |  multe |  det ",
+  "usage_totals": {
+    "input_tokens": 510,
+    "output_tokens": 591,
+    "in_audio": 272,
+    "out_audio": 426,
+    "in_text": 238,
+    "out_text": 165
+  },
+  "cost": {
+    "estimate_usd": 0.03956,
+    "estimate_ron": 0.182,
+    "within_3_ron_target": true
+  },
+  "closed_by": "client_timeout_180s",
+  "force_disconnect_at_limit": true,
+  "error": null,
+  "language": "ro"
+}

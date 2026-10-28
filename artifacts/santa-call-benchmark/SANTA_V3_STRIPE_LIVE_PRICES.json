@@ -1,0 +1,6 @@
+[
+  {"sku":"xmas_santa_voice_call","price_id":"price_1UVXfHGD87aY9yHxPJcj9CIz","currency":"ron","unit_amount":5900,"product":"prod_VWaqrLDjt30GrT"},
+  {"sku":"xmas_santa_voice_call_extension","price_id":"price_1UVXfIGD87aY9yHxsPbf8lRt","currency":"ron","unit_amount":4900,"product":"prod_VWaqU53EwpLVHg"},
+  {"sku":"xmas_santa_voice_call_us","price_id":"price_1UVXfIGD87aY9yHxuT9GYyyt","currency":"usd","unit_amount":1299,"product":"prod_VWaruUNqEKb26y"},
+  {"sku":"xmas_santa_voice_call_extension_us","price_id":"price_1UVXfJGD87aY9yHx6nzxfXA1","currency":"usd","unit_amount":999,"product":"prod_VWarCLewMSHllB"}
+]

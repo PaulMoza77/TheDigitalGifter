@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-10-24T17:45:00Z",
+  "branch": "feature/santa-voice-call",
+  "sha_start": "07adf56d798fd5db4524cda04fc826a7846cf89d",
+  "sha_final": "021c2585a1f7fabc1fcb0e073572b8286322657c",
+  "commercial_guards": {
+    "CHRISTMAS_LIVE_PRODUCTS": "EMPTY",
+    "stripe_contabo_secret": "LIVE (untouched \u2014 no Contabo checkout sessions created)",
+    "stripe_test_key": "local ~/.config/tdg/stripe-test.key",
+    "public_route_/christmas/santa-call": "404",
+    "dns_modified": false,
+    "stripe_live_modified": false
+  },
+  "preflight": {
+    "backup": "/opt/supabase/tdg/backups/santa-v2-20261024T173849Z/postgres_full.dump",
+    "backup_sha256": "3bf067822c87c8d0e784c2b0f383d212caef19dd5a221bd7588292b211157716",
+    "rollback": "RESTORE.md + ROLLBACK_PRICES.sql in backup dir",
+    "v1_entitlements_before": {
+      "ready": 1,
+      "completed": 2
+    },
+    "other_product_prices_unchanged": true
+  },
+  "migration": {
+    "status": "PASS",
+    "file": "supabase/migrations/20261024180000_christmas_santa_voice_call_v2.sql",
+    "fix": "product_type 'other' required by christmas_products_type_chk (santa_voice_call rejected)",
+    "verified_prices": {
+      "xmas_santa_voice_call": 5900,
+      "xmas_santa_voice_call_extension": 4900,
+      "xmas_portrait": 499,
+      "xmas_santa_video": 999,
+      "xmas_magic_bundle": 1499
+    },
+    "durations": {
+      "initial": 180,
+      "extension": 300
+    }
+  },
+  "deploy": {
+    "status": "PASS",
+    "functions": [
+      "christmas-santa-call",
+      "_shared/christmas/santaCallFulfill.ts",
+      "_shared/christmas/santaCallPersonality.ts",
+      "_shared/christmas/santaCallProviders.ts",
+      "_shared/christmas/stripeFulfill.ts",
+      "_shared/christmas/commercialOffers.ts",
+      "christmas-checkout/index.ts"
+    ],
+    "edge_health": "healthy",
+    "api_resolve_probe": "200 invalid_token",
+    "voice_env": "ash / gpt-realtime"
+  },
+  "stripe_initial": {
+    "status": "PASS",
+    "checkout_created_unpaid_5900": "PASS",
+    "payment_intent_succeeded_5900": "PASS",
+    "cancelled_unpaid": "PASS",
+    "failed_card_declined": "PASS",
+    "signed_webhook_verify_test_secret": "PASS",
+    "duplicate_signature_verify": "PASS",
+    "bad_secret_rejected": "PASS",
+    "note": "Checkout creation \u2260 payment; paid via PaymentIntent confirm pm_card_visa"
+  },
+  "stripe_upsell": {
+    "status": "PASS_WITH_CAVEAT",
+    "payment_intent_succeeded_4900": "PASS",
+    "db_activate_extension_300s": "PASS",
+    "duplicate_activate_idempotent": "PASS",
+    "contabo_create_extension_checkout": "BLOCKED \u2014 Contabo STRIPE_SECRET_KEY is LIVE; refused to open live Checkout sessions",
+    "caveat": "Upsell payment + entitlement proven via Stripe TEST + Contabo RPCs; live Contabo checkout UI path not exercised"
+  },
+  "safari_return": {
+    "status": "BLOCKED",
+    "reason": "No iPhone/Safari agent session",
+    "manual_url_file": "/tmp/tdg-santa-v2-qa-call-url",
+    "manual_token_file": "/tmp/tdg-santa-v2-qa-token",
+    "qa_overlay": "https://www.thedigitalgifter.com/_qa/santa-private/\u2026 \u2192 HTTP 200",
+    "entitlement": "ready / 180s / Andrei / ro"
+  },
+  "voice_qa": {
+    "status": "BLOCKED",
+    "ash_mint_api": "PASS (voice=ash, resumeMode=true, openingLine empty on extension)",
+    "full_conversation_mic": "BLOCKED \u2014 no device microphone",
+    "ho_ho_once_code": "PASS (personality V2)",
+    "language_switch_live": "BLOCKED \u2014 needs human listen"
+  },
+  "conversation_extension": {
+    "duration_limit_to_awaiting_extension": "PASS",
+    "extension_grants_exactly_300": "PASS",
+    "max_duration_budget_480": "PASS",
+    "resume_no_regreet": "PASS",
+    "single_extension_idempotent": "PASS"
+  },
+  "tests": {
+    "node_strip_types_assertions": "PASS",
+    "vitest": "BLOCKED \u2014 CLI hangs idle in kevent under agent Node 26",
+    "typescript_lint_build": "NOT_RE_RUN this pass (prior Santa branch builds existed; no FE commercial release)"
+  },
+  "cost": {
+    "measured_prior_180s_server_ron": 0.182,
+    "estimate_480s_usd": 0.8,
+    "estimate_480s_ron": 3.7,
+    "list_108_ron": 108,
+    "e2e_stripe_test_charges": "real TEST charges at 5900 + 4900 bani (plus prior failed/cancelled probes)"
+  },
+  "remaining_risks": [
+    "Contabo uses LIVE Stripe secret \u2014 extension checkout UI must not be pointed at Contabo until TEST key isolation or explicit launch approval",
+    "Safari iPhone return + full 180s/300s human voice QA still required",
+    "QA overlay under /_qa/santa-private is ephemeral (container recreate)",
+    "Vitest runner unreliable in this agent environment"
+  ],
+  "verdict": "NO-GO",
+  "verdict_reason": "Migration+deploy+Stripe TEST payments+DB upsell PASS, but Safari return and human voice QA remain BLOCKED; Contabo LIVE Stripe blocks exercising create_extension_checkout in-place; public sales correctly still disabled."
+}

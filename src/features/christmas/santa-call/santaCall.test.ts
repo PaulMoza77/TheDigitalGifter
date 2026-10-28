@@ -91,6 +91,8 @@ describe("Santa Call RO/EN copy parity", () => {
     expect(SANTA_CALL_COPY.ro.faqs.length).toBe(SANTA_CALL_COPY.en.faqs.length);
     expect(SANTA_CALL_COPY.ro.title).toContain("Moș Crăciun");
     expect(SANTA_CALL_COPY.en.title).toContain("Santa");
+    expect(SANTA_CALL_COPY.ro.cta).toContain("Moș");
+    expect(SANTA_CALL_COPY.en.cta).toBe("Call Santa");
     expect(SANTA_CALL_COPY.ro.ogDescription).toContain("Conversație");
   });
 });

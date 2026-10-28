@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-10-24T14:11:18.034724+00:00",
+  "branch": "feature/santa-voice-call",
+  "sha_reference": "1cd3bc25",
+  "sha_final": "1cd3bc25",
+  "sha_note": "Uncommitted finalize fixes on top of 1cd3bc25 (activate RPC column fix, FE page/lint sync). No commit created (not requested).",
+  "environment": {
+    "node_system": "v26.4.0",
+    "package_manager": "npm (package-lock.json / npm ci)",
+    "disk": "recovered to ~14Gi free during npm ci; was 97-98% full",
+    "node22_portable": "BLOCKED \u2014 new Mach-O binaries hang at dyld_start (XProtect); brew node@22 reinstall blocked on ca-certificates sudo postinstall",
+    "toolchain_workaround": "npm ci --ignore-scripts; esbuild 0.25.12 via trusted-inode overwrite; rollup replaced with @rollup/wasm-node in node_modules only"
+  },
+  "quality_gates": {
+    "vitest_christmas": "PASS \u2014 49 files / 486 tests",
+    "vitest_santa_call": "PASS \u2014 5/5",
+    "typescript_tsc_b": "PASS \u2014 exit 0",
+    "eslint_santa_call_sources": "PASS \u2014 exit 0",
+    "production_build": "PASS \u2014 vite build ~17s",
+    "secret_scan_dist": "PASS"
+  },
+  "commercial_flow": {
+    "1_personalization_form": "PASS \u2014 code + unit validation (santaCall.test.ts)",
+    "2_order_99_ron": "PASS \u2014 pricing_items xmas_santa_voice_call = 9900 ron; Stripe session amount_total 9900",
+    "3_stripe_test_checkout": "PASS \u2014 cs_test_ session created (unpaid; no real charge)",
+    "4_signed_webhook": "BLOCKED \u2014 only stripe-live-webhook.secret present; no Stripe TEST webhook secret / CLI listen in this env",
+    "5_entitlement_after_paid": "PASS \u2014 DB RPC activate/resolve after paid order (fixed fulfillment_status/generation_finished_at bug)",
+    "6_resend_email": "PASS(auth) / BLOCKED(end-to-end send) \u2014 API key authenticates (prior harness HTTP 200); live delivery email not sent (avoid side effects); Contabo function not redeployed",
+    "7_private_link": "PASS \u2014 fulfill path mints opaque token hash; resolve rejects bad token",
+    "8_voice_session_start": "BLOCKED \u2014 OPENAI_API_KEY empty Contabo + local; christmas-santa-call not deployed for controlled test",
+    "9_bidirectional_conversation": "BLOCKED \u2014 no realtime provider session",
+    "10_auto_close_180s": "PASS \u2014 heartbeat_christmas_santa_call_session at 180s returns force_end/wrap_up; concurrent_session enforced"
+  },
+  "voice": {
+    "openai_realtime": "BLOCKED \u2014 missing OPENAI_API_KEY",
+    "ro_en_quality": "BLOCKED \u2014 no mic/device live call",
+    "interrupt_reconnect_expiry": "BLOCKED \u2014 no live call (DB concurrent + 180s rules verified)",
+    "real_3_min_call": "BLOCKED"
+  },
+  "security_cost": {
+    "api_keys_in_client": "PASS \u2014 secret-scan dist clean; keys via Deno.env server-side",
+    "no_voice_before_payment": "PASS \u2014 resolve/begin RPCs require paid entitlement",
+    "token_replay": "PASS \u2014 hash-only storage; invalid token rejected; concurrent session blocked",
+    "no_default_transcript_recording": "PASS \u2014 provider session config reviewed (no default persist); verify again at deploy",
+    "child_data_isolation": "PASS \u2014 profiles tied to order_id; resolve returns limited PII",
+    "provider_disconnect_on_expiry": "PASS \u2014 force_end at 180s in RPC; FE ends call on remaining<=0 (code path)",
+    "cost_estimate_ron_3min": 1.4,
+    "cost_target_max_ron": 3.0,
+    "cost_within_target": true,
+    "cost_measured": false
+  },
+  "blockers": [
+    "OPENAI_API_KEY missing (Contabo empty + no local key) \u2014 blocks Realtime + live call",
+    "No Stripe TEST webhook signing secret \u2014 cannot prove signed webhook end-to-end here",
+    "christmas-santa-call Edge function not deployed to Contabo (by restriction: no LIVE deploy)",
+    "Cannot declare mic/voice PASS without real device",
+    "Node 22 / fresh native binaries blocked by macOS dyld_start hang in this agent environment"
+  ],
+  "verdict": "PARTIALLY READY"
+}

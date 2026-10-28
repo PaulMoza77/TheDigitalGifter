@@ -1,0 +1,23 @@
+{
+  "method": "estimate_from_openai_public_token_rates_gpt-realtime",
+  "model_assumed": "gpt-realtime (code default)",
+  "assumptions": {
+    "session_sec": 180,
+    "user_speech_sec": 90,
+    "assistant_speech_sec": 90,
+    "user_audio_tokens": 900.0,
+    "assistant_audio_tokens": 1800.0,
+    "text_input_tokens": 20000,
+    "text_output_tokens": 5000,
+    "ron_per_usd": 4.6,
+    "measured": false,
+    "note": "No live OpenAI call; estimate only. Code default model gpt-realtime / voice cedar."
+  },
+  "estimate_usd": 0.304,
+  "estimate_ron": 1.4,
+  "mini_estimate_usd": 0.069,
+  "mini_estimate_ron": 0.32,
+  "target_max_ron": 3.0,
+  "within_target_default_model": true,
+  "within_target_mini": true
+}

@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-10-24T18:08:00Z",
+  "base_sha": "363050c6",
+  "deliverable_sha": "49d13f07",
+  "verdict": "GO_FOR_IPHONE_SAFARI_QA",
+  "commercial_launch": false,
+  "stripe_live_changed": false,
+  "dns_changed": false,
+  "christmas_live_products": "",
+  "isolation": {
+    "contabo_STRIPE_SECRET_KEY": "sk_live_* (untouched)",
+    "contabo_STRIPE_TEST_SECRET_KEY": "sk_test_* (Santa QA/extension path)",
+    "CHRISTMAS_SANTA_CALL_STRIPE_MODE": "test",
+    "keys_distinct": true,
+    "create_qa_checkout": "requires X-Santa-QA-Secret server-side",
+    "create_extension_checkout": "uses TEST key when mode=test; returns livemode:false",
+    "LIVE_stripeFulfill": "ignores stripe_mode=test Santa events",
+    "TEST_webhook": "santa-call-stripe-test-webhook + stripe_test_webhook action with STRIPE_TEST_WEBHOOK_SECRET"
+  },
+  "e2e": {
+    "report": "SANTA_V2_STRIPE_TEST_ISOLATION_E2E.json",
+    "summary": { "pass": 24, "fail": 0, "blocked": 2 },
+    "blocked_reason": "Hosted Checkout attaches PaymentIntent only after browser opens cs_test_* URL — covered by manual iPhone Safari QA",
+    "proofs": {
+      "initial_checkout": "cs_test_* hosted 5900 RON, stripeMode=test, livemode=false",
+      "extension_checkout_ui": "cs_test_* hosted 4900 RON URL minted server-side",
+      "signed_webhook": "checkout.session.completed verified with STRIPE_TEST_WEBHOOK_SECRET → fulfill",
+      "entitlements": "180s after initial; 300s after extension; second extension blocked",
+      "resume": "ash voice, resumeMode=true, opening_len=0",
+      "cancel_fail": "unpaid cancel + declined card",
+      "no_live_charges": "all sessions livemode=false; LIVE sk unused"
+    }
+  },
+  "validation": {
+    "tsc_b": "PASS",
+    "vite_build": "PASS",
+    "vitest_santaCall": "PASS (6) with --pool=forks",
+    "vitest_checkout_related": "PASS (13) foundingPassCheckout + stripeKeys with --pool=forks",
+    "vitest_default_pool": "BLOCKED — default/threads pool hangs on this macOS host (kevent); use --pool=forks"
+  },
+  "safari_qa": {
+    "url_file": "/tmp/tdg-santa-safari-qa-url",
+    "token_file": "/tmp/tdg-santa-safari-qa-token",
+    "qr_file": "/tmp/tdg-santa-safari-qa-qr.png",
+    "steps_file": "artifacts/santa-call-benchmark/SANTA_V2_SAFARI_IPHONE_QA.md",
+    "child": "Maya",
+    "remaining_seconds": 180,
+    "manual_only": ["microphone", "audible voice", "barge-in", "language switching", "Safari payment return"]
+  },
+  "remaining_blockers": [
+    "Physical iPhone Safari QA not yet executed (mic/voice/barge-in/payment return)",
+    "Hosted Checkout PaymentIntent confirmation requires browser (E2E BLOCKED x2 by design)"
+  ],
+  "go_no_go": {
+    "stripe_test_isolation_for_extension_checkout_ui": "GO",
+    "commercial_public_launch": "NO-GO",
+    "iphone_safari_manual_qa": "READY (GO to start manual)"
+  }
+}

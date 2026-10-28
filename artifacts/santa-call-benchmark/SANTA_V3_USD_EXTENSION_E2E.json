@@ -1,10 +1,10 @@
 {
-  "sha": "169d322d0997e03033b256cdfad43a7f5da00134",
-  "at": "2026-10-25T07:22:22.016Z",
+  "sha": "84524785b89f5e830513138bec8e27ae0fee27b8",
+  "at": "2026-10-28T14:05:16.069Z",
   "market": "us",
   "currency": "usd",
-  "accessToken_hint": "3f33c912…",
-  "call_url": "https://www.thedigitalgifter.com/_qa/santa-private/santa/call/3f33c912acea47028a91819ce83c6309d120c6c9a3454880bfb79f9f97c79910",
+  "accessToken_hint": "77d03d66…",
+  "call_url": "https://www.thedigitalgifter.com/_qa/santa-private/santa/call/77d03d66f7bf48c3876a9e8bbb74b4a7d481356ca30b49b8948ce4de3bd003df",
   "checks": [
     {
       "name": "preflight_secrets",
@@ -24,7 +24,7 @@
     },
     {
       "name": "us_session_id",
-      "prefix": "cs_test_a1s0",
+      "prefix": "cs_test_a1kZ",
       "status": "PASS"
     },
     {

@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-10-24T17:44:41.802Z",
+  "sha": "07adf56d",
+  "summary": {
+    "pass": 23,
+    "fail": 0,
+    "blocked": 3
+  },
+  "checks": [
+    {
+      "name": "stripe_test_key",
+      "status": "PASS"
+    },
+    {
+      "name": "contabo_stripe_mode",
+      "status": "PASS",
+      "mode": "LIVE",
+      "note": "LIVE expected on Contabo; E2E must not create Contabo checkout sessions"
+    },
+    {
+      "name": "live_products_empty",
+      "status": "PASS",
+      "value_repr": "CHRISTMAS_LIVE_PRODUCTS="
+    },
+    {
+      "name": "stripe_test_webhook_secret",
+      "status": "PASS",
+      "len": 38
+    },
+    {
+      "name": "db_prices_5900_4900",
+      "status": "PASS",
+      "prices": "xmas_portrait:499\nxmas_santa_voice_call_extension:4900\nxmas_santa_voice_call:5900"
+    },
+    {
+      "name": "stripe_test_checkout_initial",
+      "status": "PASS",
+      "amount_total": 5900,
+      "currency": "ron",
+      "payment_status": "unpaid",
+      "note": "checkout created ≠ paid"
+    },
+    {
+      "name": "stripe_test_payment_initial",
+      "status": "PASS",
+      "payment_status": "succeeded",
+      "amount": 5900,
+      "currency": "ron"
+    },
+    {
+      "name": "stripe_test_checkout_cancelled_unpaid",
+      "status": "PASS",
+      "payment_status": "unpaid",
+      "note": "session exists but unpaid — must not activate entitlement"
+    },
+    {
+      "name": "stripe_test_payment_failed",
+      "status": "PASS",
+      "reason": "Your card was declined."
+    },
+    {
+      "name": "stripe_signed_webhook_verify",
+      "status": "PASS",
+      "duplicate_verify": true
+    },
+    {
+      "name": "stripe_webhook_bad_secret_rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "db_entitlement_activate",
+      "status": "PASS",
+      "snippet": "BEGIN\n                                                                  activate                                                                   \n----------------------------------------------------"
+    },
+    {
+      "name": "duration_limit_upsell_state",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_activate_300s",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_duplicate_idempotent",
+      "status": "PASS",
+      "note": "second activate must not grant another 300s"
+    },
+    {
+      "name": "resume_context_saved",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_remaining_300",
+      "status": "PASS",
+      "rem_line": "300 |                  480 | ready  |                       300 | Talked about dinosaurs and Christmas wishes. Continue warmly without re-greeting."
+    },
+    {
+      "name": "api_resolve_after_extension",
+      "status": "PASS",
+      "http": 200,
+      "remaining": 300,
+      "entitlement_status": "ready"
+    },
+    {
+      "name": "api_start_extension_segment",
+      "status": "PASS",
+      "http": 200,
+      "provider": "openai_realtime",
+      "voice": "ash",
+      "resumeMode": true,
+      "opening_empty": true,
+      "remaining": 300
+    },
+    {
+      "name": "voice_ash",
+      "status": "PASS",
+      "voice": "ash"
+    },
+    {
+      "name": "no_regreet_on_extension",
+      "status": "PASS",
+      "resumeMode": true,
+      "opening_len": 0
+    },
+    {
+      "name": "stripe_test_payment_upsell",
+      "status": "PASS",
+      "payment_status": "succeeded",
+      "amount": 4900
+    },
+    {
+      "name": "contabo_create_extension_checkout",
+      "status": "BLOCKED",
+      "reason": "Contabo STRIPE_SECRET_KEY is LIVE — refusing to invoke create_extension_checkout against production Stripe"
+    },
+    {
+      "name": "safari_return",
+      "status": "BLOCKED",
+      "reason": "requires human Safari iPhone; private link prepared separately"
+    },
+    {
+      "name": "voice_qa_full_conversation",
+      "status": "BLOCKED",
+      "reason": "no device microphone in agent; ash mint checked if start succeeded"
+    },
+    {
+      "name": "manual_safari_link_prepared",
+      "status": "PASS",
+      "token_file": "/tmp/tdg-santa-v2-qa-token",
+      "url_file": "/tmp/tdg-santa-v2-qa-call-url"
+    }
+  ],
+  "guards": {
+    "CHRISTMAS_LIVE_PRODUCTS": "EMPTY",
+    "contabo_stripe": "LIVE",
+    "note": "No LIVE checkout sessions created"
+  }
+}

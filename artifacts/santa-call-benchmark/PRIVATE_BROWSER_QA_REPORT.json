@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-10-24T15:26:55.057792+00:00",
+  "sha_reference": "15bc5edf",
+  "branch": "feature/santa-voice-call",
+  "verdict": "NO-GO",
+  "verdict_reason": "Private HTTPS preview ready for human Safari QA; iPhone 15 not connected to this agent; realtime mic/WebRTC/180s interrupt not agent-verified in browser.",
+  "commercial_guards": {
+    "CHRISTMAS_LIVE_PRODUCTS": "EMPTY",
+    "prod_route_/christmas/santa-call": "404 (unchanged)",
+    "sitemap_nav_catalog_publish": "not enabled for commercial sell; QA under /_qa/santa-private with noindex",
+    "stripe_live": "not enabled",
+    "commercial_deploy": "not performed"
+  },
+  "repo_routes": {
+    "/christmas/santa-call": true,
+    "/santa/call/:token": true,
+    "/admin/christmas/santa-voice-benchmark": true
+  },
+  "prod_fe_gap": {
+    "/christmas/santa-call": "404",
+    "note": "Production SPA bundle does not include Santa Call routes"
+  },
+  "private_https_preview": {
+    "base_url": "https://www.thedigitalgifter.com/_qa/santa-private",
+    "benchmark_listen": "https://www.thedigitalgifter.com/_qa/santa-private/santa-voice-benchmark/",
+    "call_path_shape": "https://www.thedigitalgifter.com/_qa/santa-private/santa/call/<token>",
+    "call_url_secret_file": "/tmp/tdg-santa-qa-call-url",
+    "token_secret_file": "/tmp/tdg-santa-qa-token-live",
+    "overlay_note": "Ephemeral QA files + origin.mjs fallback under /_qa/santa-private inside running thedigitalgifter container. Not a commercial image release. Reverts on container recreate unless re-applied.",
+    "samples_embedded": 15,
+    "voices_measured": [
+      "cedar",
+      "marin",
+      "ash",
+      "echo",
+      "verse"
+    ]
+  },
+  "backend_contabo": {
+    "function": "christmas-santa-call",
+    "qa_entitlement": "ready / 180s / child Andrei / language ro / isolated harness order",
+    "migrations_rerun": false,
+    "other_edge_functions_modified": false,
+    "voice_default": "cedar"
+  },
+  "automated_checks": {
+    "languageDetect_RO_EN_DE_FR_ES_IT_AR": "PASS (vitest)",
+    "realtime_audio_language_validation": "NOT_RUN (requires human Safari)",
+    "mic_webrtc_interrupt_180s": "NOT_RUN (requires human Safari)",
+    "iphone_15": "NOT_TESTED (device not connected)"
+  },
+  "needs_user": [
+    "Open benchmark URL and listen to 5 OpenAI voices RO/EN/DE",
+    "Open private call URL from /tmp/tdg-santa-qa-call-url on Safari (Mac or iPhone)",
+    "Allow microphone; confirm cedar voice, barge-in, countdown, auto-end at 180s",
+    "Optional: approve durable Caddy sidecar if ephemeral overlay should be replaced"
+  ]
+}

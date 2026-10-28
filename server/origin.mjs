@@ -43,6 +43,7 @@ const MIME = {
   ".txt": "text/plain; charset=utf-8",
   ".webm": "video/webm",
   ".mp4": "video/mp4",
+  ".wav": "audio/wav",
   ".woff2": "font/woff2",
   ".map": "application/json; charset=utf-8",
 };
@@ -286,6 +287,74 @@ async function handle(req, res) {
         return;
       }
     }
+
+    // Isolated Santa QA overlays — SPA shells under /_qa/* without touching commercial routes.
+    // santa-private: internal QA. santa-preview: public landing (checkout off).
+    // santa-qa: parent TEST call (requires ?access= / cookie; Stripe TEST only).
+    for (const qaSlug of ["santa-private", "santa-preview", "santa-qa"]) {
+      const prefix = `/_qa/${qaSlug}`;
+      if (url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)) {
+        if (qaSlug === "santa-qa") {
+          let expected = String(process.env.CHRISTMAS_SANTA_CALL_QA_PAGE_TOKEN || "").trim();
+          let expiresAt = String(process.env.CHRISTMAS_SANTA_CALL_QA_PAGE_EXPIRES_AT || "").trim();
+          try {
+            const gatePath = join(distDir, "_qa/santa-qa/.qa-access.json");
+            if (existsSync(gatePath)) {
+              const gate = JSON.parse(readFileSync(gatePath, "utf8"));
+              if (typeof gate?.token === "string" && gate.token.trim().length >= 16) {
+                expected = gate.token.trim();
+              }
+              if (typeof gate?.expiresAt === "string" && gate.expiresAt.trim()) {
+                expiresAt = gate.expiresAt.trim();
+              }
+            }
+          } catch {
+            /* ignore malformed gate file */
+          }
+          const cookieHeader = String(req.headers.cookie || "");
+          const cookieMatch = cookieHeader.match(/(?:^|;\s*)tdg_santa_qa_access=([^;]+)/);
+          const cookieTok = cookieMatch?.[1] ? decodeURIComponent(cookieMatch[1]) : "";
+          const queryTok = String(url.searchParams.get("access") || "").trim();
+          const got = queryTok || cookieTok;
+          const expired = expiresAt && Number.isFinite(Date.parse(expiresAt)) && Date.now() > Date.parse(expiresAt);
+          const allowed = expected.length >= 16 && got === expected && !expired;
+          if (!allowed) {
+            res.statusCode = 401;
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+            res.setHeader("Cache-Control", "no-store");
+            res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+            res.end(
+              "<!doctype html><html><head><meta name=\"robots\" content=\"noindex\"/><title>QA access required</title></head><body style=\"font-family:system-ui;background:#12080a;color:#F7F0E4;padding:2rem\"><h1>Access required</h1><p>This Santa TEST QA link needs a valid access token.</p></body></html>",
+            );
+            return;
+          }
+          if (queryTok && queryTok === expected) {
+            res.setHeader(
+              "Set-Cookie",
+              `tdg_santa_qa_access=${encodeURIComponent(queryTok)}; Path=/_qa/santa-qa; Max-Age=1209600; HttpOnly; Secure; SameSite=Lax`,
+            );
+          }
+        }
+        const qaIndex = join(distDir, `_qa/${qaSlug}/index.html`);
+        if (existsSync(qaIndex)) {
+          // Static assets under /_qa/... are served earlier via safeJoin; HTML shell for SPA routes.
+          if (url.pathname.includes(".") && !url.pathname.endsWith(".html")) {
+            // fall through to 404/index if somehow reached
+          } else {
+            const html = readFileSync(qaIndex, "utf8");
+            const body = Buffer.from(html);
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "text/html; charset=utf-8");
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+            res.setHeader("Content-Length", String(body.length));
+            res.end(body);
+            return;
+          }
+        }
+      }
+    }
+
     const index = join(distDir, "index.html");
     if (existsSync(index)) {
       const html = applyRouteMeta(readFileSync(index, "utf8"), url.pathname);
@@ -352,41 +421,5 @@ server.listen(port, "0.0.0.0", () => {
     };
     setInterval(runLongFormTick, longFormTickMs);
     setTimeout(runLongFormTick, 4000);
-  }
-  const publisherTickMs = Number(process.env.PUBLISHER_TICK_MS || 30000);
-  if (publisherTickMs > 0) {
-    const runPublisherTick = () => {
-      import("../api/_lib/publisher/service.ts")
-        .then((mod) => mod.tickPublisherWorker("origin-loop"))
-        .catch((error) => {
-          console.error(
-            JSON.stringify({
-              source: "publisher",
-              event: "origin_tick_failed",
-              message: error instanceof Error ? error.message : String(error),
-            }),
-          );
-        });
-    };
-    setInterval(runPublisherTick, publisherTickMs);
-    setTimeout(runPublisherTick, 6000);
-  }
-  const youtubeLiveTickMs = Number(process.env.YOUTUBE_LIVE_TICK_MS || process.env.CLIP_FACTORY_TICK_MS || 15000);
-  if (youtubeLiveTickMs > 0) {
-    const runYoutubeLiveTick = () => {
-      import("../api/_lib/youtube-live/worker.ts")
-        .then((mod) => mod.tickYoutubeLive())
-        .catch((error) => {
-          console.error(
-            JSON.stringify({
-              source: "youtube-live",
-              event: "origin_tick_failed",
-              message: error instanceof Error ? error.message : String(error),
-            }),
-          );
-        });
-    };
-    setInterval(runYoutubeLiveTick, youtubeLiveTickMs);
-    setTimeout(runYoutubeLiveTick, 8000);
   }
 });

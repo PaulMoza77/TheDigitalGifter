@@ -1,0 +1,60 @@
+{
+  "product": "Santa Voice Call V2",
+  "branch": "feature/santa-voice-call",
+  "sha": "82d33fe1857db60e58061ced00d4b0374ddf6a42",
+  "feature_sha": "41c23e2fe6761821cc6fff8ad5707bedb9d1ed04",
+  "base_ash_sha": "8889266cf6a70d3e675429b148e0ce3fb4e021da",
+  "voice": "ash",
+  "pricing": {
+    "initial_ron_minor": 5900,
+    "initial_seconds": 180,
+    "extension_ron_minor": 4900,
+    "extension_seconds": 300,
+    "max_total_seconds": 480,
+    "max_extensions": 1,
+    "international_currencies_published": false,
+    "other_product_prices_changed": false,
+    "public_sales_enabled": false,
+    "stripe_live_modified": false
+  },
+  "migrations": [
+    "supabase/migrations/20261024180000_christmas_santa_voice_call_v2.sql"
+  ],
+  "ux": {
+    "onboarding_form": "parent personalization + AI consent (ChristmasSantaCallPage)",
+    "upsell_modal": "Mai vorbești 5 minute cu Moșul? / 49 lei",
+    "north_pole_scene": "NorthPoleScene — static authorized still + optional muted video slot (no invented loop asset)",
+    "still_asset": "/assets/christmas/library-stills/santa_workshop_north_pole.jpg",
+    "video_loop_implemented": false,
+    "reduced_motion": true,
+    "mic_permission_timing": "only on Start call"
+  },
+  "tests": {
+    "vitest_runner": "HUNG in this agent environment (Node idle in kevent) — treated as infra issue",
+    "node_strip_types_assertions": "PASS (14 checks: pricing, personality, migration, upsell wiring)",
+    "stripe_test_initial_59": "NOT_RUN_THIS_PASS — requires migration apply + Stripe TEST checkout in isolated env",
+    "stripe_test_upsell_49": "NOT_RUN_THIS_PASS — webhook + create_extension_checkout ready in code",
+    "voice_qa_safari_iphone": "MANUAL_REQUIRED — agent has no microphone; prior ash QA was PASS",
+    "ho_ho_repetition": "CODE_GUARD — personality V2 limits to start (+ optional end); manual listen still required"
+  },
+  "cost_estimate": {
+    "method": "openai_realtime_mixed_talk_approx_$0.10_per_min",
+    "initial_180s_usd": 0.3,
+    "extension_300s_usd": 0.5,
+    "total_480s_usd": 0.8,
+    "ron_per_usd_assumed": 4.6,
+    "total_480s_ron_approx": 3.7,
+    "revenue_108_ron": 108,
+    "measured": false,
+    "note": "Estimate only; no new live OpenAI measurement this pass"
+  },
+  "remaining_issues": [
+    "Apply V2 migration to Contabo/isolated DB before Stripe TEST upsell E2E",
+    "Deploy updated christmas-santa-call + stripe fulfill functions to edge (non-commercial)",
+    "Manual Safari iPhone: 180s cutover → upsell → Stripe return → 300s resume without re-greeting",
+    "Authorize/produce real 8–12s North Pole MP4/WebM before declaring loop live",
+    "Vitest CLI hang under agent shell (Node 26) — rerun locally"
+  ],
+  "verdict": "NO-GO",
+  "verdict_reason": "Implementation complete in repo for pricing/personality/upsell/scene, but Stripe TEST E2E, migration apply, and Safari voice/upsell QA are still outstanding; public sales remain correctly disabled."
+}

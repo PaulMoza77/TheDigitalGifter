@@ -1,0 +1,19 @@
+{
+  "product": "santa_voice_call_v2",
+  "voice": "ash",
+  "model_assumed": "gpt-realtime",
+  "method": "estimate_from_code_model_openai_realtime_est_$0.10_per_min_mixed",
+  "segments": {
+    "initial_180s_usd": 0.3,
+    "extension_300s_usd": 0.5,
+    "total_480s_usd": 0.8
+  },
+  "ron_per_usd": 4.6,
+  "total_480s_ron_approx": 3.68,
+  "list_price_ron": 108,
+  "measured": false,
+  "notes": [
+    "Matches santaCallProviders.estimateCallCostUsd openai path",
+    "Prior 180s artifact estimate ~$0.30; extension scales linearly"
+  ]
+}

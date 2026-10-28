@@ -1,6 +1,6 @@
 {
-  "sha": "0e0878211b639220e9313e5b3eb185cd274e0d2e",
-  "at": "2026-10-24T19:37:19.746Z",
+  "sha": "84524785b89f5e830513138bec8e27ae0fee27b8",
+  "at": "2026-10-28T14:04:59.833Z",
   "checks": [
     {
       "name": "preflight_secrets",
@@ -8,7 +8,7 @@
     },
     {
       "name": "qa_checkout_ro",
-      "orderId": "441dbf73-ed91-4490-9507-fb0ee21caa6e",
+      "orderId": "4c3fa0b9-f6eb-495f-8f44-1b04a3a0485c",
       "amountCents": 5900,
       "currency": "ron",
       "market": "ro",
@@ -18,7 +18,7 @@
     },
     {
       "name": "qa_checkout_us",
-      "orderId": "40fe0c49-95c1-40df-82bc-34b6274570c5",
+      "orderId": "921dab0a-238a-49bc-95da-fffe0166f3b2",
       "amountCents": 1299,
       "currency": "usd",
       "market": "us",

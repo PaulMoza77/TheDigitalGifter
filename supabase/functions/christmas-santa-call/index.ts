@@ -38,14 +38,32 @@ const EXTENSION_SECONDS = 300;
 const EXTENSION_PRODUCT_KEY = "christmas_santa_voice_call_extension";
 const EXTENSION_PRICING_KEY = "xmas_santa_voice_call_extension";
 
+function timingSafeEqual(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function qaSecretOk(req: Request): boolean {
   const expected = asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_SECRET"));
   if (!expected || expected.length < 16) return false;
   const got = asString(req.headers.get("x-santa-qa-secret"));
-  if (!got || got.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= got.charCodeAt(i) ^ expected.charCodeAt(i);
-  return diff === 0;
+  return timingSafeEqual(got, expected);
+}
+
+/** Parent iPhone QA page token (expiring). Distinct from automation X-Santa-QA-Secret. */
+function qaPageAccessOk(req: Request, body: Record<string, unknown>): boolean {
+  const expected = asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_PAGE_TOKEN"));
+  if (!expected || expected.length < 16) return false;
+  const expiresRaw = asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_PAGE_EXPIRES_AT"));
+  if (expiresRaw) {
+    const exp = Date.parse(expiresRaw);
+    if (!Number.isFinite(exp) || Date.now() > exp) return false;
+  }
+  const got = asString(req.headers.get("x-santa-qa-page-access")) || asString(body.page_access) ||
+    asString(body.access);
+  return timingSafeEqual(got, expected);
 }
 
 function toHex(buffer: ArrayBuffer): string {
@@ -520,12 +538,22 @@ Deno.serve(async (req) => {
     }
 
     // Protected QA-only: create initial Stripe TEST Checkout (RO/US market map).
-    if (action === "create_qa_checkout") {
-      if (!qaSecretOk(req)) return json({ error: "forbidden", code: "qa_forbidden" }, 403);
+    // Automation: X-Santa-QA-Secret. Parent iPhone QA: X-Santa-QA-Page-Access / page_access.
+    if (action === "create_qa_checkout" || action === "create_parent_test_checkout") {
+      const parentPage = action === "create_parent_test_checkout" || qaPageAccessOk(req, body as Record<string, unknown>);
+      const automation = qaSecretOk(req);
+      if (!automation && !qaPageAccessOk(req, body as Record<string, unknown>)) {
+        return json({ error: "forbidden", code: "qa_forbidden" }, 403);
+      }
       if (resolveSantaStripeModeEnv() !== "test") {
         return json({ ok: false, code: "qa_requires_test_mode" }, 403);
       }
-      const ok = await assertRateLimit(service, `santa_call_qa_checkout:${ip}`, 6, 60);
+      const ok = await assertRateLimit(
+        service,
+        parentPage && !automation ? `santa_call_parent_qa:${ip}` : `santa_call_qa_checkout:${ip}`,
+        parentPage && !automation ? 8 : 6,
+        60,
+      );
       if (!ok) return json({ error: "rate_limited", code: "rate_limited" }, 429);
 
       const stripe = resolveSantaStripeCredentials("test");
@@ -547,16 +575,23 @@ Deno.serve(async (req) => {
         return json({ ok: false, code: charge.code, message: charge.message }, 409);
       }
       const email = (asString(body.email) || "santa-qa@thedigitalgifter.invalid").toLowerCase();
+      if (action === "create_parent_test_checkout" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return json({ ok: false, code: "email_required" }, 400);
+      }
       const accessToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
       const tokenHash = await sha256Hex(accessToken);
-      const qaBase = asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_ORIGIN")) ||
-        `${siteOrigin()}/_qa/santa-private`;
+      const qaBase = (asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_CALL_ORIGIN")) ||
+        asString(Deno.env.get("CHRISTMAS_SANTA_CALL_QA_ORIGIN")) ||
+        `${siteOrigin()}/_qa/santa-qa`).replace(/\/$/, "");
+      const pageAccess = asString(req.headers.get("x-santa-qa-page-access")) || asString(body.page_access) ||
+        asString(body.access);
+      const accessQs = pageAccess ? `&access=${encodeURIComponent(pageAccess)}` : "";
       const successUrl =
         asString(body.success_url) ||
-        `${qaBase.replace(/\/$/, "")}/santa/call/${encodeURIComponent(accessToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+        `${qaBase}/santa/call/${encodeURIComponent(accessToken)}?checkout=success${accessQs}&session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl =
         asString(body.cancel_url) ||
-        `${qaBase.replace(/\/$/, "")}/santa/call/qa-cancel?checkout=cancel`;
+        `${qaBase}/christmas/santa-call?checkout=cancel${accessQs}`;
 
       const { data: order, error: orderError } = await service
         .from("christmas_orders")

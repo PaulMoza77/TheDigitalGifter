@@ -1,0 +1,67 @@
+BEGIN
+                                                                  activate                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "status": "ready", "expires_at": "2026-10-31T17:44:39.038264+00:00", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25"}
+(1 row)
+
+                                                             activate_idempotent                                                             
+---------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "status": "ready", "expires_at": "2026-10-31T17:44:39.038264+00:00", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25"}
+(1 row)
+
+                                                                                                                                                                                                                              resolved                                                                                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "status": "ready", "language": "ro", "order_id": "8f193d30-089a-4e47-a959-4a91ef03354a", "expires_at": "2026-10-31T17:44:39.038264+00:00", "active_session": false, "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "child_first_name": "Andrei", "remaining_seconds": 180, "extension_purchased": false, "provider_preference": "openai_realtime", "grace_period_seconds": 45, "is_extension_segment": false, "max_duration_seconds": 180}
+(1 row)
+
+                                                                                                                                                                                                                                      began                                                                                                                                                                                                                                      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "age": 7, "hobbies": "dinozauri", "resumed": false, "language": "ro", "order_id": "8f193d30-089a-4e47-a959-4a91ef03354a", "pet_name": null, "session_id": "7a597926-3317-4859-8466-768458ee830e", "resume_mode": false, "christmas_wish": "un tren", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "resume_summary": null, "positive_detail": "a ajutat-o pe bunica", "resume_language": null, "child_first_name": "Andrei", "remaining_seconds": 180}
+(1 row)
+
+                                                     ended                                                     
+---------------------------------------------------------------------------------------------------------------
+ {"ok": true, "remaining_seconds": 0, "entitlement_status": "awaiting_extension", "extension_available": true}
+(1 row)
+
+ resume_saved 
+--------------
+ {"ok": true}
+(1 row)
+
+                                                                                                                                             awaiting                                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "awaiting_extension", "language": "ro", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "child_first_name": "Andrei", "extension_seconds": 300, "remaining_seconds": 0, "extension_currency": "ron", "extension_available": true, "extension_price_minor": 4900}
+(1 row)
+
+                                                                       ext1                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "status": "ready", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "remaining_seconds": 300, "max_duration_seconds": 480}
+(1 row)
+
+                                                            ext2_dup                                                            
+--------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "reason": "already_extended", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "remaining_seconds": 300}
+(1 row)
+
+                                                                                                                                                                                                                            after_ext                                                                                                                                                                                                                             
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "status": "ready", "language": "ro", "order_id": "8f193d30-089a-4e47-a959-4a91ef03354a", "expires_at": "2026-10-31T17:44:39.038264+00:00", "active_session": false, "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "child_first_name": "Andrei", "remaining_seconds": 300, "extension_purchased": true, "provider_preference": "openai_realtime", "grace_period_seconds": 45, "is_extension_segment": true, "max_duration_seconds": 480}
+(1 row)
+
+                                                                                                                                                                                                                                                                           began_ext                                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "age": 7, "hobbies": "dinozauri", "resumed": false, "language": "ro", "order_id": "8f193d30-089a-4e47-a959-4a91ef03354a", "pet_name": null, "session_id": "a57f652d-3fdc-454a-9329-e9d79c5784b3", "resume_mode": true, "christmas_wish": "un tren", "entitlement_id": "ce2f527d-33c7-4526-bb55-9fa88e9c2e25", "resume_summary": "Talked about dinosaurs and Christmas wishes. Continue warmly without re-greeting.", "positive_detail": "a ajutat-o pe bunica", "resume_language": "ro", "child_first_name": "Andrei", "remaining_seconds": 300}
+(1 row)
+
+                                             ended_probe                                             
+-----------------------------------------------------------------------------------------------------
+ {"ok": true, "remaining_seconds": 300, "entitlement_status": "ready", "extension_available": false}
+(1 row)
+
+ remaining_seconds | max_duration_seconds | status | extension_seconds_granted |                                  resume_summary                                   
+-------------------+----------------------+--------+---------------------------+-----------------------------------------------------------------------------------
+               300 |                  480 | ready  |                       300 | Talked about dinosaurs and Christmas wishes. Continue warmly without re-greeting.
+(1 row)
+
+COMMIT
