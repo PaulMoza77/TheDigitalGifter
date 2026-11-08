@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
 
       const { data: ord } = await service
         .from("christmas_orders")
-        .select("id,metadata,amount_cents")
+        .select("id,metadata,amount_cents,currency,product_key,stripe_checkout_session_id")
         .eq("id", orderId)
         .maybeSingle();
       if (!ord) return json({ error: "missing_order" }, 404);
@@ -292,8 +292,15 @@ Deno.serve(async (req) => {
         return json({ ok: false, code: "order_not_test_mode" }, 403);
       }
 
+      if (String(ord.product_key) !== productKey ||
+          Number(obj.amount_total) !== Number(ord.amount_cents) ||
+          String(obj.currency || "").toLowerCase() !== String(ord.currency).toLowerCase() ||
+          !String(obj.id || "").startsWith("cs_test_") ||
+          (ord.stripe_checkout_session_id && ord.stripe_checkout_session_id !== obj.id)) {
+        return json({ error: "Santa TEST checkout does not match order", code: "order_mismatch" }, 400);
+      }
       const paymentStatus = String(obj.payment_status || "");
-      if (paymentStatus && paymentStatus !== "paid" && paymentStatus !== "no_payment_required") {
+      if (paymentStatus !== "paid") {
         await service.from("processed_stripe_events").insert({
           event_id: eventId,
           event_type: eventType,
@@ -303,7 +310,7 @@ Deno.serve(async (req) => {
         return json({ ok: true, status: "ignored_unpaid" });
       }
 
-      await service
+      const { error: paidUpdateError } = await service
         .from("christmas_orders")
         .update({
           payment_status: "paid",
@@ -313,6 +320,8 @@ Deno.serve(async (req) => {
           charged_amount_cents: Number(obj.amount_total) || ord.amount_cents,
         })
         .eq("id", orderId);
+
+      if (paidUpdateError) return json({ error: "paid_order_update_failed" }, 500);
 
       const fulfill =
         productKey === "christmas_santa_voice_call_extension"
@@ -324,6 +333,7 @@ Deno.serve(async (req) => {
           })
           : await fulfillSantaVoiceCallOrder({ service, orderId });
 
+      if (!fulfill.ok) return json({ ok: false, status: "fulfillment_retry_required" }, 500);
       await service.from("processed_stripe_events").insert({
         event_id: eventId,
         event_type: eventType,
