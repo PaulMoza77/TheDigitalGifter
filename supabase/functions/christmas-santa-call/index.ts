@@ -32,6 +32,10 @@ import {
   type SantaCallMarket,
 } from "../_shared/christmas/santaCallPricing.ts";
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
+import {
+  hangupOpenAiRealtimeCall,
+  isOpenAiRealtimeCallId,
+} from "../_shared/christmas/santaCallProviderTermination.ts";
 
 const INITIAL_SECONDS = 180;
 const INITIAL_PRODUCT_KEY = "christmas_santa_voice_call";
@@ -117,6 +121,19 @@ function serviceClient() {
   const url = Deno.env.get("SUPABASE_URL") || "";
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   return createClient(url, key, { auth: { persistSession: false } });
+}
+
+async function hangupBoundProviderCall(provider: unknown, providerCallId: unknown) {
+  if (provider !== "openai_realtime" || !isOpenAiRealtimeCallId(providerCallId)) {
+    return { ok: false, status: 0, alreadyClosed: false, attempted: false };
+  }
+  const apiKey = asString(Deno.env.get("OPENAI_API_KEY"));
+  if (!apiKey) return { ok: false, status: 0, alreadyClosed: false, attempted: false };
+  try {
+    return { ...(await hangupOpenAiRealtimeCall({ apiKey, callId: providerCallId })), attempted: true };
+  } catch {
+    return { ok: false, status: 0, alreadyClosed: false, attempted: true };
+  }
 }
 
 async function requireAdmin(req: Request): Promise<boolean> {
@@ -234,7 +251,6 @@ Deno.serve(async (req) => {
       await service
         .from("christmas_santa_call_sessions")
         .update({
-          provider_session_id: mint.creds.clientSecret.slice(0, 64),
           status: "connecting",
         })
         .eq("id", beganObj.session_id);
@@ -255,6 +271,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "bind_provider_session") {
+      const token = asString(body.access_token);
+      const sessionId = asString(body.session_id);
+      const providerCallId = asString(body.provider_call_id);
+      if (!token || !isUuid(sessionId) || !isOpenAiRealtimeCallId(providerCallId)) {
+        return json({ error: "invalid_request", code: "invalid_provider_session" }, 400);
+      }
+      const hash = await sha256Hex(token);
+      const { data, error } = await service.rpc("bind_christmas_santa_call_provider_session", {
+        p_session_id: sessionId,
+        p_access_token_hash: hash,
+        p_provider_session_id: providerCallId,
+      });
+      if (error) return json({ error: "provider_session_bind_failed" }, 500);
+      const result = (data || {}) as Record<string, unknown>;
+      return json(result, result.ok === true ? 200 : result.code === "invalid_token" ? 403 : 409);
+    }
+
     if (action === "heartbeat") {
       const token = asString(body.access_token);
       const sessionId = asString(body.session_id);
@@ -269,6 +303,20 @@ Deno.serve(async (req) => {
       });
       if (error) return json({ error: error.message }, 500);
       const result = (data || {}) as Record<string, unknown>;
+
+      if (result.force_end === true) {
+        const { data: session } = await service
+          .from("christmas_santa_call_sessions")
+          .select("provider,provider_session_id")
+          .eq("id", sessionId)
+          .maybeSingle();
+        const termination = await hangupBoundProviderCall(session?.provider, session?.provider_session_id);
+        result.provider_termination = termination.ok
+          ? "confirmed"
+          : termination.attempted
+          ? "failed"
+          : "unavailable";
+      }
 
       // At wrap-up window, optionally remint is client-driven; server only signals.
       return json(result);
@@ -296,6 +344,17 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 500);
 
       const endResult = (data || {}) as Record<string, unknown>;
+      const { data: session } = await service
+        .from("christmas_santa_call_sessions")
+        .select("provider,provider_session_id")
+        .eq("id", sessionId)
+        .maybeSingle();
+      const termination = await hangupBoundProviderCall(session?.provider, session?.provider_session_id);
+      endResult.provider_termination = termination.ok
+        ? "confirmed"
+        : termination.attempted
+        ? "failed"
+        : "unavailable";
       // Minimal resume notes only — never full transcript / audio.
       if (endResult.extension_available === true || reason === "duration_limit") {
         const summary = asString(body.resume_summary).slice(0, 600);
@@ -1029,15 +1088,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!ent) return json({ ok: false, code: "invalid_token" }, 404);
 
-      // Already usable — no Stripe round-trip required.
-      if (["ready", "in_progress"].includes(asString(ent.status)) && Number(ent.remaining_seconds) > 0) {
+      const sessionIdHint = asString(body.session_id) || asString(body.checkout_session_id);
+
+      // Already usable and no payment return to reconcile — no Stripe round-trip required.
+      if (!sessionIdHint.startsWith("cs_") && ["ready", "in_progress"].includes(asString(ent.status)) && Number(ent.remaining_seconds) > 0) {
         const { data: resolved } = await service.rpc("resolve_christmas_santa_call_access", {
           p_access_token_hash: hash,
         });
         return json({ ok: true, status: "already_ready", resolve: resolved });
       }
-
-      const sessionIdHint = asString(body.session_id) || asString(body.checkout_session_id);
 
       // Prefer the entitlement's own order; for extensions also accept the paid extension session.
       let orderId = asString(ent.order_id);
@@ -1154,6 +1213,11 @@ Deno.serve(async (req) => {
         resolve: resolved,
         stripe_session_id: sessionId,
         stripe_mode: stripeMode,
+        livemode: session.livemode === true,
+        orderId,
+        productKey,
+        amountCents: Number(session.amount_total) || Number(order.amount_cents) || 0,
+        currency: asString(session.currency) || asString(order.currency) || "ron",
       }, resolvedObj.ok === true || resolvedObj.code === "awaiting_extension" ? 200 : 409);
     }
 

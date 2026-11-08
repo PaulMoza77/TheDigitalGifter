@@ -246,6 +246,15 @@ describe("Santa Voice Call V2 product wiring", () => {
     expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
       'action === "confirm_checkout"',
     );
+    expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
+      'action === "bind_provider_session"',
+    );
+    expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
+      "hangupBoundProviderCall",
+    );
+    expect(readSrc("src/features/christmas/santa-call/openaiRealtimeWebRtc.ts")).toContain(
+      'res.headers.get("Location")',
+    );
     expect(readSrc("supabase/functions/stripe-webhook-test/index.ts")).toContain(
       "christmas_santa_voice_call",
     );

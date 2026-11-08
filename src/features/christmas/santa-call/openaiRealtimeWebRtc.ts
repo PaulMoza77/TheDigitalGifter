@@ -14,6 +14,7 @@ export type RealtimeSessionHandle = {
   pc: RTCPeerConnection;
   dc: RTCDataChannel;
   localStream: MediaStream;
+  callId: string;
   close: () => void;
   setMicEnabled: (enabled: boolean) => void;
   sendEvent: (event: Record<string, unknown>) => void;
@@ -106,12 +107,22 @@ export async function connectOpenAiRealtimeWebRtc(input: {
     throw new Error(`realtime_connect_${res.status}`);
   }
   const answer = await res.text();
+  const location = res.headers.get("Location");
+  const callId = location?.split("?")[0].split("/").filter(Boolean).pop() || "";
+  if (!/^rtc_[A-Za-z0-9_-]{8,200}$/.test(callId)) {
+    handlers.onStatus?.("failed");
+    handlers.onError?.("realtime_call_id_missing");
+    localStream.getTracks().forEach((t) => t.stop());
+    pc.close();
+    throw new Error("realtime_call_id_missing");
+  }
   await pc.setRemoteDescription({ type: "answer", sdp: answer });
 
   return {
     pc,
     dc,
     localStream,
+    callId,
     close: () => {
       try {
         dc.close();

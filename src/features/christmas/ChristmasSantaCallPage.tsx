@@ -12,6 +12,7 @@ import {
   trackSantaCallMetaPurchase,
   trackSantaCallMetaViewContent,
 } from "@/features/christmas/santa-call/santaCallMeta";
+import { trackSantaCallAnalytics } from "@/features/christmas/santa-call/santaCallAnalytics";
 import {
   confirmSantaCallCommercialCheckout,
   createSantaCallParentTestCheckout,
@@ -102,6 +103,7 @@ export default function ChristmasSantaCallPage() {
     if (!qaCheckout && !viewed.current) {
       viewed.current = true;
       trackSantaCallMetaViewContent(prices.initialMinor, prices.currency);
+      trackSantaCallAnalytics("page_view", { page_type: "santa_call", market }, "landing_view");
     }
     if (params.get("checkout") === "success") {
       setSuccessNote(true);
@@ -126,6 +128,11 @@ export default function ChristmasSantaCallPage() {
       // Meta Purchase only after LIVE server confirmation — never for TEST.
       if (orderId && data.livemode === true && data.stripe_mode === "live") {
         trackSantaCallMetaPurchase({ orderId, amountCents, currency });
+        trackSantaCallAnalytics(
+          "payment_confirmed",
+          { transaction_id: orderId, value: amountCents / 100, currency: currency.toUpperCase(), payment_type: "initial" },
+          `payment_confirmed.${orderId}`,
+        );
       }
       const callPath = String(data.callPath || "");
       if (callPath.startsWith("/santa/call/")) {
@@ -195,6 +202,7 @@ export default function ChristmasSantaCallPage() {
   );
 
   function openForm() {
+    trackSantaCallAnalytics("santa_call_cta", { market, language: lang }, "cta");
     setShowForm(true);
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({
@@ -311,6 +319,15 @@ export default function ChristmasSantaCallPage() {
           amountCents: data.amountCents,
           currency: data.currency || prices.currency,
         });
+        trackSantaCallAnalytics(
+          "begin_checkout",
+          {
+            transaction_id: orderId,
+            value: data.amountCents / 100,
+            currency: String(data.currency || prices.currency).toUpperCase(),
+          },
+          `begin_checkout.${orderId}`,
+        );
       }
       setCheckout({
         clientSecret: data.clientSecret,

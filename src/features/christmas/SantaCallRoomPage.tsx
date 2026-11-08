@@ -11,11 +11,14 @@ import {
   endSantaCall,
   getOrCreateCallFingerprint,
   heartbeatSantaCall,
+  bindSantaCallProviderSession,
   pollSantaCallExtension,
   resolveSantaCall,
   startSantaCall,
 } from "@/features/christmas/santa-call/santaCallApi";
 import { readSantaQaPageAccessToken } from "@/features/christmas/santa-call/santaCallPublic";
+import { trackSantaCallAnalytics } from "@/features/christmas/santa-call/santaCallAnalytics";
+import { trackSantaCallMetaPurchase } from "@/features/christmas/santa-call/santaCallMeta";
 import {
   SANTA_CALL_COPY,
   SANTA_CALL_MAX_SECONDS,
@@ -221,12 +224,30 @@ export default function SantaCallRoomPage() {
     const sessionId = params.get("session_id");
     const tick = async () => {
       // Prefer server reconcile (handles delayed webhook), then resolve.
-      await confirmSantaCallCheckout({ accessToken: token, sessionId });
+      const confirmed = await confirmSantaCallCheckout({ accessToken: token, sessionId });
       if (cancelled) return;
       const { data } = await pollSantaCallExtension(token);
       if (cancelled) return;
       const obj = (data || {}) as Record<string, unknown>;
       if (obj.ok === true && Number(obj.remaining_seconds) > 0) {
+        const payment = (confirmed.data || {}) as Record<string, unknown>;
+        const orderId = String(payment.orderId || "");
+        if (orderId && payment.livemode === true && payment.stripe_mode === "live") {
+          const amountCents = Number(payment.amountCents) || 4900;
+          const currency = String(payment.currency || "ron");
+          trackSantaCallMetaPurchase({
+            orderId,
+            amountCents,
+            currency,
+            productKey: "christmas_santa_voice_call_extension",
+          });
+          trackSantaCallAnalytics(
+            "extension_paid",
+            { transaction_id: orderId, value: amountCents / 100, currency: currency.toUpperCase() },
+            `extension_paid.${orderId}`,
+          );
+          trackSantaCallAnalytics("extension_activated", { seconds_granted: 300 }, `extension_activated.${orderId}`);
+        }
         setExtensionPolling(false);
         applyResolve(obj);
         return;
@@ -297,12 +318,22 @@ export default function SantaCallRoomPage() {
         return;
       }
       if (endData?.extension_available === true || reason === "duration_limit") {
+        trackSantaCallAnalytics(
+          "call_completed",
+          { completion_reason: reason, extension_available: true },
+          `call_completed.${sessionId || "unknown"}`,
+        );
         setRemaining(0);
         setUi("awaiting_extension");
         setUpsellOpen(true);
         return;
       }
       setUi("completed");
+      trackSantaCallAnalytics(
+        "call_completed",
+        { completion_reason: reason, extension_available: false },
+        `call_completed.${sessionId || "unknown"}`,
+      );
       setRemaining(0);
       setUpsellOpen(false);
     },
@@ -419,10 +450,6 @@ export default function SantaCallRoomPage() {
             }
             audioRef.current.srcObject = stream;
             void audioRef.current.play().catch(() => undefined);
-            if (!connectedAtRef.current) {
-              connectedAtRef.current = Date.now();
-              startHeartbeat(String(data.sessionId));
-            }
           },
           onError: (message) => {
             setError(message);
@@ -430,7 +457,21 @@ export default function SantaCallRoomPage() {
           },
         },
       });
+      const bound = await bindSantaCallProviderSession({
+        accessToken: token,
+        sessionId: String(data.sessionId),
+        providerCallId: handle.callId,
+      });
+      if (!bound.ok || bound.data?.ok !== true) {
+        handle.close();
+        throw new Error(String(bound.data?.code || "provider_session_bind_failed"));
+      }
       handleRef.current = handle;
+      trackSantaCallAnalytics(
+        "call_started",
+        { provider: "openai_realtime" },
+        `call_started.${String(data.sessionId)}`,
+      );
       if (!connectedAtRef.current) {
         connectedAtRef.current = Date.now();
         startHeartbeat(String(data.sessionId));
@@ -475,6 +516,7 @@ export default function SantaCallRoomPage() {
     setExtensionBusy(true);
     setError(null);
     try {
+      trackSantaCallAnalytics("extension_checkout", { value: 49, currency: "RON" }, "extension_checkout");
       const access = readSantaQaPageAccessToken(window.location.search);
       const accessQs = access ? `&access=${encodeURIComponent(access)}` : "";
       const successUrl =

@@ -67,6 +67,7 @@ export function trackSantaCallMetaPurchase(input: {
   orderId: string;
   amountCents: number;
   currency: string;
+  productKey?: string;
 }) {
   const fbq = pixel();
   if (!fbq || input.amountCents <= 0 || !input.orderId) return;
@@ -78,7 +79,7 @@ export function trackSantaCallMetaPurchase(input: {
     {
       currency: (input.currency || "ron").toUpperCase(),
       value: input.amountCents / 100,
-      content_ids: [SANTA_CALL_PRODUCT_KEY],
+      content_ids: [input.productKey || SANTA_CALL_PRODUCT_KEY],
       content_type: "product",
       order_id: input.orderId,
     },

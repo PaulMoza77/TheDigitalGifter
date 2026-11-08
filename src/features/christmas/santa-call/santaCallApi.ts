@@ -49,6 +49,20 @@ export async function heartbeatSantaCall(input: {
   return { ok: res.ok, data };
 }
 
+export async function bindSantaCallProviderSession(input: {
+  accessToken: string;
+  sessionId: string;
+  providerCallId: string;
+}) {
+  const { res, data } = await post({
+    action: "bind_provider_session",
+    access_token: input.accessToken,
+    session_id: input.sessionId,
+    provider_call_id: input.providerCallId,
+  });
+  return { ok: res.ok, status: res.status, data };
+}
+
 export async function endSantaCall(input: {
   accessToken: string;
   sessionId: string;
