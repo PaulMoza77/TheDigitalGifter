@@ -426,6 +426,7 @@ export default function ChristmasSantaCallPage() {
             <h1 className="santa-call-display sc-title">{copy.title}</h1>
             <p className="sc-sub">{copy.subtitle}</p>
             <p className="sc-price">{priceHero}</p>
+              <p className="sc-ext-note">{copy.extensionHint}</p>
             <p className="sc-trust">{copy.trust}</p>
             {!purchasable && !qaCheckout ? <p className="sc-soon">{copy.comingSoon}</p> : null}
             {qaCheckout ? <p className="sc-soon sc-soon-qa">QA TEST · Stripe TEST only</p> : null}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Activity, AlertTriangle, BarChart3, CircleDollarSign, Clock3, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 type Stats = {
@@ -69,23 +70,57 @@ export default function SantaCallAdminPage() {
   }
 
   const ent = stats?.entitlements || {};
+  const paid = stats?.paidOrders;
+  const revenue = stats?.grossRevenueMinor != null && stats?.currencyHint
+    ? `${(stats.grossRevenueMinor / 100).toFixed(2)} ${String(stats.currencyHint).toUpperCase()}`
+    : "Not connected";
+  const cards = [
+    { label: "Paid initial + extension orders", value: paid ?? "Not connected", note: "Stripe-verified · TEST/LIVE separated", icon: CircleDollarSign },
+    { label: "Gross revenue", value: revenue, note: "Stripe paid records only", icon: BarChart3 },
+    { label: "Completed calls", value: ent.completed ?? "Not connected", note: "Santa entitlement sessions", icon: Sparkles },
+    { label: "Active calls", value: ent.in_progress ?? "Not connected", note: "Server session state", icon: Activity },
+    { label: "Estimated AI cost", value: stats?.aiCostUsd != null ? `$${stats.aiCostUsd.toFixed(4)}` : "Not connected", note: "Estimate, not provider billing", icon: Clock3 },
+    { label: "Launch status", value: stats?.productEnabled === false ? "Paused" : "Not verified", note: "Production flag requires owner approval", icon: ShieldCheck },
+  ];
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex items-start justify-between gap-4">
+    <div className="min-h-full bg-[#070b14] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h2 className="text-xl font-semibold text-white">Santa Voice Call</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-300">Analytics Command Center</p>
+          <h2 className="mt-2 text-3xl font-semibold text-white">Santa Call Romania</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Ops dashboard — child PII is hidden unless needed for authorized support.
+            Authoritative Stripe, entitlement and provider operations. Customer PII and audio are excluded.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
         >
-          Refresh
+          <RefreshCw className="h-4 w-4" /> Refresh data
         </button>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {cards.map(({ label, value, note, icon: Icon }) => (
+          <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/10">
+            <div className="flex items-start justify-between gap-3"><p className="text-sm text-slate-400">{label}</p><Icon className="h-5 w-5 text-amber-300" /></div>
+            <p className="mt-4 text-2xl font-semibold tracking-tight">{value}</p>
+            <p className="mt-2 text-xs text-slate-500">{note} · Updated {stats ? "just now" : "not available"}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex items-center justify-between"><div><h3 className="font-semibold">Conversion funnel</h3><p className="mt-1 text-xs text-slate-500">GA4 / Meta platform reception is not connected in this environment.</p></div><BarChart3 className="h-5 w-5 text-slate-500" /></div>
+          <div className="mt-5 grid gap-2 sm:grid-cols-5">
+            {["Landing page", "CTA", "Checkout", "Paid", "Call completed"].map((stage) => <div key={stage} className="rounded-xl border border-dashed border-slate-700 bg-slate-950/50 p-3"><p className="text-xs text-slate-500">{stage}</p><p className="mt-2 font-semibold text-slate-300">Not connected</p></div>)}
+          </div>
+        </section>
+        <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5"><div className="flex gap-3"><AlertTriangle className="h-5 w-5 shrink-0 text-amber-300" /><div><h3 className="font-semibold">Verification status</h3><p className="mt-2 text-sm leading-6 text-slate-300">Stripe and entitlement metrics are server-authoritative. Meta, GA4, Clarity, ad spend and provider billing are shown as unavailable until authenticated integrations are connected.</p></div></div></section>
       </div>
 
       {stats?.error ? (
@@ -172,6 +207,7 @@ export default function SantaCallAdminPage() {
           </ul>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
