@@ -99,7 +99,7 @@ export default function ChristmasSantaCallPage() {
   useEffect(() => {
     ensureFonts();
     captureFunnelAttribution(window.location.search);
-    if (!viewed.current) {
+    if (!qaCheckout && !viewed.current) {
       viewed.current = true;
       trackSantaCallMetaViewContent(prices.initialMinor, prices.currency);
     }
@@ -107,7 +107,7 @@ export default function ChristmasSantaCallPage() {
       setSuccessNote(true);
       setShowForm(true);
     }
-  }, [params, prices.currency, prices.initialMinor]);
+  }, [params, prices.currency, prices.initialMinor, qaCheckout]);
 
   // Server-verified payment recovery (email works even if this fails / browser closed).
   useEffect(() => {
@@ -257,13 +257,6 @@ export default function ChristmasSantaCallPage() {
         setMarketLocked(true);
         const orderId = String(data.orderId || "");
         const callToken = String(data.accessToken || "");
-        if (orderId) {
-          trackSantaCallMetaInitiateCheckout({
-            orderId,
-            amountCents: Number(data.amountCents) || prices.initialMinor,
-            currency: String(data.currency || prices.currency),
-          });
-        }
         // Prefer server callPath; keep page access on redirect for overlay cookie continuity.
         if (data.checkoutMode === "hosted" && data.checkoutUrl) {
           window.location.href = String(data.checkoutUrl);
@@ -432,6 +425,7 @@ export default function ChristmasSantaCallPage() {
             <section
               className="sc-section"
               id="personalize"
+              data-clarity-mask="true"
               ref={(el) => {
                 formRef.current = el;
               }}
