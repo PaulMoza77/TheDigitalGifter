@@ -11,6 +11,8 @@ import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
 import { isPlannerProductKey } from "./plannerCommerce.ts";
 import { sendPlannerReadyEmail } from "./plannerEmail.ts";
 
+import { fulfillSantaVoiceCallOrder, fulfillSantaVoiceCallExtensionOrder } from "./santaCallFulfill.ts";
+
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
 function waitUntil(promise: Promise<unknown>) {
@@ -114,8 +116,16 @@ export async function handleChristmasStripeEvent(input: {
     return null;
   }
 
+  const santaProductKey = asString(input.metadata.product_key);
+  if (santaProductKey.startsWith("christmas_santa_voice_call") &&
+      (input.obj.livemode !== true || asString(input.metadata.stripe_mode) === "test")) {
+    return new Response(JSON.stringify({ ok: false, status: "santa_test_requires_test_webhook" }), {
+      status: 400, headers: { "Content-Type": "application/json" },
+    });
+  }
   const paymentStatus = asString(input.obj.payment_status);
-  if (paymentStatus && paymentStatus !== "paid" && paymentStatus !== "no_payment_required") {
+  if ((santaProductKey.startsWith("christmas_santa_voice_call") && paymentStatus !== "paid") ||
+      (paymentStatus && paymentStatus !== "paid" && paymentStatus !== "no_payment_required")) {
     await input.service.from("processed_stripe_events").insert({
       event_id: input.eventId,
       event_type: input.eventType,
@@ -159,6 +169,33 @@ export async function handleChristmasStripeEvent(input: {
     }
 
     const result = (data || {}) as Record<string, unknown>;
+    const santaProduct = asString(input.metadata.product_key);
+    if (santaProduct === "christmas_santa_voice_call" || santaProduct === "christmas_santa_voice_call_extension") {
+      if (result.ok !== true) {
+        return new Response(JSON.stringify({ ok: false, christmas: result }), {
+          status: 400, headers: { "Content-Type": "application/json" },
+        });
+      }
+      // Retry fulfilment on already_paid: payment and entitlement grants are idempotent.
+      const fulfilled = santaProduct === "christmas_santa_voice_call_extension"
+        ? await fulfillSantaVoiceCallExtensionOrder({
+            service: input.service, orderId,
+            stripeCheckoutSessionId: sessionId, stripePaymentIntentId: paymentIntent,
+          })
+        : await fulfillSantaVoiceCallOrder({ service: input.service, orderId });
+      if (!fulfilled.ok) {
+        return new Response(JSON.stringify({ ok: false, status: "santa_call_extension_or_initial_retry" }), {
+          status: 500, headers: { "Content-Type": "application/json" },
+        });
+      }
+      await input.service.from("processed_stripe_events").insert({
+        event_id: input.eventId, event_type: input.eventType,
+        stripe_session_id: sessionId, result: { status: "santa_call_fulfilled" },
+      });
+      return new Response(JSON.stringify({ ok: true, christmas: result }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     await input.service.from("processed_stripe_events").insert({
       event_id: input.eventId,
       event_type: input.eventType,

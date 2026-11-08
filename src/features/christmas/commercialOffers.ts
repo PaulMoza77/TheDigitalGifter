@@ -11,6 +11,7 @@ export const CHRISTMAS_OFFER_CATEGORY = "christmas_offer" as const;
 export const CREDIT_PACK_CATEGORIES = ["credit_pack", "credits"] as const;
 
 export const XMAS_PORTRAIT = "xmas_portrait" as const;
+export const XMAS_SANTA_VOICE_CALL = "xmas_santa_voice_call" as const;
 export const XMAS_SANTA_VIDEO = "xmas_santa_video" as const;
 export const XMAS_MAGIC_BUNDLE = "xmas_magic_bundle" as const;
 
@@ -18,6 +19,7 @@ export const CHRISTMAS_COMMERCIAL_KEYS = [
   XMAS_PORTRAIT,
   XMAS_SANTA_VIDEO,
   XMAS_MAGIC_BUNDLE,
+  XMAS_SANTA_VOICE_CALL,
 ] as const;
 
 export type ChristmasCommercialKey = (typeof CHRISTMAS_COMMERCIAL_KEYS)[number];
@@ -49,6 +51,18 @@ export const CHRISTMAS_COMMERCIAL_SEED: Record<
     productType: string;
   }
 > = {
+  xmas_santa_voice_call: {
+    key: XMAS_SANTA_VOICE_CALL,
+    name: "Santa Voice Call",
+    webPriceMinor: 5900,
+    webCurrency: "ron",
+    appCreditsCost: 180,
+    sortOrder: 25,
+    featured: false,
+    badge: null,
+    bundleComponents: null,
+    productType: "santa_voice_call",
+  },
   xmas_portrait: {
     key: XMAS_PORTRAIT,
     name: "Christmas Portrait Pack",
@@ -89,6 +103,8 @@ export const CHRISTMAS_COMMERCIAL_SEED: Record<
 
 /** Map generation / funnel product keys onto the 3 commercial offers. */
 export const PRODUCT_KEY_TO_COMMERCIAL: Record<string, ChristmasCommercialKey> = {
+  xmas_santa_voice_call: XMAS_SANTA_VOICE_CALL,
+  christmas_santa_voice_call: XMAS_SANTA_VOICE_CALL,
   xmas_portrait: XMAS_PORTRAIT,
   christmas_photo: XMAS_PORTRAIT,
   christmas_family: XMAS_PORTRAIT,

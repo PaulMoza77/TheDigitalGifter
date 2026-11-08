@@ -9,7 +9,8 @@ export type ChristmasLocale = (typeof CHRISTMAS_LOCALES)[number];
 
 export const CHRISTMAS_PRODUCT_TYPES = [
   "photo_generator",
-  "santa_video" | "santa_voice_call",
+  "santa_video",
+  "santa_voice_call",
   "card",
   "tree",
   "advent",
@@ -433,7 +434,7 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
         packageName: "Call Santa — 3 minutes",
         description: "One private AI Santa voice call (up to 180 seconds).",
         currency: "ron",
-        priceCents: 9900,
+        priceCents: 5900,
         compareAtCents: null,
         active: true,
         purchasable: false,
@@ -446,7 +447,6 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
   },
   {
     productKey: "christmas_santa_video",
-  "christmas_santa_voice_call",
     slug: "santa-video",
     productType: "santa_video",
     name: "Personalized Santa Video",
