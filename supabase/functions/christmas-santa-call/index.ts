@@ -1280,6 +1280,34 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "sweep_stale_sessions") {
+      if (!(await requireAdmin(req))) return json({ error: "forbidden" }, 403);
+      const staleSeconds = Math.min(300, Math.max(30, Number(body.stale_seconds) || 90));
+      const cutoff = new Date(Date.now() - staleSeconds * 1000).toISOString();
+      const { data: stale, error: staleError } = await service
+        .from("christmas_santa_call_sessions")
+        .select("id,provider,provider_session_id,last_heartbeat_at,status")
+        .in("status", ["connecting", "connected", "listening", "speaking", "reconnecting"])
+        .lt("last_heartbeat_at", cutoff)
+        .limit(50);
+      if (staleError) return json({ error: "stale_session_query_failed" }, 500);
+      const results = [];
+      for (const row of stale || []) {
+        const termination = await hangupBoundProviderCall(row.provider, row.provider_session_id);
+        const nextStatus = termination.ok ? "orphaned_closed" : row.status;
+        if (termination.ok) {
+          await service.from("christmas_santa_call_sessions").update({
+            status: nextStatus,
+            ended_at: new Date().toISOString(),
+            end_reason: "watchdog_stale_heartbeat",
+            error_code: null,
+          }).eq("id", row.id);
+        }
+        results.push({ id: row.id, provider_termination: termination.ok ? "confirmed" : termination.attempted ? "failed" : "unavailable" });
+      }
+      return json({ ok: true, cutoff, inspected: (stale || []).length, results });
+    }
+
     if (action === "resend_email" || action === "revoke" || action === "reissue") {
       if (!(await requireAdmin(req))) return json({ error: "forbidden" }, 403);
       const orderId = asString(body.order_id);

@@ -69,6 +69,21 @@ export default function SantaCallAdminPage() {
     }
   }
 
+  async function sweepStaleSessions() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const url = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-santa-call`;
+      const res = await fetch(url, { method: "POST", headers: await adminHeaders(), body: JSON.stringify({ action: "sweep_stale_sessions", stale_seconds: 90 }) });
+      setMessage(JSON.stringify(await res.json()));
+      await load();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const ent = stats?.entitlements || {};
   const paid = stats?.paidOrders;
   const revenue = stats?.grossRevenueMinor != null && stats?.currencyHint
@@ -192,6 +207,13 @@ export default function SantaCallAdminPage() {
         {message ? (
           <pre className="mt-3 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs text-slate-300">{message}</pre>
         ) : null}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div><h3 className="text-sm font-semibold text-white">Provider watchdog</h3><p className="mt-1 text-xs text-slate-400">Find active sessions with no heartbeat for 90 seconds and request provider hangup. Every result is returned for audit.</p></div>
+          <button type="button" disabled={busy} onClick={() => void sweepStaleSessions()} className="rounded-lg border border-rose-400/40 px-3 py-2 text-sm text-rose-100 disabled:opacity-40">Sweep stale sessions</button>
+        </div>
       </div>
 
       {stats?.recentErrors?.length ? (
