@@ -16,11 +16,18 @@ type Body = {
   height?: number;
   style_key?: string;
   public_token?: string;
+  session_id?: string;
   order_id?: string;
   email?: string;
   image_data_url?: string;
   expected_species?: string;
 };
+
+const CONFIRMABLE_PORTRAITS = new Set([
+  "christmas_photo",
+  "christmas_family",
+  "christmas_couple",
+]);
 
 const SOURCE_BUCKET = "christmas-source";
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -30,9 +37,36 @@ function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function browserStorageUrl(req: Request, signedUrl: string): string {
+  const forwardedHost = (req.headers.get("x-forwarded-host") || "").split(",")[0].trim();
+  const host = forwardedHost || "supabase.thedigitalgifter.com";
+  const internal = host === "api-gw" || host.startsWith("localhost") || host.startsWith("127.");
+  const publicHost = internal ? "supabase.thedigitalgifter.com" : host;
+  const signed = new URL(signedUrl);
+  signed.protocol = "https:";
+  signed.hostname = publicHost;
+  signed.port = "";
+  return signed.toString();
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function enqueuePortraitGeneration(orderId: string) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  void fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-photo-generate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      apikey: key,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order_id: orderId }),
+  });
 }
 
 Deno.serve(async (req) => {
@@ -121,6 +155,103 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "confirmStripePayment") {
+      const token = asString(body.public_token);
+      const sessionId = asString(body.session_id);
+      if (!token || token.length < 32 || !/^cs_(live|test)_[A-Za-z0-9]+$/.test(sessionId)) {
+        return jsonResponse({ error: "invalid confirmation" }, 400);
+      }
+      const hash = await sha256Hex(token);
+      const { data: order, error } = await service
+        .from("christmas_orders")
+        .select("id,product_key,payment_status,fulfillment_status,stripe_checkout_session_id,amount_cents,currency,email,email_normalized,user_id")
+        .eq("public_token_hash", hash)
+        .maybeSingle();
+      if (error) throw error;
+      if (!order) return jsonResponse({ error: "Order not found" }, 404);
+      const productKey = asString(order.product_key);
+      if (!CONFIRMABLE_PORTRAITS.has(productKey)) {
+        return jsonResponse({ error: "unsupported product", code: "unsupported_product" }, 403);
+      }
+      if (Number(order.amount_cents) !== 499 || asString(order.currency).toLowerCase() !== "eur") {
+        return jsonResponse({ error: "price mismatch", code: "price_mismatch" }, 409);
+      }
+      const boundSession = asString(order.stripe_checkout_session_id);
+      if (!boundSession || boundSession !== sessionId) {
+        return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
+      }
+      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+      const keyMode = stripeKey.startsWith("sk_live_") ? "live" : stripeKey.startsWith("sk_test_") ? "test" : "";
+      if (!keyMode) return jsonResponse({ error: "Stripe is not configured" }, 503);
+      const sessionRes = await fetch(
+        `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+        { headers: { Authorization: `Bearer ${stripeKey}` } },
+      );
+      const session = await sessionRes.json();
+      if (!sessionRes.ok) {
+        return jsonResponse({ error: "Could not verify payment" }, 502);
+      }
+      const liveMode = session?.livemode === true;
+      if ((keyMode === "live") !== liveMode) {
+        return jsonResponse({ error: "mode mismatch", code: "mode_mismatch" }, 403);
+      }
+      if (asString(session?.status) !== "complete" || asString(session?.payment_status) !== "paid") {
+        return jsonResponse({ ok: true, status: "not_paid", paymentStatus: asString(session?.payment_status) });
+      }
+      const amountTotal = Number(session?.amount_total);
+      const currency = asString(session?.currency).toLowerCase();
+      if (amountTotal !== 499 || currency !== "eur") {
+        return jsonResponse({ error: "price mismatch", code: "price_mismatch" }, 409);
+      }
+      const sessionMeta = (session?.metadata || {}) as Record<string, unknown>;
+      if (asString(sessionMeta.christmas_order_id) !== asString(order.id)) {
+        return jsonResponse({ error: "session mismatch", code: "session_mismatch" }, 403);
+      }
+      if (asString(sessionMeta.product_key) !== productKey || asString(sessionMeta.product_family) !== "christmas") {
+        return jsonResponse({ error: "product mismatch", code: "product_mismatch" }, 403);
+      }
+      const sessionEmail = asString(session?.customer_details?.email || session?.customer_email).toLowerCase();
+      const orderEmail = asString(order.email_normalized || order.email).toLowerCase();
+      if (orderEmail && sessionEmail && orderEmail !== sessionEmail) {
+        return jsonResponse({ error: "customer mismatch", code: "customer_mismatch" }, 403);
+      }
+      const metaUser = asString(sessionMeta.user_id);
+      if (order.user_id && metaUser && metaUser !== asString(order.user_id)) {
+        return jsonResponse({ error: "customer mismatch", code: "customer_mismatch" }, 403);
+      }
+      const { data, error: rpcError } = await service.rpc("fulfill_christmas_order_payment", {
+        p_order_id: order.id,
+        p_stripe_session_id: sessionId,
+        p_stripe_payment_intent_id: asString(session?.payment_intent) || null,
+        p_amount_cents: amountTotal,
+        p_currency: currency,
+        p_stripe_event_id: `confirm:${sessionId}`,
+      });
+      if (rpcError) throw rpcError;
+      const result = (data || {}) as { ok?: boolean; status?: string; fulfillment_status?: string };
+      if (result.ok !== true) {
+        return jsonResponse({ ok: false, status: result.status || "rejected" }, 409);
+      }
+      const fulfillment = asString(result.fulfillment_status || order.fulfillment_status);
+      if (fulfillment !== "completed") {
+        const { data: job } = await service
+          .from("christmas_generation_jobs")
+          .select("status,claimed_at")
+          .eq("order_id", order.id)
+          .maybeSingle();
+        const claimedAt = job?.claimed_at ? Date.parse(String(job.claimed_at)) : 0;
+        const runningFresh = job?.status === "running" && claimedAt > 0 && Date.now() - claimedAt < 3 * 60 * 1000;
+        if (job?.status !== "succeeded" && !runningFresh) {
+          enqueuePortraitGeneration(asString(order.id));
+        }
+      }
+      return jsonResponse({
+        ok: true,
+        status: result.status || "paid",
+        fulfillment_status: fulfillment,
+      });
+    }
+
     if (action === "getOrder") {
       const token = asString(body.public_token);
       if (!token || token.length < 32) {
@@ -148,7 +279,7 @@ Deno.serve(async (req) => {
           const signed = await service.storage
             .from(asset.storage_bucket)
             .createSignedUrl(asset.storage_path, 60 * 15);
-          resultUrl = signed.data?.signedUrl || null;
+          resultUrl = signed.data?.signedUrl ? browserStorageUrl(req, signed.data.signedUrl) : null;
         }
       }
 
@@ -188,19 +319,7 @@ Deno.serve(async (req) => {
         .update({ fulfillment_status: "queued", last_error: null })
         .eq("id", orderId);
 
-      const url = Deno.env.get("SUPABASE_URL");
-      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      if (url && key) {
-        void fetch(`${url.replace(/\/$/, "")}/functions/v1/christmas-photo-generate`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            apikey: key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ order_id: orderId }),
-        });
-      }
+      enqueuePortraitGeneration(orderId);
       return jsonResponse({ ok: true, queued: true });
     }
 

@@ -5,6 +5,7 @@ import { trackChristmasEvent, getChristmasFunnelSessionId } from "./analytics";
 import { CHRISTMAS_CATALOG_SEED, findProduct } from "./catalog";
 import { catalogFromRows, commercialKeyForProduct } from "./commercialOffers";
 import {
+  confirmChristmasStripePayment,
   createChristmasUpload,
   fetchChristmasCommercialOffers,
   getChristmasOrderByToken,
@@ -12,6 +13,7 @@ import {
   uploadChristmasBlob,
   validateChristmasSpecies,
 } from "./photoApi";
+import { trackChristmasPortraitPurchase } from "./portraitMeta";
 import {
   createBlurredOriginalPreview,
   christmasPreviewUsesReplicate,
@@ -194,8 +196,25 @@ export function useChristmasPortraitFunnel({
     (async () => {
       try {
         setBusy(true);
+        const sessionId = params.get("session_id") || "";
+        if (sessionId) {
+          try {
+            await confirmChristmasStripePayment(token, sessionId);
+          } catch {
+            /* Webhook may still mark the order paid. */
+          }
+        }
         const { order } = await getChristmasOrderByToken(token);
         if (cancelled) return;
+        if (order.payment_status === "paid") {
+          trackChristmasPortraitPurchase({
+            orderId: order.id,
+            productKey: order.product_key,
+            amountCents: order.amount_cents,
+            currency: order.currency,
+            paidAt: order.paid_at,
+          });
+        }
         setDraft((prev) => {
           const next = {
             ...prev,
@@ -239,6 +258,15 @@ export function useChristmasPortraitFunnel({
       try {
         const { order } = await getChristmasOrderByToken(draft.publicToken!);
         if (stop) return;
+        if (order.payment_status === "paid") {
+          trackChristmasPortraitPurchase({
+            orderId: order.id,
+            productKey: order.product_key,
+            amountCents: order.amount_cents,
+            currency: order.currency,
+            paidAt: order.paid_at,
+          });
+        }
         if (order.fulfillment_status === "completed" && order.resultUrl) {
           setResultUrl(order.resultUrl);
           setStep("result");

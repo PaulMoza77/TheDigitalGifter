@@ -29,17 +29,34 @@ export async function sendChristmasDeliveryEmail(input: {
         : "starter_ready";
 
   const { data: existing } = await input.service
-    .from("christmas_email_deliveries")
+    .from("christmas_v2_email_deliveries")
     .select("id, status")
     .eq("order_id", input.orderId)
     .eq("kind", kind)
     .maybeSingle();
   if (existing?.status === "sent") return { sent: false, reason: "already_sent" };
 
-  const pack = CHRISTMAS_PACKS[input.packKey];
+  const { data: order, error: orderError } = await input.service
+    .from("christmas_v2_orders")
+    .select("image_count,video_count,amount_cents,currency,pack_snapshot,status")
+    .eq("id", input.orderId)
+    .single();
+  if (orderError || !order) throw new Error("Cannot resolve purchased pack for delivery email");
+
+  const pack = {
+    ...CHRISTMAS_PACKS[input.packKey],
+    imageCount: order.image_count,
+    videoCount: order.video_count,
+  };
+  const total = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: asString(order.currency) || "eur",
+  }).format(Number(order.amount_cents || pack.amountCents) / 100);
   const url = `${siteOrigin()}/christmas-ai-photos/order?token=${encodeURIComponent(input.publicToken)}`;
-  const subject =
-    input.packKey === "magic"
+  const partial = asString(order.status) === "partial_failure";
+  const subject = partial
+    ? "Your Christmas order is ready (partial results)"
+    : input.packKey === "magic"
       ? "Your Christmas Magic Pack is ready"
       : input.packKey === "ultimate"
         ? "Your Ultimate Christmas Pack is ready"
@@ -51,6 +68,8 @@ export async function sendChristmasDeliveryEmail(input: {
     <p style="line-height:1.6;opacity:.9">${escapeHtml(pack.name)} includes ${pack.imageCount} Christmas photos${
       pack.videoCount ? ` and ${pack.videoCount} short AI video${pack.videoCount > 1 ? "s" : ""}` : ""
     }.</p>
+    ${partial ? "<p style=\"line-height:1.6;opacity:.9\">Some items needed a retry — open your gallery for the completed downloads.</p>" : ""}
+    <p>One-time payment: ${escapeHtml(total)}</p>
     <p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1B4332;color:#F7F0E4;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:600">View your results</a></p>
     <p style="font-size:12px;opacity:.55">Digital Gifter \u00b7 No subscription</p>
   </div></body></html>`;
@@ -60,12 +79,11 @@ export async function sendChristmasDeliveryEmail(input: {
     process.env.CHRISTMAS_EMAIL_FROM || process.env.TRANSACTIONAL_EMAIL_FROM || process.env.PET_EMAIL_FROM,
   );
 
-  await input.service.from("christmas_email_deliveries").upsert(
+  await input.service.from("christmas_v2_email_deliveries").upsert(
     {
       order_id: input.orderId,
       kind,
       status: apiKey && from ? "queued" : "skipped",
-      last_error: apiKey && from ? null : "email_provider_unconfigured",
     },
     { onConflict: "order_id,kind" },
   );
@@ -77,31 +95,26 @@ export async function sendChristmasDeliveryEmail(input: {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `christmas-delivery-${input.orderId}-${kind}`,
     },
     body: JSON.stringify({ from, to: [input.email], subject, html }),
   });
   if (!res.ok) {
-    const providerError = (await res.text()).slice(0, 500);
     await input.service
-      .from("christmas_email_deliveries")
-      .update({ status: "failed", last_error: providerError || `resend_http_${res.status}` })
+      .from("christmas_v2_email_deliveries")
+      .update({ status: "failed" })
       .eq("order_id", input.orderId)
       .eq("kind", kind);
     throw new Error(`Christmas delivery email failed (${res.status})`);
   }
   const body = (await res.json()) as { id?: string };
   await input.service
-    .from("christmas_email_deliveries")
-    .update({
-      status: "sent",
-      provider_message_id: asString(body.id),
-      last_error: null,
-      sent_at: new Date().toISOString(),
-    })
+    .from("christmas_v2_email_deliveries")
+    .update({ status: "sent", provider_message_id: asString(body.id) })
     .eq("order_id", input.orderId)
     .eq("kind", kind);
   await input.service
-    .from("christmas_orders")
+    .from("christmas_v2_orders")
     .update({ delivery_email_sent_at: new Date().toISOString() })
     .eq("id", input.orderId);
   return { sent: true };

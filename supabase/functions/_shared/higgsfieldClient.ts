@@ -32,6 +32,7 @@ export async function higgsfieldJson(
       method,
       headers: authHeaders(authorization, body !== undefined),
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
     });
   } catch {
     throw new Error(GENERATION_UNAVAILABLE_MESSAGE);
@@ -47,7 +48,7 @@ export async function higgsfieldJson(
     }
   }
   if (!response.ok) {
-    throw new Error(GENERATION_UNAVAILABLE_MESSAGE);
+    throw new Error(`${GENERATION_UNAVAILABLE_MESSAGE} (HTTP ${response.status})`);
   }
   return parsed;
 }
@@ -77,7 +78,7 @@ export async function uploadBytesToHiggsfield(
   }
   if (!uploadHeaders.has("Content-Type")) uploadHeaders.set("Content-Type", contentType);
   const putBody = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-  const uploaded = await fetchImpl(uploadUrl, { method: "PUT", headers: uploadHeaders, body: putBody });
+  const uploaded = await fetchImpl(uploadUrl, { method: "PUT", headers: uploadHeaders, body: putBody, signal: AbortSignal.timeout(30_000) });
   if (!uploaded.ok) throw new Error(GENERATION_UNAVAILABLE_MESSAGE);
   return publicUrl;
 }
@@ -99,7 +100,7 @@ export async function pollHiggsfieldImage(
   requestId: string,
   fetchImpl: FetchImpl = fetch,
   options?: { maxAttempts?: number; sleepMs?: number },
-): Promise<{ done: boolean; imageUrl: string | null; failed: boolean }> {
+): Promise<{ done: boolean; imageUrl: string | null; failed: boolean; status?: string }> {
   const maxAttempts = options?.maxAttempts ?? 12;
   const sleepMs = options?.sleepMs ?? 2000;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -113,9 +114,9 @@ export async function pollHiggsfieldImage(
     const status = String(current.status || "");
     if (isTerminalHiggsfieldStatus(status)) {
       if (!isSuccessfulHiggsfieldStatus(status)) {
-        return { done: true, imageUrl: null, failed: true };
+        return { done: true, imageUrl: null, failed: true, status };
       }
-      return { done: true, imageUrl: extractHiggsfieldImageUrl(current), failed: false };
+      return { done: true, imageUrl: extractHiggsfieldImageUrl(current), failed: false, status };
     }
     if (attempt < maxAttempts - 1) {
       await new Promise((resolve) => setTimeout(resolve, sleepMs));

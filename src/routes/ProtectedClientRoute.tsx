@@ -64,7 +64,9 @@ export default function ProtectedClientRoute() {
         </Suspense>
       );
     }
-    return <Navigate to="/" replace state={{ from: location }} />;
+    const returnTo = `${location.pathname}${location.search}`;
+    rememberAuthReturnTo(returnTo);
+    return <Navigate to={`/login?next=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   return <Outlet />;

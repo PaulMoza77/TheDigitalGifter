@@ -1,5 +1,3 @@
-import { reachablePublicStorageUrl } from "./publicStorageUrl.ts";
-
 /**
  * Public /generator image request rules for Higgsfield.
  * Pure module: no credentials, no network. The edge function performs I/O.
@@ -11,9 +9,9 @@ import { reachablePublicStorageUrl } from "./publicStorageUrl.ts";
 
 export const HIGGSFIELD_API_BASE = "https://api.higgsfield.ai";
 export const PUBLIC_GENERATOR_SOURCE = "tdg_generator_page";
-export const HIGGSFIELD_IMAGE_MODEL = "nano_banana_2";
-export const HIGGSFIELD_IMAGE_MODEL_LABEL = "Nano Banana Pro";
-export const HIGGSFIELD_IMAGE_RESOLUTION = "2k";
+export const HIGGSFIELD_IMAGE_MODEL = "higgsfield-ai/soul/v2/image-to-image";
+export const HIGGSFIELD_IMAGE_MODEL_LABEL = "Soul 2";
+export const HIGGSFIELD_IMAGE_RESOLUTION = "720p";
 export const HIGGSFIELD_PROVIDER = "higgsfield";
 export const MAX_GENERATOR_SOURCE_IMAGES = 4;
 export const GENERATOR_SOURCE_BUCKET = "generator-sources";
@@ -68,17 +66,6 @@ export function resolveAspectRatio(value: unknown): HiggsfieldAspectRatio | null
 export function aspectRatioForStoredGeneration(value: unknown): HiggsfieldAspectRatio | null {
   if (String(value ?? "").trim() === "match_input_image") return "9:16";
   return resolveAspectRatio(value);
-}
-
-const TDG_PUBLIC_UPLOAD_PREFIX =
-  "https://kjlsocejpmnzhhduyumy.supabase.co/storage/v1/object/public/uploads/";
-
-/** Public upload URL from the generator that is still live during the backend cutover. */
-export function legacyGeneratorSourceUrl(value: unknown): string | null {
-  const url = String(value ?? "").trim();
-  if (!url.startsWith(TDG_PUBLIC_UPLOAD_PREFIX)) return null;
-  if (url.includes("..") || url.includes("\\") || /\s/.test(url)) return null;
-  return url;
 }
 
 export function isPrimaryAspectRatio(value: string): boolean {
@@ -153,7 +140,7 @@ export function templateImageUrl(template: Record<string, unknown> | null | unde
     template.thumbnailurl,
   ];
   for (const candidate of candidates) {
-    const url = reachablePublicStorageUrl(candidate);
+    const url = String(candidate ?? "").trim();
     if (/^https?:\/\//i.test(url)) return url;
   }
   return "";
@@ -199,16 +186,19 @@ export function higgsfieldImageRequest(input: {
   aspectRatio: HiggsfieldAspectRatio;
   imageReferences: string[];
 }): { path: string; body: Record<string, unknown> } {
-  if (input.imageReferences.length < 2) {
-    throw new Error("Higgsfield image generation requires the customer photo and the template image.");
+  const references = input.imageReferences.map((value) => String(value || "").trim()).filter((value) => /^https?:\/\//i.test(value));
+  if (!references.length) {
+    throw new Error("Higgsfield image generation requires the customer photo.");
   }
   return {
     path: `/${HIGGSFIELD_IMAGE_MODEL}`,
     body: {
       prompt: input.prompt,
+      image_url: references[0],
       aspect_ratio: input.aspectRatio,
       resolution: HIGGSFIELD_IMAGE_RESOLUTION,
-      image_references: input.imageReferences,
+      enhance_prompt: true,
+      batch_size: 1,
     },
   };
 }
