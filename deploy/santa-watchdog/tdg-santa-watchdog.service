@@ -1,0 +1,18 @@
+[Unit]
+Description=TDG Santa Call stale OpenAI session watchdog
+After=network-online.target docker.service
+Wants=network-online.target
+[Service]
+Type=oneshot
+RuntimeDirectory=tdg-santa-watchdog
+
+User=root
+ExecStart=/usr/local/sbin/tdg-santa-watchdog
+TimeoutStartSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/opt/supabase/tdg/.env
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+exec 9>/run/tdg-santa-watchdog/watchdog.lock
+flock -n 9 || exit 0
+ENV_FILE=/opt/supabase/tdg/.env
+[[ -r "$ENV_FILE" ]] || { echo 'santa_watchdog missing_env' >&2; exit 1; }
+service_key="$(sed -n 's/^SERVICE_ROLE_KEY=//p' "$ENV_FILE" | head -n 1)"
+service_key="${service_key%\"}"; service_key="${service_key#\"}"
+[[ -n "$service_key" ]] || { echo 'santa_watchdog missing_service_key' >&2; exit 1; }
+response="$(mktemp)"
+trap 'rm -f "$response"' EXIT
+http_code="$(curl --silent --show-error --connect-timeout 3 --max-time 20 --output "$response" --write-out '%{http_code}' -H 'Content-Type: application/json' -H "Authorization: Bearer $service_key" -H "apikey: $service_key" --data '{"action":"sweep_stale_sessions","stale_seconds":120}' http://127.0.0.1:8000/functions/v1/christmas-santa-call)"
+unset service_key
+if [[ "$http_code" != 200 ]] || ! grep -q '"ok":true' "$response"; then
+  echo "santa_watchdog failed http=$http_code" >&2
+  exit 1
+fi
+echo 'santa_watchdog success'
