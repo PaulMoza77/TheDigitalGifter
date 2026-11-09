@@ -58,6 +58,16 @@ services:
       YOUTUBE_LIVE_MAX_CONCURRENT: ${YOUTUBE_LIVE_MAX_CONCURRENT:-1}
     volumes:
       - /opt/mozas/projects/thedigitalgifter/media:/var/lib/tdg/clip-factory
+      # Historical/static media is kept on the VPS and mounted separately so
+      # Docker builds do not upload multi-gigabyte asset archives. These
+      # subdirectory mounts do not hide Vite's hashed JS files in dist/assets.
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/christmas:/app/dist/assets/christmas:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/funnel:/app/dist/assets/funnel:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/pet:/app/dist/assets/pet:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/library:/app/dist/assets/library:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/music:/app/dist/assets/music:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/volocar:/app/dist/assets/volocar:ro
+      - /opt/mozas/projects/thedigitalgifter/repo/public/assets/flavours-bistro:/app/dist/assets/flavours-bistro:ro
       - /opt/mozas/projects/thedigitalgifter/repo/generated/christmas-factory-200:/app/dist/assets/christmas/christmas-factory-200
       - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
     expose:

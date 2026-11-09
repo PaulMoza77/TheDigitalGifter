@@ -4,7 +4,11 @@
 node_modules
 dist
 docs
+source
+final
+artifacts
 generated
+public/assets
 output
 *.md
 .env
