@@ -1281,7 +1281,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "sweep_stale_sessions") {
-      if (!(await requireAdmin(req))) return json({ error: "forbidden" }, 403);
+      // Allow the trusted server-side scheduler to authenticate with the service role;
+      // regular admin users continue to require an authenticated admin session.
+      const suppliedBearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+      const trustedServiceKey = asString(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY"));
+      const internalScheduler = Boolean(trustedServiceKey && suppliedBearer === trustedServiceKey);
+      if (!internalScheduler && !(await requireAdmin(req))) return json({ error: "forbidden" }, 403);
       const staleSeconds = Math.min(300, Math.max(30, Number(body.stale_seconds) || 90));
       const cutoff = new Date(Date.now() - staleSeconds * 1000).toISOString();
       const { data: stale, error: staleError } = await service
