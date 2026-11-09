@@ -68,7 +68,6 @@ services:
       - /opt/mozas/projects/thedigitalgifter/repo/public/assets/music:/app/dist/assets/music:ro
       - /opt/mozas/projects/thedigitalgifter/repo/public/assets/volocar:/app/dist/assets/volocar:ro
       - /opt/mozas/projects/thedigitalgifter/repo/public/assets/flavours-bistro:/app/dist/assets/flavours-bistro:ro
-      - /opt/mozas/projects/thedigitalgifter/repo/generated/christmas-factory-200:/app/dist/assets/christmas/christmas-factory-200
       - /opt/mozas/projects/thedigitalgifter/data/long-form:/data/long-form
     expose:
       - "8080"

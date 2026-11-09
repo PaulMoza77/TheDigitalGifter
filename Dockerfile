@@ -24,6 +24,11 @@ RUN apk add --no-cache wget ffmpeg font-dejavu fontconfig python3 py3-pip \
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm install --no-save tsx@4.20.5
 COPY --from=build /app/dist ./dist
+# Keep bind-mount targets present even when large historical media is supplied
+# from the VPS rather than copied into the image.
+RUN mkdir -p dist/assets/christmas dist/assets/funnel dist/assets/pet \
+  dist/assets/library dist/assets/music dist/assets/volocar \
+  dist/assets/flavours-bistro
 COPY api ./api
 # YouTube Live origin handlers import shared social helpers from Supabase functions.
 COPY supabase/functions ./supabase/functions
