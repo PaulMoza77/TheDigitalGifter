@@ -296,7 +296,7 @@ export default function ChristmasPhotoGeneratorExperience() {
           <div className="pg-studio__card">
             {!["intro", "generating", "result"].includes(funnel.draft.step) && (
               <nav aria-label="Creation navigation" style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.goBack}>← Back</button>
+                <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={() => funnel.setStep("upload")}>← Back</button>
                 <button type="button" className="xmas-btn xmas-btn--ghost" disabled={funnel.busy} onClick={funnel.resetAnother}>Start over</button>
               </nav>
             )}
@@ -307,7 +307,7 @@ export default function ChristmasPhotoGeneratorExperience() {
             ) : null}
             {funnel.draft.softWarning ? <p className="pg-warn">{t(funnel.draft.softWarning)}</p> : null}
 
-            {funnel.draft.step === "photo" && (
+            {funnel.draft.step === "upload" && (
               <section aria-label="Your uploaded photo">
                 {funnel.draft.localPreviewUrl ? <img className="pg-preview-thumb" src={funnel.draft.localPreviewUrl} alt="Your uploaded photo" /> : null}
                 <button type="button" className="xmas-btn xmas-btn--gold" disabled={funnel.busy || !funnel.draft.sourcePath} onClick={() => funnel.setStep("style")}>Next &gt;</button>
@@ -385,7 +385,7 @@ export default function ChristmasPhotoGeneratorExperience() {
                     autoComplete="email"
                   />
                 </label>
-                <button type="button" className="xmas-btn xmas-btn--gold" style={{marginTop:"1rem",width:"100%"}} disabled={funnel.busy} onClick={() => void funnel.startPackCheckout(packKey)}>{funnel.busy ? t("offer.busy") : `Continue to payment — ${CHRISTMAS_PACKS[packKey].priceDisplay}`}</button>
+                <button type="button" className="xmas-btn xmas-btn--gold" style={{marginTop:"1rem",width:"100%"}} disabled={funnel.busy} onClick={() => void funnel.startCheckout()}>{funnel.busy ? t("offer.busy") : `Continue to payment — ${CHRISTMAS_PACKS[packKey].priceDisplay}`}</button>
               </section>
             )}
 
