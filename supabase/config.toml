@@ -108,3 +108,6 @@ verify_jwt = false
 
 [functions.affiliate-product-search]
 verify_jwt = false
+
+[functions.support-conversation]
+verify_jwt = false

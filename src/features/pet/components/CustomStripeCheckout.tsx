@@ -53,7 +53,8 @@ function CheckoutBody({
   email,
   payButtonLabel,
   busyLabel = "Paying…",
-  loadingLabel = "Loading Apple Pay and card…",
+  loadingLabel,
+  language = "en",
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
@@ -71,6 +72,7 @@ function CheckoutBody({
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
+  language?: "ro" | "en";
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
@@ -85,6 +87,7 @@ function CheckoutBody({
   /** When true, Apple Pay / Google Pay use Stripe `auto` - no reserved/fake wallet buttons. */
   walletCapabilityOnly?: boolean;
 }) {
+  const romanian = language === "ro";
   const checkoutState = useCheckoutElements();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +177,7 @@ function CheckoutBody({
       }
     }
     if (!isExpress && !paymentComplete) {
-      setError(CARD_PAY_INCOMPLETE_MESSAGE);
+      setError(romanian ? "Completează datele cardului înainte de plată." : CARD_PAY_INCOMPLETE_MESSAGE);
       return;
     }
     setBusy(true);
@@ -190,7 +193,7 @@ function CheckoutBody({
         console.info("[stripe-checkout-confirm]", {
           failureCode: result.error.code || "confirm_failed",
         });
-        if (message) setError(message);
+        if (message) setError(romanian ? "Plata nu a putut fi finalizată. Verifică datele cardului sau încearcă altă metodă de plată." : message);
       } else {
         void onBeforeConfirm?.().catch(() => undefined);
       }
@@ -200,7 +203,7 @@ function CheckoutBody({
       console.info("[stripe-checkout-confirm]", {
         failureCode: caught instanceof Error ? caught.name : "confirm_exception",
       });
-      if (message) setError(message);
+      if (message) setError(romanian ? "Nu am putut confirma plata. Verifică conexiunea și reîncearcă." : message);
     } finally {
       setBusy(false);
     }
@@ -218,7 +221,7 @@ function CheckoutBody({
     return (
       <div className="space-y-4" role="status" aria-live="polite">
         {walletCapabilityOnly ? null : <ApplePayButton disabled />}
-        <p className={`text-center text-sm ${mutedText}`}>{walletCapabilityOnly ? "Loading secure payment…" : loadingLabel}</p>
+        <p className={`text-center text-sm ${mutedText}`}>{loadingLabel || (romanian ? "Încărcăm plata securizată…" : walletCapabilityOnly ? "Loading secure payment…" : "Loading Apple Pay and card…")}</p>
       </div>
     );
   }
@@ -229,7 +232,7 @@ function CheckoutBody({
       return (
         <div className="space-y-3 py-2">
           <p className={`text-sm ${alertText}`} role="alert">
-            {stripeCheckoutInitCustomerError(checkoutState.error.message)}
+            {romanian ? "Nu am putut încărca plata securizată. Încearcă din nou." : stripeCheckoutInitCustomerError(checkoutState.error.message)}
           </p>
         </div>
       );
@@ -237,7 +240,7 @@ function CheckoutBody({
     return (
       <div className="space-y-3 py-2">
         <p className={`text-sm ${alertText}`} role="alert">
-          {stripeCheckoutInitCustomerError(checkoutState.error.message)}
+          {romanian ? "Nu am putut încărca plata securizată. Încearcă din nou." : stripeCheckoutInitCustomerError(checkoutState.error.message)}
         </p>
         <button
           type="button"
@@ -251,7 +254,7 @@ function CheckoutBody({
               : "h-11 w-full rounded-full border border-[#1a140e]/20 bg-transparent text-sm text-[#1a140e]"
           }
         >
-          Retry secure payment
+          {romanian ? "Reîncearcă plata securizată" : "Retry secure payment"}
         </button>
       </div>
     );
@@ -319,7 +322,7 @@ function CheckoutBody({
           {walletsReady && walletsAvailable ? (
             <div className="mt-4 flex items-center gap-3">
               <span className={`h-px flex-1 ${rule}`} />
-              <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
+              <span className={`text-[12px] font-medium ${mutedText}`}>{romanian ? "Sau plătește cu cardul" : "Or pay with card"}</span>
               <span className={`h-px flex-1 ${rule}`} />
             </div>
           ) : null}
@@ -349,7 +352,7 @@ function CheckoutBody({
           </div>
           <div className="flex items-center gap-3">
             <span className={`h-px flex-1 ${rule}`} />
-            <span className={`text-[12px] font-medium ${mutedText}`}>Or pay with card</span>
+            <span className={`text-[12px] font-medium ${mutedText}`}>{romanian ? "Sau plătește cu cardul" : "Or pay with card"}</span>
             <span className={`h-px flex-1 ${rule}`} />
           </div>
         </>
@@ -394,6 +397,7 @@ export function CustomStripeCheckout({
   payButtonLabel,
   busyLabel,
   loadingLabel,
+  language,
   onBeforeConfirm,
   onReady,
   onPaymentInteraction,
@@ -413,6 +417,7 @@ export function CustomStripeCheckout({
   payButtonLabel?: (payLabel: string) => string;
   busyLabel?: string;
   loadingLabel?: string;
+  language?: "ro" | "en";
   onBeforeConfirm?: () => Promise<{ ok: boolean; error?: string; focusId?: string }>;
   onReady?: () => void;
   onPaymentInteraction?: () => void;
@@ -566,6 +571,7 @@ export function CustomStripeCheckout({
         payButtonLabel={payButtonLabel}
         busyLabel={busyLabel}
         loadingLabel={loadingLabel}
+        language={language}
         onBeforeConfirm={onBeforeConfirm}
         onReady={handleReady}
         onPaymentInteraction={onPaymentInteraction}

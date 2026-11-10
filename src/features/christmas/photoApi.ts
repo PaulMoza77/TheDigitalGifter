@@ -111,7 +111,8 @@ async function startChristmasCheckoutRequest(body: Record<string, unknown>) {
     publishableKey: string;
     amountCents: number;
     currency: string;
-    uiMode: "custom";
+    uiMode: "custom" | "hosted";
+    checkoutUrl?: string | null;
   };
 }
 

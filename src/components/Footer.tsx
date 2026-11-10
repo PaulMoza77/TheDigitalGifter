@@ -9,9 +9,9 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link to="/" className="mb-4 inline-flex items-center">
+            <div className="mb-4 inline-flex items-center">
               <Logo />
-            </Link>
+            </div>
 
             <p className="mt-3 text-sm leading-relaxed text-[#c1c8d8]">
               Create stunning AI-powered cards and share-ready visuals for holidays,

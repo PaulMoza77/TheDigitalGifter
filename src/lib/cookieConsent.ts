@@ -1,4 +1,5 @@
 export const COOKIE_CONSENT_KEY = "tdg.cookie-consent.v1";
+export const COOKIE_CONSENT_CHANGED_EVENT = "tdg-cookie-consent-changed";
 export const COOKIE_SETTINGS_EVENT = "tdg-cookie-settings";
 
 export type CookieConsentValue = "granted" | "denied";
@@ -19,6 +20,7 @@ export function applyCookieConsent(value: CookieConsentValue) {
     .__tdgSetCookieConsent;
   if (typeof setter === "function") {
     setter(value);
+    window.dispatchEvent(new Event(COOKIE_CONSENT_CHANGED_EVENT));
     return;
   }
   try {
@@ -26,6 +28,7 @@ export function applyCookieConsent(value: CookieConsentValue) {
   } catch {
     /* private mode */
   }
+  window.dispatchEvent(new Event(COOKIE_CONSENT_CHANGED_EVENT));
 }
 
 export function openCookieSettings() {

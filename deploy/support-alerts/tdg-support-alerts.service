@@ -1,0 +1,11 @@
+[Unit]
+Description=Deliver queued support notifications via Resend
+After=network-online.target
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/tdg-support-alerts.env
+ExecStart=/bin/sh /opt/tdg-support-alerts/send-alerts.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

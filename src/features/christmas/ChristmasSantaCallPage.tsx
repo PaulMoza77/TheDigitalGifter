@@ -1,3 +1,7 @@
+import { resolveSantaCheckout } from "./santa-call/santaCheckoutDestination";
+import { Logo } from "@/components/ui/logo";
+import { SantaLandingVideo } from "./santa-call/SantaLandingVideo";
+import { SantaSupportChat, openSantaSupport } from "./santa-call/SantaSupportChat";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
@@ -6,7 +10,10 @@ import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { fetchChristmasCommercialOffers, startChristmasCheckout } from "@/features/christmas/photoApi";
 import { catalogFromRows } from "@/features/christmas/commercialOffers";
-import { NorthPoleScene } from "@/features/christmas/santa-call/NorthPoleScene";
+import { NORTH_POLE_POSTER } from "@/features/christmas/santa-call/NorthPoleScene";
+import { COOKIE_CONSENT_CHANGED_EVENT, openCookieSettings } from "@/lib/cookieConsent";
+import { SANTA_LANDING_COPY } from "@/features/christmas/santa-call/santaLandingCopy";
+import "./santa-call/santaLanding.css";
 import {
   trackSantaCallMetaInitiateCheckout,
   trackSantaCallMetaPurchase,
@@ -76,6 +83,7 @@ export default function ChristmasSantaCallPage() {
   });
   const [marketLocked, setMarketLocked] = useState(false);
   const copy = SANTA_CALL_COPY[lang];
+  const landing = SANTA_LANDING_COPY[lang];
   const prices = pricesForSantaCallMarket(market);
   const [form, setForm] = useState<SantaCallPersonalization>(() => ({
     ...emptySantaCallPersonalization(),
@@ -92,36 +100,46 @@ export default function ChristmasSantaCallPage() {
     currency: string;
     orderId?: string;
   } | null>(null);
-  const [successNote, setSuccessNote] = useState(false);
+  const [offerStatus, setOfferStatus] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
+  const [offerRetry, setOfferRetry] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "checking" | "confirmed" | "error">("idle");
+  const [paymentRetry, setPaymentRetry] = useState(0);
   const [showForm, setShowForm] = useState(false);
-  const viewed = useRef(false);
+  const submitting = useRef(false);
   const formRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     ensureFonts();
     captureFunnelAttribution(window.location.search);
-    if (!qaCheckout && !viewed.current) {
-      viewed.current = true;
+    const trackView = () => {
+      if (qaCheckout || !previewOk || params.get("checkout") === "success") return;
       trackSantaCallMetaViewContent(prices.initialMinor, prices.currency);
-      trackSantaCallAnalytics("page_view", { page_type: "santa_call", market }, "landing_view");
-    }
-    if (params.get("checkout") === "success") {
-      setSuccessNote(true);
-      setShowForm(true);
-    }
-  }, [params, prices.currency, prices.initialMinor, qaCheckout]);
+      trackSantaCallAnalytics("santa_page_view", { market, language: lang }, "landing_view");
+    };
+    trackView();
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, trackView);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, trackView);
+  }, [params, market, lang, prices.currency, prices.initialMinor, qaCheckout, previewOk]);
 
   // Server-verified payment recovery (email works even if this fails / browser closed).
   useEffect(() => {
     if (params.get("checkout") !== "success") return;
     if (qaCheckout) return;
     const sessionId = String(params.get("session_id") || "").trim();
-    if (!sessionId.startsWith("cs_")) return;
+    if (!sessionId.startsWith("cs_")) {
+      setPaymentStatus("error");
+      return;
+    }
+    setPaymentStatus("checking");
     let cancelled = false;
     void (async () => {
-      const { ok, data } = await confirmSantaCallCommercialCheckout(sessionId);
+      const { ok, data } = await confirmSantaCallCommercialCheckout(sessionId).catch(() => ({ ok: false, data: null }));
       if (cancelled) return;
-      if (!ok || data?.ok !== true) return;
+      if (!ok || data?.ok !== true) {
+        setPaymentStatus("error");
+        return;
+      }
+      setPaymentStatus("confirmed");
       const orderId = String(data.orderId || "");
       const amountCents = Number(data.amountCents) || prices.initialMinor;
       const currency = String(data.currency || prices.currency);
@@ -129,7 +147,7 @@ export default function ChristmasSantaCallPage() {
       if (orderId && data.livemode === true && data.stripe_mode === "live") {
         trackSantaCallMetaPurchase({ orderId, amountCents, currency });
         trackSantaCallAnalytics(
-          "payment_confirmed",
+          "santa_purchase_confirmed",
           { transaction_id: orderId, value: amountCents / 100, currency: currency.toUpperCase(), payment_type: "initial" },
           `payment_confirmed.${orderId}`,
         );
@@ -142,7 +160,7 @@ export default function ChristmasSantaCallPage() {
     return () => {
       cancelled = true;
     };
-  }, [params, qaCheckout, prices.currency, prices.initialMinor, lang]);
+  }, [params, qaCheckout, prices.currency, prices.initialMinor, lang, paymentRetry]);
 
   useEffect(() => {
     storeSantaCallMarket(market);
@@ -164,8 +182,11 @@ export default function ChristmasSantaCallPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setOfferStatus("loading");
     if (qaCheckout) {
-      setPurchasable(Boolean(readSantaQaPageAccessToken(window.location.search)));
+      const enabled = Boolean(readSantaQaPageAccessToken(window.location.search));
+      setOfferStatus(enabled ? "ready" : "unavailable");
+      setPurchasable(enabled);
       return;
     }
     void fetchChristmasCommercialOffers()
@@ -178,15 +199,20 @@ export default function ChristmasSantaCallPage() {
             .toLowerCase() === "true" ||
           String(import.meta.env.VITE_SANTA_CALL_ENABLE_CHECKOUT || "").trim() === "1";
         const ok = Boolean(offer?.active && offer.webCheckoutEnabled && offer.webPriceMinor > 0);
-        setPurchasable(ok && isSantaCallLandingPublic() && checkoutUi);
+        const enabled = ok && isSantaCallLandingPublic() && checkoutUi;
+        setPurchasable(enabled);
+        setOfferStatus(enabled ? "ready" : "unavailable");
       })
       .catch(() => {
-        if (!cancelled) setPurchasable(false);
+        if (!cancelled) {
+          setPurchasable(false);
+          setOfferStatus("error");
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [previewOk, qaCheckout]);
+  }, [previewOk, qaCheckout, offerRetry]);
 
   const priceLabel = useMemo(
     () => formatSantaCallMoney(prices.initialMinor, prices.currency),
@@ -202,7 +228,8 @@ export default function ChristmasSantaCallPage() {
   );
 
   function openForm() {
-    trackSantaCallAnalytics("santa_call_cta", { market, language: lang }, "cta");
+    if (!purchasable) return;
+    if (!qaCheckout) trackSantaCallAnalytics("santa_cta_click", { market, language: lang }, "cta");
     setShowForm(true);
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({
@@ -213,6 +240,7 @@ export default function ChristmasSantaCallPage() {
   }
 
   function onLang(next: SantaCallLanguage) {
+    if (busy || checkout) return;
     setLang(next);
     setForm((f) => ({ ...f, language: next }));
     if (!marketLocked && !readStoredSantaCallMarket()) {
@@ -226,6 +254,7 @@ export default function ChristmasSantaCallPage() {
   }
 
   async function onCheckout() {
+    if (submitting.current || checkout) return;
     setError(null);
     const invalid = validateSantaCallPersonalization({ ...form, language: lang });
     if (invalid) {
@@ -240,7 +269,9 @@ export default function ChristmasSantaCallPage() {
       setError("checkout_disabled");
       return;
     }
+    submitting.current = true;
     setBusy(true);
+    if (!qaCheckout) trackSantaCallAnalytics("santa_form_complete", { market, language: lang });
     try {
       if (qaCheckout) {
         const access = readSantaQaPageAccessToken(window.location.search);
@@ -311,6 +342,7 @@ export default function ChristmasSantaCallPage() {
         amount_cents: prices.initialMinor,
         preferred_currency: prices.currency,
       });
+      const transport = resolveSantaCheckout(data);
       setMarketLocked(true);
       const orderId = String((data as { orderId?: string }).orderId || "");
       if (orderId) {
@@ -320,7 +352,7 @@ export default function ChristmasSantaCallPage() {
           currency: data.currency || prices.currency,
         });
         trackSantaCallAnalytics(
-          "begin_checkout",
+          "santa_checkout_started",
           {
             transaction_id: orderId,
             value: data.amountCents / 100,
@@ -329,9 +361,13 @@ export default function ChristmasSantaCallPage() {
           `begin_checkout.${orderId}`,
         );
       }
+      if (transport.kind === "hosted") {
+        window.location.assign(transport.url);
+        return;
+      }
       setCheckout({
-        clientSecret: data.clientSecret,
-        publishableKey: data.publishableKey,
+        clientSecret: transport.clientSecret,
+        publishableKey: transport.publishableKey,
         checkoutUrl: null,
         amountCents: data.amountCents,
         currency: data.currency || prices.currency,
@@ -340,12 +376,17 @@ export default function ChristmasSantaCallPage() {
     } catch (err) {
       const code = (err as { code?: string })?.code || "checkout_failed";
       setError(code);
+      if (!qaCheckout) trackSantaCallAnalytics("santa_checkout_error", { market });
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
 
   const site = "https://www.thedigitalgifter.com";
+  const returningFromPayment = params.get("checkout") === "success" && !qaCheckout;
+  const extensionText = `${landing.extension} · ${extensionLabel}`;
+  const errorMessage = error ? (landing.errors[error as keyof typeof landing.errors] || copy.errorGeneric) : null;
   const interestsValue = [form.hobbies, form.christmasWish].filter(Boolean).join(form.hobbies && form.christmasWish ? " · " : "");
 
   if (!previewOk) {
@@ -354,19 +395,16 @@ export default function ChristmasSantaCallPage() {
         <ChristmasPageHead path={SANTA_CALL_ROUTE} noindex />
         <div className="sc-page sc-gated" lang={lang}>
           <header className="sc-header">
-            <Link to="/christmas" className="sc-brand santa-call-display">
-              {copy.brand}
-            </Link>
+            <Logo variant="light" />
           </header>
-          <main className="sc-gated-main">
+          <div className="sc-gated-main">
             <p className="sc-kicker">{copy.kicker}</p>
             <h1 className="santa-call-display sc-title">{copy.title}</h1>
             <p className="sc-body">{copy.comingSoon}</p>
             <Link to="/christmas" className="sc-cta">
               {copy.brand}
             </Link>
-          </main>
-          <style>{gatedCss}</style>
+          </div>
         </div>
       </>
     );
@@ -374,349 +412,159 @@ export default function ChristmasSantaCallPage() {
 
   return (
     <>
-      <PageHead
-        title={copy.ogTitle}
-        description={copy.ogDescription}
-        url={`${site}${SANTA_CALL_ROUTE}`}
-        image={`${site}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`}
-        exactTitle
-        noindex
-      />
+      <PageHead title={copy.ogTitle} description={copy.ogDescription}
+        url={`${site}${SANTA_CALL_ROUTE}`} image={`${site}${NORTH_POLE_POSTER}`}
+        exactTitle noindex />
       <div className="sc-page" lang={lang}>
-        <div className="sc-hero-stage" aria-hidden>
-          <NorthPoleScene variant="immersive" listening={!prefersReducedMotion()} />
-        </div>
-
+        <SantaSupportChat language={lang} />
         <header className="sc-header">
-          <Link to="/christmas" className="sc-brand santa-call-display">
-            {copy.brand}
-          </Link>
+          <Logo variant="light" />
           <div className="sc-controls">
             <div className="sc-seg" role="group" aria-label={copy.langLabel}>
-              <button type="button" className={lang === "ro" ? "is-on" : ""} onClick={() => onLang("ro")}>
-                RO
-              </button>
-              <button type="button" className={lang === "en" ? "is-on" : ""} onClick={() => onLang("en")}>
-                EN
-              </button>
+              {(["ro", "en"] as const).map((value) => (
+                <button key={value} type="button" aria-pressed={lang === value}
+                  disabled={busy || Boolean(checkout)} onClick={() => onLang(value)}>{value.toUpperCase()}</button>
+              ))}
             </div>
-            <div className="sc-seg" role="group" aria-label={copy.marketLabel}>
-              <button
-                type="button"
-                className={market === "ro" ? "is-on" : ""}
-                disabled={marketLocked || Boolean(checkout)}
-                onClick={() => onMarket("ro")}
-              >
-                RON
-              </button>
-              <button
-                type="button"
-                className={market === "us" ? "is-on" : ""}
-                disabled={marketLocked || Boolean(checkout)}
-                onClick={() => onMarket("us")}
-              >
-                USD
-              </button>
-            </div>
+            <label className="sc-currency">
+              <span className="sr-only">{copy.marketLabel}</span>
+              <select value={market} disabled={marketLocked || busy || Boolean(checkout)}
+                onChange={(event) => onMarket(event.target.value as SantaCallMarket)}>
+                <option value="ro">RON</option><option value="us">USD</option>
+              </select>
+            </label>
           </div>
         </header>
-
-        <main className="sc-main">
-          <section className="sc-hero">
-            <h1 className="santa-call-display sc-title">{copy.title}</h1>
-            <p className="sc-sub">{copy.subtitle}</p>
-            <p className="sc-price">{priceHero}</p>
-              <p className="sc-ext-note">{copy.extensionHint}</p>
-            <p className="sc-trust">{copy.trust}</p>
-            {!purchasable && !qaCheckout ? <p className="sc-soon">{copy.comingSoon}</p> : null}
-            {qaCheckout ? <p className="sc-soon sc-soon-qa">QA TEST · Stripe TEST only</p> : null}
-            {successNote ? <p className="sc-success">{copy.successNote}</p> : null}
-            {!showForm ? (
-              <button type="button" className="sc-cta" onClick={openForm}>
-                {copy.cta}
-              </button>
-            ) : null}
-            <p className="sc-ai">{copy.legalSummary}</p>
-          </section>
-
-          {showForm ? (
-            <section
-              className="sc-section"
-              id="personalize"
-              data-clarity-mask="true"
-              ref={(el) => {
-                formRef.current = el;
-              }}
-            >
-              <div className="sc-form">
-                <p className="sc-form-lead">{copy.previewBody}</p>
-                <label>
-                  <span>{copy.name} *</span>
-                  <input
-                    autoComplete="given-name"
-                    enterKeyHint="next"
-                    value={form.childFirstName}
-                    maxLength={40}
-                    onChange={(e) => setForm((f) => ({ ...f, childFirstName: e.target.value }))}
-                  />
-                </label>
-                <div className="sc-form-row">
-                  <label>
-                    <span>{copy.age}</span>
-                    <input
-                      inputMode="numeric"
-                      enterKeyHint="next"
-                      value={form.age}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, age: e.target.value.replace(/[^\d]/g, "").slice(0, 2) }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    <span>{copy.emailRequired} *</span>
-                    <input
-                      type="email"
-                      autoComplete="email"
-                      enterKeyHint="next"
-                      value={form.email}
-                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    />
-                  </label>
-                </div>
-                <label>
-                  <span>{copy.interests}</span>
-                  <textarea
-                    maxLength={120}
-                    rows={2}
-                    enterKeyHint="done"
-                    value={interestsValue}
-                    onChange={(e) => {
-                      const v = e.target.value.slice(0, 120);
-                      setForm((f) => ({ ...f, hobbies: v, christmasWish: "" }));
-                    }}
-                  />
-                </label>
-                <label className="sc-check">
-                  <input
-                    type="checkbox"
-                    checked={form.guardianConsent}
-                    onChange={(e) => setForm((f) => ({ ...f, guardianConsent: e.target.checked }))}
-                  />
-                  <span>{copy.consent}</span>
-                </label>
-
-                {error ? (
-                  <p className="sc-error" role="alert">
-                    {error === "consent"
-                      ? copy.errorConsent
-                      : error === "checkout_disabled"
-                        ? copy.errorCheckoutDisabled
-                        : error === "email" || error === "child_name"
-                          ? copy.errorGeneric
-                          : copy.errorGeneric}
-                  </p>
-                ) : null}
-
-                {!checkout ? (
-                  <button
-                    type="button"
-                    className="sc-cta"
-                    disabled={busy || !purchasable}
-                    onClick={() => void onCheckout()}
-                  >
-                    {busy ? "…" : `${copy.continueCheckout} · ${priceHero}`}
-                  </button>
-                ) : (
-                  <div className="sc-stripe">
-                    <p className="sc-charge">
-                      {formatSantaCallMoney(checkout.amountCents, checkout.currency)}
-                    </p>
-                    {checkout.clientSecret && checkout.publishableKey ? (
-                      <CustomStripeCheckout
-                        clientSecret={checkout.clientSecret}
-                        publishableKey={checkout.publishableKey}
-                        dueDisplay={formatSantaCallMoney(checkout.amountCents, checkout.currency)}
-                        email={form.email}
-                      />
-                    ) : checkout.checkoutUrl ? (
-                      <a className="sc-cta" href={checkout.checkoutUrl}>
-                        {copy.continueCheckout}
-                      </a>
-                    ) : null}
-                  </div>
-                )}
-              </div>
+        <div className="sc-main">
+          {returningFromPayment ? (
+            <section className="sc-payment-return" aria-live="polite">
+              <h1>{paymentStatus === "confirmed" ? landing.paymentConfirmed : paymentStatus === "error" ? landing.paymentPending : copy.paymentConfirming}</h1>
+              <p>{paymentStatus === "confirmed" ? copy.successNote : paymentStatus === "error" ? copy.paymentConfirmFailed : landing.paymentWait}</p>
+              {paymentStatus === "error" && <button className="sc-cta" onClick={() => setPaymentRetry((value) => value + 1)}>{copy.paymentConfirmRetry}</button>}
+              <button type="button" className="sc-text-button" onClick={openSantaSupport}>{lang === "ro" ? "Scrie-ne în chat" : "Chat with support"}</button>
             </section>
-          ) : null}
+          ) : (
+            <>
+              <section className="sc-hero" aria-labelledby="santa-title">
+                <div className="sc-hero-copy">
+                  <p className="sc-kicker">{landing.kicker}</p>
+                  <h1 id="santa-title" className="santa-call-display">{landing.title}</h1>
+                  <p className="sc-sub">{landing.subtitle}</p>
+                  <ul className="sc-benefits">{landing.benefits.map((text) => <li key={text}>✦ {text}</li>)}</ul>
+                  <p className="sc-price">{priceHero}</p>
+                  <p className="sc-trust">{copy.trust}</p>
+                  {offerStatus === "ready" ? (
+                    <button className="sc-cta" type="button" onClick={openForm}>{landing.cta} · {priceLabel} <span aria-hidden>↗</span></button>
+                  ) : (
+                    <div className="sc-availability" role="status">
+                      <p>{offerStatus === "loading" ? landing.checking : offerStatus === "error" ? landing.offerError : landing.unavailable}</p>
+                      {offerStatus !== "loading" && <button type="button" className="sc-text-button" onClick={() => setOfferRetry((value) => value + 1)}>{landing.retry}</button>}
+                      {offerStatus === "unavailable" && <button type="button" className="sc-text-button" onClick={openSantaSupport}>{lang === "ro" ? "Scrie-ne în chat" : "Chat with support"}</button>}
+                    </div>
+                  )}
+                  {qaCheckout && <p className="sc-availability">QA TEST · Stripe TEST</p>}
+                  <a href="#conversation" className="sc-demo-link">{landing.seeExample} <span aria-hidden>↓</span></a>
+                  <p className="sc-ai">{copy.legalSummary}</p>
+                </div>
+                <figure className="sc-portrait">
+                  <div className="sc-portrait-media"><SantaLandingVideo alt={landing.imageAlt} /></div>
+                  <figcaption><span className="sc-kicker">{landing.sceneLabel}</span><strong>{landing.sceneTitle}</strong><span>{landing.sceneNote}</span></figcaption>
+                </figure>
+              </section>
 
-          <section className="sc-legal">
-            <details>
-              <summary>{copy.faqTitle}</summary>
-              <div className="sc-faq">
-                {copy.faqs.slice(0, 3).map((item) => (
-                  <div key={item.q}>
-                    <strong>{item.q}</strong>
-                    <p>{item.a}</p>
+              {showForm && (
+                <section className="sc-section sc-personalize" id="personalize" data-clarity-mask="true" ref={formRef} aria-labelledby="personalize-title">
+                  <div>
+                    <p className="sc-kicker">{checkout ? landing.stepTwo : landing.stepOne}</p>
+                    <h2 id="personalize-title" className="santa-call-display">{checkout ? landing.paymentTitle : copy.formTitle}</h2>
+                    <p>{checkout ? landing.paymentDescription : copy.previewBody}</p>
+                    <p className="sc-order-summary">{priceHero}<br /><span>{copy.trust}</span></p>
+                    <p className="sc-small">{extensionText}</p>
                   </div>
-                ))}
-                <p className="sc-ext-note">{copy.extensionHint.replace(/^Prelungire opțională:\s*/i, "").replace(/^Optional extension:\s*/i, "")}</p>
-              </div>
-            </details>
-            <p className="sc-fine">
-              {copy.ai} {copy.parents}
-            </p>
-            <p className="sc-links">
-              <Link to="/privacy">{copy.privacyLink}</Link>
-              <Link to="/support">{copy.supportLink}</Link>
-            </p>
-          </section>
-        </main>
+                  <div className="sc-form-card">
+                    {!checkout ? (
+                      <form onChangeCapture={() => { if (!qaCheckout) trackSantaCallAnalytics("santa_form_start", { market }, "form_start"); }} onSubmit={(event) => { event.preventDefault(); void onCheckout(); }}>
+                        <fieldset disabled={busy}>
+                          <label htmlFor="santa-name">{copy.name} *</label>
+                          <input id="santa-name" name="childFirstName" autoComplete="off" required maxLength={40}
+                            aria-invalid={error === "child_name"} aria-describedby={error === "child_name" ? "santa-error" : undefined}
+                            value={form.childFirstName} onChange={(e) => setForm((f) => ({ ...f, childFirstName: e.target.value }))} />
+                          <label htmlFor="santa-email">{copy.emailRequired} *</label>
+                          <input id="santa-email" name="email" type="email" autoComplete="email" required maxLength={254}
+                            aria-invalid={error === "email"} aria-describedby="santa-email-help"
+                            value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+                          <p id="santa-email-help" className="sc-small">{landing.emailHelp}</p>
+                          <details className="sc-optional">
+                            <summary>{landing.optional}</summary>
+                            <label htmlFor="santa-age">{copy.age}</label>
+                            <input id="santa-age" type="number" min={1} max={17} inputMode="numeric"
+                              aria-invalid={error === "age"} aria-describedby={error === "age" ? "santa-error" : undefined}
+                              value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))} />
+                            <label htmlFor="santa-interests">{landing.interests}</label>
+                            <textarea id="santa-interests" maxLength={120} rows={3} value={interestsValue}
+                              onChange={(e) => setForm((f) => ({ ...f, hobbies: e.target.value, christmasWish: "" }))} />
+                          </details>
+                          <label className="sc-check">
+                            <input type="checkbox" required checked={form.guardianConsent}
+                              onChange={(e) => setForm((f) => ({ ...f, guardianConsent: e.target.checked }))} />
+                            <span>{copy.consent}</span>
+                          </label>
+                          <p className="sc-links"><Link to="/terms" target="_blank" rel="noopener noreferrer">{landing.terms}</Link><Link to="/privacy" target="_blank" rel="noopener noreferrer">{copy.privacyLink}</Link></p>
+                          {errorMessage && <p id="santa-error" className="sc-error" role="alert">{errorMessage}</p>}
+                          <button type="submit" className="sc-cta" disabled={busy || !purchasable}>{busy ? landing.preparing : `${copy.continueCheckout} · ${priceLabel}`}</button>
+                        </fieldset>
+                      </form>
+                    ) : (
+                      <div className="sc-stripe">
+                        {checkout.clientSecret && checkout.publishableKey ? (
+                          <CustomStripeCheckout clientSecret={checkout.clientSecret} publishableKey={checkout.publishableKey}
+                            language={lang}
+                            dueDisplay={formatSantaCallMoney(checkout.amountCents, checkout.currency)} email={form.email}
+                            walletCapabilityOnly loadingLabel={landing.paymentLoading} busyLabel={landing.paying}
+                            payButtonLabel={(amount) => `${landing.pay} ${amount}`}
+                            onReady={() => { if (!qaCheckout) trackSantaCallAnalytics("santa_checkout_loaded", { market }, `loaded.${checkout.orderId}`); }}
+                            onPaymentInteraction={() => { if (!qaCheckout) trackSantaCallAnalytics("santa_payment_interaction", { market }, `interaction.${checkout.orderId}`); }}
+                            onInitError={() => { if (!qaCheckout) trackSantaCallAnalytics("santa_payment_load_error", { market }); }} />
+                        ) : checkout.checkoutUrl ? <a className="sc-cta" href={checkout.checkoutUrl}>{copy.continueCheckout}</a> : null}
+                        <p className="sc-small">{landing.securePayment}</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
-        {!showForm ? (
-          <div className="sc-sticky">
-            <button type="button" className="sc-cta sc-cta-sticky" onClick={openForm}>
-              {copy.ctaSticky} · {priceHero}
-            </button>
-          </div>
-        ) : null}
+              <section className="sc-section" id="how-it-works" aria-labelledby="process-title">
+                <p className="sc-kicker">{landing.processKicker}</p>
+                <h2 id="process-title" className="santa-call-display">{landing.processTitle}</h2>
+                <ol className="sc-steps">{landing.steps.map((step, index) => <li key={step.title}><span className="sc-step-number">0{index + 1}</span><h3>{step.title}</h3><p>{step.body}</p></li>)}</ol>
+              </section>
 
-        <style>{pageCss}</style>
+              <section className="sc-section sc-conversation" id="conversation" aria-labelledby="conversation-title">
+                <div><p className="sc-kicker">{landing.exampleLabel}</p><h2 id="conversation-title" className="santa-call-display">{landing.exampleTitle}</h2><p>{landing.exampleBody}</p><p className="sc-small">{landing.exampleNote}</p></div>
+                <div className="sc-dialogue">{landing.dialogue.map((line, index) => <div key={index} className={index === 1 ? "sc-bubble sc-bubble-child" : "sc-bubble"}><span>{index === 1 ? landing.child : copy.santaLabel}</span><p>{line}</p></div>)}</div>
+              </section>
+
+              <section className="sc-section sc-faq" aria-labelledby="faq-title">
+                <p className="sc-kicker">{landing.forParents}</p><h2 id="faq-title" className="santa-call-display">{copy.faqTitle}</h2>
+                {landing.faqs.map((item) => <details key={item.q}><summary>{item.q}</summary><p>{item.a}</p></details>)}
+                <details><summary>{landing.extensionQuestion}</summary><p>{extensionText}. {landing.extensionBody}</p></details>
+              </section>
+
+              <section className="sc-section sc-final">
+                <p className="sc-kicker">{landing.finalKicker}</p><h2 className="santa-call-display">{landing.finalTitle}</h2><p>{priceHero} · {landing.singlePayment}</p>
+                {purchasable && <button type="button" className="sc-cta" onClick={openForm}>{landing.cta} · {priceLabel} <span aria-hidden>↗</span></button>}
+                <p className="sc-small">{extensionText}</p>
+              </section>
+            </>
+          )}
+          <footer className="sc-footer">
+            <strong>{copy.brand}</strong><p>{landing.parentNote}</p>
+            <nav aria-label={landing.footerLabel} className="sc-links"><Link to="/privacy">{copy.privacyLink}</Link><Link to="/terms">{landing.terms}</Link><Link to="/refunds">{landing.refunds}</Link><button type="button" className="sc-text-button" onClick={openSantaSupport}>{lang === "ro" ? "Scrie-ne în chat" : "Chat with support"}</button><button type="button" className="sc-text-button" onClick={openCookieSettings}>{landing.cookies}</button></nav>
+          </footer>
+        </div>
+        {!showForm && !returningFromPayment && purchasable && <div className="sc-sticky"><span>{priceHero}</span><button type="button" className="sc-cta" onClick={openForm}>{landing.ctaShort}</button></div>}
       </div>
     </>
   );
+
 }
-
-const gatedCss = `
-  .sc-gated { min-height: 100dvh; background: linear-gradient(160deg,#1a0b0d,#3b0610 55%,#0f3d2e); color:#F7F0E4; padding: 24px; }
-  .sc-gated-main { max-width: 36rem; margin: 12vh auto; }
-  .sc-brand { color: #e8c547; text-decoration: none; font-size: 1.25rem; }
-  .sc-kicker { letter-spacing: .14em; text-transform: uppercase; font-size: .75rem; opacity: .8; }
-  .sc-title { font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; margin: .5rem 0 1rem; }
-  .sc-body { opacity: .9; line-height: 1.55; }
-  .sc-cta { display: inline-block; margin-top: 1.5rem; color: #0f3d2e; background: #e8c547; padding: .75rem 1.25rem; border-radius: 999px; text-decoration: none; font-weight: 600; border: 0; cursor: pointer; }
-  .santa-call-display { font-family: "Cormorant Garamond", Georgia, serif; }
-`;
-
-const pageCss = `
-  .santa-call-display { font-family: "Cormorant Garamond", Georgia, serif; }
-  .sc-page {
-    font-family: "Source Sans 3", system-ui, sans-serif;
-    color: #F7F0E4;
-    background: #12080a;
-    min-height: 100dvh;
-    min-height: 100svh;
-    position: relative;
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-  .sc-hero-stage {
-    position: absolute; inset: 0 0 auto 0; height: min(100dvh, 980px);
-    z-index: 0; pointer-events: none; overflow: hidden;
-  }
-  .sc-header {
-    position: relative; z-index: 5;
-    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-    padding: max(0.65rem, env(safe-area-inset-top)) 0.85rem 0.35rem;
-    max-width: 42rem; margin: 0 auto;
-    width: 100%; box-sizing: border-box;
-  }
-  .sc-brand { color: #F7E7B0; text-decoration: none; font-size: 1.05rem; font-weight: 700; text-shadow: 0 2px 12px rgba(0,0,0,.5); min-width: 0; }
-  .sc-controls { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
-  .sc-seg {
-    display: inline-flex; border-radius: 999px; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.35);
-    backdrop-filter: blur(8px);
-  }
-  .sc-seg button {
-    border: 0; background: transparent; color: #F7F0E4; padding: 0.28rem 0.65rem;
-    font-size: 0.75rem; font-weight: 600; cursor: pointer;
-  }
-  .sc-seg button.is-on { background: #7a1520; }
-  .sc-seg button:disabled { opacity: 0.45; cursor: not-allowed; }
-  .sc-main {
-    position: relative; z-index: 2;
-    max-width: 26rem; margin: 0 auto;
-    padding: 0.35rem 0.85rem calc(5.75rem + env(safe-area-inset-bottom) + var(--tdg-cookie-offset, 0px));
-    width: 100%; box-sizing: border-box;
-  }
-  .sc-hero {
-    min-height: min(56dvh, 26rem);
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding-top: max(3.75rem, 10dvh);
-    text-shadow: 0 2px 18px rgba(0,0,0,.55);
-  }
-  .sc-title { margin: 0; font-size: clamp(1.7rem, 7vw, 2.7rem); line-height: 1.08; font-weight: 700; }
-  .sc-sub { margin: 0.55rem 0 0; font-size: 0.98rem; line-height: 1.4; max-width: 22rem; opacity: 0.95; }
-  .sc-price { margin: 0.8rem 0 0; font-size: 1.35rem; font-weight: 700; color: #E8C547; }
-  .sc-trust { margin: 0.45rem 0 0; font-size: 0.8rem; letter-spacing: 0.01em; opacity: 0.85; }
-  .sc-soon, .sc-success {
-    margin-top: 0.65rem; padding: 0.55rem 0.75rem; border-radius: 0.85rem; font-size: 0.78rem; line-height: 1.35;
-    border: 1px solid rgba(232,197,71,0.35); background: rgba(10,6,8,0.55);
-  }
-  .sc-soon-qa { border-color: rgba(120,180,255,0.35); }
-  .sc-cta {
-    margin-top: 0.9rem; border: 0; border-radius: 999px; padding: 0.95rem 1.1rem;
-    font-size: 1.05rem; font-weight: 700; color: #F7F0E4; cursor: pointer;
-    background: linear-gradient(180deg, #1a5a42 0%, #0f3d2e 100%);
-    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-    text-decoration: none; display: inline-block; text-align: center;
-    width: 100%; max-width: 22rem; box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .sc-cta:disabled { opacity: 0.5; cursor: not-allowed; }
-  .sc-ai { margin: 0.55rem 0 0; font-size: 0.72rem; line-height: 1.35; opacity: 0.78; max-width: 22rem; }
-  .sc-section { margin-top: 0.85rem; scroll-margin-top: calc(1rem + env(safe-area-inset-top)); }
-  .sc-form {
-    display: grid; gap: 0.65rem;
-    padding: 0.85rem; border-radius: 1.15rem;
-    background: rgba(26, 8, 12, 0.78); border: 1px solid rgba(232,197,71,0.22);
-    backdrop-filter: blur(10px);
-    width: 100%; box-sizing: border-box;
-  }
-  .sc-form-lead { margin: 0; font-size: 0.82rem; line-height: 1.4; opacity: 0.9; }
-  .sc-form-row { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.55rem; }
-  .sc-form label { display: grid; gap: 0.28rem; font-size: 0.84rem; }
-  .sc-form input, .sc-form textarea {
-    border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(0,0,0,0.28); color: inherit; padding: 0.7rem 0.75rem; outline: none;
-    font: inherit; font-size: 16px; width: 100%; box-sizing: border-box;
-  }
-  .sc-form textarea { min-height: 2.8rem; resize: vertical; }
-  .sc-check { display: flex !important; align-items: flex-start; gap: 0.6rem; }
-  .sc-check input { margin-top: 0.2rem; width: auto; }
-  .sc-error { margin: 0; color: #ffb4b4; font-size: 0.86rem; }
-  .sc-charge { margin: 0 0 0.55rem; font-weight: 600; color: #E8C547; }
-  .sc-legal { margin-top: 1.5rem; opacity: 0.9; padding-bottom: 0.5rem; }
-  .sc-legal summary { cursor: pointer; font-weight: 600; color: #E8C547; }
-  .sc-faq { margin-top: 0.65rem; display: grid; gap: 0.65rem; font-size: 0.86rem; line-height: 1.45; }
-  .sc-faq p { margin: 0.25rem 0 0; opacity: 0.88; }
-  .sc-ext-note { margin: 0.35rem 0 0 !important; font-size: 0.8rem; opacity: 0.8; }
-  .sc-fine { margin-top: 0.75rem; font-size: 0.72rem; line-height: 1.45; opacity: 0.72; }
-  .sc-links { display: flex; gap: 1rem; margin-top: 0.55rem; }
-  .sc-links a { color: #E8C547; }
-  .sc-sticky {
-    position: fixed; left: 0; right: 0; z-index: 70;
-    bottom: var(--tdg-cookie-offset, 0px);
-    padding: 0.55rem 0.85rem max(0.65rem, env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, transparent, rgba(8,3,5,0.92) 35%);
-    display: flex; justify-content: center;
-    width: 100%; box-sizing: border-box;
-  }
-  .sc-cta-sticky { width: min(100%, 22rem); margin-top: 0; }
-  @media (max-width: 390px) {
-    .sc-hero { min-height: min(50dvh, 22rem); padding-top: max(3.25rem, 8dvh); }
-    .sc-title { font-size: clamp(1.55rem, 7vw, 2.05rem); }
-    .sc-seg button { padding: 0.26rem 0.55rem; font-size: 0.7rem; }
-    .sc-form-row { grid-template-columns: 1fr; }
-  }
-  @media (min-width: 900px) {
-    .sc-sticky { display: none; }
-    .sc-main { max-width: 28rem; }
-    .sc-hero { min-height: min(72vh, 36rem); }
-    .sc-cta { width: auto; max-width: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .sc-cta { box-shadow: none; }
-  }
-`;

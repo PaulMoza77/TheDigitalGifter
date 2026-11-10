@@ -12,6 +12,8 @@
         return path === "/christmas";
       })();
       window.__TDG_CONSENT_KEY__ = "tdg.cookie-consent.v1";
+      window.__TDG_SANTA_LANDING__ = /^\/(?:ro\/)?christmas\/santa-call\/?$/.test(location.pathname);
+      window.__TDG_PRIVATE_ANALYTICS__ = /^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname);
     </script>
 
     <!-- Google tag (gtag.js) — Consent Mode v2: denied until the visitor accepts -->
@@ -38,7 +40,12 @@
         s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
         document.head.appendChild(s);
         gtag("js", new Date());
-        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+        gtag("config", "G-YF2GRM2TL4", window.__TDG_SANTA_LANDING__ ? {
+          send_page_view: false,
+          page_location: location.origin + "/christmas/santa-call",
+          page_referrer: "",
+          allow_google_signals: false
+        } : { send_page_view: true });
       }
 
       function __tdgLoadClarity() {
@@ -79,12 +86,13 @@
           s = b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t, s);
         })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-        fbq("init", "1581639566935542");
+        fbq("init", window.__TDG_SANTA_LANDING__ ? "1673980440653322" : "1581639566935542");
         fbq("track", "PageView");
       }
 
       function __tdgLoadMarketingScripts() {
         function boot() {
+          if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname)) return;
           __tdgLoadGtag();
           __tdgLoadClarity();
           __tdgLoadFbq();
@@ -115,6 +123,9 @@
         var granted = value === "granted";
         window.__tdgApplyConsentUpdate(granted);
         if (granted) __tdgLoadMarketingScripts();
+        if (!granted && window.fbq) window.fbq("consent", "revoke");
+        if (granted && window.fbq) window.fbq("consent", "grant");
+        window.dispatchEvent(new Event("tdg-consent-updated"));
       };
 
       (function bootConsent() {

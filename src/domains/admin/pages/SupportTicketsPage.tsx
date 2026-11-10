@@ -69,6 +69,16 @@ export default function SupportTicketsPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [failedAlerts, setFailedAlerts] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const { count, error } = await supabase.from("support_admin_alerts").select("id", { count: "exact", head: true }).eq("status", "failed");
+      if (!cancelled) setFailedAlerts(error ? null : count ?? 0);
+    };
+    void check(); const timer = window.setInterval(check, 30000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
 
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedTicketId) || null,
@@ -95,7 +105,8 @@ export default function SupportTicketsPage() {
 
         setSelectedTicketId((current) => {
           if (current && rows.some((ticket) => ticket.id === current)) return current;
-          return rows[0]?.id ?? null;
+          const requested = new URLSearchParams(window.location.search).get("ticket");
+          return rows.find((ticket) => ticket.id === requested)?.id ?? rows[0]?.id ?? null;
         });
       } catch (error: any) {
         console.error("[SupportTicketsPage] loadTickets error:", error);
@@ -359,6 +370,7 @@ export default function SupportTicketsPage() {
     <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#05070d] p-4 text-white sm:p-6">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
+        {failedAlerts === null ? <p className="text-sm text-amber-200">Email notification status unavailable. Check support-alert deployment/configuration.</p> : failedAlerts > 0 ? <p role="alert" className="text-sm text-amber-200">{failedAlerts} email notification(s) failed. Check Resend and the support notification worker.</p> : null}
         <p className="text-sm text-zinc-400">
           Real-time support inbox for client messages.
         </p>

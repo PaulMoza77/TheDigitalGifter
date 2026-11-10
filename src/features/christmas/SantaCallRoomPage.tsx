@@ -1,3 +1,4 @@
+import { SantaSupportChat } from "./santa-call/SantaSupportChat";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -242,11 +243,10 @@ export default function SantaCallRoomPage() {
             productKey: "christmas_santa_voice_call_extension",
           });
           trackSantaCallAnalytics(
-            "extension_paid",
-            { transaction_id: orderId, value: amountCents / 100, currency: currency.toUpperCase() },
+            "santa_extension_purchased",
+            { transaction_id: orderId, value: amountCents / 100, currency: currency.toUpperCase(), payment_type: "extension" },
             `extension_paid.${orderId}`,
           );
-          trackSantaCallAnalytics("extension_activated", { seconds_granted: 300 }, `extension_activated.${orderId}`);
         }
         setExtensionPolling(false);
         applyResolve(obj);
@@ -319,7 +319,7 @@ export default function SantaCallRoomPage() {
       }
       if (endData?.extension_available === true || reason === "duration_limit") {
         trackSantaCallAnalytics(
-          "call_completed",
+          "santa_call_completed",
           { completion_reason: reason, extension_available: true },
           `call_completed.${sessionId || "unknown"}`,
         );
@@ -330,7 +330,7 @@ export default function SantaCallRoomPage() {
       }
       setUi("completed");
       trackSantaCallAnalytics(
-        "call_completed",
+        "santa_call_completed",
         { completion_reason: reason, extension_available: false },
         `call_completed.${sessionId || "unknown"}`,
       );
@@ -468,7 +468,7 @@ export default function SantaCallRoomPage() {
       }
       handleRef.current = handle;
       trackSantaCallAnalytics(
-        "call_started",
+        "santa_call_started",
         { provider: "openai_realtime" },
         `call_started.${String(data.sessionId)}`,
       );
@@ -478,6 +478,7 @@ export default function SantaCallRoomPage() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "failed";
+      trackSantaCallAnalytics("santa_call_failed", {}, `call_failed.${sessionIdRef.current || "unbound"}`);
       setError(message);
       setUi("failed");
       if (sessionIdRef.current) {
@@ -516,7 +517,6 @@ export default function SantaCallRoomPage() {
     setExtensionBusy(true);
     setError(null);
     try {
-      trackSantaCallAnalytics("extension_checkout", { value: 49, currency: "RON" }, "extension_checkout");
       const access = readSantaQaPageAccessToken(window.location.search);
       const accessQs = access ? `&access=${encodeURIComponent(access)}` : "";
       const successUrl =
@@ -578,6 +578,7 @@ export default function SantaCallRoomPage() {
 
   return (
     <>
+      <SantaSupportChat language={lang} context="call" />
       <PageHead
         title={copy.roomTitle}
         description={copy.ogDescription}
@@ -833,6 +834,11 @@ export default function SantaCallRoomPage() {
                       clientSecret={extensionCheckout.clientSecret}
                       publishableKey={extensionCheckout.publishableKey}
                       dueDisplay={formatMoney(extensionCheckout.amountCents, extensionCheckout.currency)}
+                      language={lang}
+                      walletCapabilityOnly
+                      appearanceTheme="night"
+                      payButtonLabel={(amount) => lang === "ro" ? `Plătește ${amount} · +5 minute` : `Pay ${amount} · +5 minutes`}
+                      busyLabel={lang === "ro" ? "Se procesează…" : "Processing…"}
                     />
                   ) : extensionCheckout.checkoutUrl ? (
                     <a

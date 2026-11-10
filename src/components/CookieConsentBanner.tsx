@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   COOKIE_SETTINGS_EVENT,
   applyCookieConsent,
@@ -18,6 +18,10 @@ function setCookieOffset(px: number) {
 }
 
 export function CookieConsentBanner() {
+  const location = useLocation();
+  const santaRoute = /(?:^|\/)(?:christmas\/santa-call|santa\/call)(?:\/|$)/.test(location.pathname);
+  const language = new URLSearchParams(location.search).get("lang") || navigator.language || "ro";
+  const romanian = santaRoute && !language.toLowerCase().startsWith("en");
   const [visible, setVisible] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -69,12 +73,14 @@ export function CookieConsentBanner() {
       <div className="mx-auto flex max-w-5xl flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0 max-w-2xl">
           <p id="tdg-cookie-title" className="text-xs font-semibold sm:text-sm">
-            Cookies and analytics
+            {romanian ? "Cookies și analiză" : "Cookies and analytics"}
           </p>
           <p id="tdg-cookie-copy" className="mt-0.5 text-[0.75rem] leading-5 text-white/75 sm:text-sm sm:leading-6">
-            Essential cookies keep you signed in. Analytics/ads stay off until you accept.{" "}
+            {romanian
+              ? "Folosim cookies esențiale pentru funcționarea site-ului. Analiza și publicitatea se activează doar dacă accepți."
+              : "Essential cookies keep you signed in. Analytics/ads stay off until you accept."}{" "}
             <Link className="underline decoration-white/40 underline-offset-2 hover:text-white" to="/privacy">
-              Privacy
+              {romanian ? "Confidențialitate" : "Privacy"}
             </Link>
           </p>
         </div>
@@ -84,14 +90,14 @@ export function CookieConsentBanner() {
             className="min-h-10 rounded-full border border-white/20 px-3 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 sm:px-4"
             onClick={() => choose("denied")}
           >
-            Reject
+            {romanian ? "Refuză" : "Reject"}
           </button>
           <button
             type="button"
             className="min-h-10 rounded-full bg-[#ffd976] px-3 py-2 text-sm font-semibold text-[#1a1a1a] hover:brightness-110 sm:px-4"
             onClick={() => choose("granted")}
           >
-            Accept
+            {romanian ? "Acceptă" : "Accept"}
           </button>
         </div>
       </div>

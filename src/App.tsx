@@ -394,6 +394,10 @@ function GtagPageViewTracker() {
   const skipInitialHtmlPageView = useRef(true);
 
   useEffect(() => {
+    if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname) || /^\/(?:ro\/)?christmas\/santa-call\/?$/.test(location.pathname)) {
+      skipInitialHtmlPageView.current = false;
+      return;
+    }
     if (skipInitialHtmlPageView.current) {
       skipInitialHtmlPageView.current = false;
       return;
@@ -410,6 +414,7 @@ function MetaSpaPageViewTracker() {
   const skipInitialHtmlPageView = useRef(true);
 
   useEffect(() => {
+    if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname)) return;
     if (skipInitialHtmlPageView.current) {
       skipInitialHtmlPageView.current = false;
       return;
@@ -436,13 +441,14 @@ function WebsiteLayout() {
   const hideChromeExtras =
     location.pathname === "/christmas/tree-gifts" ||
     location.pathname.startsWith("/christmas/tree-gifts/");
+  const hideSantaChrome = /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(location.pathname);
   const hidePlannerChrome =
     location.pathname === "/christmas/planner" ||
     location.pathname.startsWith("/christmas/planner/");
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      {hidePlannerChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
+      {hidePlannerChrome || hideSantaChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
       <main className={`flex-1 ${hideChromeExtras || hidePlannerChrome ? "min-h-0" : ""}`}>
         <Outlet />
@@ -453,7 +459,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      {hideChromeExtras || hidePlannerChrome ? null : <WebsiteFooter />}
+      {hideChromeExtras || hidePlannerChrome || hideSantaChrome ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -484,6 +490,7 @@ function PlannerAwareSupportWidget() {
     location.pathname.startsWith("/christmas/planner/") ||
     location.pathname === "/account/christmas" ||
     location.pathname.startsWith("/account/christmas/") ||
+    /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(location.pathname) ||
     location.pathname.startsWith("/santa/call")
   ) {
     return null;

@@ -80,11 +80,11 @@ export const SANTA_CALL_COPY = {
   ro: {
     brand: "The Digital Gifter",
     kicker: "Colecția de Crăciun",
-    title: "Un apel magic cu Moș Crăciun",
-    subtitle: "Moșul îi știe numele, îi ascultă dorințele și îi răspunde în timp real.",
+    title: "Anul acesta, un apel magic: Moș Crăciun îl sună chiar pe copilul tău! 🎅",
+    subtitle: "O conversație magică și interactivă, în limba română, în care Moș Crăciun îl strigă pe nume, îl ascultă și îi răspunde.",
     priceHint: "59 lei / 3 minute",
     extensionHint: "Prelungire opțională +5 minute · 49 lei",
-    cta: "Sună-l pe Moș Crăciun",
+    cta: "Pregătește apelul cu Moș Crăciun — 59 lei",
     ctaSticky: "Sună-l pe Moș",
     trust: "Plată securizată · Fără abonament",
     priceDuration: "3 minute",
@@ -97,10 +97,9 @@ export const SANTA_CALL_COPY = {
     legalSummary: "Personaj AI · Supraveghere parentală · Fără telefonul copilului",
     processTitle: "Cum funcționează",
     process: [
-      "Completezi câteva detalii despre copil (doar ce vrei să știe Moșul).",
-      "Plătești în siguranță cu Stripe (prețul pieței alese).",
-      "Primești pe email un link privat către apel.",
-      "Copilul vorbește 3 minute; poți prelungi o singură dată cu încă 5 minute.",
+      "Personalizezi experiența cu numele și câteva detalii opționale.",
+      "Plătești securizat prin Stripe, fără abonament.",
+      "Primești un link privat și copilul vorbește cu Moș Crăciun în browser.",
     ],
     specialTitle: "Ce face experiența specială",
     special: [
@@ -119,20 +118,48 @@ export const SANTA_CALL_COPY = {
     faqTitle: "Întrebări frecvente",
     faqs: [
       {
-        q: "Moșul este o persoană reală?",
-        a: "Nu. Moș Crăciun este un personaj AI. Experiența este magică, dar transparentă: copilul vorbește cu un personaj generat de inteligență artificială.",
+        q: "Este un apel real cu Moș Crăciun?",
+        a: "Este o conversație interactivă cu un Moș Crăciun virtual, creat cu inteligență artificială. Copilul poate vorbi, pune întrebări și primi răspunsuri în timp real; nu este doar o înregistrare redată automat.",
       },
       {
-        q: "Moșul sună pe telefonul copilului?",
-        a: "Nu. Apelul rulează în browser (Safari/Chrome), pe linkul privat pe care îl primești pe email. Nu colectăm numărul de telefon al copilului.",
+        q: "Moș Crăciun vorbește în limba română?",
+        a: "Da. Experiența este pregătită în limba română, iar conversația poate detecta automat limba vorbită.",
       },
       {
-        q: "Ce limbi sunt suportate?",
-        a: "Interfața este în română și engleză. În apel, limba vorbită poate fi detectată automat; părintele alege un fallback.",
+        q: "Moș Crăciun știe numele copilului meu?",
+        a: "Da. Înainte de apel, completezi numele și informațiile opționale pe care vrei să le folosească în conversație.",
       },
       {
-        q: "Pot prelungi apelul?",
-        a: "Da, o singură dată, cu încă 5 minute, printr-o plată separată după cele 3 minute inițiale.",
+        q: "Cât durează și cât costă?",
+        a: "Apelul inițial costă 59 lei și include 3 minute. Poți adăuga încă 5 minute pentru 49 lei, o singură dată, după apelul inițial.",
+      },
+      {
+        q: "Cum începe apelul după plată?",
+        a: "După confirmarea plății primești un link privat pe email. Deschizi linkul în Safari sau Chrome, permiți microfonul și apeși butonul de pornire.",
+      },
+      {
+        q: "Trebuie să instalez o aplicație?",
+        a: "Nu. Experiența rulează direct în browser pe telefon sau desktop; este necesară o conexiune stabilă și acces la microfon.",
+      },
+      {
+        q: "Copilul poate pune orice întrebare?",
+        a: "Poate purta o conversație liberă, dar este o experiență AI cu limite și răspunsurile pot fi uneori imperfecte.",
+      },
+      {
+        q: "Este potrivit pentru copii?",
+        a: "Experiența este creată pentru familie. Un adult trebuie să supravegheze interacțiunea, deoarece răspunsurile sunt generate de AI.",
+      },
+      {
+        q: "Cum sunt protejate informațiile copilului?",
+        a: "Colectăm doar informațiile necesare pentru personalizare și livrarea linkului privat, cu consimțământ parental. Nu cerem numărul de telefon al copilului.",
+      },
+      {
+        q: "Ce se întâmplă dacă apelul se întrerupe?",
+        a: "Poți redeschide linkul privat și contacta suportul dacă problema persistă. Durata este controlată pe server, iar eventualele situații neobișnuite sunt verificate de echipa noastră.",
+      },
+      {
+        q: "Cum pot plăti?",
+        a: "Plata se face prin Stripe Hosted Checkout. Cardul și Apple Pay sunt afișate atunci când sunt disponibile pe dispozitivul și browserul tău.",
       },
     ],
     finalCtaTitle: "Gata de magie?",
@@ -242,22 +269,17 @@ export const SANTA_CALL_COPY = {
     pricingExtension: "Optional extension — +5 minutes (once)",
     faqTitle: "FAQ",
     faqs: [
-      {
-        q: "Is Santa a real person?",
-        a: "No. Santa is an AI character. The experience is magical and transparent: your child talks with an AI-generated character.",
-      },
-      {
-        q: "Does Santa dial my child's phone?",
-        a: "No. The call runs in the browser (Safari/Chrome) via the private link emailed to you. We do not collect the child's phone number.",
-      },
-      {
-        q: "Which languages are supported?",
-        a: "The interface is Romanian and English. During the call, spoken language can be auto-detected; you choose a fallback.",
-      },
-      {
-        q: "Can I extend the call?",
-        a: "Yes — once — for 5 more minutes, with a separate payment after the initial 3 minutes.",
-      },
+      { q: "Is this a real call with Santa?", a: "It is an interactive conversation with an AI Santa character, not a prerecorded video." },
+      { q: "Does Santa speak Romanian?", a: "Yes. The experience is prepared in Romanian, with automatic spoken-language detection." },
+      { q: "Does Santa know my child’s name?", a: "Yes. You provide the name and optional details before the call." },
+      { q: "How long does it last and what does it cost?", a: "The initial call is 59 lei for 3 minutes. Add 5 minutes once for 49 lei." },
+      { q: "How does the call start after payment?", a: "Open the private email link in Safari or Chrome, allow the microphone, and press start." },
+      { q: "Do I need to install an app?", a: "No. It runs in a modern browser with a stable connection and microphone access." },
+      { q: "Can my child ask anything?", a: "The conversation is open-ended, but AI answers can have reasonable limitations." },
+      { q: "Is it suitable for children?", a: "It is designed for family use; an adult should supervise the AI interaction." },
+      { q: "How is my child’s information protected?", a: "We collect only what is needed for personalization and private-link delivery, with parental consent." },
+      { q: "What if the call is interrupted?", a: "Reopen the private link and contact support if the issue persists; server-side duration controls the entitlement." },
+      { q: "How can I pay?", a: "Stripe Hosted Checkout shows card and Apple Pay when available on your device and browser." },
     ],
     finalCtaTitle: "Ready for magic?",
     finalCtaBody: "Personalize the call and give your child an unforgettable moment.",
