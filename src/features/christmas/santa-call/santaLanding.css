@@ -31,6 +31,15 @@
 .sc-page h2 { font-size: clamp(30px, 3.4vw, 44px); line-height: 1.1; margin: 0 0 20px; }
 .sc-page h3 { font-size: 19px; font-weight: 600; margin: 16px 0 8px; }
 .sc-page .sc-section p { line-height: 1.65; }
+.sc-page .sc-joy-heading { max-width: 660px; }
+.sc-page .sc-joy-heading > p:last-child { color: var(--sc-muted); font-size: 18px; }
+.sc-page .sc-joy-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 28px 0; }
+.sc-page .sc-joy-cards li { border: 1px solid #dcded2; border-radius: 20px; padding: 24px; background: #f5f1e7; }
+.sc-page .sc-joy-star { color: #82633a; font-size: 24px; }
+.sc-page .sc-joy-cards h3 { margin-top: 10px; }
+.sc-page .sc-joy-cards p { color: var(--sc-muted); font-size: 16px; margin-bottom: 0; }
+.sc-page .sc-joy-action { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.sc-page .sc-joy-action p { max-width: 420px; font-size: 18px; margin: 0; }
 .sc-page .sc-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; list-style: none; padding: 12px 0 0; margin: 0; }
 .sc-page .sc-steps p { font-size: 15px; color: var(--sc-muted); }
 .sc-page .sc-step-number { color: #9e302b; font-family: Georgia, serif; font-size: 30px; }
@@ -87,6 +96,9 @@
   .sc-page .sc-portrait { border-radius: 24px; max-width: 420px; width: 100%; justify-self: center; }
   .sc-page .sc-portrait img { object-position: center; }
   .sc-page .sc-steps, .sc-page .sc-conversation, .sc-page .sc-personalize { grid-template-columns: 1fr; gap: 28px; }
+  .sc-page .sc-joy-cards { grid-template-columns: 1fr; }
+  .sc-page .sc-joy-cards li { padding: 20px; }
+  .sc-page .sc-joy-action .sc-cta { width: 100%; }
   .sc-page .sc-steps li { padding-bottom: 12px; }
   .sc-page .sc-section { padding: 36px 0; }
   .sc-page .sc-final { padding: 32px 18px; }

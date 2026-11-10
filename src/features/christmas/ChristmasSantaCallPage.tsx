@@ -533,6 +533,27 @@ export default function ChristmasSantaCallPage() {
                 </section>
               )}
 
+              <section className="sc-section sc-joy" aria-labelledby="joy-title">
+                <div className="sc-joy-heading">
+                  <p className="sc-kicker">{landing.joyKicker}</p>
+                  <h2 id="joy-title" className="santa-call-display">{landing.joyTitle}</h2>
+                  <p>{landing.joyIntro}</p>
+                </div>
+                <ul className="sc-joy-cards">
+                  {landing.joyCards.map((item) => (
+                    <li key={item.title}>
+                      <span className="sc-joy-star" aria-hidden="true">✦</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.body}</p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="sc-joy-action">
+                  <p>{landing.joyParentNote}</p>
+                  {purchasable && <button type="button" className="sc-cta" onClick={openForm}>{landing.joyCta} · {priceLabel} <span aria-hidden>↗</span></button>}
+                </div>
+              </section>
+
               <section className="sc-section" id="how-it-works" aria-labelledby="process-title">
                 <p className="sc-kicker">{landing.processKicker}</p>
                 <h2 id="process-title" className="santa-call-display">{landing.processTitle}</h2>
