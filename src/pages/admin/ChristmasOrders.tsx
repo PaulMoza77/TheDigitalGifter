@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { readAdminRows } from "@/domains/admin/data/readAdminRows";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { RefreshCw, Search, Gift } from "lucide-react";
@@ -150,6 +151,7 @@ export default function ChristmasOrdersPage() {
   const [fulfillmentFilter, setFulfillmentFilter] = useState("");
   const [productFilter, setProductFilter] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ChristmasOrderRow | null>(null);
   const [plannerBusy, setPlannerBusy] = useState(false);
   const [santaJob, setSantaJob] = useState<SantaJobRow | null>(null);
@@ -157,21 +159,18 @@ export default function ChristmasOrdersPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("christmas_orders")
-      .select(
-        "id,email,user_id,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata",
-      )
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    if (error) {
-      toast.error(error.message || "Failed to load Christmas orders");
-      setRows([]);
-    } else {
-      setRows((data || []) as ChristmasOrderRow[]);
+    setLoadError(null);
+    try {
+      const data = await readAdminRows<ChristmasOrderRow>(() => supabase
+        .from("christmas_orders")
+        .select("id,email,user_id,product_key,package_key,style_key,portrait_type,species,source_route,amount_cents,currency,payment_status,fulfillment_status,stripe_checkout_session_id,stripe_payment_intent_id,last_error,utm_source,utm_campaign,affiliate_ref,landing_path,created_at,paid_at,model_name,generation_started_at,generation_finished_at,metadata", { count: "exact" })
+        .order("id"), "Christmas orders");
+      setRows(data.sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Failed to load orders");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -403,7 +402,8 @@ export default function ChristmasOrdersPage() {
         <div className="flex items-center gap-2">
           <Gift className="h-5 w-5 text-slate-300" />
           <div>
-            <h1 className="text-xl font-semibold text-white">Christmas orders</h1>
+            {loadError && <p role="alert" className="rounded border border-red-500 p-3 text-red-200">Orders unavailable: {loadError}. Previously loaded rows may be outdated; refresh before acting.</p>}
+          <h1 className="text-xl font-semibold text-white">Christmas orders</h1>
             <p className="text-sm text-slate-400">
               Payment and fulfillment observability foundation (no child PII fields).
             </p>

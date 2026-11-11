@@ -152,6 +152,8 @@ export default function ChristmasDashboardPage() {
           <p className="text-xs text-slate-500">{data.softWarnings.join(" ")}</p>
         ) : null}
 
+        <p className="text-sm text-slate-300">For Santa Call, use <a className="underline" href="/admin/christmas/santa-call?tab=analytics">the dedicated funnel report</a>. It combines GA4 with confirmed payments and runtime calls.</p>
+        {data.loading ? <p role="status">Loading report…</p> : data.error ? <p>Report unavailable. Retry or select a shorter period; no totals are shown.</p> : <>
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Income" value={incomeLabel} hint={`${paid.length} paid orders`} />
           <Metric
@@ -270,6 +272,7 @@ export default function ChristmasDashboardPage() {
             </table>
           </div>
         </SectionCard>
+        </>}
       </div>
     </div>
   );

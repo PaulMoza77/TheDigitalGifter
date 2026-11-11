@@ -36,6 +36,8 @@ function AdminSignInGate({ returnPath }: { returnPath: string }) {
 export function AdminRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [gate, setGate] = useState<Gate>({ ready: false, email: null, isAdmin: false });
 
   useEffect(() => {
@@ -49,28 +51,18 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const { data: row, error } = await supabase
-          .from("admin_users")
-          .select("email")
-          .eq("email", normalizedEmail)
-          .maybeSingle();
-
+        const { data, error } = await supabase.rpc("is_admin");
         if (!mounted) return;
-
         if (error) {
-          console.error("[AdminRoute] admin_users check error:", error);
+          setError("Admin access could not be verified. Check the connection and retry.");
           setGate({ ready: true, email: normalizedEmail, isAdmin: false });
           return;
         }
-
-        setGate({
-          ready: true,
-          email: normalizedEmail,
-          isAdmin: Boolean(row?.email),
-        });
+        setError(null);
+        setGate({ ready: true, email: normalizedEmail, isAdmin: data === true });
       } catch (e) {
         console.error("[AdminRoute] checkAdmin fatal:", e);
-        if (mounted) setGate({ ready: true, email: null, isAdmin: false });
+        if (mounted) { setError("Admin access could not be verified. Please retry."); setGate({ ready: true, email: normalizedEmail, isAdmin: false }); }
       }
     }
 
@@ -81,7 +73,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [authLoading, user?.email]);
+  }, [authLoading, user?.email, retry]);
 
   if (authLoading || !gate.ready) {
     return (
@@ -93,6 +85,8 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+
+  if (error && user) return <div className="p-8 text-center"><p role="alert">{error}</p><button className="mt-4 underline" onClick={() => setRetry((n) => n + 1)}>Retry access check</button></div>;
 
   if (!gate.email) {
     return <AdminSignInGate returnPath={`${location.pathname}${location.search}`} />;

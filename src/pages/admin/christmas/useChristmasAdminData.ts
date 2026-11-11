@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { readAdminRows } from "@/domains/admin/data/readAdminRows";
 import { supabase } from "@/lib/supabase";
 import {
   sinceIso,
@@ -17,6 +18,7 @@ function emptyOnError<T>(error: { message: string } | null, data: T[] | null): T
 }
 
 export function useChristmasAdminData(days: RangeDays) {
+  const generation = useRef(0);
   const [events, setEvents] = useState<ChristmasEventRow[]>([]);
   const [orders, setOrders] = useState<ChristmasOrderRow[]>([]);
   const [emails, setEmails] = useState<ChristmasEmailRow[]>([]);
@@ -30,50 +32,43 @@ export function useChristmasAdminData(days: RangeDays) {
   const [softWarnings, setSoftWarnings] = useState<string[]>([]);
 
   const load = useCallback(async () => {
+    const current = ++generation.current;
     setLoading(true);
     setError(null);
     const since = sinceIso(days);
 
     let eventQuery = supabase
       .from("christmas_funnel_events")
-      .select("id,event_name,funnel_session_id,product_key,package_key,order_id,locale,pathname,device_type,amount_cents,utm_source,utm_campaign,is_test,environment,metadata,created_at")
-      .order("created_at", { ascending: false })
-      .limit(10000);
+      .select("id,event_name,funnel_session_id,product_key,package_key,order_id,locale,pathname,device_type,amount_cents,utm_source,utm_campaign,is_test,environment,metadata,created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let orderQuery = supabase
       .from("christmas_orders")
-      .select("id,product_key,package_key,amount_cents,currency,payment_status,fulfillment_status,last_error,source_route,landing_path,metadata,created_at,paid_at,delivery_email_sent_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+      .select("id,product_key,package_key,amount_cents,currency,payment_status,fulfillment_status,last_error,source_route,landing_path,metadata,created_at,paid_at,delivery_email_sent_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let emailQuery = supabase
       .from("christmas_email_deliveries")
-      .select("id,order_id,kind,status,last_error,created_at,sent_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+      .select("id,order_id,kind,status,last_error,created_at,sent_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let legacyEmailQuery = supabase
       .from("christmas_v2_email_deliveries")
-      .select("id,order_id,kind,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+      .select("id,order_id,kind,status,created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let costQuery = supabase
       .from("ai_cost_ledger")
-      .select("cost_usd,product_family,model_name,is_mock,occurred_at,started_at")
-      .like("product_family", "christmas%")
-      .limit(8000);
+      .select("cost_usd,product_family,model_name,is_mock,occurred_at,started_at", { count: "exact" })
+      .like("product_family", "christmas%").order("id");
     let santaQuery = supabase
       .from("christmas_santa_video_jobs")
-      .select("cost_total_usd,created_at")
-      .order("created_at", { ascending: false })
-      .limit(3000);
+      .select("cost_total_usd,created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let clubQuery = supabase
       .from("christmas_club_signups")
-      .select("id,created_at,source,status")
-      .order("created_at", { ascending: false })
-      .limit(5000);
+      .select("id,created_at,source,status", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
     let v2Query = supabase
       .from("christmas_v2_funnel_events")
-      .select("id,event_name,funnel_session_id,pathname,amount_cents,product,utm_source,utm_campaign,device_type,created_at")
-      .order("created_at", { ascending: false })
-      .limit(8000);
+      .select("id,event_name,funnel_session_id,pathname,amount_cents,product,utm_source,utm_campaign,device_type,created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
 
     if (since) {
       eventQuery = eventQuery.gte("created_at", since);
@@ -104,7 +99,11 @@ export function useChristmasAdminData(days: RangeDays) {
       santaQuery,
       clubQuery,
       v2Query,
-    ]);
+    ].map(async (query) => {
+      try { return { data: await readAdminRows<any>(() => query, "Christmas reporting"), error: null }; }
+      catch (error) { return { data: [] as any[], error: { message: error instanceof Error ? error.message : "Source unavailable" } }; }
+    }));
+    if (current !== generation.current) return;
 
     const critical = eventResult.error || orderResult.error;
     if (critical) {
@@ -133,6 +132,8 @@ export function useChristmasAdminData(days: RangeDays) {
     }));
 
     const warnings: string[] = [];
+    if (emailResult.error) warnings.push("Delivery email ledger unavailable; email totals are incomplete.");
+    if (legacyResult.error) warnings.push("Legacy delivery email ledger unavailable; email totals are incomplete.");
     if (costResult.error) warnings.push("AI cost ledger unavailable for this range.");
     if (santaResult.error) warnings.push("Santa job costs unavailable.");
     if (clubResult.error) warnings.push("Club signups table unavailable.");
@@ -155,6 +156,7 @@ export function useChristmasAdminData(days: RangeDays) {
 
   useEffect(() => {
     void load();
+    return () => { generation.current++; };
   }, [load]);
 
   return {

@@ -37,6 +37,8 @@ import {
   isOpenAiRealtimeCallId,
 } from "../_shared/christmas/santaCallProviderTermination.ts";
 
+import { santaAdminReport } from "../_shared/christmas/santaAdminReporting.ts";
+
 const INITIAL_SECONDS = 180;
 const INITIAL_PRODUCT_KEY = "christmas_santa_voice_call";
 const INITIAL_PRICING_KEY = "xmas_santa_voice_call";
@@ -149,9 +151,8 @@ async function requireAdmin(req: Request): Promise<boolean> {
   const { data: userData } = await userClient.auth.getUser();
   const email = asString(userData.user?.email).toLowerCase();
   if (!email) return false;
-  const service = serviceClient();
-  const { data } = await service.from("admin_users").select("email").eq("email", email).maybeSingle();
-  return Boolean(data?.email);
+  const { data, error } = await userClient.rpc("is_admin");
+  return !error && data === true;
 }
 
 Deno.serve(async (req) => {
@@ -166,7 +167,7 @@ Deno.serve(async (req) => {
 
     if (
       santaCallKillSwitchActive() &&
-      !["stats", "resolve", "confirm_checkout", "poll_extension"].includes(action)
+      !["stats", "admin_dashboard", "resolve", "confirm_checkout", "poll_extension"].includes(action)
     ) {
       // resolve/confirm still allowed so paid Safari returns can recover entitlements
       return json({ error: "Santa Call is temporarily disabled", code: "kill_switch" }, 503);
@@ -1278,6 +1279,23 @@ Deno.serve(async (req) => {
           .map((s) => ({ id: s.id, error_code: s.error_code, created_at: s.created_at })),
         productEnabled: !santaCallKillSwitchActive(),
       });
+    }
+
+    if (action === "admin_dashboard") {
+      if (!(await requireAdmin(req))) return json({ error: "forbidden" }, 403);
+      try {
+        let connectorSnapshot: string | undefined;
+        try {
+          connectorSnapshot = await Deno.readTextFile(new URL("../_shared/christmas/santaAnalyticsSnapshot.json", import.meta.url));
+        } catch (error) {
+          if (!(error instanceof Deno.errors.NotFound)) throw new Error("connector_snapshot_unreadable");
+        }
+        return json(await santaAdminReport(service, body, (key) => Deno.env.get(key), connectorSnapshot));
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "report_failed";
+        const safe = /^[a-z0-9_]+$/.test(code) ? code : "report_failed";
+        return json({ error: safe }, /range|invalid_page/.test(safe) ? 400 : 503);
+      }
     }
 
     if (action === "sweep_stale_sessions") {

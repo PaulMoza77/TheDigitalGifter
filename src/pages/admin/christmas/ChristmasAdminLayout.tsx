@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const TABS = [
+  { to: "/admin/christmas/santa-call", label: "Santa Call · Funnel & Health", end: false },
   { to: "/admin/christmas", label: "Dashboard", end: true },
   { to: "/admin/christmas/analytics", label: "Analytics", end: false },
   { to: "/admin/christmas/orders", label: "Orders", end: false },

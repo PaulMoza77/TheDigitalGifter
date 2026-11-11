@@ -4,6 +4,7 @@ import { Bot, CheckCircle2, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/lib/supabase";
+import { readAdminRows } from "@/domains/admin/data/readAdminRows";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +18,7 @@ type TicketRow = {
   name: string | null;
   email: string | null;
   subject: string;
+  public_reference?: string | null;
   status: TicketStatus | string;
   priority: string | null;
   page_url: string | null;
@@ -69,11 +71,21 @@ export default function SupportTicketsPage() {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [ticketError, setTicketError] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const activeTicketRef = useRef(selectedTicketId);
+  activeTicketRef.current = selectedTicketId;
+  const mutationRef = useRef(false);
+  const drafts = useRef<Record<string, string>>({});
   const [failedAlerts, setFailedAlerts] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
-      const { count, error } = await supabase.from("support_admin_alerts").select("id", { count: "exact", head: true }).eq("status", "failed");
+      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { count, error } = await supabase.from("support_admin_alerts").select("id", { count: "exact", head: true }).or(`status.eq.failed,and(status.in.(queued,sending),created_at.lt.${cutoff})`);
       if (!cancelled) setFailedAlerts(error ? null : count ?? 0);
     };
     void check(); const timer = window.setInterval(check, 30000);
@@ -90,18 +102,17 @@ export default function SupportTicketsPage() {
 
     async function loadTickets() {
       try {
-        setLoadingTickets(true);
+        // Background polling also works when Realtime is unavailable.
 
-        const { data, error } = await supabase
+        const data = await readAdminRows<TicketRow>(() => supabase
           .from("support_tickets")
-          .select("*")
-          .order("updated_at", { ascending: false });
-
-        if (error) throw error;
+          .select("*", { count: "exact" })
+          .order("updated_at", { ascending: false }).order("id"), "Support tickets");
         if (cancelled) return;
 
         const rows = sortTickets((data || []) as TicketRow[]);
         setTickets(rows);
+        setTicketError(null);
 
         setSelectedTicketId((current) => {
           if (current && rows.some((ticket) => ticket.id === current)) return current;
@@ -110,18 +121,19 @@ export default function SupportTicketsPage() {
         });
       } catch (error: any) {
         console.error("[SupportTicketsPage] loadTickets error:", error);
-        toast.error(error?.message || "Failed to load tickets");
+        if (!cancelled) setTicketError(error?.message || "Failed to load tickets");
       } finally {
         if (!cancelled) setLoadingTickets(false);
       }
     }
 
     void loadTickets();
-
+    const timer = window.setInterval(() => { void loadTickets(); }, 15000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [retry]);
 
   useEffect(() => {
     const channel = supabase
@@ -187,35 +199,41 @@ export default function SupportTicketsPage() {
     }
 
     let cancelled = false;
+    setMessages([]);
+    setReply(drafts.current[selectedTicketId] || "");
+    setMessageError(null);
+    setLoadingMessages(true);
 
     async function loadMessages() {
       try {
-        setLoadingMessages(true);
-
-        const { data, error } = await supabase
+        const data = await readAdminRows<MessageRow>(() => supabase
           .from("support_ticket_messages")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("ticket_id", selectedTicketId)
-          .order("created_at", { ascending: true });
-
-        if (error) throw error;
+          .order("created_at", { ascending: true }).order("id"), "Ticket messages");
         if (cancelled) return;
 
-        setMessages((data || []) as MessageRow[]);
+        setMessages((prev) => {
+          const merged = new Map(prev.filter((m) => m.ticket_id === selectedTicketId).map((m) => [m.id, m]));
+          for (const message of data) merged.set(message.id, message);
+          return [...merged.values()].sort((a, b) => a.created_at.localeCompare(b.created_at));
+        });
+        setMessageError(null);
       } catch (error: any) {
         console.error("[SupportTicketsPage] loadMessages error:", error);
-        toast.error(error?.message || "Failed to load messages");
+        if (!cancelled) setMessageError(error?.message || "Failed to load messages");
       } finally {
         if (!cancelled) setLoadingMessages(false);
       }
     }
 
     void loadMessages();
-
+    const timer = window.setInterval(() => { void loadMessages(); }, 10000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
-  }, [selectedTicketId]);
+  }, [selectedTicketId, retry]);
 
   useEffect(() => {
     if (!selectedTicketId) return;
@@ -232,6 +250,7 @@ export default function SupportTicketsPage() {
         },
         (payload) => {
           const newMessage = payload.new as MessageRow;
+          if (activeTicketRef.current !== newMessage.ticket_id) return;
 
           setMessages((prev) => {
             if (prev.some((message) => message.id === newMessage.id)) return prev;
@@ -251,6 +270,7 @@ export default function SupportTicketsPage() {
   }, [messages.length, selectedTicketId]);
 
   function addMessageInstant(message: MessageRow) {
+    if (activeTicketRef.current !== message.ticket_id) return;
     setMessages((prev) => {
       if (prev.some((item) => item.id === message.id)) return prev;
       return [...prev, message];
@@ -287,8 +307,8 @@ export default function SupportTicketsPage() {
   }
 
   async function sendReply() {
-    if (!selectedTicketId || selectedTicket?.status === "closed") return;
-
+    if (!selectedTicketId || selectedTicket?.status === "closed" || mutationRef.current || !user?.id) return;
+    const ticketId = selectedTicketId;
     const cleanReply = reply.trim();
 
     if (!cleanReply) {
@@ -296,13 +316,14 @@ export default function SupportTicketsPage() {
       return;
     }
 
+    mutationRef.current = true;
     try {
       setSending(true);
 
       const { data, error } = await supabase
         .from("support_ticket_messages")
         .insert({
-          ticket_id: selectedTicketId,
+          ticket_id: ticketId,
           sender_id: user?.id ?? null,
           sender_type: "admin",
           message: cleanReply,
@@ -314,65 +335,51 @@ export default function SupportTicketsPage() {
 
       if (data) addMessageInstant(data as MessageRow);
 
-      setReply("");
-
-      await touchTicket(selectedTicketId, {
-        status: "open",
-        priority: "normal",
-      });
+      drafts.current[ticketId] = "";
+      if (activeTicketRef.current === ticketId) setReply("");
+      try {
+        await touchTicket(ticketId, { status: "open" });
+      } catch {
+        toast.warning("Reply delivered, but ticket status could not be updated. Refresh before changing status.");
+      }
     } catch (error: any) {
       console.error("[SupportTicketsPage] sendReply error:", error);
       toast.error(error?.message || "Failed to send reply");
     } finally {
+      mutationRef.current = false;
       setSending(false);
     }
   }
 
   async function closeTicket() {
-    if (!selectedTicketId || selectedTicket?.status === "closed") return;
-
+    if (!selectedTicketId || selectedTicket?.status === "closed" || mutationRef.current) return;
+    const ticketId = selectedTicketId;
+    mutationRef.current = true;
     try {
       setClosing(true);
-
-      const closingMessage =
-        "This support chat has been closed. If you need any further assistance, please open a new support ticket and our team will be happy to help.";
-
-      const { data: messageData, error: messageError } = await supabase
-        .from("support_ticket_messages")
-        .insert({
-          ticket_id: selectedTicketId,
-          sender_id: user?.id ?? null,
-          sender_type: "system",
-          message: closingMessage,
-        })
-        .select("*")
-        .single();
-
-      if (messageError) throw messageError;
-
-      if (messageData) addMessageInstant(messageData as MessageRow);
-
-      await touchTicket(selectedTicketId, {
-        status: "closed",
-        priority: "normal",
-      });
-
+      await touchTicket(ticketId, { status: "closed" });
       toast.success("Ticket closed");
-    } catch (error: any) {
-      console.error("[SupportTicketsPage] closeTicket error:", error);
-      toast.error(error?.message || "Failed to close ticket");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to close ticket");
     } finally {
+      mutationRef.current = false;
       setClosing(false);
     }
   }
+  const visibleTickets = tickets.filter((ticket) =>
+    (statusFilter === "all" || (statusFilter === "active" ? ticket.status !== "closed" : ticket.status === "closed")) &&
+    `${ticket.subject} ${ticket.email || ""} ${ticket.public_reference || ""} ${ticket.id}`.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#05070d] p-4 text-white sm:p-6">
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold">Support Tickets</h1>
-        {failedAlerts === null ? <p className="text-sm text-amber-200">Email notification status unavailable. Check support-alert deployment/configuration.</p> : failedAlerts > 0 ? <p role="alert" className="text-sm text-amber-200">{failedAlerts} email notification(s) failed. Check Resend and the support notification worker.</p> : null}
+        <button type="button" className="my-2 underline" onClick={() => setRetry((v) => v + 1)}>Refresh inbox</button>
+        {ticketError && <p role="alert" className="text-red-300">Tickets unavailable: {ticketError}. Previous data may be outdated.</p>}
+        {failedAlerts === null ? <p className="text-sm text-amber-200">Email notification status unavailable. Check support-alert deployment/configuration.</p> : failedAlerts > 0 ? <p role="alert" className="text-sm text-amber-200">{failedAlerts} email notification(s) failed or delayed more than 5 minutes. Check Resend and the support notification worker.</p> : null}
         <p className="text-sm text-zinc-400">
-          Real-time support inbox for client messages.
+          Client messages refresh automatically. Replies appear in the client chat; they are not sent by email.
         </p>
       </div>
 
@@ -380,26 +387,30 @@ export default function SupportTicketsPage() {
         <aside className="min-h-0 border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10">
           <div className="shrink-0 border-b border-white/10 p-4">
             <p className="text-sm font-semibold">
-              Tickets <span className="text-zinc-400">({tickets.length})</span>
+              Tickets <span className="text-zinc-400">({visibleTickets.length})</span>
             </p>
           </div>
 
+          <div className="flex flex-wrap gap-2 p-3">
+            <input aria-label="Search tickets" placeholder="Email, subject or ID" value={search} onChange={(e) => setSearch(e.target.value)} className="min-w-0 w-full rounded bg-slate-900 p-2" />
+            <select aria-label="Ticket status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded bg-slate-900 p-2"><option value="active">Active</option><option value="closed">Closed</option><option value="all">All</option></select>
+          </div>
           <div className="h-[260px] overflow-y-auto lg:h-[calc(100%-53px)]">
             {loadingTickets ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               </div>
-            ) : tickets.length === 0 ? (
+            ) : visibleTickets.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-zinc-500">
                 <Inbox className="h-8 w-8" />
-                <p className="text-sm">No tickets yet</p>
+                <p className="text-sm">{ticketError ? "Tickets could not be loaded" : "No matching tickets"}</p>
               </div>
             ) : (
-              tickets.map((ticket) => (
+              visibleTickets.map((ticket) => (
                 <button
                   key={ticket.id}
                   type="button"
-                  onClick={() => setSelectedTicketId(ticket.id)}
+                  onClick={() => { if (ticket.id !== selectedTicketId) { setMessages([]); setLoadingMessages(true); setSelectedTicketId(ticket.id); } }}
                   className={cn(
                     "w-full border-b border-white/10 p-4 text-left transition hover:bg-white/[0.06]",
                     selectedTicketId === ticket.id && "bg-white/[0.08]"
@@ -421,7 +432,7 @@ export default function SupportTicketsPage() {
                   </div>
 
                   <p className="line-clamp-1 text-xs text-zinc-400">
-                    {ticket.email || ticket.name || "Guest"}
+                    {ticket.public_reference ? `${ticket.public_reference} · ` : ""}{ticket.email || ticket.name || "Guest"}
                   </p>
 
                   <p className="mt-2 text-[11px] text-zinc-600">
@@ -472,7 +483,7 @@ export default function SupportTicketsPage() {
                   <button
                     type="button"
                     onClick={() => void closeTicket()}
-                    disabled={closing || selectedTicket.status === "closed"}
+                    disabled={closing || sending || selectedTicket.status === "closed"}
                     className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {closing ? (
@@ -486,6 +497,7 @@ export default function SupportTicketsPage() {
               </div>
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5">
+                {messageError && <p role="alert" className="text-red-300">Messages unavailable: {messageError}. Refresh to retry.</p>}
                 {loadingMessages ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
@@ -495,7 +507,7 @@ export default function SupportTicketsPage() {
                     No messages yet
                   </div>
                 ) : (
-                  messages.map((message) => {
+                  messages.filter((message) => message.ticket_id === selectedTicketId).map((message) => {
                     const isClient = message.sender_type === "client";
                     const isAdmin = message.sender_type === "admin";
                     const isAi = message.sender_type === "ai";
@@ -556,7 +568,8 @@ export default function SupportTicketsPage() {
                   <div className="flex gap-2">
                     <textarea
                       value={reply}
-                      onChange={(e) => setReply(e.target.value)}
+                      disabled={sending || closing || loadingMessages || Boolean(messageError)}
+                      onChange={(e) => { setReply(e.target.value); if (selectedTicketId) drafts.current[selectedTicketId] = e.target.value; }}
                       placeholder="Write a reply..."
                       rows={1}
                       className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500"
@@ -571,7 +584,8 @@ export default function SupportTicketsPage() {
                     <button
                       type="button"
                       onClick={() => void sendReply()}
-                      disabled={sending}
+                      aria-label="Send reply"
+                      disabled={sending || closing || loadingMessages || Boolean(messageError) || !reply.trim()}
                       className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-blue-500 text-white transition hover:brightness-110 disabled:opacity-60"
                     >
                       {sending ? (

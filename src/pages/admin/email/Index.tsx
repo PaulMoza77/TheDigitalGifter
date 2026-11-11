@@ -31,7 +31,6 @@ export default function AdminEmailLayoutPage() {
       <div className="flex items-center gap-2 flex-wrap">
         <TabLink to="/admin/email/templates" label="Templates" />
         <TabLink to="/admin/email/offers" label="Offers" />
-        <TabLink to="/admin/email/campaigns" label="Campaigns" />
       </div>
 
       <Outlet />

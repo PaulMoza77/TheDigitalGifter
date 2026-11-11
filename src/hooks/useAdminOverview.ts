@@ -1,5 +1,6 @@
 // FILE: src/hooks/useAdminOverview.ts
 import * as React from "react";
+import { readAdminRows } from "@/domains/admin/data/readAdminRows";
 import { supabase } from "@/lib/supabase";
 
 export type AdminDateRange = {
@@ -129,19 +130,6 @@ function rangeToIso(from: string, to: string) {
   };
 }
 
-async function fetchCount(table: string) {
-  const { count, error } = await supabase
-    .from(table)
-    .select("*", { count: "exact", head: true });
-
-  if (error) {
-    console.error(`[useAdminOverview] count ${table}:`, error);
-    return 0;
-  }
-
-  return count ?? 0;
-}
-
 async function fetchRows<T>(
   table: string,
   columns: string,
@@ -151,18 +139,8 @@ async function fetchRows<T>(
 ): Promise<T[]> {
   const { fromIso, toIso } = rangeToIso(from, to);
 
-  const { data, error } = await supabase
-    .from(table)
-    .select(columns)
-    .gte(dateColumn, fromIso)
-    .lte(dateColumn, toIso);
-
-  if (error) {
-    console.error(`[useAdminOverview] ${table} ranged error:`, error);
-    return [];
-  }
-
-  return (data ?? []) as T[];
+  return readAdminRows<T>(() => supabase.from(table).select(columns, { count: "exact" })
+    .gte(dateColumn, fromIso).lte(dateColumn, toIso).order("id"), table);
 }
 
 function groupOrdersByPack(orders: OrderRow[], labels: string[]) {
@@ -288,11 +266,7 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
     setError("");
 
     try {
-      const [customersTotal, ordersTotal, generationsTotal] = await Promise.all([
-        fetchCount("customers"),
-        fetchCount("orders"),
-        fetchCount("generations"),
-      ]);
+      if (!from || !to || from > to) throw new Error("Choose a valid date range");
 
       const [ordersRaw, customers, generations, ledger] = await Promise.all([
         fetchRows<OrderRow>(
@@ -326,6 +300,9 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
       ]);
 
       const orders = ordersRaw.filter(isCompletedOrder);
+      if (orders.some((order) => clean(order.currency).toUpperCase() !== "EUR")) {
+        throw new Error("Legacy EUR report cannot combine different or unknown currencies. Use Customers and product-specific order reports.");
+      }
 
       const creditsIn = ledger
         .filter((row) => clean(row.direction).toLowerCase() === "in")
@@ -363,10 +340,10 @@ export function useAdminOverview(range: AdminDateRange): AdminOverviewData {
       });
 
       setTotals({
-        totalGenerated: generations.length || generationsTotal,
-        customers: customersTotal,
-        orders: orders.length || ordersTotal,
-        generations: generations.length || generationsTotal,
+        totalGenerated: generations.length,
+        customers: customers.length,
+        orders: orders.length,
+        generations: generations.length,
         creditsInCirculation: Math.max(0, creditsIn - creditsOut),
         creditsUsed: creditsOut,
         totalRevenue,

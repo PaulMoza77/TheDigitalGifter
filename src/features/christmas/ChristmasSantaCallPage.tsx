@@ -141,10 +141,10 @@ export default function ChristmasSantaCallPage() {
       }
       setPaymentStatus("confirmed");
       const orderId = String(data.orderId || "");
-      const amountCents = Number(data.amountCents) || prices.initialMinor;
-      const currency = String(data.currency || prices.currency);
+      const amountCents = Number(data.amountCents);
+      const currency = String(data.currency || "");
       // Meta Purchase only after LIVE server confirmation — never for TEST.
-      if (orderId && data.livemode === true && data.stripe_mode === "live") {
+      if (orderId && data.livemode === true && data.stripe_mode === "live" && Number.isInteger(amountCents) && amountCents > 0 && /^(ron|usd)$/i.test(currency)) {
         trackSantaCallMetaPurchase({ orderId, amountCents, currency });
         trackSantaCallAnalytics(
           "santa_purchase_confirmed",

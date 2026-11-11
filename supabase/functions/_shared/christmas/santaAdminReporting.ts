@@ -13,7 +13,7 @@ import { reportingSources } from "./santaAnalyticsSources.ts";
 import { snapshotForRange } from "./santaAnalyticsSnapshot.ts";
 
 const ORDER_COLUMNS =
-  "id,product_key,payment_status,amount_cents,charged_amount_cents,currency,stripe_checkout_session_id,stripe_payment_intent_id,created_at,paid_at,refunded_at,last_refund_at,refunded_amount_cents,metadata";
+  "id,product_key,payment_status,amount_cents,charged_amount_cents,currency,stripe_checkout_session_id,stripe_payment_intent_id,created_at,paid_at,refunded_at,metadata";
 const CALL_COLUMNS =
   "id,order_id,status,provider,started_at,connected_at,ended_at,created_at,seconds_used,end_reason,error_code,last_heartbeat_at";
 const LIMIT = 10000,
@@ -54,7 +54,7 @@ export async function santaAdminReport(
         .from("christmas_orders")
         .select(ORDER_COLUMNS)
         .in("product_key", [SANTA_INITIAL, SANTA_EXTENSION])
-        .or(dateOr(["created_at", "paid_at", "refunded_at", "last_refund_at"]))
+        .or(dateOr(["created_at", "paid_at", "refunded_at"]))
         .order("id"),
     ),
     boundedRows<Call>(() =>
@@ -141,11 +141,17 @@ export async function santaAdminReport(
     if (integrations.meta.status !== "connected" && snapshot.meta)
       integrations.meta = snapshot.meta;
   }
+  const aggregate = aggregateSanta(orders, calls, range, generatedAt);
+  // The deployed commerce schema has no reconciled partial-refund ledger for Santa.
+  // Do not imply that missing refund ingestion means zero refunds.
+  aggregate.metrics = aggregate.metrics.map((metric) => metric.id === "refunds" ? {
+    ...metric, value: null, unavailable: "Santa refund reconciliation is not configured; verify refunds in Stripe",
+  } : metric);
   return {
     ok: true,
     generatedAt,
     range,
-    ...aggregateSanta(orders, calls, range, generatedAt),
+    ...aggregate,
     integrations,
     // Explicit allowlisted columns only; payment metadata never leaves the server.
     orders: commercial

@@ -13,6 +13,7 @@ export type AdminNavAlerts = {
   tickets: number;
   orders: number;
   petOrders: number;
+  unavailable: boolean;
 };
 
 function readSeen(key: string): string | null {
@@ -42,19 +43,20 @@ function makeChannelName(prefix: string) {
 async function countRows(
   table: string,
   apply: (query: any) => any
-): Promise<number> {
+): Promise<number | null> {
   const { count, error } = await apply(
     supabase.from(table).select("id", { count: "exact", head: true })
   );
   if (error) {
     console.error(`[useAdminNavAlerts] count ${table}:`, error);
-    return 0;
+    return null;
   }
   return count ?? 0;
 }
 
 export function useAdminNavAlerts(): AdminNavAlerts {
   const { pathname } = useLocation();
+  const [unavailable, setUnavailable] = useState(false);
   const [tickets, setTickets] = useState(0);
   const [orders, setOrders] = useState(0);
   const [petOrders, setPetOrders] = useState(0);
@@ -80,9 +82,10 @@ export function useAdminNavAlerts(): AdminNavAlerts {
         : countRows("pet_orders", (query) => query.gt("paid_at", petSince)),
     ]);
 
-    setTickets(ticketCount);
-    setOrders(orderCount);
-    setPetOrders(petCount);
+    setUnavailable(ticketCount === null || orderCount === null || petCount === null);
+    if (ticketCount !== null) setTickets(ticketCount);
+    if (orderCount !== null) setOrders(orderCount);
+    if (petCount !== null) setPetOrders(petCount);
   }, [pathname]);
 
   const refreshRef = useRef(refresh);
@@ -136,5 +139,5 @@ export function useAdminNavAlerts(): AdminNavAlerts {
     void refresh();
   }, [refresh]);
 
-  return { tickets, orders, petOrders };
+  return { tickets, orders, petOrders, unavailable };
 }

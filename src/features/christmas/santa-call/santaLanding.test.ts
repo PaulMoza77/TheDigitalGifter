@@ -130,6 +130,12 @@ describe("Santa landing purchase safeguards", () => {
     expect(container.querySelector<HTMLInputElement>("#santa-name")?.value).toBe("Test");
     expect(container.querySelector("fieldset")?.disabled).toBe(false);
   });
+  it("does not invent a purchase amount when server confirmation omits it", async () => {
+    mocks.confirm.mockResolvedValue({ ok: true, data: { ok: true, orderId: "paid-order", livemode: true, stripe_mode: "live", currency: "ron" } });
+    await render("/christmas/santa-call?lang=ro&market=ro&checkout=success&session_id=cs_live_example");
+    expect(mocks.purchase).not.toHaveBeenCalled();
+    expect(mocks.analytics.mock.calls.some(([name]) => name === "santa_purchase_confirmed")).toBe(false);
+  });
   it("does not report a test payment as a live purchase", async () => {
     mocks.confirm.mockResolvedValue({ ok: true, data: { ok: true, orderId: "test-order", livemode: false, stripe_mode: "test" } });
     await render("/christmas/santa-call?checkout=success&session_id=cs_test_example&lang=ro&market=ro");

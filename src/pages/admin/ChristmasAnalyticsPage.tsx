@@ -159,6 +159,9 @@ export default function ChristmasAnalyticsPage() {
           </div>
         ) : null}
 
+        {data.softWarnings.length > 0 && <p role="status" className="text-sm text-amber-200">Incomplete auxiliary data: {data.softWarnings.join(" ")}</p>}
+        <p className="text-sm text-slate-300">For Santa Call, use <a className="underline" href="/admin/christmas/santa-call?tab=analytics">the dedicated funnel report</a>. It combines GA4 with confirmed payments and runtime calls.</p>
+        {data.loading ? <p role="status">Loading report…</p> : data.error ? <p>Report unavailable. Retry or select a shorter period; no totals are shown.</p> : <>
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Tracked sessions" value={sessionCount} hint={`${viewed} reached a page view`} />
           <Metric
@@ -173,9 +176,9 @@ export default function ChristmasAnalyticsPage() {
             }
           />
           <Metric label="Checkout sessions" value={checkout} hint={`${pct(checkout, viewed || sessionCount)} of views`} />
-          <Metric label="Paid orders" value={paidCommercial.length} hint={`${pct(paidCommercial.length, checkout)} from checkout`} />
+          <Metric label="Paid orders" value={paidCommercial.length} hint="Confirmed paid orders; not a linked visitor cohort" />
           <Metric label="Verified revenue" value={moneyByCurrency(paidCommercial)} hint="Stripe-paid, amount > 0" />
-          <Metric label="Pending orders" value={pending.length} hint="Open or abandoned checkout" />
+          <Metric label="Pending orders" value={pending.length} hint="Not confirmed paid; not proof of abandonment" />
           <Metric label="Fulfillment failures" value={fulfillmentFailures.length} hint="Paid orders needing recovery" />
           <Metric label="Delivery emails sent" value={emailSent} hint={`${emailFailed} failed · ${allEmails.length} ledger rows`} />
         </section>
@@ -303,6 +306,7 @@ export default function ChristmasAnalyticsPage() {
             </div>
           </div>
         </section>
+        </>}
       </div>
     </div>
   );

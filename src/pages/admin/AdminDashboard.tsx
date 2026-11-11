@@ -82,7 +82,7 @@ export default function AdminDashboard() {
             </p>
 
             <h1 className="mt-1 text-2xl font-semibold text-slate-50 sm:text-3xl">
-              Overview
+              Legacy credit overview
             </h1>
 
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
@@ -171,6 +171,7 @@ export default function AdminDashboard() {
 
         <AiCostsReplicateSection loading={aiCostLoading} report={aiCostReport} />
 
+        {!error && <>
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Total generated"
@@ -299,6 +300,7 @@ export default function AdminDashboard() {
             items={topTemplates}
           />
         </div>
+        </>}
       </div>
     </div>
   );

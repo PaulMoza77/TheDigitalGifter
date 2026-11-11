@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   FileText,
   BadgePercent,
-  Send,
   Sparkles,
   Coins,
   ShoppingCart,
@@ -139,17 +138,22 @@ const SidebarNavigation: React.FC<{
   showLogo?: boolean;
   alerts: AdminNavAlerts;
 }> = ({ collapsed, isActive, navigateTo, onNavigate, showLogo = true, alerts }) => {
+  const [showTools, setShowTools] = useState(false);
   const sections: NavSection[] = useMemo(
     () => [
       {
-        label: "MAIN",
+        label: "DAILY OPERATIONS",
         items: [
           {
-            label: "Overview",
+            label: "Operations",
             path: "/admin",
             badge: "Main",
             icon: LayoutDashboard,
           },
+          { label: "Santa Call Funnel", path: "/admin/christmas/santa-call", icon: BarChart3 },
+          { label: "Customers", path: "/admin/customers", icon: Users },
+          { label: "Christmas Orders", path: "/admin/christmas/orders", icon: ShoppingCart },
+          { label: "Support Tickets", path: "/admin/support-tickets", icon: Inbox, alertCount: alerts.tickets },
         ],
       },
       {
@@ -189,17 +193,6 @@ const SidebarNavigation: React.FC<{
         ],
       },
       {
-        label: "INBOX",
-        items: [
-          {
-            label: "Support Tickets",
-            path: "/admin/support-tickets",
-            icon: Inbox,
-            alertCount: alerts.tickets,
-          },
-        ],
-      },
-      {
         label: "EMAIL",
         items: [
           {
@@ -211,11 +204,6 @@ const SidebarNavigation: React.FC<{
             label: "Offers",
             path: "/admin/email/offers",
             icon: BadgePercent,
-          },
-          {
-            label: "Campaigns",
-            path: "/admin/email/campaigns",
-            icon: Send,
           },
         ],
       },
@@ -255,11 +243,7 @@ const SidebarNavigation: React.FC<{
             path: "/admin/pet-funnel-analytics",
             icon: BarChart3,
           },
-          {
-            label: "Customers",
-            path: "/admin/customers",
-            icon: Users,
-          },
+
         ],
       },
     ],
@@ -280,7 +264,8 @@ const SidebarNavigation: React.FC<{
       ) : null}
 
       <div className="flex w-full flex-col gap-6">
-        {sections.map((section) => (
+        {alerts.unavailable && <p role="status" title="Some alert counts are unavailable; previous counts may be outdated" className="text-xs text-amber-200">{collapsed ? "!" : "Some alert counts are unavailable. Open the relevant section to retry."}</p>}
+        {sections.filter((_, index) => index === 0 || showTools).map((section) => (
           <div
             key={section.label}
             className={cx("w-full", collapsed ? "px-1" : "")}
@@ -314,6 +299,7 @@ const SidebarNavigation: React.FC<{
             </div>
           </div>
         ))}
+        <button type="button" aria-expanded={showTools} title="Content, email, pricing and other product tools" onClick={() => setShowTools((value) => !value)} className="rounded-lg border border-slate-700 px-2 py-3 text-xs text-slate-300">{collapsed ? (showTools ? "−" : "+") : (showTools ? "Hide other tools" : "Other tools · content, email, pricing")}</button>
       </div>
     </div>
   );

@@ -65,6 +65,8 @@ const AdminLayout = lazy(() => import("@/layouts/AdminLayout"));
 const ClientLayout = lazy(() => import("@/layouts/ClientLayout"));
 
 // ================= ADMIN CORE =================
+const AdminOperationsPage = lazy(() => import("@/pages/admin/AdminOperationsPage"));
+const AdminPublisherPage = lazy(() => import("@/pages/admin/AdminPublisherPage"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const Templates = lazy(() => import("@/pages/admin/Templates"));
 const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
@@ -90,6 +92,9 @@ const SantaVoiceBenchmarkPage = lazy(
 );
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
+const ChristmasFactoryReviewPage = lazy(() => import("@/pages/admin/ChristmasFactoryReviewPage"));
+const AdminContentAutopilotPage = lazy(() => import("@/pages/admin/AdminContentAutopilotPage"));
+const AdminMusicLibraryPage = lazy(() => import("@/pages/admin/AdminMusicLibraryPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
 const AdminClipFactoryPage = lazy(() => import("@/pages/admin/AdminClipFactoryPage"));
 const AdminLongFormStudioPage = lazy(() => import("@/pages/admin/AdminLongFormStudioPage"));
@@ -108,9 +113,6 @@ const AdminEmailTemplatesPage = lazy(
   () => import("@/pages/admin/email/Templates")
 );
 const AdminEmailOffersPage = lazy(() => import("@/pages/admin/email/Offers"));
-const AdminEmailCampaignsPage = lazy(
-  () => import("@/pages/admin/email/Campaigns")
-);
 
 // ================= ADMIN FUNNEL =================
 const AdminFunnelPage = lazy(
@@ -1029,7 +1031,9 @@ function AppInner() {
               </AdminRoute>
             }
           >
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<AdminOperationsPage />} />
+            <Route path="legacy-overview" element={<AdminDashboard />} />
+            <Route path="publisher" element={<AdminPublisherPage />} />
             <Route path="funnel" element={<AdminFunnelPage />} />
             <Route path="templates" element={<Templates />} />
             <Route path="blog" element={<AdminBlogPage />} />
@@ -1059,6 +1063,9 @@ function AppInner() {
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
+            <Route path="library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
+            <Route path="content-autopilot" element={<AdminContentAutopilotPage />} />
+            <Route path="music-library" element={<AdminMusicLibraryPage />} />
             <Route path="long-form-studio" element={<AdminLongFormStudioPage />} />
             <Route path="clip-factory" element={<AdminClipFactoryPage />} />
             <Route path="studio" element={<AdminStudioPage />} />
@@ -1074,7 +1081,7 @@ function AppInner() {
               />
               <Route path="templates" element={<AdminEmailTemplatesPage />} />
               <Route path="offers" element={<AdminEmailOffersPage />} />
-              <Route path="campaigns" element={<AdminEmailCampaignsPage />} />
+              <Route path="campaigns" element={<Navigate to="/admin/email/offers" replace />} />
             </Route>
           </Route>
 

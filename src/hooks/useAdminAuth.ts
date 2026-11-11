@@ -39,63 +39,17 @@ export function useAdminAuth(redirectIfNotAdmin = true) {
         return;
       }
 
-      // ---- 1) Try profiles.role (if you have it) ----
       try {
-        const { data: prof, error: profErr } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        // If row exists and is admin -> done
-        if (!profErr && prof?.role) {
-          const admin = prof.role === "admin";
-          if (mounted) {
-            setIsAdminRaw(admin);
-            setIsLoading(false);
-            if (redirectIfNotAdmin && !admin) navigate("/");
-          }
-          return;
-        }
-      } catch (e) {
-        console.error("[useAdminAuth] profiles check failed:", e);
-      }
-
-      // ---- 2) Fallback: admin_users allowlist by email ----
-      try {
-        const email = user.email ?? null;
-
-        if (!email) {
-          if (mounted) {
-            setIsAdminRaw(false);
-            setIsLoading(false);
-            if (redirectIfNotAdmin) navigate("/");
-          }
-          return;
-        }
-
-        const { data: row, error: allowErr } = await supabase
-          .from("admin_users")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle();
-
-        if (allowErr) console.error("[useAdminAuth] admin_users check error:", allowErr);
-
-        const admin = Boolean(row?.email);
-
+        const { data, error } = await supabase.rpc("is_admin");
+        if (error) throw error;
         if (mounted) {
-          setIsAdminRaw(admin);
+          setIsAdminRaw(data === true);
           setIsLoading(false);
-          if (redirectIfNotAdmin && !admin) navigate("/");
+          if (redirectIfNotAdmin && data !== true) navigate("/");
         }
-      } catch (e) {
-        console.error("[useAdminAuth] admin_users fallback failed:", e);
-        if (mounted) {
-          setIsAdminRaw(false);
-          setIsLoading(false);
-          if (redirectIfNotAdmin) navigate("/");
-        }
+      } catch (error) {
+        console.error("[useAdminAuth] admin verification failed", error);
+        if (mounted) { setIsAdminRaw(false); setIsLoading(false); }
       }
     }
 
