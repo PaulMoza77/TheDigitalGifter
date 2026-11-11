@@ -49,6 +49,14 @@ export type Call = {
   error_code: string | null;
   last_heartbeat_at: string | null;
 };
+export type FunnelEvent = {
+  event_name: string;
+  funnel_session_id: string;
+  order_id: string | null;
+  created_at: string;
+  is_test: boolean;
+  environment: string | null;
+};
 export type Integration = {
   status: "connected" | "snapshot" | "unavailable" | "error";
   source: string;

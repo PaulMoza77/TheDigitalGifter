@@ -1,6 +1,13 @@
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
-import { isWave1GenerationLocale, normalizeWave1GenerationLocale } from "../_shared/christmas/wave1Locale.ts";
-import { getAuthUser, getServiceClient, readJson } from "../_shared/supabase.ts";
+import {
+  isWave1GenerationLocale,
+  normalizeWave1GenerationLocale,
+} from "../_shared/christmas/wave1Locale.ts";
+import {
+  getAuthUser,
+  getServiceClient,
+  readJson,
+} from "../_shared/supabase.ts";
 import {
   buildChristmasPortraitPrompt,
   isPortraitProductKey,
@@ -28,7 +35,9 @@ import {
 import { resolveSantaStripeModeEnv } from "../_shared/christmas/santaStripe.ts";
 
 function normalizeMarketFromSnapshot(snap: Record<string, unknown>) {
-  return normalizeSantaCallMarket(snap.santa_call_market || snap.market || "ro");
+  return normalizeSantaCallMarket(
+    snap.santa_call_market || snap.market || "ro",
+  );
 }
 
 /**
@@ -102,8 +111,19 @@ function asString(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function optionalUuid(value: unknown): string | null {
+  const raw = asString(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    raw,
+  )
+    ? raw
+    : null;
+}
+
 function checkoutEnabled(): boolean {
-  const raw = asString(Deno.env.get("CHRISTMAS_CHECKOUT_ENABLED")).toLowerCase();
+  const raw = asString(
+    Deno.env.get("CHRISTMAS_CHECKOUT_ENABLED"),
+  ).toLowerCase();
   return raw === "true" || raw === "1" || raw === "on";
 }
 
@@ -139,23 +159,39 @@ function siteOrigin(): string {
 }
 
 async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST")
+    return jsonResponse({ error: "Method not allowed" }, 405);
 
   try {
     const body = await readJson<Body>(req);
     const productKey = asString(body.product_key);
-    if (!productKey) return jsonResponse({ error: "product_key required" }, 400);
+    if (!productKey)
+      return jsonResponse({ error: "product_key required" }, 400);
     // Planner Founding Pass is gated by checkout_live / CHRISTMAS_PLANNER_CHECKOUT_ENABLED.
     // Other Christmas products stay behind the global CHRISTMAS_CHECKOUT_ENABLED kill switch.
-    if (!isPlannerProductKey(productKey) && !isIndividualPortraitKey(productKey)) {
+    if (
+      !isPlannerProductKey(productKey) &&
+      !isIndividualPortraitKey(productKey)
+    ) {
       if (!checkoutEnabled() || !liveProductAllowed(productKey)) {
-        return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
+        return jsonResponse(
+          {
+            error: "Christmas checkout is not enabled",
+            code: "checkout_disabled",
+          },
+          403,
+        );
       }
     }
     // Client-supplied Stripe price IDs are never accepted.
@@ -175,7 +211,13 @@ Deno.serve(async (req) => {
     const plannerFlow = isPlannerProductKey(productKey);
     const { user: authUser } = await getAuthUser(req);
     if (plannerFlow && !authUser?.id) {
-      return jsonResponse({ error: "Sign in required to purchase the Planner.", code: "auth_required" }, 401);
+      return jsonResponse(
+        {
+          error: "Sign in required to purchase the Planner.",
+          code: "auth_required",
+        },
+        401,
+      );
     }
 
     let resolvedProductKey = productKey;
@@ -187,7 +229,11 @@ Deno.serve(async (req) => {
     let sku = "";
     let commercialKey: string | null = null;
     let plannerAddonKeys: string[] = [];
-    let plannerLineItems: Array<{ packageKey: string; name: string; amountCents: number }> = [];
+    let plannerLineItems: Array<{
+      packageKey: string;
+      name: string;
+      amountCents: number;
+    }> = [];
     let plannerEntitlements: string[] = [];
     let pricingKey: string | null = null;
     let pricingUpdatedAt: string | null = null;
@@ -200,7 +246,13 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (plannerProductError) throw plannerProductError;
       if (!plannerProduct) {
-        return jsonResponse({ error: "Unknown Christmas Planner product.", code: "unknown_product" }, 400);
+        return jsonResponse(
+          {
+            error: "Unknown Christmas Planner product.",
+            code: "unknown_product",
+          },
+          400,
+        );
       }
       const { data: plannerPackages, error: plannerPkgError } = await service
         .from("christmas_packages")
@@ -211,14 +263,19 @@ Deno.serve(async (req) => {
         product: plannerProduct,
         packages: plannerPackages || [],
         packageKey,
-        addonKeys: Array.isArray(body.addon_keys) ? body.addon_keys.map((k) => String(k)) : [],
+        addonKeys: Array.isArray(body.addon_keys)
+          ? body.addon_keys.map((k) => String(k))
+          : [],
         clientAmountCents: body.amount_cents,
         clientCurrency: body.currency,
         christmasCheckoutEnabled: true,
       });
       if (!plannerPlan.ok) {
         const status = plannerPlan.code === "checkout_disabled" ? 403 : 400;
-        return jsonResponse({ error: plannerPlan.message, code: plannerPlan.code }, status);
+        return jsonResponse(
+          { error: plannerPlan.message, code: plannerPlan.code },
+          status,
+        );
       }
       resolvedProductKey = plannerPlan.productKey;
       productName = plannerPlan.productName;
@@ -241,9 +298,14 @@ Deno.serve(async (req) => {
         seasonYear: plannerPlan.seasonYear,
       };
     } else if (productKey === "christmas_gift_tree") {
-      const offer = GIFT_TREE_PAID_OFFERS.find((item) => item.package_key === packageKey);
+      const offer = GIFT_TREE_PAID_OFFERS.find(
+        (item) => item.package_key === packageKey,
+      );
       if (!offer) {
-        return jsonResponse({ error: "Unknown gift tree pack.", code: "unknown_package" }, 400);
+        return jsonResponse(
+          { error: "Unknown gift tree pack.", code: "unknown_package" },
+          400,
+        );
       }
       const { data: treeProduct, error: treeProductError } = await service
         .from("christmas_products")
@@ -252,7 +314,13 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (treeProductError) throw treeProductError;
       if (!treeProduct?.active) {
-        return jsonResponse({ error: "Gift tree checkout is not available.", code: "inactive_product" }, 400);
+        return jsonResponse(
+          {
+            error: "Gift tree checkout is not available.",
+            code: "inactive_product",
+          },
+          400,
+        );
       }
       const { data: treePkg, error: treePkgError } = await service
         .from("christmas_packages")
@@ -262,10 +330,25 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (treePkgError) throw treePkgError;
       if (!treePkg?.active || !treePkg.purchasable) {
-        return jsonResponse({ error: "Gift tree pack is not purchasable.", code: "inactive_product" }, 400);
+        return jsonResponse(
+          {
+            error: "Gift tree pack is not purchasable.",
+            code: "inactive_product",
+          },
+          400,
+        );
       }
-      if (Number(treePkg.price_cents) !== offer.price_cents || String(treePkg.currency).toLowerCase() !== "usd") {
-        return jsonResponse({ error: "Gift tree price does not match the server catalog.", code: "pricing_mismatch" }, 409);
+      if (
+        Number(treePkg.price_cents) !== offer.price_cents ||
+        String(treePkg.currency).toLowerCase() !== "usd"
+      ) {
+        return jsonResponse(
+          {
+            error: "Gift tree price does not match the server catalog.",
+            code: "pricing_mismatch",
+          },
+          409,
+        );
       }
       resolvedProductKey = "christmas_gift_tree";
       productName = treeProduct.name || offer.label;
@@ -273,7 +356,10 @@ Deno.serve(async (req) => {
       currency = "usd";
       packageKeyResolved = offer.package_key;
       sku = `xmas_tree_${offer.package_key}`;
-      pricingKey = offer.package_key === "open_five" ? "xmas_tree_gift_5" : "xmas_tree_gift";
+      pricingKey =
+        offer.package_key === "open_five"
+          ? "xmas_tree_gift_5"
+          : "xmas_tree_gift";
       commercialSnapshot = {
         pricingKey,
         chargedAmountMinor: amountCents,
@@ -296,7 +382,10 @@ Deno.serve(async (req) => {
         clientCurrency: body.currency,
       });
       if (!checkoutPlan.ok) {
-        return jsonResponse({ error: checkoutPlan.message, code: checkoutPlan.code }, 400);
+        return jsonResponse(
+          { error: checkoutPlan.message, code: checkoutPlan.code },
+          400,
+        );
       }
 
       const { data: product, error: productError } = await service
@@ -344,11 +433,17 @@ Deno.serve(async (req) => {
       pricingUpdatedAt = checkoutPlan.offer.updatedAt;
 
       // Santa Call: fixed RO/US presentment map (no FX). Overrides single-row pricing_items seed.
-      if (resolvedProductKey === "christmas_santa_voice_call" || commercialKey === "xmas_santa_voice_call") {
+      if (
+        resolvedProductKey === "christmas_santa_voice_call" ||
+        commercialKey === "xmas_santa_voice_call"
+      ) {
         // Commercial Santa checkout is LIVE-only; TEST isolation uses christmas-santa-call QA actions.
         if (resolveSantaStripeModeEnv() !== "live") {
           return jsonResponse(
-            { error: "Santa LIVE checkout is not enabled", code: "checkout_disabled" },
+            {
+              error: "Santa LIVE checkout is not enabled",
+              code: "checkout_disabled",
+            },
             403,
           );
         }
@@ -360,7 +455,10 @@ Deno.serve(async (req) => {
           clientCurrency: body.currency || body.preferred_currency,
         });
         if (!charge.ok) {
-          return jsonResponse({ error: charge.message, code: charge.code }, 409);
+          return jsonResponse(
+            { error: charge.message, code: charge.code },
+            409,
+          );
         }
         amountCents = charge.amountCents;
         currency = charge.currency;
@@ -380,11 +478,23 @@ Deno.serve(async (req) => {
         !checkoutEnabled() &&
         productMeta.checkout_live !== true
       ) {
-        return jsonResponse({ error: "Christmas checkout is not enabled", code: "checkout_disabled" }, 403);
-      }
-      if (commercialKey === "xmas_portrait" && (amountCents !== 499 || currency !== "eur")) {
         return jsonResponse(
-          { error: "Portrait price is not the authoritative €4.99 offer.", code: "invalid_price" },
+          {
+            error: "Christmas checkout is not enabled",
+            code: "checkout_disabled",
+          },
+          403,
+        );
+      }
+      if (
+        commercialKey === "xmas_portrait" &&
+        (amountCents !== 499 || currency !== "eur")
+      ) {
+        return jsonResponse(
+          {
+            error: "Portrait price is not the authoritative €4.99 offer.",
+            code: "invalid_price",
+          },
           409,
         );
       }
@@ -394,16 +504,27 @@ Deno.serve(async (req) => {
     const sourcePath = asString(body.source_path);
     const species = asString(body.species).toLowerCase() || null;
     const portraitType = asString(body.portrait_type) || null;
-    const sourceRoute = asString(body.source_route) ||
+    const sourceRoute =
+      asString(body.source_route) ||
       recoveryRouteForOrder({
         productKey: resolvedProductKey,
         species,
         landingPath: asString(body.landing_path),
       });
+    const funnelSessionId = optionalUuid(body.funnel_session_id);
 
-    if (isPortraitProductKey(resolvedProductKey) && commercialKey !== "xmas_magic_bundle") {
+    if (
+      isPortraitProductKey(resolvedProductKey) &&
+      commercialKey !== "xmas_magic_bundle"
+    ) {
       if (!styleKey || !sourcePath) {
-        return jsonResponse({ error: "style_key and source_path required", code: "missing_photo_fields" }, 400);
+        return jsonResponse(
+          {
+            error: "style_key and source_path required",
+            code: "missing_photo_fields",
+          },
+          400,
+        );
       }
       const promptCheck = buildChristmasPortraitPrompt({
         productKey: resolvedProductKey,
@@ -412,7 +533,13 @@ Deno.serve(async (req) => {
         clientPrompt: body.client_prompt || body.prompt,
       });
       if (!promptCheck.ok) {
-        return jsonResponse({ error: "Unknown or disabled style for product", code: "invalid_style" }, 400);
+        return jsonResponse(
+          {
+            error: "Unknown or disabled style for product",
+            code: "invalid_style",
+          },
+          400,
+        );
       }
     }
 
@@ -423,18 +550,34 @@ Deno.serve(async (req) => {
       const language = normalizeWave1GenerationLocale(asString(body.language));
       const templateKey = asString(body.template_key) || "classic_santa";
       if (!body.guardian_consent) {
-        return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
+        return jsonResponse(
+          {
+            error: "Parent/guardian consent required",
+            code: "consent_required",
+          },
+          400,
+        );
       }
       if (!name || name.length > 40) {
-        return jsonResponse({ error: "child_first_name required", code: "name_required" }, 400);
+        return jsonResponse(
+          { error: "child_first_name required", code: "name_required" },
+          400,
+        );
       }
       if (!isWave1GenerationLocale(language)) {
-        return jsonResponse({ error: "unsupported Wave 1 language", code: "invalid_language" }, 400);
+        return jsonResponse(
+          { error: "unsupported Wave 1 language", code: "invalid_language" },
+          400,
+        );
       }
       if (templateKey !== "classic_santa") {
-        return jsonResponse({ error: "template unavailable", code: "template_unavailable" }, 400);
+        return jsonResponse(
+          { error: "template unavailable", code: "template_unavailable" },
+          400,
+        );
       }
-      const injection = /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s*prompt/i;
+      const injection =
+        /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s*prompt/i;
       for (const field of [
         body.something_good,
         body.hobby_or_interest,
@@ -443,7 +586,13 @@ Deno.serve(async (req) => {
         body.sender_name,
       ]) {
         if (field && injection.test(String(field))) {
-          return jsonResponse({ error: "Disallowed content in personalization", code: "prompt_injection" }, 400);
+          return jsonResponse(
+            {
+              error: "Disallowed content in personalization",
+              code: "prompt_injection",
+            },
+            400,
+          );
         }
       }
       santaPerso = {
@@ -451,7 +600,8 @@ Deno.serve(async (req) => {
         language,
         age: body.age == null ? null : Number(body.age),
         something_good: asString(body.something_good).slice(0, 120) || null,
-        hobby_or_interest: asString(body.hobby_or_interest).slice(0, 80) || null,
+        hobby_or_interest:
+          asString(body.hobby_or_interest).slice(0, 80) || null,
         christmas_wish: asString(body.christmas_wish).slice(0, 120) || null,
         custom_fact: asString(body.custom_fact).slice(0, 120) || null,
         sender_name: asString(body.sender_name).slice(0, 60) || null,
@@ -465,27 +615,59 @@ Deno.serve(async (req) => {
     if (resolvedProductKey === "christmas_santa_voice_call") {
       const name = asString(body.child_first_name);
       const languageRaw = asString(body.language).toLowerCase();
-      const language = languageRaw === "ro" ? "ro" : languageRaw === "en" ? "en" : "";
+      const language =
+        languageRaw === "ro" ? "ro" : languageRaw === "en" ? "en" : "";
       if (!body.guardian_consent) {
-        return jsonResponse({ error: "Parent/guardian consent required", code: "consent_required" }, 400);
+        return jsonResponse(
+          {
+            error: "Parent/guardian consent required",
+            code: "consent_required",
+          },
+          400,
+        );
       }
       if (!name || name.length > 40) {
-        return jsonResponse({ error: "child_first_name required", code: "name_required" }, 400);
+        return jsonResponse(
+          { error: "child_first_name required", code: "name_required" },
+          400,
+        );
       }
       if (!language) {
-        return jsonResponse({ error: "language must be en or ro", code: "invalid_language" }, 400);
+        return jsonResponse(
+          { error: "language must be en or ro", code: "invalid_language" },
+          400,
+        );
       }
       // Amount/currency come only from pricing_items via resolveWebCheckout (seed: 5900 RON).
       // Do not invent FX conversions here — Admin configures international rows deliberately.
-      const injection = /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s*prompt/i;
-      for (const field of [body.christmas_wish, body.hobbies, body.pet_name, body.positive_detail]) {
+      const injection =
+        /ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s*prompt/i;
+      for (const field of [
+        body.christmas_wish,
+        body.hobbies,
+        body.pet_name,
+        body.positive_detail,
+      ]) {
         if (field && injection.test(String(field))) {
-          return jsonResponse({ error: "Disallowed content in personalization", code: "prompt_injection" }, 400);
+          return jsonResponse(
+            {
+              error: "Disallowed content in personalization",
+              code: "prompt_injection",
+            },
+            400,
+          );
         }
       }
-      const ageNum = body.age == null || body.age === "" ? null : Number(body.age);
-      if (ageNum != null && (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 17)) {
-        return jsonResponse({ error: "age must be 1–17 when provided", code: "invalid_age" }, 400);
+      const ageNum =
+        body.age == null || body.age === "" ? null : Number(body.age);
+      if (
+        ageNum != null &&
+        (!Number.isFinite(ageNum) || ageNum < 1 || ageNum > 17)
+      ) {
+        return jsonResponse(
+          { error: "age must be 1–17 when provided", code: "invalid_age" },
+          400,
+        );
       }
       santaCallPerso = {
         child_first_name: name,
@@ -496,7 +678,8 @@ Deno.serve(async (req) => {
         pet_name: asString(body.pet_name).slice(0, 40) || null,
         positive_detail: asString(body.positive_detail).slice(0, 160) || null,
         guardian_consent: true,
-        consent_version: asString(body.consent_version) || "santa_call_v1_2026_10",
+        consent_version:
+          asString(body.consent_version) || "santa_call_v1_2026_10",
         consented_at: new Date().toISOString(),
       };
     }
@@ -507,9 +690,14 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Stripe is not configured" }, 503);
     }
 
-    const email = (asString(body.email) || asString(authUser?.email)).toLowerCase();
+    const email = (
+      asString(body.email) || asString(authUser?.email)
+    ).toLowerCase();
     const successUrl = plannerFlow
-      ? plannerSafeCheckoutSuccessUrl(asString(body.success_url) || asString(body.landing_path), siteOrigin())
+      ? plannerSafeCheckoutSuccessUrl(
+          asString(body.success_url) || asString(body.landing_path),
+          siteOrigin(),
+        )
       : asString(body.success_url) ||
         (resolvedProductKey === "christmas_santa_video"
           ? `${siteOrigin()}/christmas/santa-video?checkout=success`
@@ -534,6 +722,16 @@ Deno.serve(async (req) => {
       portrait_type: portraitType,
       species,
       source_route: sourceRoute,
+      landing_path: asString(body.landing_path) || null,
+      utm_source: asString(body.utm_source) || null,
+      utm_medium: asString(body.utm_medium) || null,
+      utm_campaign: asString(body.utm_campaign) || null,
+      utm_content: asString(body.utm_content) || null,
+      utm_term: asString(body.utm_term) || null,
+      campaign_id: asString(body.campaign_id) || null,
+      adset_id: asString(body.adset_id) || null,
+      ad_id: asString(body.ad_id) || null,
+      funnel_session_id: funnelSessionId,
       amount_cents: amountCents,
       currency,
       package_key: packageKeyResolved,
@@ -547,13 +745,18 @@ Deno.serve(async (req) => {
     if (orderId) {
       const { data: existing } = await service
         .from("christmas_orders")
-        .select("id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash")
+        .select(
+          "id,payment_status,stripe_checkout_session_id,amount_cents,public_token_hash",
+        )
         .eq("id", orderId)
         .maybeSingle();
       if (!existing || existing.payment_status === "paid") {
         orderId = "";
       } else {
-        await service.from("christmas_orders").update(orderPatch).eq("id", orderId);
+        await service
+          .from("christmas_orders")
+          .update(orderPatch)
+          .eq("id", orderId);
       }
     }
 
@@ -561,7 +764,9 @@ Deno.serve(async (req) => {
     const guestTokenHash = guestToken ? await sha256Hex(guestToken) : "";
 
     if (!orderId) {
-      publicToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      publicToken =
+        crypto.randomUUID().replace(/-/g, "") +
+        crypto.randomUUID().replace(/-/g, "");
       const tokenHash = await sha256Hex(publicToken);
       const { data: order, error: orderError } = await service
         .from("christmas_orders")
@@ -581,7 +786,7 @@ Deno.serve(async (req) => {
           campaign_id: asString(body.campaign_id) || null,
           adset_id: asString(body.adset_id) || null,
           ad_id: asString(body.ad_id) || null,
-          funnel_session_id: asString(body.funnel_session_id) || null,
+          funnel_session_id: funnelSessionId,
           metadata: {
             source: "christmas-checkout",
             public_token_hint: publicToken,
@@ -590,12 +795,18 @@ Deno.serve(async (req) => {
             source_route: sourceRoute,
             ...(resolvedProductKey === "christmas_santa_voice_call"
               ? {
-                  santa_call_market: (commercialSnapshot as Record<string, unknown>)?.santa_call_market ||
+                  santa_call_market:
+                    (commercialSnapshot as Record<string, unknown>)
+                      ?.santa_call_market ||
                     (commercialSnapshot as Record<string, unknown>)?.market ||
                     null,
-                  market: (commercialSnapshot as Record<string, unknown>)?.market || null,
+                  market:
+                    (commercialSnapshot as Record<string, unknown>)?.market ||
+                    null,
                   stripe_mode: "live",
-                  stripe_price_id: (commercialSnapshot as Record<string, unknown>)?.stripe_price_id || null,
+                  stripe_price_id:
+                    (commercialSnapshot as Record<string, unknown>)
+                      ?.stripe_price_id || null,
                 }
               : {}),
             ...(plannerFlow
@@ -630,13 +841,15 @@ Deno.serve(async (req) => {
     }
 
     if (santaPerso) {
-      const { error: persoError } = await service.from("christmas_santa_personalization").upsert(
-        {
-          order_id: orderId,
-          ...santaPerso,
-        },
-        { onConflict: "order_id" },
-      );
+      const { error: persoError } = await service
+        .from("christmas_santa_personalization")
+        .upsert(
+          {
+            order_id: orderId,
+            ...santaPerso,
+          },
+          { onConflict: "order_id" },
+        );
       if (persoError) throw persoError;
       await service.from("christmas_santa_video_jobs").upsert(
         {
@@ -663,18 +876,20 @@ Deno.serve(async (req) => {
         .single();
       if (callPersoError) throw callPersoError;
       // Draft entitlement — activated only after paid webhook (real token hash replaces pending).
-      const { error: entError } = await service.from("christmas_santa_call_entitlements").upsert(
-        {
-          order_id: orderId,
-          profile_id: callProfile.id,
-          access_token_hash: await sha256Hex(`pending:${orderId}`),
-          status: "pending_payment",
-          expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-          remaining_seconds: 180,
-          max_duration_seconds: 180,
-        },
-        { onConflict: "order_id" },
-      );
+      const { error: entError } = await service
+        .from("christmas_santa_call_entitlements")
+        .upsert(
+          {
+            order_id: orderId,
+            profile_id: callProfile.id,
+            access_token_hash: await sha256Hex(`pending:${orderId}`),
+            status: "pending_payment",
+            expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+            remaining_seconds: 180,
+            max_duration_seconds: 180,
+          },
+          { onConflict: "order_id" },
+        );
       if (entError) throw entError;
     }
 
@@ -689,15 +904,20 @@ Deno.serve(async (req) => {
     if (email) params.set("customer_email", email);
     const santaLivePriceId =
       resolvedProductKey === "christmas_santa_voice_call"
-        ? asString((commercialSnapshot as Record<string, unknown>)?.stripe_price_id) ||
+        ? asString(
+            (commercialSnapshot as Record<string, unknown>)?.stripe_price_id,
+          ) ||
           santaCallLivePriceId(
-            normalizeMarketFromSnapshot(commercialSnapshot as Record<string, unknown>),
+            normalizeMarketFromSnapshot(
+              commercialSnapshot as Record<string, unknown>,
+            ),
             "initial",
           )
         : "";
-    const items = plannerFlow && plannerLineItems.length
-      ? plannerLineItems
-      : [{ packageKey: packageKeyResolved, name: productName, amountCents }];
+    const items =
+      plannerFlow && plannerLineItems.length
+        ? plannerLineItems
+        : [{ packageKey: packageKeyResolved, name: productName, amountCents }];
     items.forEach((item, index) => {
       params.set(`line_items[${index}][quantity]`, "1");
       if (santaLivePriceId && index === 0 && !plannerFlow) {
@@ -705,8 +925,14 @@ Deno.serve(async (req) => {
         params.set(`line_items[${index}][price]`, santaLivePriceId);
       } else {
         params.set(`line_items[${index}][price_data][currency]`, currency);
-        params.set(`line_items[${index}][price_data][unit_amount]`, String(item.amountCents));
-        params.set(`line_items[${index}][price_data][product_data][name]`, item.name);
+        params.set(
+          `line_items[${index}][price_data][unit_amount]`,
+          String(item.amountCents),
+        );
+        params.set(
+          `line_items[${index}][price_data][product_data][name]`,
+          item.name,
+        );
       }
     });
     params.set("metadata[product_family]", "christmas");
@@ -716,13 +942,21 @@ Deno.serve(async (req) => {
     params.set("metadata[commercial_key]", pricingKey || "");
     params.set("metadata[sku]", sku);
     params.set("metadata[christmas_order_id]", orderId);
+    if (funnelSessionId) {
+      params.set("metadata[funnel_session_id]", funnelSessionId);
+      params.set(
+        "payment_intent_data[metadata][funnel_session_id]",
+        funnelSessionId,
+      );
+    }
     if (resolvedProductKey === "christmas_santa_voice_call") {
       const m = asString(
         (commercialSnapshot as Record<string, unknown>)?.santa_call_market ||
           (commercialSnapshot as Record<string, unknown>)?.market,
       );
       params.set("metadata[stripe_mode]", "live");
-      if (santaLivePriceId) params.set("metadata[stripe_price_id]", santaLivePriceId);
+      if (santaLivePriceId)
+        params.set("metadata[stripe_price_id]", santaLivePriceId);
       if (m) {
         params.set("metadata[santa_call_market]", m);
         params.set("metadata[market]", m);
@@ -738,31 +972,41 @@ Deno.serve(async (req) => {
         params.set("metadata[user_id]", authUser.id);
         params.set("client_reference_id", authUser.id);
         params.set("payment_intent_data[metadata][user_id]", authUser.id);
-        params.set("payment_intent_data[metadata][product_key]", resolvedProductKey);
+        params.set(
+          "payment_intent_data[metadata][product_key]",
+          resolvedProductKey,
+        );
       }
     }
-    if (guestTokenHash) params.set("metadata[guest_token_hash]", guestTokenHash);
+    if (guestTokenHash)
+      params.set("metadata[guest_token_hash]", guestTokenHash);
     if (styleKey) params.set("metadata[style_key]", styleKey);
     if (portraitType) params.set("metadata[portrait_type]", portraitType);
     if (species) params.set("metadata[species]", species);
     params.set("payment_intent_data[metadata][product_family]", "christmas");
     params.set("payment_intent_data[metadata][christmas_order_id]", orderId);
     if (guestTokenHash) {
-      params.set("payment_intent_data[metadata][guest_token_hash]", guestTokenHash);
+      params.set(
+        "payment_intent_data[metadata][guest_token_hash]",
+        guestTokenHash,
+      );
     }
 
-    const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${stripeSecret}`,
-        "Stripe-Version": "2025-03-31.basil",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": plannerFlow
-          ? `xmas-planner-${orderId}-${packageKeyResolved}-${plannerAddonKeys.join(".")}-${amountCents}`
-          : `xmas-checkout-${orderId}`,
+    const stripeRes = await fetch(
+      "https://api.stripe.com/v1/checkout/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${stripeSecret}`,
+          "Stripe-Version": "2025-03-31.basil",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": plannerFlow
+            ? `xmas-planner-${orderId}-${packageKeyResolved}-${plannerAddonKeys.join(".")}-${amountCents}`
+            : `xmas-checkout-${orderId}`,
+        },
+        body: params,
       },
-      body: params,
-    });
+    );
     const session = await stripeRes.json();
     if (!stripeRes.ok) {
       await service
@@ -772,7 +1016,10 @@ Deno.serve(async (req) => {
           last_error: asString(session.error?.message || "stripe_error"),
         })
         .eq("id", orderId);
-      return jsonResponse({ error: "Unable to create checkout session", code: "stripe_error" }, 502);
+      return jsonResponse(
+        { error: "Unable to create checkout session", code: "stripe_error" },
+        502,
+      );
     }
 
     await service

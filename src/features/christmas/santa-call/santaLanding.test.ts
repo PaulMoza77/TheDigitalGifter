@@ -14,7 +14,15 @@ vi.mock("../photoApi", () => ({ fetchChristmasCommercialOffers: mocks.offers, st
 vi.mock("./santaCallApi", () => ({ confirmSantaCallCommercialCheckout: mocks.confirm, createSantaCallParentTestCheckout: vi.fn() }));
 vi.mock("./santaCallAnalytics", () => ({ trackSantaCallAnalytics: mocks.analytics }));
 vi.mock("./santaCallMeta", () => ({ trackSantaCallMetaViewContent: vi.fn(), trackSantaCallMetaInitiateCheckout: vi.fn(), trackSantaCallMetaPurchase: mocks.purchase }));
-vi.mock("@/features/pet/funnelAttribution", () => ({ captureFunnelAttribution: vi.fn() }));
+vi.mock("@/features/pet/funnelAttribution", () => ({
+  captureFunnelAttribution: vi.fn(),
+  attributionParamsForInternal: vi.fn(() => ({})),
+  getFunnelFirstTouchContext: vi.fn(() => ({
+    landingPathname: "/christmas/santa-call",
+    referrerHost: null,
+    hasFbclid: false,
+  })),
+}));
 vi.mock("@/features/pet/components/CustomStripeCheckout", () => ({ CustomStripeCheckout: () => createElement("div", null, "Secure checkout") }));
 vi.mock("@/components/PageHead", () => ({ PageHead: () => null }));
 vi.mock("../seo/ChristmasPageHead", () => ({ ChristmasPageHead: () => null }));

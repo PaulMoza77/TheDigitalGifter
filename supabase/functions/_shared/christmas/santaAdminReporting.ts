@@ -7,6 +7,7 @@ import {
   SANTA_EXTENSION,
   type AnalyticsReport,
   type Call,
+  type FunnelEvent,
   type Order,
 } from "./santaAnalyticsModel.ts";
 import { reportingSources } from "./santaAnalyticsSources.ts";
@@ -16,6 +17,17 @@ const ORDER_COLUMNS =
   "id,product_key,payment_status,amount_cents,charged_amount_cents,currency,stripe_checkout_session_id,stripe_payment_intent_id,created_at,paid_at,refunded_at,metadata";
 const CALL_COLUMNS =
   "id,order_id,status,provider,started_at,connected_at,ended_at,created_at,seconds_used,end_reason,error_code,last_heartbeat_at";
+const FUNNEL_COLUMNS =
+  "event_name,funnel_session_id,order_id,created_at,is_test,environment";
+const SANTA_FUNNEL_EVENTS = [
+  "christmas_page_view",
+  "product_selected",
+  "santa_form_started",
+  "santa_form_completed",
+  "checkout_started",
+  "payment_sheet_opened",
+  "purchase",
+];
 const LIMIT = 10000,
   BATCH = 500;
 
@@ -48,7 +60,7 @@ export async function santaAdminReport(
     cols
       .map((c) => `and(${c}.gte.${range.startUtc},${c}.lt.${range.endUtc})`)
       .join(",");
-  const [orders, sessions] = await Promise.all([
+  const [orders, sessions, rawFunnel] = await Promise.all([
     boundedRows<Order>(() =>
       service
         .from("christmas_orders")
@@ -64,7 +76,22 @@ export async function santaAdminReport(
         .or(dateOr(["created_at", "connected_at", "ended_at"]))
         .order("id"),
     ),
+    boundedRows<FunnelEvent>(() =>
+      service
+        .from("christmas_funnel_events")
+        .select(FUNNEL_COLUMNS)
+        .in("product_key", [SANTA_INITIAL])
+        .in("event_name", SANTA_FUNNEL_EVENTS)
+        .or(dateOr(["created_at"]))
+        .order("id"),
+    ),
   ]);
+  const funnel = rawFunnel.filter(
+    (event) =>
+      event.is_test === false &&
+      event.environment === "production" &&
+      inRange(event.created_at, range),
+  );
   const linked = new Map(orders.map((o) => [o.id, o]));
   const missing = [...new Set(sessions.map((s) => s.order_id))].filter(
     (id) => !linked.has(id),
@@ -142,11 +169,45 @@ export async function santaAdminReport(
       integrations.meta = snapshot.meta;
   }
   const aggregate = aggregateSanta(orders, calls, range, generatedAt);
+  const distinctSessions = (eventName: string) =>
+    new Set(
+      funnel
+        .filter((event) => event.event_name === eventName)
+        .map((event) => event.funnel_session_id),
+    ).size;
+  const firstParty = [
+    ["fp_page_views", "Vizite landing", "christmas_page_view"],
+    ["fp_cta", "Clickuri pe personalizare", "product_selected"],
+    ["fp_form_start", "Formulare începute", "santa_form_started"],
+    ["fp_form_complete", "Formulare completate", "santa_form_completed"],
+    ["fp_checkout", "Checkout creat", "checkout_started"],
+    ["fp_payment_sheet", "Plata afișată", "payment_sheet_opened"],
+    ["fp_purchase", "Plăți confirmate", "purchase"],
+  ] as const;
+  aggregate.metrics.push(
+    ...firstParty.map(([id, label, eventName]) => ({
+      id,
+      label,
+      value: distinctSessions(eventName),
+      unit: "count" as const,
+      source: "Funnel propriu",
+      definition:
+        "Sesiuni anonime distincte, legate prin același identificator de la landing până la Stripe.",
+      updatedAt: generatedAt,
+    })),
+  );
   // The deployed commerce schema has no reconciled partial-refund ledger for Santa.
   // Do not imply that missing refund ingestion means zero refunds.
-  aggregate.metrics = aggregate.metrics.map((metric) => metric.id === "refunds" ? {
-    ...metric, value: null, unavailable: "Santa refund reconciliation is not configured; verify refunds in Stripe",
-  } : metric);
+  aggregate.metrics = aggregate.metrics.map((metric) =>
+    metric.id === "refunds"
+      ? {
+          ...metric,
+          value: null,
+          unavailable:
+            "Santa refund reconciliation is not configured; verify refunds in Stripe",
+        }
+      : metric,
+  );
   return {
     ok: true,
     generatedAt,

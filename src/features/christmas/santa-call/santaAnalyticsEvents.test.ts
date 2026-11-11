@@ -85,7 +85,7 @@ it("dispatches checkout analytics before the hosted redirect and only confirms p
   expect(commercial.indexOf('"santa_checkout_started"')).toBeLessThan(
     commercial.indexOf("window.location.assign"),
   );
-  expect(page).toContain(
-    'data.livemode === true && data.stripe_mode === "live"',
+  expect(page).toMatch(
+    /data\.livemode === true\s*&&\s*data\.stripe_mode === "live"/,
   );
 });

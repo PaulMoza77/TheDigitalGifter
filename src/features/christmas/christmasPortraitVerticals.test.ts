@@ -117,6 +117,7 @@ describe("christmas portrait style registry", () => {
 
   it("deno registry mirrors client product style keys and aliases kids to family-safe styles", () => {
     const deno = readSrc("supabase/functions/_shared/christmas/portraitPromptRegistry.ts");
+    expect(deno).toContain('input.productKey === "christmas_santa_voice_call"');
     for (const key of stylesForProductKey("christmas_family").map((s) => s.styleKey)) {
       expect(deno).toContain(`"styleKey": "${key}"`);
     }

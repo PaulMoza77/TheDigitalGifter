@@ -65,6 +65,13 @@ const metricLabels: Record<string, string> = {
   meta_purchases: "Comenzi atribuite de Meta",
   meta_cpp: "Cost pe comandă (Meta)",
   meta_roas: "Venit / cost (Meta)",
+  fp_page_views: "Vizite landing",
+  fp_cta: "Clickuri pe personalizare",
+  fp_form_start: "Formulare începute",
+  fp_form_complete: "Formulare completate",
+  fp_checkout: "Checkout creat",
+  fp_payment_sheet: "Plata afișată",
+  fp_purchase: "Plăți confirmate",
 };
 const metricHints: Record<string, string> = {
   visitors: "Persoane măsurate de GA4",
@@ -317,7 +324,7 @@ export default function SantaCallAdminPage() {
                   metrics={[
                     "revenue",
                     "purchases",
-                    "visitors",
+                    "fp_page_views",
                     "stripe_checkouts",
                     "calls_completed",
                     "conversion",
@@ -338,7 +345,7 @@ export default function SantaCallAdminPage() {
               <div className="space-y-5">
                 <Metrics
                   metrics={[
-                    "visitors",
+                    "fp_page_views",
                     "sessions",
                     "purchases",
                     "revenue",
@@ -824,23 +831,24 @@ function Funnel({
   range: AnalyticsReport["range"];
 }) {
   const ids = [
-    "page_views",
-    "cta",
-    "form_start",
-    "form_complete",
-    "ga_checkout",
-    "purchases",
+    "fp_page_views",
+    "fp_cta",
+    "fp_form_start",
+    "fp_form_complete",
+    "fp_checkout",
+    "fp_payment_sheet",
+    "fp_purchase",
     "calls_started",
     "calls_completed",
   ];
-  const [active, setActive] = useState("page_views");
+  const [active, setActive] = useState("fp_page_views");
   const selected = metrics.find((m) => m.id === active);
   return (
     <Panel title="Pașii până la un apel">
       <p className="mt-2 text-xs leading-5 text-neutral-500">
-        Vizualizările și clickurile vin din GA4; plățile și apelurile sunt
-        confirmate de magazin. Aceste numere nu urmăresc aceeași persoană între
-        pași.
+        Landingul, formularul și Stripe sunt legate prin aceeași sesiune
+        anonimă. Plata este confirmată server-side, iar apelurile vin din
+        registrul de funcționare.
       </p>
       <div className="mt-4 space-y-1">
         {ids.map((id, i) => {

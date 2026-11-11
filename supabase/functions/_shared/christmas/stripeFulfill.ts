@@ -11,13 +11,19 @@ import { GIFT_TREE_PAID_OFFERS } from "./giftTreeRewards.ts";
 import { isPlannerProductKey } from "./plannerCommerce.ts";
 import { sendPlannerReadyEmail } from "./plannerEmail.ts";
 
-import { fulfillSantaVoiceCallOrder, fulfillSantaVoiceCallExtensionOrder } from "./santaCallFulfill.ts";
+import {
+  fulfillSantaVoiceCallOrder,
+  fulfillSantaVoiceCallExtensionOrder,
+} from "./santaCallFulfill.ts";
 
 export const CHRISTMAS_PRODUCT_FAMILY = "christmas";
 
 function waitUntil(promise: Promise<unknown>) {
-  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void } })
-    .EdgeRuntime;
+  const runtime = (
+    globalThis as {
+      EdgeRuntime?: { waitUntil?: (value: Promise<unknown>) => void };
+    }
+  ).EdgeRuntime;
   if (runtime && typeof runtime.waitUntil === "function") {
     runtime.waitUntil(promise);
     return;
@@ -25,7 +31,9 @@ function waitUntil(promise: Promise<unknown>) {
   void promise;
 }
 
-export function isChristmasCheckoutMetadata(metadata: Record<string, unknown>): boolean {
+export function isChristmasCheckoutMetadata(
+  metadata: Record<string, unknown>,
+): boolean {
   const family = asString(metadata.product_family);
   const productType = asString(metadata.product_type);
   const sku = asString(metadata.sku);
@@ -38,7 +46,9 @@ export function isChristmasCheckoutMetadata(metadata: Record<string, unknown>): 
   );
 }
 
-function isCommerceChristmasMetadata(metadata: Record<string, unknown>): boolean {
+function isCommerceChristmasMetadata(
+  metadata: Record<string, unknown>,
+): boolean {
   return asString(metadata.product_family) === CHRISTMAS_PRODUCT_FAMILY;
 }
 
@@ -74,6 +84,48 @@ export function enqueueChristmasGenerate(
   );
 }
 
+async function recordSantaPurchaseFunnel(input: {
+  service: SupabaseClient;
+  orderId: string;
+  amountCents: number;
+}) {
+  const { data: order } = await input.service
+    .from("christmas_orders")
+    .select(
+      "funnel_session_id,product_key,package_key,locale,landing_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term,campaign_id,adset_id,ad_id",
+    )
+    .eq("id", input.orderId)
+    .maybeSingle();
+  if (!order || !isUuid(order.funnel_session_id)) return;
+  const { error } = await input.service.from("christmas_funnel_events").upsert(
+    {
+      event_name: "purchase",
+      funnel_session_id: order.funnel_session_id,
+      idempotency_key: `santa_purchase:${input.orderId}`,
+      product_key: order.product_key,
+      package_key: order.package_key,
+      order_id: input.orderId,
+      locale: order.locale,
+      pathname: "/christmas/santa-call",
+      landing_path: order.landing_path,
+      amount_cents: input.amountCents,
+      utm_source: order.utm_source,
+      utm_medium: order.utm_medium,
+      utm_campaign: order.utm_campaign,
+      utm_content: order.utm_content,
+      utm_term: order.utm_term,
+      campaign_id: order.campaign_id,
+      adset_id: order.adset_id,
+      ad_id: order.ad_id,
+      is_test: false,
+      environment: "production",
+      metadata: { source: "stripe_webhook" },
+    },
+    { onConflict: "idempotency_key", ignoreDuplicates: true },
+  );
+  if (error) console.error("Santa purchase funnel event failed", error.code);
+}
+
 export async function handleChristmasStripeEvent(input: {
   service: SupabaseClient;
   eventId: string;
@@ -96,7 +148,10 @@ export async function handleChristmasStripeEvent(input: {
     await input.service.from("processed_stripe_events").insert({
       event_id: input.eventId,
       event_type: input.eventType,
-      result: { status: "ignored", reason: "christmas_one_time_ignores_invoice" },
+      result: {
+        status: "ignored",
+        reason: "christmas_one_time_ignores_invoice",
+      },
     });
     return new Response(JSON.stringify({ ok: true, status: "ignored" }), {
       headers: { "Content-Type": "application/json" },
@@ -117,34 +172,58 @@ export async function handleChristmasStripeEvent(input: {
   }
 
   const santaProductKey = asString(input.metadata.product_key);
-  if (santaProductKey.startsWith("christmas_santa_voice_call") &&
-      (input.obj.livemode !== true || asString(input.metadata.stripe_mode) === "test")) {
-    return new Response(JSON.stringify({ ok: false, status: "santa_test_requires_test_webhook" }), {
-      status: 400, headers: { "Content-Type": "application/json" },
-    });
+  if (
+    santaProductKey.startsWith("christmas_santa_voice_call") &&
+    (input.obj.livemode !== true ||
+      asString(input.metadata.stripe_mode) === "test")
+  ) {
+    return new Response(
+      JSON.stringify({ ok: false, status: "santa_test_requires_test_webhook" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
   const paymentStatus = asString(input.obj.payment_status);
-  if ((santaProductKey.startsWith("christmas_santa_voice_call") && paymentStatus !== "paid") ||
-      (paymentStatus && paymentStatus !== "paid" && paymentStatus !== "no_payment_required")) {
+  if (
+    (santaProductKey.startsWith("christmas_santa_voice_call") &&
+      paymentStatus !== "paid") ||
+    (paymentStatus &&
+      paymentStatus !== "paid" &&
+      paymentStatus !== "no_payment_required")
+  ) {
     await input.service.from("processed_stripe_events").insert({
       event_id: input.eventId,
       event_type: input.eventType,
       stripe_session_id: asString(input.obj.id),
-      result: { status: "ignored_unpaid", payment_status: paymentStatus, commerce },
+      result: {
+        status: "ignored_unpaid",
+        payment_status: paymentStatus,
+        commerce,
+      },
     });
-    return new Response(JSON.stringify({ ok: true, status: "ignored_unpaid" }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, status: "ignored_unpaid" }),
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   const orderId = isUuid(input.metadata.christmas_order_id)
     ? asString(input.metadata.christmas_order_id)
     : null;
   if (!orderId) {
-    return new Response(JSON.stringify({ error: "christmas_order_id missing from Stripe metadata" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "christmas_order_id missing from Stripe metadata",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   if (commerce) {
@@ -153,14 +232,17 @@ export async function handleChristmasStripeEvent(input: {
     const sessionId = asString(input.obj.id);
     const paymentIntent = asString(input.obj.payment_intent);
 
-    const { data, error } = await input.service.rpc("fulfill_christmas_order_payment", {
-      p_order_id: orderId,
-      p_stripe_session_id: sessionId,
-      p_stripe_payment_intent_id: paymentIntent || null,
-      p_amount_cents: amountTotal,
-      p_currency: currency,
-      p_stripe_event_id: input.eventId,
-    });
+    const { data, error } = await input.service.rpc(
+      "fulfill_christmas_order_payment",
+      {
+        p_order_id: orderId,
+        p_stripe_session_id: sessionId,
+        p_stripe_payment_intent_id: paymentIntent || null,
+        p_amount_cents: amountTotal,
+        p_currency: currency,
+        p_stripe_event_id: input.eventId,
+      },
+    );
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
@@ -170,27 +252,53 @@ export async function handleChristmasStripeEvent(input: {
 
     const result = (data || {}) as Record<string, unknown>;
     const santaProduct = asString(input.metadata.product_key);
-    if (santaProduct === "christmas_santa_voice_call" || santaProduct === "christmas_santa_voice_call_extension") {
+    if (
+      santaProduct === "christmas_santa_voice_call" ||
+      santaProduct === "christmas_santa_voice_call_extension"
+    ) {
       if (result.ok !== true) {
         return new Response(JSON.stringify({ ok: false, christmas: result }), {
-          status: 400, headers: { "Content-Type": "application/json" },
+          status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
       // Retry fulfilment on already_paid: payment and entitlement grants are idempotent.
-      const fulfilled = santaProduct === "christmas_santa_voice_call_extension"
-        ? await fulfillSantaVoiceCallExtensionOrder({
-            service: input.service, orderId,
-            stripeCheckoutSessionId: sessionId, stripePaymentIntentId: paymentIntent,
-          })
-        : await fulfillSantaVoiceCallOrder({ service: input.service, orderId });
+      const fulfilled =
+        santaProduct === "christmas_santa_voice_call_extension"
+          ? await fulfillSantaVoiceCallExtensionOrder({
+              service: input.service,
+              orderId,
+              stripeCheckoutSessionId: sessionId,
+              stripePaymentIntentId: paymentIntent,
+            })
+          : await fulfillSantaVoiceCallOrder({
+              service: input.service,
+              orderId,
+            });
       if (!fulfilled.ok) {
-        return new Response(JSON.stringify({ ok: false, status: "santa_call_extension_or_initial_retry" }), {
-          status: 500, headers: { "Content-Type": "application/json" },
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            status: "santa_call_extension_or_initial_retry",
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      if (santaProduct === "christmas_santa_voice_call") {
+        await recordSantaPurchaseFunnel({
+          service: input.service,
+          orderId,
+          amountCents: amountTotal,
         });
       }
       await input.service.from("processed_stripe_events").insert({
-        event_id: input.eventId, event_type: input.eventType,
-        stripe_session_id: sessionId, result: { status: "santa_call_fulfilled" },
+        event_id: input.eventId,
+        event_type: input.eventType,
+        stripe_session_id: sessionId,
+        result: { status: "santa_call_fulfilled" },
       });
       return new Response(JSON.stringify({ ok: true, christmas: result }), {
         headers: { "Content-Type": "application/json" },
@@ -203,7 +311,11 @@ export async function handleChristmasStripeEvent(input: {
       result: { ...result, product_family: "christmas" },
     });
 
-    if (result.ok === true && (result.status === "paid" || result.status === "already_paid") && isPlannerProductKey(asString(input.metadata.product_key))) {
+    if (
+      result.ok === true &&
+      (result.status === "paid" || result.status === "already_paid") &&
+      isPlannerProductKey(asString(input.metadata.product_key))
+    ) {
       const productKey = asString(input.metadata.product_key);
       const packageKey = asString(input.metadata.package_key);
       const entitlements = asString(input.metadata.entitlements)
@@ -217,7 +329,10 @@ export async function handleChristmasStripeEvent(input: {
         .maybeSingle();
       const metaUserId = asString(input.metadata.user_id);
       if (ord && !ord.user_id && isUuid(metaUserId)) {
-        await input.service.from("christmas_orders").update({ user_id: metaUserId }).eq("id", orderId);
+        await input.service
+          .from("christmas_orders")
+          .update({ user_id: metaUserId })
+          .eq("id", orderId);
         ord.user_id = metaUserId;
       }
       const meta = (ord?.metadata || {}) as Record<string, unknown>;
@@ -265,8 +380,9 @@ export async function handleChristmasStripeEvent(input: {
       if (isPlannerProductKey(productKey)) {
         // Entitlements + email handled above (including webhook replay).
       } else if (productKey === "christmas_gift_tree") {
-        const paid = GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey)
-          || (packageKey === "open_5"
+        const paid =
+          GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === packageKey) ||
+          (packageKey === "open_5"
             ? GIFT_TREE_PAID_OFFERS.find((o) => o.package_key === "open_five")
             : undefined);
         const opens = paid?.opens_granted ?? 0;
@@ -277,7 +393,9 @@ export async function handleChristmasStripeEvent(input: {
             .eq("id", orderId)
             .maybeSingle();
           const meta = (ord?.metadata || {}) as Record<string, unknown>;
-          const guestHash = asString(meta.guest_token_hash) || asString(input.metadata.guest_token_hash);
+          const guestHash =
+            asString(meta.guest_token_hash) ||
+            asString(input.metadata.guest_token_hash);
           const email = asString(ord?.email) || asString(input.metadata.email);
           await input.service.rpc("christmas_gift_tree_grant_opens", {
             p_season_year: 2026,
@@ -330,10 +448,14 @@ export async function handleChristmasStripeEvent(input: {
             .select("product_key")
             .eq("id", orderId)
             .maybeSingle();
-          if (asString(ord?.product_key) === "christmas_santa_video") mode = "santa";
+          if (asString(ord?.product_key) === "christmas_santa_video")
+            mode = "santa";
         }
         const commercialKey = asString(input.metadata.commercial_key);
-        if (productKey === "christmas_magic_bundle" || commercialKey === "xmas_magic_bundle") {
+        if (
+          productKey === "christmas_magic_bundle" ||
+          commercialKey === "xmas_magic_bundle"
+        ) {
           const { data: ord } = await input.service
             .from("christmas_orders")
             .select("user_id,email,commercial_snapshot")
@@ -357,16 +479,20 @@ export async function handleChristmasStripeEvent(input: {
   }
 
   // V2 prototype path (quarantined tables)
-  const { data, error } = await input.service.rpc("fulfill_christmas_v2_order_payment", {
-    p_event_id: input.eventId,
-    p_session_id: asString(input.obj.id),
-    p_event_type: input.eventType,
-    p_payment_status: paymentStatus || "paid",
-    p_payment_intent_id: asString(input.obj.payment_intent),
-    p_amount_cents: input.obj.amount_total == null ? null : asInt(input.obj.amount_total),
-    p_currency: asString(input.obj.currency) || "usd",
-    p_order_id: orderId,
-  });
+  const { data, error } = await input.service.rpc(
+    "fulfill_christmas_v2_order_payment",
+    {
+      p_event_id: input.eventId,
+      p_session_id: asString(input.obj.id),
+      p_event_type: input.eventType,
+      p_payment_status: paymentStatus || "paid",
+      p_payment_intent_id: asString(input.obj.payment_intent),
+      p_amount_cents:
+        input.obj.amount_total == null ? null : asInt(input.obj.amount_total),
+      p_currency: asString(input.obj.currency) || "usd",
+      p_order_id: orderId,
+    },
+  );
   if (error) throw error;
 
   const result = data as { status?: string; should_enqueue?: boolean };
@@ -398,8 +524,10 @@ async function handleChristmasPlannerRefund(input: {
 }): Promise<Response | null> {
   const meta = {
     ...input.metadata,
-    ...(((input.obj.payment_intent as { metadata?: Record<string, unknown> } | undefined)?.metadata) ||
-      {}),
+    ...((
+      input.obj.payment_intent as
+        { metadata?: Record<string, unknown> } | undefined
+    )?.metadata || {}),
   };
   let orderId = isUuid(asString(meta.christmas_order_id))
     ? asString(meta.christmas_order_id)
@@ -440,17 +568,25 @@ async function handleChristmasPlannerRefund(input: {
     .maybeSingle();
   if (!ord) return null;
   const productKey = asString(ord.product_key);
-  if (!productKey.startsWith("christmas_planner") && !isPlannerProductKey(productKey)) {
+  if (
+    !productKey.startsWith("christmas_planner") &&
+    !isPlannerProductKey(productKey)
+  ) {
     return null;
   }
 
-  await input.service.rpc("refund_christmas_planner_order", { p_order_id: orderId });
+  await input.service.rpc("refund_christmas_planner_order", {
+    p_order_id: orderId,
+  });
   await input.service.from("processed_stripe_events").insert({
     event_id: input.eventId,
     event_type: input.eventType,
     result: { status: "planner_refunded", order_id: orderId },
   });
-  return new Response(JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ ok: true, status: "planner_refunded", order_id: orderId }),
+    {
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
