@@ -139,6 +139,7 @@ export default function ChristmasSantaCallPage() {
   const [paymentRetry, setPaymentRetry] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const submitting = useRef(false);
+  const hostedRecoveryStarted = useRef(false);
   const firstPartyEvents = useRef(new Set<string>());
   const formRef = useRef<HTMLElement | null>(null);
 
@@ -362,6 +363,47 @@ export default function ChristmasSantaCallPage() {
     setMarket(next);
   }
 
+  async function recoverHostedCheckout() {
+    if (hostedRecoveryStarted.current || !checkout?.orderId) return;
+    hostedRecoveryStarted.current = true;
+    setError(null);
+    try {
+      const attribution = attributionParamsForInternal();
+      const data = await startChristmasCheckout({
+        product_key: SANTA_CALL_PRODUCT_KEY,
+        package_key: "single",
+        existing_order_id: checkout.orderId,
+        checkout_mode: "hosted",
+        email: form.email.trim() || undefined,
+        child_first_name: form.childFirstName.trim(),
+        language: lang,
+        age: form.age ? Number(form.age) : null,
+        christmas_wish: form.christmasWish.trim() || null,
+        hobbies: form.hobbies.trim() || null,
+        pet_name: form.petName.trim() || null,
+        positive_detail: form.positiveDetail.trim() || null,
+        guardian_consent: true,
+        consent_version: SANTA_CALL_CONSENT_VERSION,
+        landing_path: SANTA_CALL_ROUTE,
+        source_route: SANTA_CALL_ROUTE,
+        funnel_session_id: getChristmasFunnelSessionId(),
+        ...attribution,
+        success_url: `${window.location.origin}${SANTA_CALL_ROUTE}?checkout=success&lang=${lang}&market=${market}`,
+        locale: lang,
+        market,
+        currency: prices.currency,
+        amount_cents: prices.initialMinor,
+        preferred_currency: prices.currency,
+      });
+      const transport = resolveSantaCheckout(data);
+      if (transport.kind !== "hosted") throw new Error("checkout_incomplete");
+      window.location.assign(transport.url);
+    } catch {
+      hostedRecoveryStarted.current = false;
+      setError("checkout_failed");
+    }
+  }
+
   async function onCheckout() {
     if (submitting.current || checkout) return;
     setError(null);
@@ -382,6 +424,7 @@ export default function ChristmasSantaCallPage() {
       return;
     }
     submitting.current = true;
+    hostedRecoveryStarted.current = false;
     setBusy(true);
     trackSantaFunnel("santa_form_completed", "form_complete", {
       amountCents: prices.initialMinor,
@@ -465,6 +508,7 @@ export default function ChristmasSantaCallPage() {
         currency: prices.currency,
         amount_cents: prices.initialMinor,
         preferred_currency: prices.currency,
+        checkout_mode: "hosted",
       });
       const transport = resolveSantaCheckout(data);
       setMarketLocked(true);
@@ -908,6 +952,7 @@ export default function ChristmasSantaCallPage() {
                                   "santa_payment_load_error",
                                   { market },
                                 );
+                              void recoverHostedCheckout();
                             }}
                           />
                         ) : checkout.checkoutUrl ? (

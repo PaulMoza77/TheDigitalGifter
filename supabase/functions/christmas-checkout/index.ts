@@ -105,6 +105,8 @@ type Body = {
   addon_keys?: string[];
   prompt?: string;
   client_prompt?: string;
+  /** Stripe presentation mode. Hosted is the safest fallback for mobile/webviews. */
+  checkout_mode?: "custom" | "hosted";
 };
 
 function asString(value: unknown): string {
@@ -704,6 +706,13 @@ Deno.serve(async (req) => {
           : resolvedProductKey === "christmas_santa_voice_call"
             ? `${siteOrigin()}/christmas/santa-call?checkout=success`
             : `${siteOrigin()}${sourceRoute}?checkout=success`);
+    const requestedCheckoutMode = asString(body.checkout_mode).toLowerCase();
+    const hostedCheckout = requestedCheckoutMode === "hosted";
+    const cancelUrl =
+      asString(body.cancel_url) ||
+      (successUrl.includes("checkout=success")
+        ? successUrl.replace("checkout=success", "checkout=cancel")
+        : `${successUrl}${successUrl.includes("?") ? "&" : "?"}checkout=cancel`);
 
     let orderId = asString(body.existing_order_id);
     let publicToken = "";
@@ -895,12 +904,21 @@ Deno.serve(async (req) => {
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
-    params.set("ui_mode", "custom");
     // Do not set payment_method_types — automatic methods include Apple Pay / Google Pay when Stripe + domain + device allow them.
-    const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
-      ? successUrl
-      : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
-    params.set("return_url", returnUrl);
+    if (hostedCheckout) {
+      // Hosted Checkout requires success_url/cancel_url and does not accept return_url.
+      const hostedSuccessUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
+        ? successUrl
+        : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
+      params.set("success_url", hostedSuccessUrl);
+      params.set("cancel_url", cancelUrl);
+    } else {
+      params.set("ui_mode", "custom");
+      const returnUrl = successUrl.includes("{CHECKOUT_SESSION_ID}")
+        ? successUrl
+        : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&token=${encodeURIComponent(publicToken || "recover")}`;
+      params.set("return_url", returnUrl);
+    }
     if (email) params.set("customer_email", email);
     const santaLivePriceId =
       resolvedProductKey === "christmas_santa_voice_call"
@@ -1002,7 +1020,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/x-www-form-urlencoded",
           "Idempotency-Key": plannerFlow
             ? `xmas-planner-${orderId}-${packageKeyResolved}-${plannerAddonKeys.join(".")}-${amountCents}`
-            : `xmas-checkout-${orderId}`,
+            : `xmas-checkout-${orderId}-${hostedCheckout ? "hosted" : "custom"}`,
         },
         body: params,
       },
@@ -1035,11 +1053,12 @@ Deno.serve(async (req) => {
       orderId,
       publicToken: publicToken || null,
       sessionId: session.id,
-      clientSecret: session.client_secret,
+      clientSecret: hostedCheckout ? null : session.client_secret,
       publishableKey: publishable,
       amountCents,
       currency,
-      uiMode: "custom",
+      uiMode: hostedCheckout ? "hosted" : "custom",
+      checkoutUrl: hostedCheckout ? asString(session.url) || null : null,
       addonKeys: plannerFlow ? plannerAddonKeys : undefined,
       entitlements: plannerFlow ? plannerEntitlements : undefined,
     });
