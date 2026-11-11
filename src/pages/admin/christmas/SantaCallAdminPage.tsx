@@ -343,36 +343,42 @@ export default function SantaCallAdminPage() {
             )}
             {tab === "analytics" && (
               <div className="space-y-5">
+                <p className="text-sm text-neutral-500">
+                  Trafic, interes și comenzi — urmărește unde se opresc
+                  vizitatorii. Perioada selectată se aplică tuturor
+                  indicatorilor de mai jos.
+                </p>
                 <Metrics
+                  dashboard
                   metrics={[
                     "fp_page_views",
                     "sessions",
+                    "fp_cta",
+                    "stripe_checkouts",
                     "purchases",
                     "revenue",
-                    "stripe_checkouts",
-                    "conversion",
                   ].map(byId)}
                   range={data.range}
                 />
-                <Trend data={data} />
-                <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid items-start gap-5 xl:grid-cols-[1.6fr_1fr]">
+                  <Trend data={data} />
                   <Funnel metrics={allMetrics} range={data.range} />
-                  <Panel title="Ce se întâmplă la plată?">
-                    <p className="mt-2 text-sm text-neutral-500">
-                      Pentru plățile începute în perioada selectată.
-                    </p>
-                    <Bars
-                      rows={[
-                        { label: "Plătite", value: data.dropoff.paid },
-                        { label: "Încă neplătite", value: data.dropoff.unpaid },
-                      ]}
-                    />
-                    <p className="mt-4 text-xs leading-5 text-neutral-500">
-                      O plată nefinalizată poate fi încheiată ulterior. Nu o
-                      numărăm automat ca abandon.
-                    </p>
-                  </Panel>
                 </div>
+                <Panel title="Ce se întâmplă la plată?">
+                  <p className="mt-2 text-sm text-neutral-500">
+                    Pentru plățile începute în perioada selectată.
+                  </p>
+                  <Bars
+                    rows={[
+                      { label: "Plătite", value: data.dropoff.paid },
+                      { label: "Încă neplătite", value: data.dropoff.unpaid },
+                    ]}
+                  />
+                  <p className="mt-4 text-xs leading-5 text-neutral-500">
+                    O plată nefinalizată poate fi încheiată ulterior. Nu o
+                    numărăm automat ca abandon.
+                  </p>
+                </Panel>
                 <Traffic integration={data.integrations.ga4} />
                 <Panel title="Cât aduc reclamele Meta?">
                   <p className="mb-4 mt-2 text-sm text-neutral-500">
@@ -689,25 +695,33 @@ function Metrics({
   metrics,
   range,
   compact = false,
+  dashboard = false,
 }: {
   metrics: Metric[];
   range?: AnalyticsReport["range"];
   compact?: boolean;
+  dashboard?: boolean;
 }) {
   return (
     <div
-      className={`grid gap-3 ${compact ? "mt-3 sm:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3"}`}
+      className={`grid gap-3 ${dashboard ? "sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" : compact ? "mt-3 sm:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3"}`}
     >
       {metrics.map((m) => (
         <article
           key={m.id}
-          className="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
+          className={`min-w-0 rounded-2xl border border-neutral-200 p-5 shadow-sm ${dashboard && ["revenue", "purchases"].includes(m.id) ? "bg-[#fcf9f3]" : "bg-white"}`}
         >
-          <p className="text-sm text-neutral-600">
+          <p
+            className={
+              dashboard
+                ? "text-xs font-semibold uppercase tracking-widest text-neutral-500"
+                : "text-sm text-neutral-600"
+            }
+          >
             {metricLabels[m.id] || m.label}
           </p>
           <p
-            className={`my-3 font-bold ${m.value == null ? "text-base text-neutral-400" : "text-2xl"}`}
+            className={`my-3 font-bold tracking-tight ${m.value == null ? "text-base text-neutral-400" : "text-3xl"}`}
           >
             {formatMetric(m)}
           </p>
@@ -844,35 +858,43 @@ function Funnel({
   const [active, setActive] = useState("fp_page_views");
   const selected = metrics.find((m) => m.id === active);
   return (
-    <Panel title="Pașii până la un apel">
+    <Panel title="Funnel de conversie">
       <p className="mt-2 text-xs leading-5 text-neutral-500">
         Landingul, formularul și Stripe sunt legate prin aceeași sesiune
         anonimă. Plata este confirmată server-side, iar apelurile vin din
         registrul de funcționare.
       </p>
       <div className="mt-4 space-y-1">
-        {ids.map((id, i) => {
-          const m = metrics.find((m) => m.id === id)!;
+        {ids.map((id) => {
+          const m = metrics.find((m) => m.id === id);
+          if (!m) return null;
+          const baseline = metrics.find((item) => item.id === ids[0])?.value;
           return (
             <button
               key={id}
               onClick={() => setActive(id)}
-              className={`flex w-full items-center justify-between gap-3 rounded-lg p-3 text-left ${active === id ? "bg-[#6f1521] text-white" : "bg-neutral-50"}`}
+              aria-pressed={active === id}
+              className={`block w-full rounded-lg px-3 py-2 text-left ${active === id ? "bg-amber-50" : "hover:bg-neutral-50"}`}
             >
-              <span>
-                <span className="mr-2 opacity-50">{i + 1}</span>
+              <span className="flex items-center justify-between gap-3">
                 <span className="text-sm">{metricLabels[m.id] || m.label}</span>
-                <small className="ml-5 block text-[10px] opacity-70">
-                  {m.source}
-                </small>
+                <strong className="text-sm">{formatMetric(m)}</strong>
               </span>
-              <strong className="text-sm">{formatMetric(m)}</strong>
+              {m.value != null && baseline != null && baseline > 0 && (
+                <progress
+                  className="mt-1 h-2 w-full accent-amber-600"
+                  max={Math.max(baseline, m.value)}
+                  value={m.value}
+                  aria-label={`${metricLabels[m.id] || m.label} : ${m.value}`}
+                />
+              )}
             </button>
           );
         })}
       </div>
       <p className="mt-4 text-xs leading-5 text-neutral-500">
-        {selected?.definition} {rangeLabel(range)}
+        {selected?.definition} {rangeLabel(range)} Etapele includ măsurători
+        distincte; barele nu reprezintă automat o rată de abandon.
       </p>
     </Panel>
   );
