@@ -16,14 +16,32 @@ describe("Santa payment webhook routing", () => {
   });
   function fixture(product = "christmas_santa_voice_call_extension", payment = "paid", live = true) {
     const insert = vi.fn().mockResolvedValue({ error: null });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
     const rpc = vi.fn().mockResolvedValue({ data: { ok: true, status: "paid" }, error: null });
-    const service = { rpc, from: vi.fn(() => ({ insert })) };
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        funnel_session_id: "22222222-2222-4222-8222-222222222222",
+        product_key: product,
+        package_key: "single",
+        locale: "ro",
+        landing_path: "/christmas/santa-call",
+      },
+      error: null,
+    });
+    const eq = vi.fn(() => ({ maybeSingle }));
+    const select = vi.fn(() => ({ eq }));
+    const service = {
+      rpc,
+      from: vi.fn((table: string) =>
+        table === "christmas_orders" ? { select } : { insert, upsert },
+      ),
+    };
     const input = {
       service: service as never, eventId: "evt_synthetic", eventType: "checkout.session.completed",
       obj: { payment_status: payment, amount_total: 4900, currency: "ron", livemode: live, id: "cs_synthetic", payment_intent: "pi_synthetic" },
       metadata: { product_family: "christmas", product_key: product, christmas_order_id: "11111111-1111-4111-8111-111111111111", stripe_mode: live ? "live" : "test" },
     };
-    return { input, insert, rpc };
+    return { input, insert, rpc, upsert };
   }
   it("grants extension only after payment RPC succeeds", async () => {
     const f = fixture(); await handleChristmasStripeEvent(f.input);
@@ -61,5 +79,12 @@ describe("Santa payment webhook routing", () => {
     const f = fixture("christmas_santa_voice_call");
     await handleChristmasStripeEvent(f.input);
     expect(handlers.initial).toHaveBeenCalledOnce(); expect(handlers.extension).not.toHaveBeenCalled();
+    expect(f.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_name: "purchase",
+        funnel_session_id: "22222222-2222-4222-8222-222222222222",
+      }),
+      expect.objectContaining({ onConflict: "idempotency_key" }),
+    );
   });
 });
