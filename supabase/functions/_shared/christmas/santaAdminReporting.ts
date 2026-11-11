@@ -133,7 +133,7 @@ export async function santaAdminReport(
   const orderPage = page("orderPage"),
     callPage = page("callPage"),
     pageSize = 25;
-  const integrations = { ...(await reportingSources(range, env)) };
+  const integrations = { ...(await reportingSources(range, env, service)) };
   if (connectorSnapshot) {
     const snapshot = snapshotForRange(connectorSnapshot, range);
     if (integrations.ga4.status !== "connected" && snapshot.ga4)

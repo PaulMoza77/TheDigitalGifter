@@ -11,12 +11,12 @@ import type {
 type Tab =
   "overview" | "orders" | "calls" | "analytics" | "operations" | "settings";
 const tabs: Array<[Tab, string]> = [
-  ["overview", "Overview"],
-  ["orders", "Orders"],
-  ["calls", "Calls"],
-  ["analytics", "Analytics"],
-  ["operations", "Operations & Health"],
-  ["settings", "Settings"],
+  ["overview", "Rezumat"],
+  ["orders", "Comenzi"],
+  ["calls", "Apeluri"],
+  ["analytics", "Trafic și reclame"],
+  ["operations", "Funcționare"],
+  ["settings", "Configurare"],
 ];
 const time = (v?: string | null) =>
   v
@@ -25,7 +25,7 @@ const time = (v?: string | null) =>
         timeStyle: "short",
         timeZone: "Europe/Bucharest",
       }).format(new Date(v))
-    : "Never received";
+    : "Fără date primite";
 const short = (v?: string | null) => (v ? `${v.slice(0, 10)}…` : "—");
 const money = (v: number, currency = "RON") =>
   new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(v);
@@ -34,12 +34,45 @@ const rangeLabel = (r: AnalyticsReport["range"]) =>
 const missingGa: Array<[string, string]> = [
   ["page_views", "Page views"],
   ["visitors", "Unique visitors"],
-  ["sessions", "Sessions"],
+  ["sessions", "Vizite"],
   ["cta", "CTA clicks"],
   ["form_start", "Form started"],
   ["form_complete", "Form completed"],
   ["ga_checkout", "Checkout initiated (GA4)"],
 ];
+const metricLabels: Record<string, string> = {
+  visitors: "Vizitatori",
+  sessions: "Vizite",
+  page_views: "Vizualizări pagină",
+  cta: "Clickuri pe personalizare",
+  form_start: "Formulare începute",
+  form_complete: "Formulare completate",
+  ga_checkout: "Clickuri spre plată",
+  stripe_checkouts: "Plăți începute",
+  purchases: "Comenzi plătite",
+  revenue: "Încasări confirmate",
+  conversion: "Plăți finalizate (%)",
+  calls_started: "Apeluri începute",
+  calls_completed: "Apeluri încheiate",
+  calls_failed: "Apeluri cu probleme",
+  meta_spend: "Buget cheltuit",
+  meta_impressions: "Afișări reclame",
+  meta_reach: "Persoane atinse",
+  meta_clicks: "Clickuri pe link",
+  meta_lpv: "Vizualizări după reclamă",
+  meta_ctr: "Rata de click",
+  meta_cpc: "Cost pe click",
+  meta_purchases: "Comenzi atribuite de Meta",
+  meta_cpp: "Cost pe comandă (Meta)",
+  meta_roas: "Venit / cost (Meta)",
+};
+const metricHints: Record<string, string> = {
+  visitors: "Persoane măsurate de GA4",
+  revenue: "Plăți reale în lei",
+  purchases: "Comenzi inițiale confirmate",
+  conversion: "Din plățile începute în această perioadă",
+  stripe_checkouts: "Sesiuni de plată create în Stripe",
+};
 function gaMetrics(source: Integration): Metric[] {
   return missingGa.map(
     ([id, label]) =>
@@ -57,7 +90,7 @@ function gaMetrics(source: Integration): Metric[] {
 }
 const formatMetric = (m: Metric) =>
   m.value == null || !Number.isFinite(m.value)
-    ? "Unavailable"
+    ? "—"
     : m.unit === "RON" || m.unit === "USD"
       ? money(m.value, m.unit)
       : m.unit === "percent"
@@ -158,11 +191,11 @@ export default function SantaCallAdminPage() {
               The Digital Gifter · Operations
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight">
-              Santa Call Romania
+              Apel cu Moșu · Analytics
             </h1>
             <p className="mt-1 text-sm text-neutral-500">
-              Commercial RON reporting. No names, emails or personalization
-              data.
+              Vezi traficul, comenzile și rezultatele reclamelor într-un singur
+              loc.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -173,12 +206,12 @@ export default function SantaCallAdminPage() {
               className="h-10 rounded-lg border bg-white px-3 text-sm"
             >
               {[
-                ["today", "Today"],
-                ["yesterday", "Yesterday"],
-                ["7", "7 days"],
-                ["30", "30 days"],
-                ["90", "90 days"],
-                ["custom", "Custom dates"],
+                ["today", "Astăzi"],
+                ["yesterday", "Ieri"],
+                ["7", "Ultimele 7 zile"],
+                ["30", "Ultimele 30 zile"],
+                ["90", "Ultimele 90 zile"],
+                ["custom", "Alege perioada"],
               ].map(([v, l]) => (
                 <option value={v} key={v}>
                   {l}
@@ -193,7 +226,7 @@ export default function SantaCallAdminPage() {
               <RefreshCw
                 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
               />
-              Refresh
+              Actualizează
             </button>
           </div>
         </div>
@@ -269,17 +302,14 @@ export default function SantaCallAdminPage() {
             role="status"
             className="py-12 text-center text-sm text-neutral-500"
           >
-            Loading verified reporting sources…
+            Se încarcă datele…
           </div>
         )}
         {data && (
           <>
             <div className="mb-5 flex flex-wrap justify-between gap-2 text-xs text-neutral-500">
               <span>{rangeLabel(data.range)}</span>
-              <span>
-                Server read {time(data.generatedAt)} · external sources have
-                separate timestamps
-              </span>
+              <span>Actualizat {time(data.generatedAt)}</span>
             </div>
             {tab === "overview" && (
               <>
@@ -287,95 +317,60 @@ export default function SantaCallAdminPage() {
                   metrics={[
                     "revenue",
                     "purchases",
+                    "visitors",
+                    "stripe_checkouts",
                     "calls_completed",
-                    "calls_started",
-                    "calls_failed",
+                    "conversion",
+                  ].map(byId)}
+                  range={data.range}
+                />
+                <div className="mt-5">
+                  <Trend data={data} />
+                </div>
+                <div className="mt-5 grid gap-3 lg:grid-cols-3">
+                  {Object.entries(data.integrations).map(([id, source]) => (
+                    <SourceCard key={id} integration={source} />
+                  ))}
+                </div>
+              </>
+            )}
+            {tab === "analytics" && (
+              <div className="space-y-5">
+                <Metrics
+                  metrics={[
+                    "visitors",
+                    "sessions",
+                    "purchases",
+                    "revenue",
+                    "stripe_checkouts",
                     "conversion",
                   ].map(byId)}
                   range={data.range}
                 />
                 <Trend data={data} />
-              </>
-            )}
-            {tab === "analytics" && (
-              <div className="space-y-5">
-                <div className="grid gap-3 lg:grid-cols-3">
-                  {Object.entries(data.integrations).map(([id, s]) => (
-                    <SourceCard key={id} integration={s} />
-                  ))}
-                </div>
-                <div>
-                  <h2 className="mb-3 text-lg font-semibold">
-                    Acquisition & conversion
-                  </h2>
-                  <Metrics
-                    metrics={allMetrics.filter(
-                      (m) => !m.id.startsWith("calls_"),
-                    )}
-                    range={data.range}
-                  />
-                </div>
                 <div className="grid gap-5 lg:grid-cols-2">
                   <Funnel metrics={allMetrics} range={data.range} />
-                  <Panel title="Checkout outcomes">
+                  <Panel title="Ce se întâmplă la plată?">
                     <p className="mt-2 text-sm text-neutral-500">
-                      Same initial checkout cohort, created in this period.
-                      Outcomes observed at {time(data.generatedAt)}.
+                      Pentru plățile începute în perioada selectată.
                     </p>
                     <Bars
                       rows={[
-                        { label: "Confirmed paid", value: data.dropoff.paid },
-                        {
-                          label: "Unpaid / pending",
-                          value: data.dropoff.unpaid,
-                        },
+                        { label: "Plătite", value: data.dropoff.paid },
+                        { label: "Încă neplătite", value: data.dropoff.unpaid },
                       ]}
                     />
-                    <p className="mt-4 text-xs text-neutral-500">
-                      {data.dropoff.created} initial sessions. Pending is not
-                      final abandonment. An unpaid session may still convert.
+                    <p className="mt-4 text-xs leading-5 text-neutral-500">
+                      O plată nefinalizată poate fi încheiată ulterior. Nu o
+                      numărăm automat ca abandon.
                     </p>
                   </Panel>
                 </div>
-                <Trend data={data} />
                 <Traffic integration={data.integrations.ga4} />
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <Panel title="Devices · GA4 sessions">
-                    {data.integrations.ga4.devices ? (
-                      <Bars
-                        rows={data.integrations.ga4.devices.map((d) => ({
-                          label: d.device,
-                          value: d.sessions,
-                        }))}
-                      />
-                    ) : (
-                      <Empty text="Device data unavailable for this interval." />
-                    )}
-                    <p className="mt-3 text-xs text-neutral-500">
-                      Source: GA4 · {rangeLabel(data.range)}
-                    </p>
-                  </Panel>
-                  <Panel title="Call outcomes">
-                    <Metrics
-                      metrics={[
-                        "calls_started",
-                        "calls_completed",
-                        "calls_failed",
-                      ].map(byId)}
-                      range={data.range}
-                      compact
-                    />
-                    <p className="mt-3 text-xs text-neutral-500">
-                      Operational sessions, not unique visitors. See Calls for
-                      paginated error and interruption logs.
-                    </p>
-                  </Panel>
-                </div>
-                <Panel title="Meta Ads performance">
+                <Panel title="Cât aduc reclamele Meta?">
                   <p className="mb-4 mt-2 text-sm text-neutral-500">
-                    Campaign 120255274308780066 · account act_1877103439548293.
-                    Attributed purchases belong to Meta; payment revenue belongs
-                    to the ledger. No campaign controls.
+                    Costurile sunt în dolari. Comenzile atribuite de Meta pot
+                    diferi de plățile confirmate în magazin.
                   </p>
                   {data.integrations.meta.metrics.length ? (
                     <Metrics
@@ -383,14 +378,50 @@ export default function SantaCallAdminPage() {
                       range={data.range}
                     />
                   ) : (
-                    <Empty
-                      text={
-                        data.integrations.meta.detail +
-                        " Spend, impressions, reach, link clicks, landing views, CTR, CPC, attributed purchases, cost per purchase and ROAS remain unavailable."
-                      }
-                    />
+                    <Empty text="Datele despre reclame nu sunt conectate încă. Vezi starea conexiunilor mai jos." />
                   )}
                 </Panel>
+                <Panel title="Cum folosesc vizitatorii pagina?">
+                  <p className="mt-2 text-sm leading-6 text-neutral-500">
+                    Clarity arată înregistrările vizitelor și zonele în care
+                    oamenii dau click. Raportul său folosește ultimele 72 de
+                    ore, separat de perioada aleasă mai sus.
+                  </p>
+                  {data.integrations.clarity.metrics.length > 0 && (
+                    <div className="mt-4">
+                      <p className="mb-3 text-xs text-neutral-500">
+                        Întregul site · 72 de ore înainte de{" "}
+                        {time(data.integrations.clarity.updatedAt)}. Nu doar
+                        pagina Apel cu Moșu.
+                      </p>
+                      <Metrics
+                        metrics={data.integrations.clarity.metrics}
+                        compact
+                      />
+                    </div>
+                  )}
+                  <a
+                    className="mt-4 inline-flex rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+                    href="https://clarity.microsoft.com/projects/view/y3y98n4wks/dashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Deschide Clarity ↗
+                  </a>
+                  <p className="mt-3 text-xs text-neutral-500">
+                    Necesită acces la proiectul TheDigitalGifter.
+                  </p>
+                </Panel>
+                <section aria-label="Starea conexiunilor">
+                  <h2 className="mb-3 text-lg font-semibold">
+                    Conexiuni și actualizare
+                  </h2>
+                  <div className="grid gap-3 lg:grid-cols-3">
+                    {Object.entries(data.integrations).map(([id, s]) => (
+                      <SourceCard key={id} integration={s} />
+                    ))}
+                  </div>
+                </section>
               </div>
             )}
             {tab === "orders" && (
@@ -619,7 +650,7 @@ export default function SantaCallAdminPage() {
                 [
                   "Amount actually charged",
                   selected.charged_amount_cents == null
-                    ? "Unavailable"
+                    ? "—"
                     : money(selected.charged_amount_cents / 100),
                 ],
               ].map(([l, v]) => (
@@ -653,7 +684,7 @@ function Metrics({
   compact = false,
 }: {
   metrics: Metric[];
-  range: AnalyticsReport["range"];
+  range?: AnalyticsReport["range"];
   compact?: boolean;
 }) {
   return (
@@ -665,19 +696,25 @@ function Metrics({
           key={m.id}
           className="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm"
         >
-          <p className="text-sm text-neutral-600">{m.label}</p>
+          <p className="text-sm text-neutral-600">
+            {metricLabels[m.id] || m.label}
+          </p>
           <p
             className={`my-3 font-bold ${m.value == null ? "text-base text-neutral-400" : "text-2xl"}`}
           >
             {formatMetric(m)}
           </p>
-          <p className="text-[11px] text-neutral-500">{m.source}</p>
+          <p className="text-xs text-neutral-500">
+            {m.value == null
+              ? "Date indisponibile"
+              : metricHints[m.id] || m.source.split(" · ")[0]}
+          </p>
           <details className="mt-2 text-xs leading-5 text-neutral-500">
-            <summary className="cursor-pointer">Definition & freshness</summary>
+            <summary className="cursor-pointer">Despre acest indicator</summary>
             <p className="mt-2">{m.definition}</p>
             {m.unavailable && <p className="text-amber-800">{m.unavailable}</p>}
-            <p>{rangeLabel(range)}</p>
-            <p>Updated: {time(m.updatedAt)}</p>
+            <p>{range ? rangeLabel(range) : "Ultimele 72 de ore UTC"}</p>
+            <p>Actualizat: {time(m.updatedAt)}</p>
           </details>
         </article>
       ))}
@@ -691,16 +728,33 @@ function SourceCard({ integration: s }: { integration: Integration }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{s.source}</h3>
+        <h3 className="text-sm font-semibold">{s.source.split(" · ")[0]}</h3>
         <span
           className={`rounded-full px-2 py-1 text-[10px] font-semibold ${s.status === "connected" && !stale ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}
         >
-          {stale ? "STALE" : s.status.toUpperCase()}
+          {stale
+            ? "Date vechi"
+            : {
+                connected: "Conectat",
+                snapshot: "Raport salvat",
+                unavailable: "De conectat",
+                error: "Eroare conexiune",
+              }[s.status]}
         </span>
       </div>
-      <p className="mt-2 text-xs leading-5 text-neutral-500">{s.detail}</p>
+      <p className="mt-3 text-sm text-neutral-600">
+        {s.status === "connected"
+          ? "Date primite de la serviciu."
+          : s.status === "snapshot"
+            ? "Afișăm ultimul raport disponibil."
+            : "Raportarea nu este disponibilă. Valorile lipsă nu înseamnă zero vizitatori."}
+      </p>
+      <details className="mt-3 text-xs leading-5 text-neutral-500">
+        <summary className="cursor-pointer">Detalii conexiune</summary>
+        <p className="mt-2">{s.detail}</p>
+      </details>
       <p className="mt-2 text-[11px] text-neutral-400">
-        Updated: {time(s.updatedAt)}
+        Actualizat: {time(s.updatedAt)}
       </p>
     </div>
   );
@@ -782,10 +836,11 @@ function Funnel({
   const [active, setActive] = useState("page_views");
   const selected = metrics.find((m) => m.id === active);
   return (
-    <Panel title="Conversion funnel · distinct sources">
+    <Panel title="Pașii până la un apel">
       <p className="mt-2 text-xs leading-5 text-neutral-500">
-        These stages are not a linked user cohort. No step-to-step conversion
-        percentages are inferred.
+        Vizualizările și clickurile vin din GA4; plățile și apelurile sunt
+        confirmate de magazin. Aceste numere nu urmăresc aceeași persoană între
+        pași.
       </p>
       <div className="mt-4 space-y-1">
         {ids.map((id, i) => {
@@ -798,7 +853,7 @@ function Funnel({
             >
               <span>
                 <span className="mr-2 opacity-50">{i + 1}</span>
-                <span className="text-sm">{m.label}</span>
+                <span className="text-sm">{metricLabels[m.id] || m.label}</span>
                 <small className="ml-5 block text-[10px] opacity-70">
                   {m.source}
                 </small>
@@ -828,13 +883,13 @@ function Trend({ data }: { data: AnalyticsReport }) {
         }));
   const max = Math.max(1, ...(rows || []).map((d) => Number(d.value) || 0));
   return (
-    <Panel title="Daily trend">
+    <Panel title="Evoluția pe zile">
       <div className="my-3 flex flex-wrap gap-2">
         {[
-          ["checkouts", "Stripe sessions"],
-          ["purchases", "Paid initial orders"],
-          ["revenue", "Gross RON"],
-          ["views", "GA4 page views"],
+          ["checkouts", "Plăți începute"],
+          ["purchases", "Comenzi plătite"],
+          ["revenue", "Încasări (lei)"],
+          ["views", "Vizualizări pagină"],
         ].map(([v, l]) => (
           <button
             key={v}
@@ -849,7 +904,7 @@ function Trend({ data }: { data: AnalyticsReport }) {
       {rows?.length ? (
         <>
           <p className="text-xs text-neutral-400">
-            {series === "revenue" ? "RON" : "Count"} · scale 0–{max}
+            {series === "revenue" ? "RON" : "Număr"} · scară 0–{max}
           </p>
           <div
             className="mt-2 flex h-44 items-end gap-1 border-b border-neutral-200"
@@ -879,21 +934,21 @@ function Trend({ data }: { data: AnalyticsReport }) {
             <span>{data.range.end}</span>
           </div>
           <details className="mt-3 text-xs text-neutral-500">
-            <summary className="cursor-pointer">Exact daily values</summary>
+            <summary className="cursor-pointer">Vezi valorile pe zile</summary>
             <ul className="mt-2 grid gap-1 sm:grid-cols-3">
               {rows.map((r) => (
                 <li key={r.date}>
-                  {r.date}: {r.value ?? "Unavailable"}
+                  {r.date}: {r.value ?? "—"}
                 </li>
               ))}
             </ul>
           </details>
         </>
       ) : (
-        <Empty text="This source has no daily series for the selected period." />
+        <Empty text="Nu există date zilnice pentru această sursă în perioada selectată." />
       )}
       <p className="mt-3 text-xs text-neutral-400">
-        {series === "views" ? "GA4" : "Payment ledger · LIVE RON"} ·{" "}
+        {series === "views" ? "GA4" : "Plăți confirmate · lei"} ·{" "}
         {series === "views"
           ? time(data.integrations.ga4.updatedAt)
           : time(data.generatedAt)}
@@ -907,15 +962,14 @@ function Traffic({ integration }: { integration: Integration }) {
     (r) => group === "All" || r.group === group,
   );
   return (
-    <Panel title="Traffic sources & campaign attribution">
+    <Panel title="De unde vin vizitatorii?">
       <p className="mb-3 mt-2 text-xs leading-5 text-neutral-500">
-        GA4 session dimensions; query parameters excluded from the landing path.
-        Campaign values remain separate. Visitors and session breakdowns may
-        overlap or use GA4 estimation and must not be summed into the headline
-        total. Purchases here are GA4-attributed events.
+        Sursele și comenzile de mai jos sunt raportate de GA4. Pentru încasările
+        confirmate, folosește indicatorii din rezumat. Vizitatorii din surse
+        diferite se pot suprapune.
       </p>
       <label className="text-xs">
-        Traffic group{" "}
+        Sursă de trafic{" "}
         <select
           aria-label="Traffic group"
           className="ml-2 rounded border p-2"
@@ -940,12 +994,12 @@ function Traffic({ integration }: { integration: Integration }) {
               <thead className="bg-neutral-50 text-xs text-neutral-500">
                 <tr>
                   {[
-                    "Source / medium",
-                    "Campaign",
-                    "Visitors",
-                    "Sessions",
-                    "Checkouts",
-                    "GA4 purchases",
+                    "Sursă / canal",
+                    "Campanie",
+                    "Vizitatori",
+                    "Vizite",
+                    "Plăți începute",
+                    "Comenzi (GA4)",
                   ].map((h) => (
                     <th key={h} className="p-3">
                       {h}
@@ -973,11 +1027,11 @@ function Traffic({ integration }: { integration: Integration }) {
             </table>
           </div>
           {!rows.length && (
-            <Empty text="No received rows for this traffic group." />
+            <Empty text="Nu există date pentru această sursă." />
           )}
         </>
       ) : (
-        <Empty text="Attribution data unavailable for this interval. No server revenue is assigned to a traffic source without a verified link." />
+        <Empty text="Datele despre sursele de trafic nu sunt disponibile pentru această perioadă." />
       )}
     </Panel>
   );

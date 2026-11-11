@@ -1,3 +1,4 @@
+import { clarityReport } from "./santaClarityReporting.ts";
 import {
   type Integration,
   type Metric,
@@ -449,18 +450,15 @@ const cache = new Map<
     value: { ga4: Integration; meta: Integration; clarity: Integration };
   }
 >();
-export async function reportingSources(range: ReportRange, env: Env) {
+export async function reportingSources(range: ReportRange, env: Env, service?: any) {
   const key = `${range.start}:${range.end}`;
   const hit = cache.get(key);
   if (hit && hit.until > Date.now()) return hit.value;
-  const [ga4, meta] = await Promise.all([
+  const [ga4, meta, clarity] = await Promise.all([
     ga4Report(range, env),
     metaReport(range, env),
+    clarityReport(env, service),
   ]);
-  const clarity = unavailable(
-    "Clarity · y3y98n4wks",
-    "Browser tag is not evidence of session reception. Requires project-admin read access. Clarity Export API provides only rolling 1–3 UTC days (not this Bucharest date range); no project-wide totals substituted for Santa visits.",
-  );
   const value = { ga4, meta, clarity };
   if (cache.size >= 24) cache.delete(cache.keys().next().value!);
   cache.set(key, { until: Date.now() + 300000, value });
