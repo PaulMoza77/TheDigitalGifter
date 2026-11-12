@@ -6,7 +6,7 @@ import { buildAnalyticsReport } from "./christmas/analytics/analyticsReport";
 export default function ChristmasAnalyticsPage() {
   const [days, setDays] = useState<7 | 30 | 90>(30);
   const [page, setPage] = useState("");
-  const data = useChristmasAdminData(days);
+  const data = useChristmasAdminData(days, false);
   const report = useMemo(
     () => buildAnalyticsReport(data.events, data.orders, days, page),
     [data.events, data.orders, days, page],
