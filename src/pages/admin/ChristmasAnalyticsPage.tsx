@@ -76,6 +76,9 @@ export default function ChristmasAnalyticsPage() {
   const [detailTab, setDetailTab] = useState<"pages" | "products" | "sources">(
     "pages",
   );
+  const [activeTrafficDate, setActiveTrafficDate] = useState<string | null>(
+    null,
+  );
   const data = useChristmasAdminData(days);
   const selectedFunnel = funnelId === "all" ? null : funnelById(funnelId);
 
@@ -222,6 +225,12 @@ export default function ChristmasAnalyticsPage() {
     1,
     ...dailyTraffic.map((row) => row.sessions),
   );
+  const activeTrafficIndex = dailyTraffic.findIndex(
+    (row) => row.date === activeTrafficDate,
+  );
+  const activeTraffic = dailyTraffic[activeTrafficIndex];
+  const activeTrafficX =
+    42 + (activeTrafficIndex / Math.max(1, dailyTraffic.length - 1)) * 738;
 
   const funnelRows = selectedFunnel
     ? dropSteps.map((step) => ({
@@ -453,12 +462,16 @@ export default function ChristmasAnalyticsPage() {
                     Utilizatori
                   </span>
                 </div>
-                <div className="mt-6 h-[280px] w-full">
+                <div className="relative mt-6 h-[280px] w-full">
                   <svg
                     viewBox="0 0 800 280"
                     className="h-full w-full"
-                    role="img"
+                    role="group"
                     aria-label="Trafic în timp"
+                    onPointerLeave={() => setActiveTrafficDate(null)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setActiveTrafficDate(null);
+                    }}
                   >
                     {[0, 1, 2, 3, 4].map((line) => {
                       const y = 32 + line * 52;
@@ -550,7 +563,89 @@ export default function ChristmasAnalyticsPage() {
                           })
                         : ""}
                     </text>
+                    {dailyTraffic.map((row, index) => {
+                      const spacing =
+                        738 / Math.max(1, dailyTraffic.length - 1);
+                      const x = 42 + index * spacing;
+                      const left = index === 0 ? 24 : x - spacing / 2;
+                      const right =
+                        index === dailyTraffic.length - 1
+                          ? 796
+                          : x + spacing / 2;
+                      const label = `${new Date(`${row.date}T12:00:00`).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}: ${row.sessions} sesiuni urmărite`;
+                      return (
+                        <rect
+                          key={`hover-${row.date}`}
+                          x={left}
+                          y="24"
+                          width={right - left}
+                          height="220"
+                          fill="transparent"
+                          tabIndex={0}
+                          role="button"
+                          aria-label={label}
+                          onPointerEnter={() => setActiveTrafficDate(row.date)}
+                          onPointerMove={() => setActiveTrafficDate(row.date)}
+                          onClick={() => setActiveTrafficDate(row.date)}
+                          onFocus={() => setActiveTrafficDate(row.date)}
+                          onBlur={() => setActiveTrafficDate(null)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setActiveTrafficDate(row.date);
+                            }
+                          }}
+                        >
+                          <title>{label}</title>
+                        </rect>
+                      );
+                    })}
+                    {activeTraffic ? (
+                      <g pointerEvents="none">
+                        <line
+                          x1={activeTrafficX}
+                          x2={activeTrafficX}
+                          y1="24"
+                          y2="240"
+                          stroke="#c98f27"
+                          strokeDasharray="4 4"
+                        />
+                        <circle
+                          cx={activeTrafficX}
+                          cy={
+                            232 -
+                            (activeTraffic.sessions / maxDailyTraffic) * 178
+                          }
+                          r="8"
+                          fill="white"
+                          stroke="#c98f27"
+                          strokeWidth="4"
+                        />
+                      </g>
+                    ) : null}
                   </svg>
+                  {activeTraffic ? (
+                    <div
+                      role="tooltip"
+                      className="pointer-events-none absolute top-0 z-10 w-[220px] max-w-full rounded-lg bg-neutral-800 px-3 py-2 text-[13px] leading-5 text-white shadow-lg"
+                      style={{
+                        left: `clamp(0px, calc(${activeTrafficX / 8}% - 110px), calc(100% - 220px))`,
+                      }}
+                    >
+                      <div className="font-semibold">
+                        {new Date(
+                          `${activeTraffic.date}T12:00:00`,
+                        ).toLocaleDateString("ro-RO", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                      <div className="text-[#f2c66d]">
+                        Sesiuni urmărite: {activeTraffic.sessions}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
