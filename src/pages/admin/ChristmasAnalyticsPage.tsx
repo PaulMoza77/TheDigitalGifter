@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
-import { StatCard } from "@/components/admin/overview/AdminOverviewCards";
 import {
   CHRISTMAS_FUNNELS,
   emailsCollectedInFunnel,
@@ -20,8 +19,26 @@ import {
 } from "./christmas/christmasAdminTypes";
 import { useChristmasAdminData } from "./christmas/useChristmasAdminData";
 
-function Metric({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return <StatCard label={label} value={String(value)} helper={hint} />;
+function Metric({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+        {label}
+      </p>
+      <p className="my-3 text-3xl font-bold tracking-tight text-neutral-900">
+        {value}
+      </p>
+      <p className="text-sm text-neutral-500">{hint}</p>
+    </div>
+  );
 }
 
 export default function ChristmasAnalyticsPage() {
@@ -37,7 +54,8 @@ export default function ChristmasAnalyticsPage() {
       data.events.filter((row) => {
         if (!includeTests && row.is_test) return false;
         if (platform !== "all" && eventPlatform(row) !== platform) return false;
-        if (selectedFunnel && !eventMatchesFunnel(row, selectedFunnel)) return false;
+        if (selectedFunnel && !eventMatchesFunnel(row, selectedFunnel))
+          return false;
         return true;
       }),
     [data.events, includeTests, platform, selectedFunnel],
@@ -47,37 +65,65 @@ export default function ChristmasAnalyticsPage() {
       data.orders.filter((row) => {
         if (!includeTests && isTestOrder(row)) return false;
         if (platform !== "all" && orderPlatform(row) !== platform) return false;
-        if (selectedFunnel && !selectedFunnel.productKeys.includes(row.product_key)) return false;
+        if (
+          selectedFunnel &&
+          !selectedFunnel.productKeys.includes(row.product_key)
+        )
+          return false;
         return true;
       }),
     [data.orders, includeTests, platform, selectedFunnel],
   );
 
-  const sessionCount = new Set(filteredEvents.map((row) => row.funnel_session_id)).size;
+  const sessionCount = new Set(
+    filteredEvents.map((row) => row.funnel_session_id),
+  ).size;
   const viewed = new Set(
     filteredEvents
-      .filter((row) => VIEW_EVENTS.has(row.event_name) || row.event_name.endsWith("page_view"))
+      .filter(
+        (row) =>
+          VIEW_EVENTS.has(row.event_name) ||
+          row.event_name.endsWith("page_view"),
+      )
       .map((row) => row.funnel_session_id),
   ).size;
-  const checkout = new Set(filteredEvents.filter((row) => row.event_name.includes("checkout")).map((row) => row.funnel_session_id)).size;
+  const checkout = new Set(
+    filteredEvents
+      .filter((row) => row.event_name.includes("checkout"))
+      .map((row) => row.funnel_session_id),
+  ).size;
   const paid = filteredOrders.filter((row) => row.payment_status === "paid");
   const paidCommercial = paid.filter((row) => row.amount_cents > 0);
-  const fulfillmentFailures = paid.filter((row) => row.fulfillment_status === "failed" || Boolean(row.last_error));
-  const pending = filteredOrders.filter((row) => row.payment_status === "pending");
+  const fulfillmentFailures = paid.filter(
+    (row) => row.fulfillment_status === "failed" || Boolean(row.last_error),
+  );
+  const pending = filteredOrders.filter(
+    (row) => row.payment_status === "pending",
+  );
   const allEmails = [...data.emails, ...data.legacyEmails];
   const emailSent = allEmails.filter((row) => row.status === "sent").length;
   const emailFailed = allEmails.filter((row) => row.status === "failed").length;
   const latestEventAt = filteredEvents[0]?.created_at || null;
-  const dropSteps = selectedFunnel ? funnelDropoff(filteredEvents, selectedFunnel.steps) : [];
+  const dropSteps = selectedFunnel
+    ? funnelDropoff(filteredEvents, selectedFunnel.steps)
+    : [];
   const emailsFromEvents = selectedFunnel
     ? selectedFunnel.id === "club"
       ? 0
       : emailsCollectedInFunnel(filteredEvents, selectedFunnel)
-    : CHRISTMAS_FUNNELS.filter((funnel) => funnel.id !== "club").reduce((sum, funnel) => {
-        const rows = filteredEvents.filter((row) => eventMatchesFunnel(row, funnel));
-        return sum + emailsCollectedInFunnel(rows, funnel);
-      }, 0);
-  const clubEmails = !selectedFunnel || selectedFunnel.id === "club" ? data.clubSignups.length : 0;
+    : CHRISTMAS_FUNNELS.filter((funnel) => funnel.id !== "club").reduce(
+        (sum, funnel) => {
+          const rows = filteredEvents.filter((row) =>
+            eventMatchesFunnel(row, funnel),
+          );
+          return sum + emailsCollectedInFunnel(rows, funnel);
+        },
+        0,
+      );
+  const clubEmails =
+    !selectedFunnel || selectedFunnel.id === "club"
+      ? data.clubSignups.length
+      : 0;
   const emailsCollected = clubEmails + emailsFromEvents;
 
   const biggestDrop = dropSteps
@@ -85,15 +131,41 @@ export default function ChristmasAnalyticsPage() {
     .sort((a, b) => (b.dropped || 0) - (a.dropped || 0))[0];
 
   const productRows = useMemo(() => {
-    const keys = [...new Set(filteredOrders.map((row) => row.product_key).concat(filteredEvents.map((row) => row.product_key || "").filter(Boolean)))].sort();
+    const keys = [
+      ...new Set(
+        filteredOrders
+          .map((row) => row.product_key)
+          .concat(
+            filteredEvents.map((row) => row.product_key || "").filter(Boolean),
+          ),
+      ),
+    ].sort();
     return keys
       .map((key) => {
-        const productEvents = filteredEvents.filter((row) => row.product_key === key);
-        const productOrders = filteredOrders.filter((row) => row.product_key === key);
-        const sessions = new Set(productEvents.map((row) => row.funnel_session_id)).size;
-        const checkouts = new Set(productEvents.filter((row) => row.event_name.includes("checkout")).map((row) => row.funnel_session_id)).size;
-        const purchases = productOrders.filter((row) => row.payment_status === "paid" && row.amount_cents > 0);
-        return { key, sessions, checkouts, purchases: purchases.length, revenue: moneyByCurrency(purchases) };
+        const productEvents = filteredEvents.filter(
+          (row) => row.product_key === key,
+        );
+        const productOrders = filteredOrders.filter(
+          (row) => row.product_key === key,
+        );
+        const sessions = new Set(
+          productEvents.map((row) => row.funnel_session_id),
+        ).size;
+        const checkouts = new Set(
+          productEvents
+            .filter((row) => row.event_name.includes("checkout"))
+            .map((row) => row.funnel_session_id),
+        ).size;
+        const purchases = productOrders.filter(
+          (row) => row.payment_status === "paid" && row.amount_cents > 0,
+        );
+        return {
+          key,
+          sessions,
+          checkouts,
+          purchases: purchases.length,
+          revenue: moneyByCurrency(purchases),
+        };
       })
       .filter((row) => row.sessions || row.checkouts || row.purchases);
   }, [filteredEvents, filteredOrders]);
@@ -101,45 +173,69 @@ export default function ChristmasAnalyticsPage() {
   const sourceRows = useMemo(() => {
     const counts = new Map<string, number>();
     for (const row of filteredEvents) {
-      const key = [row.utm_source || "direct", row.utm_campaign || "(none)"].join(" / ");
+      const key = [
+        row.utm_source || "direct",
+        row.utm_campaign || "(none)",
+      ].join(" / ");
       counts.set(key, (counts.get(key) || 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   }, [filteredEvents]);
 
   return (
-    <div className="px-4 py-5 text-white sm:px-6 lg:px-8">
+    <div className="min-h-full bg-[#f7f7f5] px-4 py-5 text-neutral-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Analytics</h2>
-            <p className="mt-1 max-w-3xl text-sm text-slate-400">
-              Filter one funnel to see where people stop and how many emails you collected. Test traffic is off by default.
+            <p className="text-xs font-semibold uppercase tracking-[.16em] text-amber-700">
+              The Digital Gifter · Operations
+            </p>
+            <h2 className="mt-1 text-3xl font-bold tracking-tight">
+              Analytics
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-neutral-500">
+              Vezi traficul, conversiile și proveniența comenzilor într-un
+              singur loc.
             </p>
           </div>
           <button
             type="button"
             onClick={() => void data.load()}
             disabled={data.loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-neutral-50 disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${data.loading ? "animate-spin" : ""}`} /> Refresh
+            <RefreshCw
+              className={`h-4 w-4 ${data.loading ? "animate-spin" : ""}`}
+            />{" "}
+            Refresh
           </button>
         </header>
 
-        <div className="flex flex-wrap gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-3 text-sm">
-          <select value={days} onChange={(e) => setDays(Number(e.target.value) as RangeDays)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-            <option value={1}>Last 24 hours</option>
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={0}>All time</option>
+        <div className="flex flex-wrap gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-sm shadow-sm">
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value) as RangeDays)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+          >
+            <option value={1}>Astăzi</option>
+            <option value={7}>Ultimele 7 zile</option>
+            <option value={30}>Ultimele 30 zile</option>
+            <option value={0}>Tot timpul</option>
           </select>
-          <select value={platform} onChange={(e) => setPlatform(e.target.value as Platform)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-            <option value="all">Web + iOS</option>
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value as Platform)}
+            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+          >
+            <option value="all">Tot site-ul</option>
             <option value="web">Web only</option>
             <option value="ios">iOS only</option>
           </select>
-          <select value={funnelId} onChange={(e) => setFunnelId(e.target.value)} className="max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+          <select
+            value={funnelId}
+            onChange={(e) => setFunnelId(e.target.value)}
+            className="max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+          >
             <option value="all">All funnels</option>
             {CHRISTMAS_FUNNELS.map((funnel) => (
               <option key={funnel.id} value={funnel.id}>
@@ -148,165 +244,322 @@ export default function ChristmasAnalyticsPage() {
             ))}
           </select>
           <label className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2">
-            <input type="checkbox" checked={includeTests} onChange={(e) => setIncludeTests(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeTests}
+              onChange={(e) => setIncludeTests(e.target.checked)}
+            />
             Include test / zero-value
           </label>
         </div>
 
         {data.error ? (
-          <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
+          <div
+            role="alert"
+            className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100"
+          >
             {data.error}
           </div>
         ) : null}
 
-        {data.softWarnings.length > 0 && <p role="status" className="text-sm text-amber-200">Incomplete auxiliary data: {data.softWarnings.join(" ")}</p>}
-        <p className="text-sm text-slate-300">For Santa Call, use <a className="underline" href="/admin/christmas/santa-call?tab=analytics">the dedicated funnel report</a>. It combines GA4 with confirmed payments and runtime calls.</p>
-        {data.loading ? <p role="status">Loading report…</p> : data.error ? <p>Report unavailable. Retry or select a shorter period; no totals are shown.</p> : <>
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Tracked sessions" value={sessionCount} hint={`${viewed} reached a page view`} />
-          <Metric
-            label="Emails collected"
-            value={emailsCollected}
-            hint={
-              selectedFunnel?.id === "club"
-                ? "Club signup rows"
-                : selectedFunnel?.emailEvents.length
-                  ? selectedFunnel.emailEvents.join(", ")
-                  : "Club signups + funnel claim events"
-            }
-          />
-          <Metric label="Checkout sessions" value={checkout} hint={`${pct(checkout, viewed || sessionCount)} of views`} />
-          <Metric label="Paid orders" value={paidCommercial.length} hint="Confirmed paid orders; not a linked visitor cohort" />
-          <Metric label="Verified revenue" value={moneyByCurrency(paidCommercial)} hint="Stripe-paid, amount > 0" />
-          <Metric label="Pending orders" value={pending.length} hint="Not confirmed paid; not proof of abandonment" />
-          <Metric label="Fulfillment failures" value={fulfillmentFailures.length} hint="Paid orders needing recovery" />
-          <Metric label="Delivery emails sent" value={emailSent} hint={`${emailFailed} failed · ${allEmails.length} ledger rows`} />
-        </section>
-
-        {selectedFunnel ? (
-          <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-            <div className="border-b border-slate-800 p-4">
-              <h3 className="font-semibold">{selectedFunnel.label} drop-off</h3>
-              <p className="mt-1 text-sm text-slate-400">
-                {biggestDrop && biggestDrop.dropped
-                  ? `Largest drop: ${biggestDrop.label} lost ${biggestDrop.dropped} sessions (${biggestDrop.fromPreviousPct} continued).`
-                  : "Sessions unique per step. A drop means they did the previous step but not this one."}
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="p-3">Step</th>
-                    <th className="p-3">Sessions</th>
-                    <th className="p-3">Kept from previous</th>
-                    <th className="p-3">Lost here</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dropSteps.map((step) => (
-                    <tr key={step.event} className="border-t border-slate-800">
-                      <td className="p-3">
-                        <div>{step.label}</div>
-                        <div className="font-mono text-[11px] text-slate-500">{step.event}</div>
-                      </td>
-                      <td className="p-3">{step.sessions}</td>
-                      <td className="p-3">{step.fromPreviousPct}</td>
-                      <td className="p-3">{step.dropped == null ? "-" : step.dropped}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ) : (
-          <p className="text-sm text-slate-400">Pick a funnel above to see step-by-step drop-off.</p>
+        {data.softWarnings.length > 0 && (
+          <p role="status" className="text-sm text-amber-700">
+            Date auxiliare incomplete: {data.softWarnings.join(" ")}
+          </p>
         )}
+        <p className="text-sm text-neutral-500">
+          Datele combină evenimentele de funnel cu plățile confirmate și sursele
+          campaniilor.
+        </p>
+        {data.loading ? (
+          <p role="status">Loading report…</p>
+        ) : data.error ? (
+          <p>
+            Report unavailable. Retry or select a shorter period; no totals are
+            shown.
+          </p>
+        ) : (
+          <>
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric
+                label="Tracked sessions"
+                value={sessionCount}
+                hint={`${viewed} reached a page view`}
+              />
+              <Metric
+                label="Emails collected"
+                value={emailsCollected}
+                hint={
+                  selectedFunnel?.id === "club"
+                    ? "Club signup rows"
+                    : selectedFunnel?.emailEvents.length
+                      ? selectedFunnel.emailEvents.join(", ")
+                      : "Club signups + funnel claim events"
+                }
+              />
+              <Metric
+                label="Checkout sessions"
+                value={checkout}
+                hint={`${pct(checkout, viewed || sessionCount)} of views`}
+              />
+              <Metric
+                label="Paid orders"
+                value={paidCommercial.length}
+                hint="Confirmed paid orders; not a linked visitor cohort"
+              />
+              <Metric
+                label="Verified revenue"
+                value={moneyByCurrency(paidCommercial)}
+                hint="Stripe-paid, amount > 0"
+              />
+              <Metric
+                label="Pending orders"
+                value={pending.length}
+                hint="Not confirmed paid; not proof of abandonment"
+              />
+              <Metric
+                label="Fulfillment failures"
+                value={fulfillmentFailures.length}
+                hint="Paid orders needing recovery"
+              />
+              <Metric
+                label="Delivery emails sent"
+                value={emailSent}
+                hint={`${emailFailed} failed · ${allEmails.length} ledger rows`}
+              />
+            </section>
 
-        <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-            <div className="border-b border-slate-800 p-4">
-              <h3 className="font-semibold">By product</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="p-3">Product</th>
-                    <th className="p-3">Sessions</th>
-                    <th className="p-3">Checkout</th>
-                    <th className="p-3">Paid</th>
-                    <th className="p-3">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productRows.map((row) => (
-                    <tr key={row.key} className="border-t border-slate-800">
-                      <td className="p-3 font-mono text-xs">{row.key}</td>
-                      <td className="p-3">{row.sessions}</td>
-                      <td className="p-3">{row.checkouts}</td>
-                      <td className="p-3">{row.purchases}</td>
-                      <td className="p-3">{row.revenue}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-            <h3 className="font-semibold">Source / campaign</h3>
-            <div className="mt-4 space-y-2 text-sm">
-              {sourceRows.length ? (
-                sourceRows.map(([label, count]) => (
-                  <div key={label} className="flex justify-between gap-4">
-                    <span className="truncate text-slate-400">{label}</span>
-                    <span>{count}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-slate-500">No events in this view.</p>
-              )}
-            </div>
-            <p className="mt-4 text-xs text-slate-500">
-              Tracking: {latestEventAt ? new Date(latestEventAt).toLocaleString() : "No events"}
-              {data.loadedAt ? ` · refreshed ${data.loadedAt.toLocaleTimeString()}` : ""}
-            </p>
-          </div>
-        </section>
+            <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-semibold">Trafic în timp</h3>
+              <p className="mt-1 text-sm text-neutral-500">
+                Vizitatori unici pe zi pentru perioada selectată.
+              </p>
+              <div className="mt-5 flex h-48 items-end gap-2 border-b border-neutral-200">
+                {Array.from(
+                  { length: Math.max(1, Math.min(days || 7, 14)) },
+                  (_, index) => {
+                    const date = new Date(
+                      Date.now() -
+                        (Math.max(1, Math.min(days || 7, 14)) - 1 - index) *
+                          86400000,
+                    )
+                      .toISOString()
+                      .slice(0, 10);
+                    const value = new Set(
+                      filteredEvents
+                        .filter((row) => row.created_at.slice(0, 10) === date)
+                        .map((row) => row.funnel_session_id),
+                    ).size;
+                    const max = Math.max(
+                      1,
+                      ...Array.from(
+                        { length: Math.max(1, Math.min(days || 7, 14)) },
+                        (_, i) =>
+                          new Set(
+                            filteredEvents
+                              .filter(
+                                (row) =>
+                                  row.created_at.slice(0, 10) ===
+                                  new Date(
+                                    Date.now() -
+                                      (Math.max(1, Math.min(days || 7, 14)) -
+                                        1 -
+                                        i) *
+                                        86400000,
+                                  )
+                                    .toISOString()
+                                    .slice(0, 10),
+                              )
+                              .map((row) => row.funnel_session_id),
+                          ).size,
+                      ),
+                    );
+                    return (
+                      <div
+                        key={date}
+                        className="group relative flex h-full flex-1 items-end"
+                      >
+                        <div
+                          title={`${date}: ${value}`}
+                          className="w-full rounded-t bg-amber-500"
+                          style={{ height: `${(value / max) * 100}%` }}
+                        />
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-          <h3 className="font-semibold">Operational health</h3>
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            <div className={`rounded-xl border p-3 ${fulfillmentFailures.length ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
-              <p className="flex items-center gap-2 font-medium">
-                {fulfillmentFailures.length ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />} Paid fulfillment
-              </p>
-              {fulfillmentFailures.slice(0, 6).map((row) => (
-                <p key={row.id} className="mt-2 break-words font-mono text-xs text-slate-300">
-                  {row.product_key} · {row.id.slice(0, 8)} · {row.last_error || row.fulfillment_status}
-                </p>
-              ))}
-              {!fulfillmentFailures.length ? <p className="mt-2 text-sm text-slate-400">No paid fulfillment failures in this view.</p> : null}
-            </div>
-            <div className={`rounded-xl border p-3 ${emailFailed ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
-              <p className="flex items-center gap-2 font-medium">
-                {emailFailed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />} Delivery email
-              </p>
-              {allEmails
-                .filter((row) => row.status !== "sent")
-                .slice(0, 6)
-                .map((row) => (
-                  <p key={row.id} className="mt-2 break-words font-mono text-xs text-slate-300">
-                    {row.kind} · {row.status} · {row.last_error || row.order_id.slice(0, 8)}
+            {selectedFunnel ? (
+              <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+                <div className="border-b border-slate-800 p-4">
+                  <h3 className="font-semibold">
+                    {selectedFunnel.label} drop-off
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {biggestDrop && biggestDrop.dropped
+                      ? `Largest drop: ${biggestDrop.label} lost ${biggestDrop.dropped} sessions (${biggestDrop.fromPreviousPct} continued).`
+                      : "Sessions unique per step. A drop means they did the previous step but not this one."}
                   </p>
-                ))}
-              {!allEmails.length ? (
-                <p className="mt-2 text-sm text-amber-200">No delivery-email ledger rows yet.</p>
-              ) : null}
-            </div>
-          </div>
-        </section>
-        </>}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500">
+                      <tr>
+                        <th className="p-3">Step</th>
+                        <th className="p-3">Sessions</th>
+                        <th className="p-3">Kept from previous</th>
+                        <th className="p-3">Lost here</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dropSteps.map((step) => (
+                        <tr
+                          key={step.event}
+                          className="border-t border-slate-800"
+                        >
+                          <td className="p-3">
+                            <div>{step.label}</div>
+                            <div className="font-mono text-[11px] text-slate-500">
+                              {step.event}
+                            </div>
+                          </td>
+                          <td className="p-3">{step.sessions}</td>
+                          <td className="p-3">{step.fromPreviousPct}</td>
+                          <td className="p-3">
+                            {step.dropped == null ? "-" : step.dropped}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ) : (
+              <p className="text-sm text-slate-400">
+                Pick a funnel above to see step-by-step drop-off.
+              </p>
+            )}
+
+            <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+                <div className="border-b border-slate-800 p-4">
+                  <h3 className="font-semibold">By product</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500">
+                      <tr>
+                        <th className="p-3">Product</th>
+                        <th className="p-3">Sessions</th>
+                        <th className="p-3">Checkout</th>
+                        <th className="p-3">Paid</th>
+                        <th className="p-3">Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productRows.map((row) => (
+                        <tr key={row.key} className="border-t border-slate-800">
+                          <td className="p-3 font-mono text-xs">{row.key}</td>
+                          <td className="p-3">{row.sessions}</td>
+                          <td className="p-3">{row.checkouts}</td>
+                          <td className="p-3">{row.purchases}</td>
+                          <td className="p-3">{row.revenue}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+                <h3 className="font-semibold">Source / campaign</h3>
+                <div className="mt-4 space-y-2 text-sm">
+                  {sourceRows.length ? (
+                    sourceRows.map(([label, count]) => (
+                      <div key={label} className="flex justify-between gap-4">
+                        <span className="truncate text-slate-400">{label}</span>
+                        <span>{count}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-slate-500">No events in this view.</p>
+                  )}
+                </div>
+                <p className="mt-4 text-xs text-slate-500">
+                  Tracking:{" "}
+                  {latestEventAt
+                    ? new Date(latestEventAt).toLocaleString()
+                    : "No events"}
+                  {data.loadedAt
+                    ? ` · refreshed ${data.loadedAt.toLocaleTimeString()}`
+                    : ""}
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+              <h3 className="font-semibold">Operational health</h3>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <div
+                  className={`rounded-xl border p-3 ${fulfillmentFailures.length ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}
+                >
+                  <p className="flex items-center gap-2 font-medium">
+                    {fulfillmentFailures.length ? (
+                      <AlertTriangle className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}{" "}
+                    Paid fulfillment
+                  </p>
+                  {fulfillmentFailures.slice(0, 6).map((row) => (
+                    <p
+                      key={row.id}
+                      className="mt-2 break-words font-mono text-xs text-slate-300"
+                    >
+                      {row.product_key} · {row.id.slice(0, 8)} ·{" "}
+                      {row.last_error || row.fulfillment_status}
+                    </p>
+                  ))}
+                  {!fulfillmentFailures.length ? (
+                    <p className="mt-2 text-sm text-slate-400">
+                      No paid fulfillment failures in this view.
+                    </p>
+                  ) : null}
+                </div>
+                <div
+                  className={`rounded-xl border p-3 ${emailFailed ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}
+                >
+                  <p className="flex items-center gap-2 font-medium">
+                    {emailFailed ? (
+                      <AlertTriangle className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}{" "}
+                    Delivery email
+                  </p>
+                  {allEmails
+                    .filter((row) => row.status !== "sent")
+                    .slice(0, 6)
+                    .map((row) => (
+                      <p
+                        key={row.id}
+                        className="mt-2 break-words font-mono text-xs text-slate-300"
+                      >
+                        {row.kind} · {row.status} ·{" "}
+                        {row.last_error || row.order_id.slice(0, 8)}
+                      </p>
+                    ))}
+                  {!allEmails.length ? (
+                    <p className="mt-2 text-sm text-amber-200">
+                      No delivery-email ledger rows yet.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );
