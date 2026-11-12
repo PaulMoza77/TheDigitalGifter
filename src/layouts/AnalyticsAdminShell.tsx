@@ -91,6 +91,45 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/admin/blog", label: "Blog", icon: LayoutList },
       { path: "/admin/publisher", label: "Publicare", icon: CalendarDays },
       { path: "/admin/pricing", label: "Prețuri", icon: Settings },
+      { path: "/admin/orders", label: "Comenzi generale", icon: ShoppingBag },
+      { path: "/admin/credits", label: "Credite", icon: Wallet },
+      { path: "/admin/pet-orders", label: "Comenzi Pet", icon: ShoppingBag },
+      {
+        path: "/admin/pet-funnel-analytics",
+        label: "Analytics Pet",
+        icon: ChartNoAxesCombined,
+      },
+      { path: "/admin/funnel", label: "Ocazii și categorii", icon: LayoutList },
+    ],
+  },
+  {
+    title: "Email & studio",
+    items: [
+      {
+        path: "/admin/email/templates",
+        label: "Template-uri email",
+        icon: LayoutList,
+      },
+      {
+        path: "/admin/email/offers",
+        label: "Oferte email",
+        icon: PackageSearch,
+      },
+      { path: "/admin/studio", label: "Studio", icon: Store },
+      { path: "/admin/clip-factory", label: "Clip Factory", icon: Store },
+      {
+        path: "/admin/long-form-studio",
+        label: "Long Form Studio",
+        icon: Store,
+      },
+      { path: "/admin/music-library", label: "Muzică", icon: PackageSearch },
+      {
+        path: "/admin/content-autopilot",
+        label: "Content Autopilot",
+        icon: CalendarDays,
+      },
+      { path: "/admin/social-accounts", label: "Conturi sociale", icon: Users },
+      { path: "/admin/publishing", label: "Publicări", icon: CalendarDays },
     ],
   },
 ];
@@ -121,6 +160,10 @@ export default function AnalyticsAdminShell({
   const nav = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pendingOrders = alerts.orders;
+  useEffect(() => {
+    document.body.classList.add("tdg-admin-theme");
+    return () => document.body.classList.remove("tdg-admin-theme");
+  }, []);
   // închide drawer-ul mobil la schimbare de rută
   useEffect(() => {
     setMobileOpen(false);
@@ -280,7 +323,9 @@ export default function AnalyticsAdminShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <main
+          className={`mx-auto w-full ${loc.pathname.endsWith("/analytics") ? "max-w-6xl" : "max-w-[1440px]"} px-4 py-6 sm:px-6`}
+        >
           <Outlet />
         </main>
       </div>
