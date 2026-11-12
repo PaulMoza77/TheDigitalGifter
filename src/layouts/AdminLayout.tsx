@@ -1,3 +1,4 @@
+import AnalyticsAdminShell from "./AnalyticsAdminShell";
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -306,6 +307,7 @@ const SidebarNavigation: React.FC<{
 };
 
 const AdminLayout: React.FC = () => {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const isActive = useIsActivePath();
   const alerts = useAdminNavAlerts();
@@ -326,6 +328,8 @@ const AdminLayout: React.FC = () => {
       /* ignore */
     }
   }, [collapsed]);
+
+  if (pathname.replace(/\/$/, "") === "/admin/christmas/analytics") return <AnalyticsAdminShell alerts={alerts} />;
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-slate-950 font-sans text-slate-50">

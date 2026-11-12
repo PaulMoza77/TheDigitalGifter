@@ -1,4 +1,4 @@
-export type RangeDays = 1 | 7 | 30 | 0;
+export type RangeDays = 1 | 7 | 30 | 90 | 0;
 export type Platform = "all" | "web" | "ios";
 
 export type ChristmasEventRow = {

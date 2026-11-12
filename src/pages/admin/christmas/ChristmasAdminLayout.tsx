@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const TABS = [
   { to: "/admin/christmas/santa-call", label: "Santa Call · Funnel & Health", end: false },
@@ -18,6 +18,8 @@ function tabClass(isActive: boolean) {
 }
 
 export default function ChristmasAdminLayout() {
+  const { pathname } = useLocation();
+  if (pathname.replace(/\/$/, "") === "/admin/christmas/analytics") return <Outlet />;
   return (
     <div className="min-h-full">
       <div className="border-b border-slate-800 px-4 py-4 sm:px-6 lg:px-8">
