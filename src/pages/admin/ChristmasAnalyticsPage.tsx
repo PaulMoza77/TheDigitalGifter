@@ -1,5 +1,17 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleDollarSign,
+  Eye,
+  Filter,
+  MousePointerClick,
+  RefreshCw,
+  ShoppingCart,
+  Timer,
+  Users,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import {
   CHRISTMAS_FUNNELS,
   emailsCollectedInFunnel,
@@ -23,20 +35,35 @@ function Metric({
   label,
   value,
   hint,
+  icon,
+  highlighted = false,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  icon?: ReactNode;
+  highlighted?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
-        {label}
-      </p>
-      <p className="my-3 text-3xl font-bold tracking-tight text-neutral-900">
+    <div
+      className={`min-h-[158px] rounded-2xl border border-neutral-200 p-5 shadow-sm ${highlighted ? "bg-[#fffaf0]" : "bg-white"}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+          {label}
+        </p>
+        {icon ? (
+          <span
+            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${highlighted ? "bg-[#f6ead0] text-[#9a6b16]" : "bg-neutral-100 text-neutral-500"}`}
+          >
+            {icon}
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-3 text-3xl font-bold tracking-tight text-neutral-900">
         {value}
       </p>
-      <p className="text-sm text-neutral-500">{hint}</p>
+      <p className="mt-3 text-sm text-neutral-500">{hint}</p>
     </div>
   );
 }
@@ -46,6 +73,9 @@ export default function ChristmasAnalyticsPage() {
   const [platform, setPlatform] = useState<Platform>("all");
   const [funnelId, setFunnelId] = useState("all");
   const [includeTests, setIncludeTests] = useState(false);
+  const [detailTab, setDetailTab] = useState<"pages" | "products" | "sources">(
+    "pages",
+  );
   const data = useChristmasAdminData(days);
   const selectedFunnel = funnelId === "all" ? null : funnelById(funnelId);
 
@@ -130,6 +160,94 @@ export default function ChristmasAnalyticsPage() {
     .filter((step) => step.dropped != null)
     .sort((a, b) => (b.dropped || 0) - (a.dropped || 0))[0];
 
+  const pageViews = filteredEvents.filter(
+    (row) =>
+      VIEW_EVENTS.has(row.event_name) || row.event_name.endsWith("page_view"),
+  ).length;
+  const ctaClicks = filteredEvents.filter((row) =>
+    /(preview|offer|cta|personal|checkout_started)/i.test(row.event_name),
+  ).length;
+  const conversionRate = pct(paidCommercial.length, viewed);
+  const detailPageRows = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { views: number; sessions: Set<string>; cta: number; orders: number }
+    >();
+    for (const row of filteredEvents) {
+      const path = row.pathname || "/";
+      const current = grouped.get(path) || {
+        views: 0,
+        sessions: new Set<string>(),
+        cta: 0,
+        orders: 0,
+      };
+      if (
+        VIEW_EVENTS.has(row.event_name) ||
+        row.event_name.endsWith("page_view")
+      )
+        current.views += 1;
+      current.sessions.add(row.funnel_session_id);
+      if (/(preview|offer|cta|personal|checkout_started)/i.test(row.event_name))
+        current.cta += 1;
+      if (row.order_id) current.orders += 1;
+      grouped.set(path, current);
+    }
+    return [...grouped.entries()]
+      .map(([path, row]) => ({
+        path,
+        views: row.views,
+        sessions: row.sessions.size,
+        cta: row.cta,
+        orders: row.orders,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 12);
+  }, [filteredEvents]);
+
+  const dailyTraffic = useMemo(() => {
+    const count = Math.max(1, Math.min(days || 14, 14));
+    return Array.from({ length: count }, (_, index) => {
+      const date = new Date(Date.now() - (count - 1 - index) * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      const sessions = new Set(
+        filteredEvents
+          .filter((row) => row.created_at.slice(0, 10) === date)
+          .map((row) => row.funnel_session_id),
+      ).size;
+      return { date, sessions };
+    });
+  }, [days, filteredEvents]);
+  const maxDailyTraffic = Math.max(
+    1,
+    ...dailyTraffic.map((row) => row.sessions),
+  );
+
+  const funnelRows = selectedFunnel
+    ? dropSteps.map((step) => ({
+        label: step.label,
+        value: step.sessions,
+        drop: step.dropped == null ? null : step.fromPreviousPct,
+      }))
+    : [
+        { label: "Vizite pagină", value: viewed, drop: null },
+        {
+          label: "Interes produs",
+          value: ctaClicks,
+          drop: pct(ctaClicks, viewed),
+        },
+        {
+          label: "Checkout început",
+          value: checkout,
+          drop: pct(checkout, ctaClicks),
+        },
+        {
+          label: "Comenzi plătite",
+          value: paidCommercial.length,
+          drop: pct(paidCommercial.length, checkout),
+        },
+      ];
+
   const productRows = useMemo(() => {
     const keys = [
       ...new Set(
@@ -184,25 +302,23 @@ export default function ChristmasAnalyticsPage() {
 
   return (
     <div className="min-h-full bg-[#f7f7f5] px-4 py-5 text-neutral-900 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto max-w-[1440px] space-y-7">
+        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[.16em] text-amber-700">
-              The Digital Gifter · Operations
-            </p>
-            <h2 className="mt-1 text-3xl font-bold tracking-tight">
-              Analytics
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm text-neutral-500">
-              Vezi traficul, conversiile și proveniența comenzilor într-un
-              singur loc.
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Colectare activă
+            </div>
+            <p className="mt-4 max-w-3xl text-base text-neutral-500">
+              Tot ce trebuie să știi despre traficul, interesul pentru produse
+              și punctele unde se pierd comenzile.
             </p>
           </div>
           <button
             type="button"
             onClick={() => void data.load()}
             disabled={data.loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-neutral-50 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold shadow-sm hover:bg-neutral-50 disabled:opacity-50"
           >
             <RefreshCw
               className={`h-4 w-4 ${data.loading ? "animate-spin" : ""}`}
@@ -211,11 +327,11 @@ export default function ChristmasAnalyticsPage() {
           </button>
         </header>
 
-        <div className="flex flex-wrap gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-sm shadow-sm">
+        <div className="flex flex-wrap gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-sm shadow-sm lg:justify-end">
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value) as RangeDays)}
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 font-medium text-neutral-700 outline-none focus:border-[#b98a2e]"
           >
             <option value={1}>Astăzi</option>
             <option value={7}>Ultimele 7 zile</option>
@@ -225,7 +341,7 @@ export default function ChristmasAnalyticsPage() {
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value as Platform)}
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 font-medium text-neutral-700 outline-none focus:border-[#b98a2e]"
           >
             <option value="all">Tot site-ul</option>
             <option value="web">Web only</option>
@@ -234,7 +350,7 @@ export default function ChristmasAnalyticsPage() {
           <select
             value={funnelId}
             onChange={(e) => setFunnelId(e.target.value)}
-            className="max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="max-w-xs rounded-xl border border-neutral-200 bg-white px-4 py-2.5 font-medium text-neutral-700 outline-none focus:border-[#b98a2e]"
           >
             <option value="all">All funnels</option>
             {CHRISTMAS_FUNNELS.map((funnel) => (
@@ -243,7 +359,7 @@ export default function ChristmasAnalyticsPage() {
               </option>
             ))}
           </select>
-          <label className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2">
+          <label className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-2.5 font-medium text-neutral-700">
             <input
               type="checkbox"
               checked={includeTests}
@@ -280,229 +396,375 @@ export default function ChristmasAnalyticsPage() {
           </p>
         ) : (
           <>
-            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <Metric
-                label="Tracked sessions"
+                label="Vizitatori"
                 value={sessionCount}
-                hint={`${viewed} reached a page view`}
+                hint={`${sessionCount} sesiuni`}
+                icon={<Users className="h-5 w-5" />}
               />
               <Metric
-                label="Emails collected"
-                value={emailsCollected}
-                hint={
-                  selectedFunnel?.id === "club"
-                    ? "Club signup rows"
-                    : selectedFunnel?.emailEvents.length
-                      ? selectedFunnel.emailEvents.join(", ")
-                      : "Club signups + funnel claim events"
-                }
+                label="Vizualizări"
+                value={pageViews}
+                hint={`${viewed} sesiuni cu vizualizare`}
+                icon={<Eye className="h-5 w-5" />}
               />
               <Metric
-                label="Checkout sessions"
-                value={checkout}
-                hint={`${pct(checkout, viewed || sessionCount)} of views`}
+                label="Clickuri CTA"
+                value={ctaClicks}
+                hint={`${emailsCollected} emailuri colectate`}
+                icon={<MousePointerClick className="h-5 w-5" />}
               />
               <Metric
-                label="Paid orders"
-                value={paidCommercial.length}
-                hint="Confirmed paid orders; not a linked visitor cohort"
+                label="Timp activ"
+                value="—"
+                hint="Date de durată indisponibile"
+                icon={<Timer className="h-5 w-5" />}
               />
               <Metric
-                label="Verified revenue"
-                value={moneyByCurrency(paidCommercial)}
-                hint="Stripe-paid, amount > 0"
+                label="Conversie"
+                value={conversionRate}
+                hint={`${paidCommercial.length} comenzi plătite`}
+                icon={<ShoppingCart className="h-5 w-5" />}
+                highlighted
               />
               <Metric
-                label="Pending orders"
-                value={pending.length}
-                hint="Not confirmed paid; not proof of abandonment"
-              />
-              <Metric
-                label="Fulfillment failures"
-                value={fulfillmentFailures.length}
-                hint="Paid orders needing recovery"
-              />
-              <Metric
-                label="Delivery emails sent"
-                value={emailSent}
-                hint={`${emailFailed} failed · ${allEmails.length} ledger rows`}
+                label="Venit urmărit"
+                value={moneyByCurrency(paidCommercial).replace("US$", "USD ")}
+                hint={`${pending.length} semnale de abandon`}
+                icon={<CircleDollarSign className="h-5 w-5" />}
+                highlighted
               />
             </section>
 
-            <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-              <h3 className="text-lg font-semibold">Trafic în timp</h3>
-              <p className="mt-1 text-sm text-neutral-500">
-                Vizitatori unici pe zi pentru perioada selectată.
-              </p>
-              <div className="mt-5 flex h-48 items-end gap-2 border-b border-neutral-200">
-                {Array.from(
-                  { length: Math.max(1, Math.min(days || 7, 14)) },
-                  (_, index) => {
-                    const date = new Date(
-                      Date.now() -
-                        (Math.max(1, Math.min(days || 7, 14)) - 1 - index) *
-                          86400000,
-                    )
-                      .toISOString()
-                      .slice(0, 10);
-                    const value = new Set(
-                      filteredEvents
-                        .filter((row) => row.created_at.slice(0, 10) === date)
-                        .map((row) => row.funnel_session_id),
-                    ).size;
-                    const max = Math.max(
-                      1,
-                      ...Array.from(
-                        { length: Math.max(1, Math.min(days || 7, 14)) },
-                        (_, i) =>
-                          new Set(
-                            filteredEvents
-                              .filter(
-                                (row) =>
-                                  row.created_at.slice(0, 10) ===
-                                  new Date(
-                                    Date.now() -
-                                      (Math.max(1, Math.min(days || 7, 14)) -
-                                        1 -
-                                        i) *
-                                        86400000,
-                                  )
-                                    .toISOString()
-                                    .slice(0, 10),
-                              )
-                              .map((row) => row.funnel_session_id),
-                          ).size,
-                      ),
-                    );
-                    return (
-                      <div
-                        key={date}
-                        className="group relative flex h-full flex-1 items-end"
-                      >
-                        <div
-                          title={`${date}: ${value}`}
-                          className="w-full rounded-t bg-amber-500"
-                          style={{ height: `${(value / max) * 100}%` }}
+            <section className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,0.85fr)]">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight">
+                      Trafic în timp
+                    </h3>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Utilizatori unici pe zi pentru perioada selectată.
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-2 text-sm text-neutral-500">
+                    <span className="h-3 w-3 rounded-full bg-[#c98f27]" />
+                    Utilizatori
+                  </span>
+                </div>
+                <div className="mt-6 h-[280px] w-full">
+                  <svg
+                    viewBox="0 0 800 280"
+                    className="h-full w-full"
+                    role="img"
+                    aria-label="Trafic în timp"
+                  >
+                    {[0, 1, 2, 3, 4].map((line) => {
+                      const y = 32 + line * 52;
+                      return (
+                        <line
+                          key={line}
+                          x1="42"
+                          x2="780"
+                          y1={y}
+                          y2={y}
+                          stroke="#e5e5e5"
+                          strokeDasharray="4 5"
                         />
+                      );
+                    })}
+                    <path
+                      d={`M 42 240 ${dailyTraffic
+                        .map((row, index) => {
+                          const x =
+                            42 +
+                            (index / Math.max(1, dailyTraffic.length - 1)) *
+                              738;
+                          const y =
+                            232 - (row.sessions / maxDailyTraffic) * 178;
+                          return `L ${x.toFixed(1)} ${y.toFixed(1)}`;
+                        })
+                        .join(" ")} L 780 240 Z`}
+                      fill="#c98f27"
+                      fillOpacity="0.16"
+                    />
+                    <path
+                      d={dailyTraffic
+                        .map((row, index) => {
+                          const x =
+                            42 +
+                            (index / Math.max(1, dailyTraffic.length - 1)) *
+                              738;
+                          const y =
+                            232 - (row.sessions / maxDailyTraffic) * 178;
+                          return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+                        })
+                        .join(" ")}
+                      fill="none"
+                      stroke="#c98f27"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="4"
+                    />
+                    {dailyTraffic.map((row, index) => {
+                      const x =
+                        42 +
+                        (index / Math.max(1, dailyTraffic.length - 1)) * 738;
+                      const y = 232 - (row.sessions / maxDailyTraffic) * 178;
+                      return (
+                        <circle
+                          key={row.date}
+                          cx={x}
+                          cy={y}
+                          r="6"
+                          fill="white"
+                          stroke="#c98f27"
+                          strokeWidth="4"
+                        />
+                      );
+                    })}
+                    <text x="42" y="267" fill="#a3a3a3" fontSize="12">
+                      {dailyTraffic[0]?.date
+                        ? new Date(
+                            `${dailyTraffic[0].date}T12:00:00`,
+                          ).toLocaleDateString("ro-RO", {
+                            day: "2-digit",
+                            month: "short",
+                          })
+                        : ""}
+                    </text>
+                    <text
+                      x="780"
+                      y="267"
+                      textAnchor="end"
+                      fill="#a3a3a3"
+                      fontSize="12"
+                    >
+                      {dailyTraffic.at(-1)?.date
+                        ? new Date(
+                            `${dailyTraffic.at(-1)?.date}T12:00:00`,
+                          ).toLocaleDateString("ro-RO", {
+                            day: "2-digit",
+                            month: "short",
+                          })
+                        : ""}
+                    </text>
+                  </svg>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight">
+                      Funnel de conversie
+                    </h3>
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Vezi exact între ce pași se pierd vizitatorii.
+                    </p>
+                  </div>
+                  <Filter className="h-6 w-6 text-[#b27d1f]" />
+                </div>
+                <div className="mt-7 space-y-6">
+                  {funnelRows.map((row, index) => {
+                    const width = `${Math.max(0, Math.min(100, (row.value / Math.max(1, funnelRows[0]?.value || 1)) * 100))}%`;
+                    return (
+                      <div key={`${row.label}-${index}`}>
+                        <div className="flex items-center justify-between gap-3 text-base">
+                          <span className="font-medium text-neutral-700">
+                            {row.label}
+                          </span>
+                          <span className="font-semibold text-neutral-900">
+                            {row.value}
+                          </span>
+                        </div>
+                        {row.drop && index > 0 ? (
+                          <div className="mt-1 text-right text-xs font-semibold text-rose-500">
+                            {row.drop}
+                          </div>
+                        ) : null}
+                        <div className="mt-2 h-3 rounded-full bg-neutral-100">
+                          <div
+                            className="h-3 rounded-full bg-gradient-to-r from-[#b27d1f] to-[#ebca7a]"
+                            style={{ width }}
+                          />
+                        </div>
                       </div>
                     );
-                  },
-                )}
+                  })}
+                </div>
               </div>
             </section>
 
-            {selectedFunnel ? (
-              <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-                <div className="border-b border-slate-800 p-4">
-                  <h3 className="font-semibold">
-                    {selectedFunnel.label} drop-off
+            {selectedFunnel && biggestDrop ? (
+              <p className="text-sm text-neutral-500">
+                {selectedFunnel.label}: cea mai mare pierdere este la „
+                {biggestDrop.label}” — {biggestDrop.dropped} sesiuni pierdute (
+                {biggestDrop.fromPreviousPct} au continuat).
+              </p>
+            ) : null}
+
+            <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-4 border-b border-neutral-200 p-6 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h3 className="text-2xl font-semibold tracking-tight">
+                    Analiză detaliată
                   </h3>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {biggestDrop && biggestDrop.dropped
-                      ? `Largest drop: ${biggestDrop.label} lost ${biggestDrop.dropped} sessions (${biggestDrop.fromPreviousPct} continued).`
-                      : "Sessions unique per step. A drop means they did the previous step but not this one."}
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Schimbă perspectiva fără să părăsești pagina.
                   </p>
                 </div>
+                <div className="flex flex-wrap gap-5 text-sm font-semibold text-neutral-400">
+                  {(["pages", "products", "sources"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setDetailTab(tab)}
+                      className={`border-b-2 pb-2 transition ${detailTab === tab ? "border-[#c98f27] text-neutral-900" : "border-transparent hover:text-neutral-700"}`}
+                    >
+                      {tab === "pages"
+                        ? "Pagini"
+                        : tab === "products"
+                          ? "Produse"
+                          : "Surse & ieșiri"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {detailTab === "pages" ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="text-xs uppercase text-slate-500">
+                  <table className="w-full min-w-[760px] text-left text-sm">
+                    <thead className="text-xs uppercase tracking-wider text-neutral-400">
                       <tr>
-                        <th className="p-3">Step</th>
-                        <th className="p-3">Sessions</th>
-                        <th className="p-3">Kept from previous</th>
-                        <th className="p-3">Lost here</th>
+                        <th className="p-5">Pagină</th>
+                        <th className="p-5">Vizualizări</th>
+                        <th className="p-5">Sesiuni</th>
+                        <th className="p-5">CTA</th>
+                        <th className="p-5">Comenzi</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {dropSteps.map((step) => (
-                        <tr
-                          key={step.event}
-                          className="border-t border-slate-800"
-                        >
-                          <td className="p-3">
-                            <div>{step.label}</div>
-                            <div className="font-mono text-[11px] text-slate-500">
-                              {step.event}
-                            </div>
-                          </td>
-                          <td className="p-3">{step.sessions}</td>
-                          <td className="p-3">{step.fromPreviousPct}</td>
-                          <td className="p-3">
-                            {step.dropped == null ? "-" : step.dropped}
+                      {detailPageRows.length ? (
+                        detailPageRows.map((row) => (
+                          <tr
+                            key={row.path}
+                            className="border-t border-neutral-100"
+                          >
+                            <td className="p-5 font-medium text-neutral-800">
+                              {row.path}
+                            </td>
+                            <td className="p-5">{row.views}</td>
+                            <td className="p-5">{row.sessions}</td>
+                            <td className="p-5">{row.cta}</td>
+                            <td className="p-5 font-semibold">{row.orders}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="p-5 text-neutral-500" colSpan={5}>
+                            Nu există date în perioada selectată.
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </section>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Pick a funnel above to see step-by-step drop-off.
-              </p>
-            )}
-
-            <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-                <div className="border-b border-slate-800 p-4">
-                  <h3 className="font-semibold">By product</h3>
-                </div>
+              ) : null}
+              {detailTab === "products" ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="text-xs uppercase text-slate-500">
+                  <table className="w-full min-w-[760px] text-left text-sm">
+                    <thead className="text-xs uppercase tracking-wider text-neutral-400">
                       <tr>
-                        <th className="p-3">Product</th>
-                        <th className="p-3">Sessions</th>
-                        <th className="p-3">Checkout</th>
-                        <th className="p-3">Paid</th>
-                        <th className="p-3">Revenue</th>
+                        <th className="p-5">Produs</th>
+                        <th className="p-5">Sesiuni</th>
+                        <th className="p-5">Checkout</th>
+                        <th className="p-5">Plătite</th>
+                        <th className="p-5">Venit</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {productRows.map((row) => (
-                        <tr key={row.key} className="border-t border-slate-800">
-                          <td className="p-3 font-mono text-xs">{row.key}</td>
-                          <td className="p-3">{row.sessions}</td>
-                          <td className="p-3">{row.checkouts}</td>
-                          <td className="p-3">{row.purchases}</td>
-                          <td className="p-3">{row.revenue}</td>
+                      {productRows.length ? (
+                        productRows.map((row) => (
+                          <tr
+                            key={row.key}
+                            className="border-t border-neutral-100"
+                          >
+                            <td className="p-5 font-mono text-xs text-neutral-700">
+                              {row.key}
+                            </td>
+                            <td className="p-5">{row.sessions}</td>
+                            <td className="p-5">{row.checkouts}</td>
+                            <td className="p-5">{row.purchases}</td>
+                            <td className="p-5 font-semibold">{row.revenue}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="p-5 text-neutral-500" colSpan={5}>
+                            Nu există produse în perioada selectată.
+                          </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-                <h3 className="font-semibold">Source / campaign</h3>
-                <div className="mt-4 space-y-2 text-sm">
-                  {sourceRows.length ? (
-                    sourceRows.map(([label, count]) => (
-                      <div key={label} className="flex justify-between gap-4">
-                        <span className="truncate text-slate-400">{label}</span>
-                        <span>{count}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-slate-500">No events in this view.</p>
-                  )}
+              ) : null}
+              {detailTab === "sources" ? (
+                <div className="grid gap-8 p-6 lg:grid-cols-[1.4fr_1fr]">
+                  <div>
+                    <h4 className="font-semibold text-neutral-900">
+                      Proveniență trafic
+                    </h4>
+                    <div className="mt-4 divide-y divide-neutral-100 rounded-xl border border-neutral-200">
+                      {sourceRows.length ? (
+                        sourceRows.map(([label, count]) => (
+                          <div
+                            key={label}
+                            className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                          >
+                            <span className="truncate text-neutral-600">
+                              {label}
+                            </span>
+                            <span className="font-semibold text-neutral-900">
+                              {count}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="p-4 text-sm text-neutral-500">
+                          Nu există evenimente în această perioadă.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-neutral-50 p-5 text-sm text-neutral-600">
+                    <p className="font-semibold text-neutral-900">
+                      Actualizare date
+                    </p>
+                    <p className="mt-3">
+                      Ultimul eveniment:{" "}
+                      {latestEventAt
+                        ? new Date(latestEventAt).toLocaleString("ro-RO")
+                        : "Nu există evenimente"}
+                    </p>
+                    <p className="mt-1">
+                      Raport actualizat:{" "}
+                      {data.loadedAt
+                        ? data.loadedAt.toLocaleTimeString("ro-RO")
+                        : "—"}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-4 text-xs text-slate-500">
-                  Tracking:{" "}
-                  {latestEventAt
-                    ? new Date(latestEventAt).toLocaleString()
-                    : "No events"}
-                  {data.loadedAt
-                    ? ` · refreshed ${data.loadedAt.toLocaleTimeString()}`
-                    : ""}
-                </p>
-              </div>
+              ) : null}
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="font-semibold">Operational health</h3>
+            <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <h3 className="text-2xl font-semibold tracking-tight">
+                Stare operațională
+              </h3>
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
                 <div
-                  className={`rounded-xl border p-3 ${fulfillmentFailures.length ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}
+                  className={`rounded-xl border p-4 ${fulfillmentFailures.length ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}`}
                 >
                   <p className="flex items-center gap-2 font-medium">
                     {fulfillmentFailures.length ? (
@@ -515,20 +777,20 @@ export default function ChristmasAnalyticsPage() {
                   {fulfillmentFailures.slice(0, 6).map((row) => (
                     <p
                       key={row.id}
-                      className="mt-2 break-words font-mono text-xs text-slate-300"
+                      className="mt-2 break-words font-mono text-xs text-neutral-600"
                     >
                       {row.product_key} · {row.id.slice(0, 8)} ·{" "}
                       {row.last_error || row.fulfillment_status}
                     </p>
                   ))}
                   {!fulfillmentFailures.length ? (
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="mt-2 text-sm text-neutral-600">
                       No paid fulfillment failures in this view.
                     </p>
                   ) : null}
                 </div>
                 <div
-                  className={`rounded-xl border p-3 ${emailFailed ? "border-red-500/40 bg-red-500/10" : "border-emerald-500/30 bg-emerald-500/10"}`}
+                  className={`rounded-xl border p-4 ${emailFailed ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}`}
                 >
                   <p className="flex items-center gap-2 font-medium">
                     {emailFailed ? (
@@ -544,14 +806,14 @@ export default function ChristmasAnalyticsPage() {
                     .map((row) => (
                       <p
                         key={row.id}
-                        className="mt-2 break-words font-mono text-xs text-slate-300"
+                        className="mt-2 break-words font-mono text-xs text-neutral-600"
                       >
                         {row.kind} · {row.status} ·{" "}
                         {row.last_error || row.order_id.slice(0, 8)}
                       </p>
                     ))}
                   {!allEmails.length ? (
-                    <p className="mt-2 text-sm text-amber-200">
+                    <p className="mt-2 text-sm text-amber-700">
                       No delivery-email ledger rows yet.
                     </p>
                   ) : null}
