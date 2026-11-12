@@ -162,10 +162,10 @@ export function useChristmasAdminData(
       ].map(async (query) => {
         if (!query) return { data: [] as any[], error: null };
         try {
-          return {
-            data: await readReportRows<any>(query, "Christmas reporting"),
-            error: null,
-          };
+          const result = includeAuxiliary
+            ? await readReportRows<any>(query, "Christmas reporting")
+            : (await query.limit(50_000)).data || [];
+          return { data: result, error: null };
         } catch (error) {
           return {
             data: [] as any[],
