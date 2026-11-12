@@ -65,6 +65,13 @@ export function useChristmasAdminData(
     const current = ++generation.current;
     setLoading(true);
     setError(null);
+    const loadTimeout = setTimeout(() => {
+      if (current !== generation.current) return;
+      setError(
+        "Datele Analytics nu au răspuns în 12 secunde. Apasă Reîmprospătează pentru o nouă încercare.",
+      );
+      setLoading(false);
+    }, 12_000);
     const since = sinceIso(days);
 
     let eventQuery = supabase
@@ -170,10 +177,14 @@ export function useChristmasAdminData(
         }
       }),
     );
-    if (current !== generation.current) return;
+    if (current !== generation.current) {
+      clearTimeout(loadTimeout);
+      return;
+    }
 
     const critical = eventResult.error || orderResult.error;
     if (critical) {
+      clearTimeout(loadTimeout);
       setError(critical.message);
       setLoading(false);
       return;
@@ -249,6 +260,7 @@ export function useChristmasAdminData(
     );
     setSoftWarnings(warnings);
     setLoadedAt(new Date());
+    clearTimeout(loadTimeout);
     setLoading(false);
   }, [days, includeAuxiliary]);
 
