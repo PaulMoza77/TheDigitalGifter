@@ -1,5 +1,6 @@
 import { resolveSantaCheckout } from "./santa-call/santaCheckoutDestination";
 import { Logo } from "@/components/ui/logo";
+import { GraceLandingDemo } from "./santa-call/GraceLandingDemo";
 import { SantaLandingVideo } from "./santa-call/SantaLandingVideo";
 import {
   SantaSupportChat,
@@ -725,12 +726,12 @@ export default function ChristmasSantaCallPage() {
                 </div>
                 <figure className="sc-portrait">
                   <div className="sc-portrait-media">
-                    <SantaLandingVideo alt={landing.imageAlt} />
+                    {lang === "ro" ? <GraceLandingDemo /> : <SantaLandingVideo alt={landing.imageAlt} />}
                   </div>
                   <figcaption>
-                    <span className="sc-kicker">{landing.sceneLabel}</span>
-                    <strong>{landing.sceneTitle}</strong>
-                    <span>{landing.sceneNote}</span>
+                    <span className="sc-kicker">{lang === "ro" ? "Ascultă conversația cu Grace" : landing.sceneLabel}</span>
+                    <strong>{lang === "ro" ? "Ea răspunde. Moșul reacționează." : landing.sceneTitle}</strong>
+                    <span>{lang === "ro" ? "Fragment de 8 secunde din conversație. Apasă redare pentru sunet." : landing.sceneNote}</span>
                   </figcaption>
                 </figure>
               </section>
