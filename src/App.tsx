@@ -101,6 +101,7 @@ const AdminContentAutopilotPage = lazy(() => import("@/pages/admin/AdminContentA
 const AdminMusicLibraryPage = lazy(() => import("@/pages/admin/AdminMusicLibraryPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
+const AdminExpensesPage = lazy(() => import("@/pages/admin/AdminExpensesPage"));
 const SupportTicketsPage = lazy(
   () => import("@/domains/admin/pages/SupportTicketsPage")
 );
@@ -1063,6 +1064,7 @@ function AppInner() {
             <Route path="publishing" element={<AdminPublishingPage />} />
             <Route path="publisher" element={<AdminPublisherPage />} />
             <Route path="credits" element={<CreditsPage />} />
+            <Route path="expenses" element={<AdminExpensesPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 
             <Route path="email" element={<AdminEmailLayoutPage />}>

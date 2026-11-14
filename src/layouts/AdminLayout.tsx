@@ -234,6 +234,12 @@ const SidebarNavigation: React.FC<{
             icon: Coins,
           },
           {
+            label: "Expenses / Cheltuieli",
+            path: "/admin/expenses",
+            icon: Wallet,
+            badge: "New",
+          },
+          {
             label: "Orders",
             path: "/admin/orders",
             icon: ShoppingCart,
