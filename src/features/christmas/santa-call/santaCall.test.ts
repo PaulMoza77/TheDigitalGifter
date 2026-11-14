@@ -15,13 +15,6 @@ import {
   validateSantaCallPersonalization,
 } from "./santaCallTypes";
 import {
-  CHRISTMAS_COMMERCIAL_KEYS,
-  CHRISTMAS_COMMERCIAL_SEED,
-  commercialKeyForProduct,
-  resolveWebCheckout,
-  catalogFromRows,
-} from "../commercialOffers";
-import {
   buildSantaCallInstructions,
   assertNoPromptInjection,
   santaCallOpeningLine,
@@ -93,7 +86,7 @@ describe("Santa Call RO/EN copy parity", () => {
     expect(SANTA_CALL_COPY.ro.title).toMatch(/apel magic/i);
     expect(SANTA_CALL_COPY.en.title).toContain("Santa");
     expect(SANTA_CALL_COPY.ro.cta).toContain("Moș");
-    expect(SANTA_CALL_COPY.en.cta).toBe("Call Santa");
+    expect(SANTA_CALL_COPY.en.cta).toMatch(/Call Santa/);
     expect(SANTA_CALL_COPY.ro.trust).toMatch(/Fără abonament/);
     expect(SANTA_CALL_COPY.en.trust).toMatch(/No subscription/);
     expect(SANTA_CALL_COPY.ro.ogDescription).toMatch(/dorinț/i);
@@ -102,49 +95,42 @@ describe("Santa Call RO/EN copy parity", () => {
 
 describe("Santa Voice Call V2 product wiring", () => {
   it("registers commercial key at 59 RON seed and extension constants", () => {
-    expect(CHRISTMAS_COMMERCIAL_KEYS).toContain(SANTA_CALL_COMMERCIAL_KEY);
-    expect(CHRISTMAS_COMMERCIAL_SEED.xmas_santa_voice_call.webPriceMinor).toBe(5900);
-    expect(CHRISTMAS_COMMERCIAL_SEED.xmas_santa_voice_call.webCurrency).toBe("ron");
+    expect(SANTA_CALL_COMMERCIAL_KEY).toBe("xmas_santa_voice_call");
+    expect(SANTA_CALL_PRODUCT_KEY).toBe("christmas_santa_voice_call");
     expect(SANTA_CALL_PRICE_MINOR_RON).toBe(5900);
     expect(SANTA_CALL_EXTENSION_PRICE_MINOR_RON).toBe(4900);
     expect(SANTA_CALL_MAX_SECONDS).toBe(180);
     expect(SANTA_CALL_EXTENSION_SECONDS).toBe(300);
     expect(SANTA_CALL_EXTENSION_PRODUCT_KEY).toBe("christmas_santa_voice_call_extension");
     expect(SANTA_CALL_EXTENSION_COMMERCIAL_KEY).toBe("xmas_santa_voice_call_extension");
-    expect(commercialKeyForProduct(SANTA_CALL_PRODUCT_KEY)).toBe(SANTA_CALL_COMMERCIAL_KEY);
     expect(SANTA_CALL_CONSENT_VERSION).toMatch(/v2/);
   });
 
-  it("resolves checkout from pricing rows without trusting client amount", () => {
-    const catalog = catalogFromRows([
-      {
-        key: "xmas_santa_voice_call",
-        category: "christmas_offer",
-        name: "Call Santa Claus",
-        price_cents: 5900,
+  it("resolves checkout amounts from Santa market map without trusting client amount", () => {
+    expect(
+      assertSantaCallPriceMatch({
+        market: "ro",
+        kind: "initial",
+        amountMinor: 1,
+        currency: "usd",
+      }).ok,
+    ).toBe(false);
+    expect(
+      assertSantaCallPriceMatch({
+        market: "ro",
+        kind: "initial",
+        amountMinor: 5900,
         currency: "ron",
-        credits: 180,
-        active: true,
-        metadata: {
-          web_price_minor: 5900,
-          web_currency: "ron",
-          web_checkout_enabled: true,
-          app_credits_cost: 180,
-          product_type: "santa_voice_call",
-        },
-      },
-    ]);
-    const plan = resolveWebCheckout({
-      productKey: SANTA_CALL_PRODUCT_KEY,
-      catalog,
-      clientAmountCents: 1,
-      clientCurrency: "usd",
-    });
-    expect(plan.ok).toBe(true);
-    if (plan.ok) {
-      expect(plan.amountCents).toBe(5900);
-      expect(plan.currency).toBe("ron");
-    }
+      }).ok,
+    ).toBe(true);
+    expect(
+      assertSantaCallPriceMatch({
+        market: "ro",
+        kind: "extension",
+        amountMinor: 4900,
+        currency: "ron",
+      }).ok,
+    ).toBe(true);
   });
 
   it("validates personalization and blocks prompt injection", () => {
@@ -237,8 +223,11 @@ describe("Santa Voice Call V2 product wiring", () => {
     expect(readSrc("supabase/functions/_shared/christmas/santaCallFulfill.ts")).toContain(
       "fulfillSantaVoiceCallExtensionOrder",
     );
-    expect(readSrc("supabase/functions/_shared/christmas/stripeFulfill.ts")).toContain(
-      "santa_call_extension",
+    expect(readSrc("supabase/functions/stripe-webhook-test/index.ts")).toContain(
+      "fulfillSantaVoiceCallExtensionOrder",
+    );
+    expect(readSrc("supabase/functions/stripe-webhook-test/index.ts")).toContain(
+      "christmas_santa_voice_call_extension",
     );
     expect(readSrc("supabase/functions/christmas-santa-call/index.ts")).toContain(
       'action === "create_extension_checkout"',
@@ -278,5 +267,36 @@ describe("Santa Voice Call V2 product wiring", () => {
     expect(readSrc("supabase/migrations/20261024190000_santa_call_heartbeat_awaiting_extension.sql")).toContain(
       "awaiting_extension",
     );
+  });
+
+  it("pins Basil Stripe-Version for extension checkout and allows unlimited paid extensions", () => {
+    const stripe = readSrc("supabase/functions/_shared/christmas/santaStripe.ts");
+    expect(stripe).toContain('SANTA_STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil"');
+    expect(stripe).toContain("Stripe-Version");
+    expect(stripe).toContain("idempotencyKey");
+
+    const edge = readSrc("supabase/functions/christmas-santa-call/index.ts");
+    expect(edge).toContain("SANTA_STRIPE_API_VERSION_CUSTOM");
+    expect(edge).toContain("reused: true");
+    expect(edge).toContain("infra_cap_reached");
+
+    const mig = readSrc("supabase/migrations/20261114120000_santa_call_unlimited_paid_extensions.sql");
+    expect(mig).toContain("drop constraint if exists christmas_santa_call_extensions_entitlement_id_key");
+    expect(mig).toContain("already_extended");
+    expect(mig).toContain("infra_cap");
+    expect(mig).toContain("extension_count");
+    expect(mig).toContain("where order_id = p_order_id");
+
+    expect(SANTA_CALL_COPY.ro.upsellContinue).toMatch(/49/);
+    expect(SANTA_CALL_COPY.ro.upsellBuyAgain).toMatch(/5 minute/);
+    expect(SANTA_CALL_COPY.ro.faqs[3].a).toMatch(/oricâte|câte ori/i);
+    expect(SANTA_CALL_COPY.ro.policy).not.toMatch(/maximum o prelungire/i);
+
+    const email = readSrc("supabase/functions/_shared/christmas/santaCallEmail.ts");
+    expect(email).toContain("buildSantaCallExtensionRecoveryEmailContent");
+    expect(email).toContain("Mai ai ceva să-i spui lui Moș Crăciun?");
+    expect(email).toContain("Prelungește apelul cu 5 minute");
+    expect(email).toContain("sendLive");
+    expect(email).not.toMatch(/Stripe API|eroare tehnică|gratuit/i);
   });
 });

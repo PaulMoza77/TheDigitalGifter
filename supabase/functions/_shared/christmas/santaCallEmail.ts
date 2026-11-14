@@ -230,6 +230,246 @@ export function buildSantaCallReadyEmailContent(input: {
   };
 }
 
+/** Recovery / continue-story email after initial call — paid +5 min extension CTA (RO). */
+export function buildSantaCallExtensionRecoveryEmailContent(input: {
+  accessToken: string;
+  language?: SantaCallLanguage;
+  childFirstName?: string;
+  guardianFirstName?: string;
+  extensionPriceLabel?: string;
+}): SantaCallReadyEmailContent {
+  const language: SantaCallLanguage = input.language === "en" ? "en" : "ro";
+  const origin = siteOrigin();
+  const callUrl = `${origin}/santa/call/${encodeURIComponent(input.accessToken)}?lang=${language}&extend=1`;
+  const supportUrl = `${origin}/support`;
+  const privacyUrl = `${origin}/privacy`;
+  const termsUrl = `${origin}/terms`;
+  const brandUrl = origin;
+  const child = asString(input.childFirstName).trim().slice(0, 40);
+  const guardian = asString(input.guardianFirstName).trim().slice(0, 40);
+  const price = asString(input.extensionPriceLabel) || (language === "ro" ? "49 lei" : "$9.99");
+
+  const copy =
+    language === "ro"
+      ? {
+          subject: "Mai ai ceva să-i spui lui Moș Crăciun? 🎅",
+          greeting: guardian ? `Bună, ${guardian}!` : "Bună!",
+          title: "Povestea poate continua",
+          body: child
+            ? `Mulțumim pentru apelul cu Moș Crăciun pe care l-ai cumpărat pentru ${child}. Experiența poate continua exact de unde a rămas — fără să completezi din nou formularul.`
+            : "Mulțumim pentru apelul cu Moș Crăciun pe care l-ai cumpărat. Experiența poate continua exact de unde a rămas — fără să completezi din nou formularul.",
+          offer: `Poți prelungi conversația cu încă 5 minute pentru ${price}. Plata este separată și se activează doar după confirmare.`,
+          cta: "Prelungește apelul cu 5 minute",
+          note: "Linkul este privat și legat de comanda ta. Moșul rămâne un personaj AI; copilul trebuie supravegheat de un adult.",
+          support: "Ai nevoie de ajutor? Răspunde la acest email sau vizitează pagina de suport.",
+          privacy: "Confidențialitate",
+          terms: "Termeni",
+          supportLabel: "Suport",
+        }
+      : {
+          subject: "Want to tell Santa one more thing? 🎅",
+          greeting: guardian ? `Hi, ${guardian}!` : "Hi!",
+          title: "The story can continue",
+          body: child
+            ? `Thank you for the Santa call you purchased for ${child}. The experience can continue from where you left off — no need to fill the form again.`
+            : "Thank you for the Santa call you purchased. The experience can continue from where you left off — no need to fill the form again.",
+          offer: `You can extend the conversation by 5 more minutes for ${price}. Payment is separate and minutes activate only after confirmation.`,
+          cta: "Extend the call by 5 minutes",
+          note: "This private link is tied to your order. Santa is an AI character; adult supervision is required.",
+          support: "Need help? Reply to this email or visit our support page.",
+          privacy: "Privacy",
+          terms: "Terms",
+          supportLabel: "Support",
+        };
+
+  const html = `<!doctype html>
+<html lang="${language}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(copy.subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#1a0b0d;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1a0b0d;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#5c0a14;border:1px solid #c9a22766;border-radius:18px;overflow:hidden;">
+          <tr>
+            <td style="padding:28px 24px 8px;font-family:Georgia,'Times New Roman',serif;">
+              <a href="${escapeHtml(brandUrl)}" style="text-decoration:none;color:#e8c547;font-size:12px;letter-spacing:.14em;text-transform:uppercase;">The Digital Gifter</a>
+              <h1 style="margin:12px 0 0;font-size:26px;line-height:1.25;color:#F7F0E4;">${escapeHtml(copy.title)}</h1>
+              <p style="margin:14px 0 0;font-size:16px;line-height:1.55;color:#F7F0E4;">${escapeHtml(copy.greeting)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 24px 0;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.6;color:#F7F0E4;">
+              <p style="margin:0 0 10px;">${escapeHtml(copy.body)}</p>
+              <p style="margin:0;">${escapeHtml(copy.offer)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#0f3d2e" style="border-radius:999px;">
+                    <a href="${escapeHtml(callUrl)}" style="display:inline-block;padding:14px 26px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:700;color:#F7F0E4;text-decoration:none;border-radius:999px;background:#0f3d2e;">
+                      ${escapeHtml(copy.cta)}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 24px 24px;font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.6;color:#F7F0E4;opacity:.85;">
+              <p style="margin:0 0 10px;">${escapeHtml(copy.note)}</p>
+              <p style="margin:0;">
+                <a href="${escapeHtml(supportUrl)}" style="color:#e8c547;">${escapeHtml(copy.supportLabel)}</a>
+                &nbsp;·&nbsp;
+                <a href="${escapeHtml(privacyUrl)}" style="color:#e8c547;">${escapeHtml(copy.privacy)}</a>
+                &nbsp;·&nbsp;
+                <a href="${escapeHtml(termsUrl)}" style="color:#e8c547;">${escapeHtml(copy.terms)}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    copy.subject,
+    "",
+    copy.greeting,
+    copy.body,
+    copy.offer,
+    "",
+    `${copy.cta}:`,
+    callUrl,
+    "",
+    copy.note,
+    copy.support,
+  ].join("\n");
+
+  return {
+    subject: copy.subject,
+    html,
+    text,
+    callUrl,
+    supportUrl,
+    privacyUrl,
+    termsUrl,
+    brandUrl,
+    links: [brandUrl, callUrl, supportUrl, privacyUrl, termsUrl],
+  };
+}
+
+export const SANTA_CALL_EXTENSION_RECOVERY_EMAIL_KIND = "santa_call_extension_recovery";
+
+export async function sendSantaCallExtensionRecoveryEmail(input: {
+  service: SupabaseClient;
+  orderId: string;
+  email: string;
+  accessToken: string;
+  language?: SantaCallLanguage;
+  childFirstName?: string;
+  guardianFirstName?: string;
+  extensionPriceLabel?: string;
+  /** Must be true to actually call Resend — default dry-run for safety. */
+  sendLive?: boolean;
+}): Promise<{ sent: boolean; reason?: string; providerMessageId?: string; content: SantaCallReadyEmailContent }> {
+  const kind = SANTA_CALL_EXTENSION_RECOVERY_EMAIL_KIND;
+  const content = buildSantaCallExtensionRecoveryEmailContent({
+    accessToken: input.accessToken,
+    language: input.language,
+    childFirstName: input.childFirstName,
+    guardianFirstName: input.guardianFirstName,
+    extensionPriceLabel: input.extensionPriceLabel,
+  });
+
+  const { data: prior } = await input.service
+    .from("christmas_email_deliveries")
+    .select("status,provider_message_id")
+    .eq("order_id", input.orderId)
+    .eq("kind", kind)
+    .maybeSingle();
+  if (asString(prior?.status) === "sent" && asString(prior?.provider_message_id)) {
+    return {
+      sent: true,
+      reason: "already_sent",
+      providerMessageId: asString(prior?.provider_message_id),
+      content,
+    };
+  }
+
+  if (!input.sendLive) {
+    return { sent: false, reason: "dry_run", content };
+  }
+
+  const apiKey = asString(Deno.env.get("RESEND_API_KEY"));
+  const from = asString(
+    Deno.env.get("CHRISTMAS_EMAIL_FROM") ||
+      Deno.env.get("TRANSACTIONAL_EMAIL_FROM") ||
+      Deno.env.get("PET_EMAIL_FROM"),
+  );
+  const replyTo = asString(
+    Deno.env.get("CHRISTMAS_EMAIL_REPLY_TO") ||
+      Deno.env.get("SUPPORT_EMAIL") ||
+      "support@thedigitalgifter.com",
+  );
+  if (!apiKey || !from) {
+    return { sent: false, reason: "unconfigured", content };
+  }
+
+  await input.service.from("christmas_email_deliveries").upsert(
+    { order_id: input.orderId, kind, status: "queued" },
+    { onConflict: "order_id,kind" },
+  );
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `santa-call-${kind}-${input.orderId}`,
+    },
+    body: JSON.stringify({
+      from,
+      to: [input.email],
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    await input.service
+      .from("christmas_email_deliveries")
+      .update({ status: "failed", last_error: `resend_${res.status}` })
+      .eq("order_id", input.orderId)
+      .eq("kind", kind);
+    throw new Error(`Santa extension recovery email failed (${res.status})`);
+  }
+
+  const body = await res.json();
+  const providerMessageId = asString(body.id);
+  await input.service
+    .from("christmas_email_deliveries")
+    .update({
+      status: "sent",
+      provider_message_id: providerMessageId,
+      sent_at: new Date().toISOString(),
+      last_error: null,
+    })
+    .eq("order_id", input.orderId)
+    .eq("kind", kind);
+
+  return { sent: true, providerMessageId, content };
+}
+
 export async function sendSantaCallReadyEmail(input: {
   service: SupabaseClient;
   orderId: string;

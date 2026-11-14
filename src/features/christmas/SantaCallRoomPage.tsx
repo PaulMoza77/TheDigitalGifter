@@ -96,6 +96,7 @@ export default function SantaCallRoomPage() {
   } | null>(null);
   const [extensionBusy, setExtensionBusy] = useState(false);
   const [extensionPolling, setExtensionPolling] = useState(false);
+  const [extensionPaidOk, setExtensionPaidOk] = useState(false);
   const [paymentConfirming, setPaymentConfirming] = useState(false);
   const [paymentConfirmFailed, setPaymentConfirmFailed] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
@@ -110,7 +111,7 @@ export default function SantaCallRoomPage() {
     ensureFonts();
   }, []);
 
-  const applyResolve = useCallback((data: Record<string, unknown>) => {
+  const applyResolve = useCallback((data: Record<string, unknown>, opts?: { fromExtensionPayment?: boolean }) => {
     if (data?.ok === true) {
       setLang(data.language === "en" ? "en" : "ro");
       setChildName(asPlainText(data.child_first_name));
@@ -121,6 +122,7 @@ export default function SantaCallRoomPage() {
       }
       setUpsellOpen(false);
       setExtensionCheckout(null);
+      if (opts?.fromExtensionPayment) setExtensionPaidOk(true);
       setUi("ready");
       setError(null);
       return;
@@ -136,8 +138,10 @@ export default function SantaCallRoomPage() {
       return;
     }
     if (code === "expired") setUi("expired");
-    else if (code === "completed") setUi("completed");
-    else setUi("failed");
+    else if (code === "completed") {
+      setUi("completed");
+      setUpsellOpen(true);
+    } else setUi("failed");
     setError(code);
   }, []);
 
@@ -157,6 +161,7 @@ export default function SantaCallRoomPage() {
     void resolveSantaCall(token).then(({ data }) => {
       if (cancelled) return;
       applyResolve((data || {}) as Record<string, unknown>);
+      if (params.get("extend") === "1") setUpsellOpen(true);
     });
     return () => {
       cancelled = true;
@@ -228,7 +233,7 @@ export default function SantaCallRoomPage() {
       const obj = (data || {}) as Record<string, unknown>;
       if (obj.ok === true && Number(obj.remaining_seconds) > 0) {
         setExtensionPolling(false);
-        applyResolve(obj);
+        applyResolve(obj, { fromExtensionPayment: true });
         return;
       }
       tries += 1;
@@ -287,7 +292,7 @@ export default function SantaCallRoomPage() {
           secondsElapsed: elapsed,
           reason,
           keepRemaining,
-          resumeSummary: reason === "duration_limit" ? buildResumeSummary() : undefined,
+          resumeSummary: buildResumeSummary(),
           resumeLanguage: lang,
         });
         endData = (data || {}) as Record<string, unknown>;
@@ -296,15 +301,17 @@ export default function SantaCallRoomPage() {
         setUi("ready");
         return;
       }
-      if (endData?.extension_available === true || reason === "duration_limit") {
+      // Always offer another paid extension after a segment ends (unlimited commercial).
+      if (endData?.extension_available === true || reason === "duration_limit" || !keepRemaining) {
         setRemaining(0);
         setUi("awaiting_extension");
         setUpsellOpen(true);
+        setExtensionCheckout(null);
         return;
       }
       setUi("completed");
       setRemaining(0);
-      setUpsellOpen(false);
+      setUpsellOpen(true);
     },
     [buildResumeSummary, cleanupMedia, lang, stopHeartbeat, token],
   );
@@ -617,14 +624,54 @@ export default function SantaCallRoomPage() {
           </div>
 
           <footer className="santa-room-dock">
+            {extensionPaidOk && canStart ? (
+              <p className="santa-status-pill" role="status" aria-live="polite">
+                <span className="santa-status-dot" aria-hidden />
+                <span className="santa-status-label">{copy.upsellPaidConfirm}</span>
+              </p>
+            ) : null}
+
             {canStart ? (
-              <button type="button" onClick={() => void onStart()} className="santa-cta-start">
+              <button
+                type="button"
+                onClick={() => {
+                  setExtensionPaidOk(false);
+                  void onStart();
+                }}
+                className="santa-cta-start"
+              >
                 {copy.startCall}
+              </button>
+            ) : null}
+
+            {canStart ? (
+              <button
+                type="button"
+                className="santa-ext-inline"
+                disabled={extensionBusy}
+                onClick={() => {
+                  setUpsellOpen(true);
+                  setExtensionCheckout(null);
+                }}
+              >
+                {copy.extendDuringCall}
               </button>
             ) : null}
 
             {inCall ? (
               <div className="santa-controls">
+                <button
+                  type="button"
+                  className="santa-ctrl santa-ctrl-ext"
+                  disabled={extensionBusy}
+                  aria-label={copy.extendDuringCall}
+                  onClick={() => {
+                    setUpsellOpen(true);
+                    setExtensionCheckout(null);
+                  }}
+                >
+                  <span className="santa-ctrl-label">{copy.extendDuringCall}</span>
+                </button>
                 <button
                   type="button"
                   className={`santa-ctrl ${micOn ? "" : "is-off"}`}
@@ -709,11 +756,24 @@ export default function SantaCallRoomPage() {
             {ui === "completed" || ui === "expired" ? (
               <div className="santa-done">
                 <p className="santa-call-display text-2xl font-semibold">
-                  {copy.thankYouTitle}
+                  {ui === "expired" ? copy.linkExpired : copy.upsellTitle}
                 </p>
                 <p className="mt-1 text-sm opacity-85">
                   {copy.thankYouBody}
                 </p>
+                {ui === "completed" ? (
+                  <button
+                    type="button"
+                    className="santa-cta-start mt-3"
+                    disabled={extensionBusy}
+                    onClick={() => {
+                      setUpsellOpen(true);
+                      setExtensionCheckout(null);
+                    }}
+                  >
+                    {copy.upsellContinue}
+                  </button>
+                ) : null}
                 <Link to="/christmas/santa-call" className="santa-done-link">
                   {copy.backToProduct}
                 </Link>
@@ -755,6 +815,11 @@ export default function SantaCallRoomPage() {
                 {copy.upsellTitle}
               </h2>
               <p className="mt-2 text-base font-semibold text-[#E8C547]">{copy.upsellPrice}</p>
+              {remaining > 0 ? (
+                <p className="mt-2 text-sm opacity-80 tabular-nums">
+                  {copy.timeLeft}: {formatClock(remaining)}
+                </p>
+              ) : null}
               {extensionPolling ? (
                 <p className="mt-3 text-sm opacity-80">
                   {copy.paymentConfirming}
@@ -768,7 +833,7 @@ export default function SantaCallRoomPage() {
                     onClick={() => void onBuyExtension()}
                     className="rounded-full bg-[#0f3d2e] px-5 py-3 font-semibold disabled:opacity-50"
                   >
-                    {extensionBusy ? "…" : copy.upsellContinue}
+                    {extensionBusy ? "…" : copy.upsellBuyAgain}
                   </button>
                   <button
                     type="button"
@@ -906,6 +971,19 @@ export default function SantaCallRoomPage() {
             background: linear-gradient(180deg, #1a5a42 0%, #0f3d2e 100%);
             box-shadow: 0 12px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
             -webkit-tap-highlight-color: transparent;
+          }
+          .santa-ext-inline {
+            width: min(100%, 20rem); border: 1px solid rgba(232,197,71,0.4); border-radius: 999px;
+            padding: 0.7rem 1rem; font-size: 0.92rem; font-weight: 650; color: #E8C547;
+            background: rgba(10,6,8,0.55); -webkit-tap-highlight-color: transparent;
+          }
+          .santa-ctrl-ext {
+            max-width: 6.5rem;
+          }
+          .santa-ctrl-ext .santa-ctrl-label {
+            font-size: 0.62rem; text-align: center; line-height: 1.2; white-space: normal;
+            padding: 0.45rem 0.35rem; border-radius: 999px;
+            border: 1px solid rgba(232,197,71,0.35); background: rgba(10,6,8,0.55); color: #E8C547;
           }
           .santa-controls {
             display: flex; align-items: flex-end; justify-content: center; gap: clamp(0.55rem, 4vw, 1.1rem);

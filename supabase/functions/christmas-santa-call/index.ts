@@ -21,6 +21,7 @@ import {
   isSantaStripeTestOrderMeta,
   resolveSantaStripeCredentials,
   resolveSantaStripeModeEnv,
+  SANTA_STRIPE_API_VERSION_CUSTOM,
   stripeFormPost,
   stripeGet,
   type SantaStripeMode,
@@ -337,7 +338,12 @@ Deno.serve(async (req) => {
         p_access_token_hash: hash,
       });
       const resolvedObj = (resolved || {}) as Record<string, unknown>;
-      if (resolvedObj.code !== "awaiting_extension" && resolvedObj.extension_available !== true) {
+      // Unlimited commercial: before expiry, after expiry, and after prior paid extensions.
+      const extensionEligible =
+        resolvedObj.extension_available === true ||
+        resolvedObj.code === "awaiting_extension" ||
+        (resolvedObj.ok === true && isUuid(asString(resolvedObj.entitlement_id)));
+      if (!extensionEligible) {
         return json(
           { ok: false, code: asString(resolvedObj.code) || "extension_unavailable" },
           403,
@@ -350,10 +356,14 @@ Deno.serve(async (req) => {
 
       const { data: ent } = await service
         .from("christmas_santa_call_entitlements")
-        .select("id,order_id")
+        .select("id,order_id,max_duration_seconds,status")
         .eq("id", entitlementId)
         .maybeSingle();
       const parentOrderId = asString(ent?.order_id);
+      // Infra safety ceiling (not a commercial SKU cap) — refuse checkout before charging.
+      if (Number(ent?.max_duration_seconds || 0) + EXTENSION_SECONDS > 7200) {
+        return json({ ok: false, code: "infra_cap_reached" }, 403);
+      }
       const { data: parentOrder } = parentOrderId
         ? await service
             .from("christmas_orders")
@@ -416,6 +426,52 @@ Deno.serve(async (req) => {
         (creds.mode === "test"
           ? `${qaBase.replace(/\/$/, "")}/santa/call/${encodeURIComponent(token)}?extension=return`
           : `${siteOrigin()}/santa/call/${encodeURIComponent(token)}?extension=return`);
+
+      // Reuse an open pending extension checkout for this entitlement (double-click / concurrent taps).
+      const reuseWindowIso = new Date(Date.now() - 25 * 60 * 1000).toISOString();
+      const { data: pendingExtOrders } = await service
+        .from("christmas_orders")
+        .select("id,stripe_checkout_session_id,created_at,amount_cents,currency,metadata")
+        .eq("product_key", EXTENSION_PRODUCT_KEY)
+        .eq("payment_status", "pending")
+        .gte("created_at", reuseWindowIso)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      const reusable = (pendingExtOrders || []).find((row) => {
+        const meta = (row.metadata || {}) as Record<string, unknown>;
+        return asString(meta.parent_entitlement_id) === entitlementId &&
+          asString(row.stripe_checkout_session_id);
+      });
+      if (reusable) {
+        const existingSessionId = asString(reusable.stripe_checkout_session_id);
+        const existingView = await stripeGet(
+          creds.secretKey,
+          `/checkout/sessions/${encodeURIComponent(existingSessionId)}`,
+          { apiVersion: SANTA_STRIPE_API_VERSION_CUSTOM },
+        );
+        if (
+          existingView.ok &&
+          asString(existingView.body.status) === "open" &&
+          asString(existingView.body.payment_status) === "unpaid"
+        ) {
+          const useCustomReuse = Boolean(asString(existingView.body.client_secret));
+          return json({
+            ok: true,
+            orderId: reusable.id,
+            stripeMode: creds.mode,
+            livemode: existingView.body.livemode === true,
+            checkoutMode: useCustomReuse ? "custom" : "hosted",
+            clientSecret: asString(existingView.body.client_secret) || null,
+            publishableKey: creds.publishableKey,
+            checkoutUrl: asString(existingView.body.url) || null,
+            amountCents: Number(reusable.amount_cents) || amountCents,
+            currency: asString(reusable.currency) || currency,
+            market,
+            extensionSeconds: EXTENSION_SECONDS,
+            reused: true,
+          });
+        }
+      }
 
       const { data: extOrder, error: orderError } = await service
         .from("christmas_orders")
@@ -506,10 +562,33 @@ Deno.serve(async (req) => {
       params.set("metadata[santa_call_market]", market);
       params.set("metadata[market]", market);
 
-      const stripeRes = await stripeFormPost(creds.secretKey, "/checkout/sessions", params);
+      // Pin Basil — required for ui_mode=custom (matches christmas-checkout initial purchase path).
+      const stripeRes = await stripeFormPost(creds.secretKey, "/checkout/sessions", params, {
+        apiVersion: useCustom ? SANTA_STRIPE_API_VERSION_CUSTOM : SANTA_STRIPE_API_VERSION_CUSTOM,
+        idempotencyKey: `santa-ext-${extOrder.id}`,
+      });
       if (!stripeRes.ok) {
-        console.error("stripe extension checkout", stripeRes.status, JSON.stringify(stripeRes.body).slice(0, 400));
-        return json({ ok: false, code: "stripe_session_failed", stripe_mode: creds.mode }, 502);
+        const stripeMsg = asString((stripeRes.body.error as { message?: string } | undefined)?.message) ||
+          asString(stripeRes.body.message);
+        console.error(
+          "stripe extension checkout",
+          stripeRes.status,
+          stripeMsg || JSON.stringify(stripeRes.body).slice(0, 400),
+        );
+        await service
+          .from("christmas_orders")
+          .update({
+            payment_status: "failed",
+            last_error: stripeMsg.slice(0, 240) || "stripe_session_failed",
+          })
+          .eq("id", extOrder.id);
+        return json({
+          ok: false,
+          code: "stripe_session_failed",
+          stripe_mode: creds.mode,
+          stripe_status: stripeRes.status,
+          message: stripeMsg || undefined,
+        }, 502);
       }
       const clientSecret = asString(stripeRes.body.client_secret);
       const checkoutUrl = asString(stripeRes.body.url);
@@ -543,6 +622,7 @@ Deno.serve(async (req) => {
         currency,
         market,
         extensionSeconds: EXTENSION_SECONDS,
+        reused: false,
       });
     }
 
@@ -699,7 +779,10 @@ Deno.serve(async (req) => {
       params.set("metadata[santa_call_market]", charge.market);
       params.set("metadata[market]", charge.market);
 
-      const stripeRes = await stripeFormPost(creds.secretKey, "/checkout/sessions", params);
+      const stripeRes = await stripeFormPost(creds.secretKey, "/checkout/sessions", params, {
+        apiVersion: SANTA_STRIPE_API_VERSION_CUSTOM,
+        idempotencyKey: `santa-qa-${order.id}`,
+      });
       if (!stripeRes.ok) {
         console.error("stripe qa checkout", stripeRes.status, JSON.stringify(stripeRes.body).slice(0, 400));
         return json({ ok: false, code: "stripe_session_failed" }, 502);

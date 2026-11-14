@@ -102,17 +102,30 @@ export function isSantaStripeTestOrderMeta(meta: Record<string, unknown> | null 
   return asString(m.stripe_mode).toLowerCase() === "test" || m.santa_qa === true || m.e2e === true;
 }
 
+/**
+ * Custom Checkout (`ui_mode=custom`) requires Basil API version — same pin as christmas-checkout.
+ * Without Stripe-Version, account default API rejects ui_mode=custom (Nov 2026 extension failures).
+ */
+export const SANTA_STRIPE_API_VERSION_CUSTOM = "2025-03-31.basil";
+
 export async function stripeFormPost(
   secretKey: string,
   path: string,
   params: URLSearchParams,
+  opts?: { apiVersion?: string; idempotencyKey?: string },
 ): Promise<{ ok: boolean; status: number; body: Record<string, unknown> }> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${secretKey}`,
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  const apiVersion = asString(opts?.apiVersion);
+  if (apiVersion) headers["Stripe-Version"] = apiVersion;
+  const idem = asString(opts?.idempotencyKey);
+  if (idem) headers["Idempotency-Key"] = idem;
+
   const res = await fetch(`https://api.stripe.com/v1${path}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers,
     body: params,
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
@@ -123,12 +136,17 @@ export async function stripeFormPost(
 export async function stripeGet(
   secretKey: string,
   path: string,
+  opts?: { apiVersion?: string },
 ): Promise<{ ok: boolean; status: number; body: Record<string, unknown> }> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${secretKey}`,
+  };
+  const apiVersion = asString(opts?.apiVersion);
+  if (apiVersion) headers["Stripe-Version"] = apiVersion;
+
   const res = await fetch(`https://api.stripe.com/v1${path}`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-    },
+    headers,
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: res.ok, status: res.status, body };

@@ -168,7 +168,8 @@ export async function fulfillSantaVoiceCallOrder(input: {
 }
 
 /**
- * After Stripe payment for +5 min extension: grant exactly 300s once (idempotent).
+ * After Stripe payment for +5 min extension: grant exactly 300s (idempotent per order).
+ * Multiple paid extensions accumulate; duplicate webhooks for the same order do not double-grant.
  */
 export async function fulfillSantaVoiceCallExtensionOrder(input: {
   service: SupabaseClient;
