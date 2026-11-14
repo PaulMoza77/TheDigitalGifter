@@ -1,10 +1,11 @@
 # Santa Call — Unlimited Paid Extensions + Stripe Fix + Recovery Email
 
 **Branch:** `fix/santa-call-unlimited-extensions`  
+**Commits:** `7f32a17`, `1843252` (+ hotfix migration commit)  
 **Date:** 2026-11-14  
-**Status:** **STAGING READY / PRODUCTION NO-GO** (awaiting owner approval after deploy + TEST verification)
+**Status:** **STAGING PASS · PRODUCTION PENDING OWNER APPROVAL**
 
-No LIVE test charges. No Resend send executed. No refunds. Initial 59 RON price unchanged. Stripe Price IDs unchanged.
+No LIVE card charges. No Resend send. No refunds. Initial 59 RON / Stripe Price IDs unchanged.
 
 ---
 
@@ -149,43 +150,114 @@ Does **not** mention Stripe errors / free time. Requires reissue of access token
 
 ---
 
-## 9. GO / NO-GO checklist
+## 9. Staging evidence (Contabo · 2026-11-14)
+
+**Runtime:** Contabo shared edge/DB (`tdg-supabase-edge-functions` + `tdg-supabase-db`).  
+`CHRISTMAS_SANTA_CALL_STRIPE_MODE` left at `live`; TEST isolation via order `metadata.stripe_mode=test`.  
+Backup: `/opt/supabase/tdg/backups/santa-unlimited-ext-20261114T210324Z/`
+
+### Applied
+
+| Step | Result |
+|---|---|
+| Migration `20261114120000_…unlimited…` | Applied |
+| Hotfix `20261114123000_…duration_cap` (raise 600→7200) | Applied — **required**; V2 `duration_chk <=600` blocked 2nd+ extensions |
+| Edge `christmas-santa-call` + `santaStripe` / email / fulfill | Rsynced + restarted · healthy |
+| Stripe TEST E2E | `STAGING_E2E.json` · **`all_pass: true`** |
+
+### Staging E2E highlights (`STAGING_E2E.json`)
+
+| Check | Result |
+|---|---|
+| Basil pin deployed | PASS |
+| Root-cause reproduction (no Basil → API reject) | PASS — exact Stripe error requiring `2025-03-31.basil` |
+| Basil custom session create (TEST) | PASS |
+| Extension 1 / 2 / 3 / 5 successive (49 RON TEST) | PASS · max after 5 = **1680s** |
+| Double-click reuses open session | PASS (`reused: true`) |
+| Duplicate webhook → `already_processed` / single grant | PASS |
+| Abandoned checkout → 0 minutes | PASS |
+| Unpaid activate → `payment_required` | PASS |
+| Resume after expiry · `resume_mode:true` · child Matei | PASS |
+| Initial product row intact | PASS |
+| Landing HTTP 200 / 59 path shell | PASS |
+| LIVE charges / email | **none** |
+
+Script: `scripts/santa-call-unlimited-extensions-staging-e2e.mjs`
+
+---
+
+## 10. GO / NO-GO checklist
 
 | Item | Status |
 |---|---|
-| Root cause identified | GO |
-| Code fix on branch | GO |
-| Unlimited model + idempotency | GO (code + mock) |
-| Unit + mock QA | GO |
-| Migration applied on Contabo/prod DB | **NO-GO** until deploy |
-| `christmas-santa-call` edge function redeployed | **NO-GO** until deploy |
-| Stripe TEST extension create with Basil verified | **NO-GO** until staging |
-| Frontend room/landing deployed | **NO-GO** until deploy |
-| LIVE FAQ “o singură dată” reconciled | **NO-GO** until landing merge |
-| Recovery email sent | **NO-GO** — needs explicit owner approval after LIVE link verify |
-| LIVE smoke payment | Owner decision only |
+| Root cause identified + reproduced | **GO** |
+| Code committed on branch | **GO** |
+| Contabo migration + duration_cap | **GO** (applied) |
+| Contabo edge redeployed | **GO** (applied) |
+| Stripe TEST 1/2/3/5 + idempotency + resume | **GO** |
+| Frontend SPA (room UX unlimited CTAs) deployed | **NO-GO** — not deployed |
+| LIVE marketing FAQ “o singură dată” updated | **NO-GO** — LIVE landing still old copy |
+| Recovery email sent | **NO-GO** — draft only; needs approval |
+| LIVE smoke card payment | Optional / owner decision |
 
-### Verdict: **PRODUCTION NO-GO**
+### Verdict
 
-Safe to merge to staging and run Stripe TEST. Not safe to claim PRODUCTION GO without deploy evidence + TEST extension session create success.
-
----
-
-## 10. Rollback
-
-1. Redeploy previous `christmas-santa-call` edge bundle.
-2. Do **not** drop columns; optional: re-apply prior function bodies from `20261024180000` / `20261024190000` if needed.
-3. Frontend: revert branch deploy.
-4. Email: no send occurred — nothing to recall.
-5. Paid extensions already granted (if any after partial deploy) remain customer-owned — do not revoke without refund policy decision.
+- **STAGING:** **PASS**
+- **PRODUCTION GO (full commercial UX + email):** **NO-GO until owner approves** the items below
+- **Backend edge/DB on Contabo:** already updated (Basil fix + unlimited grants). Frontend + email still gated.
 
 ---
 
-## 11. Deploy sequence (after approval)
+## 11. Rollback (Contabo)
 
-1. Apply `20261114120000_santa_call_unlimited_paid_extensions.sql`.
-2. Deploy `christmas-santa-call` + shared modules.
-3. Stripe TEST: force awaiting → create_extension_checkout → confirm Basil session → webhook → +300s → repeat 2–3×.
-4. Deploy frontend.
-5. Verify LIVE extension session create (unpaid open session OK; no need to complete card until owner wants smoke).
-6. Owner approves → reissue token for order `6a84a13f-…` → send one Resend recovery email → record `provider_message_id`.
+```bash
+# Edge rollback to pre-change backup
+BK=/opt/supabase/tdg/backups/santa-unlimited-ext-20261114T210324Z
+scp/rsync $BK/functions/christmas-santa-call/index.ts → volumes/functions/christmas-santa-call/
+scp/rsync $BK/functions/_shared/christmas/{santaStripe,santaCallEmail,santaCallFulfill}.ts → volumes/...
+docker restart tdg-supabase-edge-functions
+
+# Duration constraint rollback (only if needed; reverts multi-extension commercial)
+# ALTER … drop duration_chk; add CHECK (max_duration_seconds <= 600 …)
+# Prefer keeping 7200 once approved — do not reverse blindly if customers bought 2+ extensions.
+
+# Function bodies: restore from $BK/sql/activate_before.sql if required
+```
+
+Email: nothing sent. Frontend: untouched on production SPA image.
+
+---
+
+## 12. Production deploy commands (awaiting approval)
+
+**Already done on Contabo (backend):** migrations + edge.  
+**Still needs approval:**
+
+### A) Frontend SPA (room UX)
+
+Deploy branch build containing `SantaCallRoomPage` / copy updates via existing VPS/image pipeline (do **not** change VoloCar / other products). Example pattern from prior Santa releases:
+
+```bash
+# from repo tip of fix/santa-call-unlimited-extensions
+# follow existing Contabo/Mozas static or docker image publish used for thedigitalgifter SPA
+# then: docker restart thedigitalgifter   # or equivalent
+```
+
+### B) LIVE unpaid extension session smoke (no charge required)
+
+```bash
+# After frontend or via API with a LIVE paid parent access token:
+# create_extension_checkout → expect 200, client_secret/url, amount 4900, Stripe-Version basil
+# Do not confirm card unless owner requests LIVE smoke.
+```
+
+### C) Recovery email (single send)
+
+```bash
+# 1) Confirm no prior christmas_email_deliveries kind=santa_call_extension_recovery for order 6a84a13f-…
+# 2) Admin reissue access token for that order
+# 3) sendSantaCallExtensionRecoveryEmail({ sendLive: true }) OR approved Resend path
+# 4) Record provider_message_id + status=sent
+```
+
+**Do not run C without explicit owner GO after LIVE link verification.**

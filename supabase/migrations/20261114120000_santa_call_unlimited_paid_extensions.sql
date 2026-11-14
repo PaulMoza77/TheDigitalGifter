@@ -2,6 +2,18 @@
 -- Keeps infrastructure safety (max total duration) and per-order webhook idempotency.
 -- Does NOT grant free minutes. Does NOT change initial 59 RON / 180s pricing.
 
+-- Raise V2 one-extension duration ceiling (600s = 180+300) so cumulative paid extensions work.
+alter table public.christmas_santa_call_entitlements
+  drop constraint if exists christmas_santa_call_entitlements_duration_chk;
+alter table public.christmas_santa_call_entitlements
+  add constraint christmas_santa_call_entitlements_duration_chk
+  check (
+    max_duration_seconds > 0
+    and max_duration_seconds <= 7200
+    and remaining_seconds >= 0
+    and remaining_seconds <= max_duration_seconds
+  );
+
 -- Allow multiple extension rows per entitlement; idempotency remains on order_id UNIQUE.
 alter table public.christmas_santa_call_extensions
   drop constraint if exists christmas_santa_call_extensions_entitlement_id_key;
