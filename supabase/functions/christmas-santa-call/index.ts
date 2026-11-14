@@ -832,14 +832,11 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (entErr || !ent) return json({ ok: false, code: "invalid_token" }, 404);
 
-      const { data: extRows } = await service
+      // Unlimited commercial: prior paid extensions do not block forcing awaiting for QA.
+      const { count: priorExtCount } = await service
         .from("christmas_santa_call_extensions")
-        .select("id")
-        .eq("entitlement_id", ent.id)
-        .limit(1);
-      if (extRows && extRows.length > 0) {
-        return json({ ok: false, code: "extension_already_purchased" }, 403);
-      }
+        .select("id", { count: "exact", head: true })
+        .eq("entitlement_id", ent.id);
 
       // Close any active session as duration_limit so UI matches a real timer end.
       await service
@@ -881,6 +878,7 @@ Deno.serve(async (req) => {
         forced: true,
         previous_status: ent.status,
         previous_remaining: ent.remaining_seconds,
+        prior_extension_count: Number(priorExtCount || 0),
         resume_saved: Boolean(saved),
         resolve: resolved,
       });
