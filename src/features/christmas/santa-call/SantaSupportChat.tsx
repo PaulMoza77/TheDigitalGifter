@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  SANTA_SUPPORT_OPEN_EVENT,
+  openSantaSupport,
+} from "./santaSupportOpen";
 import "./santaSupport.css";
-const EVENT = "tdg-santa-support-open";
+
+export { openSantaSupport };
 const KEY = "tdg.santa.support.v1";
-export function openSantaSupport() {
-  window.dispatchEvent(new Event(EVENT));
-}
 type Access = { reference: string; guestToken: string };
 type Thread = {
   status: string;
@@ -46,8 +48,8 @@ export function SantaSupportChat({
   }
   useEffect(() => {
     const show = () => setOpen(true);
-    window.addEventListener(EVENT, show);
-    return () => window.removeEventListener(EVENT, show);
+    window.addEventListener(SANTA_SUPPORT_OPEN_EVENT, show);
+    return () => window.removeEventListener(SANTA_SUPPORT_OPEN_EVENT, show);
   }, []);
   useEffect(() => {
     if (!open) return;

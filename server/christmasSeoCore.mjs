@@ -388,9 +388,9 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/christmas", label: "Christmas" },
       { href: "/christmas/santa-call", label: "Santa Call" },
     ],
-    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
-    // Commercial funnel not public yet — keep noindex until launch approval.
-    noindex: true,
+    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.webp`,
+    // Live commercial funnel — indexable for Meta Ads + organic discovery.
+    noindex: false,
   },
   {
     path: "/christmas/tree",

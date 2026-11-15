@@ -1,0 +1,78 @@
+{
+  "measuredAgainst": "local-preview",
+  "baselineHost": "https://www.thedigitalgifter.com",
+  "afterHost": "http://127.0.0.1:4173",
+  "note": "Baseline = production CDN (3 runs). After = local vite preview of this PR (3 runs). Local Perf/LCP absolute values are hurt by missing CDN + placeholder Supabase (console errors). SEO/a11y/CLS and resource composition are the comparable signals pre-deploy.",
+  "runs": [
+    {
+      "n": 1,
+      "fetchTime": "2026-11-15T10:56:30.099Z",
+      "perf": 77,
+      "a11y": 97,
+      "bp": 96,
+      "seo": 100,
+      "fcp": 2763,
+      "lcp": 5104,
+      "si": 2763,
+      "tbt": 26,
+      "cls": 0,
+      "pageHead": false,
+      "gracePoster": false,
+      "lcpNode": "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde."
+    },
+    {
+      "n": 2,
+      "fetchTime": "2026-11-15T10:56:41.296Z",
+      "perf": 77,
+      "a11y": 97,
+      "bp": 96,
+      "seo": 100,
+      "fcp": 2763,
+      "lcp": 5107,
+      "si": 2763,
+      "tbt": 20,
+      "cls": 0,
+      "pageHead": false,
+      "gracePoster": false,
+      "lcpNode": "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde."
+    },
+    {
+      "n": 3,
+      "fetchTime": "2026-11-15T10:56:52.526Z",
+      "perf": 77,
+      "a11y": 97,
+      "bp": 96,
+      "seo": 100,
+      "fcp": 2758,
+      "lcp": 5094,
+      "si": 2758,
+      "tbt": 21,
+      "cls": 0,
+      "pageHead": false,
+      "gracePoster": false,
+      "lcpNode": "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde."
+    }
+  ],
+  "median": {
+    "perf": 77,
+    "a11y": 97,
+    "bp": 96,
+    "seo": 100,
+    "fcp": 2763,
+    "lcp": 5104,
+    "si": 2763,
+    "tbt": 21,
+    "cls": 0
+  },
+  "baselineMedian": {
+    "perf": 82,
+    "a11y": 97,
+    "bp": 100,
+    "seo": 66,
+    "fcp": 1153.528,
+    "lcp": 4752.5470000000005,
+    "si": 2425.7346937640978,
+    "tbt": 65,
+    "cls": 0.0028986309424718195
+  }
+}
