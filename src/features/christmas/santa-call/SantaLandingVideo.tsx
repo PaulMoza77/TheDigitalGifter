@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { NORTH_POLE_POSTER, NORTH_POLE_VIDEO_PREVIEW } from "./NorthPoleScene";
-export function SantaLandingVideo({
-  alt,
-}: {
-  alt: string;
-}) {
-  const ref = useRef<HTMLVideoElement>(null);
-  const [enabled, setEnabled] = useState(false),
-    [failed, setFailed] = useState(false);
+import {
+  NORTH_POLE_POSTER,
+  NORTH_POLE_POSTER_WEBP,
+  NORTH_POLE_POSTER_MOBILE_WEBP,
+  NORTH_POLE_VIDEO_PREVIEW,
+} from "./NorthPoleScene";
+
+export function SantaLandingVideo({ alt }: { alt: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [near, setNear] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [failed, setFailed] = useState(false);
+
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const connection = (
@@ -18,14 +23,32 @@ export function SantaLandingVideo({
     reduced.addEventListener?.("change", change);
     return () => reduced.removeEventListener?.("change", change);
   }, []);
+
   useEffect(() => {
-    const video = ref.current;
-    if (!video || !enabled) return;
+    const host = hostRef.current;
+    if (!host) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "120px 0px" },
+    );
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !enabled || !near) return;
     const observer = new IntersectionObserver((entries) => {
-      if (
-        entries[0].isIntersecting &&
-        !document.hidden
-      )
+      if (entries[0]?.isIntersecting && !document.hidden)
         void video.play().catch(() => {});
       else video.pause();
     });
@@ -38,21 +61,30 @@ export function SantaLandingVideo({
       observer.disconnect();
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [enabled]);
+  }, [enabled, near]);
+
   return (
-    <>
-      <img
-        src={NORTH_POLE_POSTER}
-        alt={alt}
-        width="1080"
-        height="1920"
-        fetchPriority="high"
-      />
-      {enabled && !failed && (
+    <div ref={hostRef} className="sc-landing-video">
+      <picture>
+        <source
+          type="image/webp"
+          srcSet={`${NORTH_POLE_POSTER_MOBILE_WEBP} 750w, ${NORTH_POLE_POSTER_WEBP} 1080w`}
+          sizes="(max-width: 760px) 90vw, 420px"
+        />
+        <img
+          src={NORTH_POLE_POSTER}
+          alt={alt}
+          width={1080}
+          height={1920}
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+      {near && enabled && !failed && (
         <video
-          ref={ref}
+          ref={videoRef}
           src={NORTH_POLE_VIDEO_PREVIEW}
-          poster={NORTH_POLE_POSTER}
+          poster={NORTH_POLE_POSTER_MOBILE_WEBP}
           muted
           playsInline
           loop
@@ -63,6 +95,6 @@ export function SantaLandingVideo({
           }}
         />
       )}
-    </>
+    </div>
   );
 }

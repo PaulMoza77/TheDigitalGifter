@@ -48,7 +48,7 @@
 .sc-page .sc-dialogue { display: grid; gap: 14px; }
 .sc-page .sc-bubble { background: #e8edde; padding: 16px 20px; border-radius: 16px 16px 16px 0; margin-right: 24px; }
 .sc-page .sc-bubble-child { background: #f1e7d8; margin-left: 44px; margin-right: 0; border-radius: 16px 16px 0 16px; }
-.sc-page .sc-bubble span { font-size: 12px; font-weight: 700; color: #65705b; }
+.sc-page .sc-bubble span { font-size: 12px; font-weight: 700; color: #4d5648; }
 .sc-page .sc-bubble p { margin: 5px 0 0; font-size: 15px; }
 .sc-page .sc-faq { max-width: 800px; margin: auto; }
 .sc-page .sc-faq details { border-bottom: 1px solid #dcded2; }
@@ -84,15 +84,20 @@
 .sc-gated { padding: 24px; }
 .sc-gated-main { max-width: 600px; margin: 15vh auto; }
 @media (max-width: 760px) {
-  .sc-page .sc-header { padding: 16px; gap: 8px; }
+  .sc-page .sc-header { padding: 12px 16px; gap: 8px; }
   .sc-page .sc-brand { font-size: 14px; }
   .sc-page .sc-controls { gap: 4px; }
-  .sc-page .sc-main { padding: 0 20px; }
-  .sc-page .sc-hero { grid-template-columns: 1fr; gap: 28px; padding: 30px 0; }
-  .sc-page h1 { font-size: clamp(38px, 10vw, 48px); }
-  .sc-page .sc-sub { font-size: 16px; }
-  .sc-page .sc-benefits { font-size: 14px; }
-  .sc-page .sc-hero-copy > .sc-cta { width: 100%; }
+  .sc-page .sc-main { padding: 0 16px; overflow-x: clip; }
+  .sc-page .sc-hero { grid-template-columns: 1fr; gap: 20px; padding: 18px 0 24px; }
+  .sc-page .sc-kicker { margin: 0 0 10px; }
+  .sc-page h1 { font-size: clamp(34px, 9vw, 44px); margin: 0 0 12px; }
+  .sc-page .sc-sub { font-size: 15px; line-height: 1.45; margin: 0; }
+  .sc-page .sc-benefits { font-size: 13px; gap: 6px; margin: 12px 0 8px; }
+  .sc-page .sc-price { font-size: 26px; margin: 14px 0 0; letter-spacing: -0.02em; }
+  .sc-page .sc-trust { margin: 2px 0 12px; }
+  .sc-page .sc-hero-copy > .sc-cta { width: 100%; min-height: 52px; }
+  .sc-page .sc-demo-link { margin: 12px 0; }
+  .sc-page .sc-ai { margin: 0; }
   .sc-page .sc-portrait { border-radius: 24px; max-width: 420px; width: 100%; justify-self: center; }
   .sc-page .sc-portrait img { object-position: center; }
   .sc-page .sc-steps, .sc-page .sc-conversation, .sc-page .sc-personalize { grid-template-columns: 1fr; gap: 28px; }
@@ -107,9 +112,37 @@
   .sc-page .sc-sticky > span { font-size: 13px; font-weight: 700; }
   .sc-page .sc-sticky .sc-cta { min-height: 46px; font-size: 14px; padding: 10px 16px; }
   .sc-page .sc-footer { padding-bottom: calc(110px + var(--tdg-cookie-offset, 0px)); }
+  /* Keep conversion controls ahead of the heavy media card on small screens. */
+  .sc-page .sc-hero-copy { order: 0; }
+  .sc-page .sc-portrait { order: 1; }
 }
 
 .sc-page .sc-portrait video { position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center; }
 
 .sc-page .sc-portrait-media { position: relative; aspect-ratio: 9/16; }
-.sc-page .sc-portrait-media img { display:block; }
+.sc-page .sc-portrait-media img { display:block; width:100%; height:100%; object-fit:contain; }
+.sc-page .sc-grace-demo,
+.sc-page .sc-landing-video { position:absolute; inset:0; }
+.sc-page .sc-grace-demo picture,
+.sc-page .sc-landing-video picture,
+.sc-page .sc-grace-demo img,
+.sc-page .sc-landing-video img,
+.sc-page .sc-grace-demo video,
+.sc-page .sc-landing-video video { width:100%; height:100%; object-fit:contain; object-position:center; }
+.sc-page .sc-grace-demo video { position:absolute; inset:0; }
+.sc-page .sc-grace-demo-start { display:block; width:100%; height:100%; padding:0; border:0; background:#1d2b23; cursor:pointer; position:relative; }
+.sc-page .sc-grace-placeholder {
+  display:block; width:100%; height:100%;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(235,213,166,.18), transparent 42%),
+    linear-gradient(180deg, #24352c 0%, #15251e 100%);
+}
+.sc-page .sc-grace-play {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:999px; display:grid; place-items:center;
+  background:rgba(158,48,43,.92); color:#fff; font-size:22px; box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+@media (max-width: 760px) {
+  /* Keep the first screen on copy + price + CTA; media starts after the fold. */
+  .sc-page .sc-hero-copy { padding-bottom: 8px; min-height: calc(100svh - 168px); }
+}

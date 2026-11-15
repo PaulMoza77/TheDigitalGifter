@@ -179,6 +179,7 @@ export const CHRISTMAS_I18N_ROUTE_BASES = [
   "/christmas/dogs",
   "/christmas/cats",
   "/christmas/santa-video",
+  "/christmas/santa-call",
   "/christmas/tree",
   "/christmas/advent",
   "/christmas/cards",

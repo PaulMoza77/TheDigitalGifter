@@ -7,12 +7,12 @@
 
     <!-- Analytics: default denied until cookie consent. Defer even after accept on /christmas. -->
     <script>
-      window.__TDG_DEFER_ANALYTICS__ = (function () {
-        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
-        return path === "/christmas";
-      })();
       window.__TDG_CONSENT_KEY__ = "tdg.cookie-consent.v1";
       window.__TDG_SANTA_LANDING__ = /^\/(?:ro\/)?christmas\/santa-call\/?$/.test(location.pathname);
+      window.__TDG_DEFER_ANALYTICS__ = (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        return path === "/christmas" || window.__TDG_SANTA_LANDING__;
+      })();
       window.__TDG_PRIVATE_ANALYTICS__ = /^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname);
     </script>
 
@@ -200,6 +200,93 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
+    <!-- /christmas/santa-call: paint hero H1 before SPA JS so LCP is not blocked by the bundle -->
+    <script>
+      (function () {
+        if (!window.__TDG_SANTA_LANDING__) return;
+        window.__TDG_SANTA_BOOT__ = true;
+        var params = new URLSearchParams(location.search || "");
+        var lang = String(params.get("lang") || "").toLowerCase();
+        if (!lang) {
+          try {
+            lang = String(navigator.language || "ro").toLowerCase();
+          } catch (e) {
+            lang = "ro";
+          }
+        }
+        var ro = lang.indexOf("en") !== 0;
+        var market = params.get("market") === "us" ? "us" : "ro";
+        var copy = ro
+          ? {
+              kicker: "APEL CU MOȘ CRĂCIUN · ÎN ROMÂNĂ",
+              title: "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde.",
+              subtitle:
+                "O conversație de 3 minute cu un Moș Crăciun virtual, creat cu AI.",
+              price: market === "us" ? "$9.99 / 3 minute" : "59 lei / 3 minute",
+              cta: "Personalizează apelul",
+            }
+          : {
+              kicker: "A CALL WITH SANTA · MADE PERSONAL",
+              title: "He knows their name. Hears their wishes. Answers back.",
+              subtitle:
+                "A 3-minute conversation with an AI Santa in your browser.",
+              price: market === "us" ? "$9.99 / 3 minutes" : "59 lei / 3 minutes",
+              cta: "Personalize the call",
+            };
+
+        var fontHref =
+          "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Source+Sans+3:wght@400;600;700&display=swap";
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+        }
+        add("preload", { as: "style", href: fontHref, "data-sc-fonts-preload": "1" });
+        add("stylesheet", { href: fontHref, id: "tdg-santa-call-fonts" });
+
+        var bootCss = document.createElement("style");
+        bootCss.id = "sc-boot-css";
+        bootCss.textContent =
+          "html,body{margin:0;background:#fcf8f0;color:#263c32}" +
+          "#sc-boot{font-family:'Source Sans 3',system-ui,sans-serif;max-width:1160px;margin:0 auto;padding:16px}" +
+          "#sc-boot .sc-boot-kicker{font-size:11px;font-weight:700;letter-spacing:.16em;color:#82633a;margin:18px 0 10px}" +
+          "#sc-boot h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:clamp(34px,9vw,48px);line-height:1.05;letter-spacing:-.025em;margin:0 0 12px}" +
+          "#sc-boot .sc-boot-sub{font-size:15px;line-height:1.45;color:#5b675e;margin:0 0 12px;max-width:32rem}" +
+          "#sc-boot .sc-boot-price{font-weight:700;font-size:26px;margin:0 0 12px}" +
+          "#sc-boot .sc-boot-cta{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:14px 24px;border-radius:12px;background:#9e302b;color:#fff;font-weight:700;font-size:16px;width:100%;max-width:420px;box-sizing:border-box}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("sc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "sc-boot";
+          boot.setAttribute("data-sc-boot", "1");
+          boot.innerHTML =
+            '<p class="sc-boot-kicker">' +
+            copy.kicker +
+            "</p>" +
+            '<h1 id="santa-title">' +
+            copy.title +
+            "</h1>" +
+            '<p class="sc-boot-sub">' +
+            copy.subtitle +
+            "</p>" +
+            '<p class="sc-boot-price">' +
+            copy.price +
+            "</p>" +
+            '<div class="sc-boot-cta" aria-hidden="true">' +
+            copy.cta +
+            "</div>";
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
+
     <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
     <script>
       (function () {
@@ -278,18 +365,26 @@
       })();
     </script>
 
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
+    <!-- Inter is skipped on Santa Call so Cormorant/Source Sans win the critical path. -->
+    <script>
+      (function () {
+        if (window.__TDG_SANTA_LANDING__) return;
+        var href =
+          "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap";
+        var link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "style";
+        link.href = href;
+        link.onload = function () {
+          this.onload = null;
+          this.rel = "stylesheet";
+        };
+        document.head.appendChild(link);
+        var noscript = document.createElement("noscript");
+        noscript.innerHTML = '<link href="' + href + '" rel="stylesheet" />';
+        document.head.appendChild(noscript);
+      })();
+    </script>
 
     <script type="application/ld+json">
       {

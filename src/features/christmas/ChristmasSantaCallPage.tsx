@@ -2,15 +2,22 @@ import { resolveSantaCheckout } from "./santa-call/santaCheckoutDestination";
 import { Logo } from "@/components/ui/logo";
 import { GraceLandingDemo } from "./santa-call/GraceLandingDemo";
 import { SantaLandingVideo } from "./santa-call/SantaLandingVideo";
-import {
-  SantaSupportChat,
-  openSantaSupport,
-} from "./santa-call/SantaSupportChat";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { openSantaSupport } from "./santa-call/santaSupportOpen";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CustomStripeCheckout } from "@/features/pet/components/CustomStripeCheckout";
 import { PageHead } from "@/components/PageHead";
-import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
+
+const CustomStripeCheckout = lazy(() =>
+  import("@/features/pet/components/CustomStripeCheckout").then((mod) => ({
+    default: mod.CustomStripeCheckout,
+  })),
+);
+const SantaSupportChat = lazy(() =>
+  import("./santa-call/SantaSupportChat").then((mod) => ({
+    default: mod.SantaSupportChat,
+  })),
+);
+const SantaCallGatedHead = lazy(() => import("./santa-call/SantaCallGatedHead"));
 import {
   attributionParamsForInternal,
   captureFunnelAttribution,
@@ -67,15 +74,30 @@ import {
   type SantaCallPersonalization,
 } from "@/features/christmas/santa-call/santaCallTypes";
 
+const SANTA_FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Source+Sans+3:wght@400;600;700&display=swap";
+
 function ensureFonts() {
   const id = "tdg-santa-call-fonts";
   if (document.getElementById(id)) return;
+  if (!document.querySelector('link[data-sc-fonts-preload="1"]')) {
+    const preload = document.createElement("link");
+    preload.rel = "preload";
+    preload.as = "style";
+    preload.href = SANTA_FONT_HREF;
+    preload.dataset.scFontsPreload = "1";
+    document.head.appendChild(preload);
+  }
   const link = document.createElement("link");
   link.id = id;
   link.rel = "stylesheet";
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
+  link.href = SANTA_FONT_HREF;
   document.head.appendChild(link);
+}
+
+function clearSantaBootShell() {
+  document.getElementById("sc-boot")?.remove();
+  document.getElementById("sc-boot-css")?.remove();
 }
 
 function prefersReducedMotion(): boolean {
@@ -162,6 +184,20 @@ export default function ChristmasSantaCallPage() {
 
   useEffect(() => {
     ensureFonts();
+    // Keep the HTML boot H1 painted until the React hero is ready, then hide
+    // (do not remove immediately — avoids a blank gap). Drop the node on idle.
+    const boot = document.getElementById("sc-boot");
+    if (boot) {
+      boot.setAttribute("aria-hidden", "true");
+      boot.style.pointerEvents = "none";
+      boot.style.opacity = "0";
+      const drop = () => clearSantaBootShell();
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(drop, { timeout: 2500 });
+      } else {
+        window.setTimeout(drop, 1200);
+      }
+    }
     captureFunnelAttribution(window.location.search);
     const trackView = () => {
       if (qaCheckout || !previewOk || params.get("checkout") === "success")
@@ -571,7 +607,9 @@ export default function ChristmasSantaCallPage() {
   if (!previewOk) {
     return (
       <>
-        <ChristmasPageHead path={SANTA_CALL_ROUTE} noindex />
+        <Suspense fallback={null}>
+          <SantaCallGatedHead />
+        </Suspense>
         <div className="sc-page sc-gated" lang={lang}>
           <header className="sc-header">
             <Logo variant="light" />
@@ -597,10 +635,12 @@ export default function ChristmasSantaCallPage() {
         url={`${site}${SANTA_CALL_ROUTE}`}
         image={`${site}${NORTH_POLE_POSTER}`}
         exactTitle
-        noindex
+        noindex={!isSantaCallLandingPublic()}
       />
       <div className="sc-page" lang={lang}>
-        <SantaSupportChat language={lang} />
+        <Suspense fallback={null}>
+          <SantaSupportChat language={lang} />
+        </Suspense>
         <header className="sc-header">
           <Logo variant="light" />
           <div className="sc-controls">
@@ -908,54 +948,60 @@ export default function ChristmasSantaCallPage() {
                     ) : (
                       <div className="sc-stripe">
                         {checkout.clientSecret && checkout.publishableKey ? (
-                          <CustomStripeCheckout
-                            clientSecret={checkout.clientSecret}
-                            publishableKey={checkout.publishableKey}
-                            language={lang}
-                            dueDisplay={formatSantaCallMoney(
-                              checkout.amountCents,
-                              checkout.currency,
-                            )}
-                            email={form.email}
-                            walletCapabilityOnly
-                            loadingLabel={landing.paymentLoading}
-                            busyLabel={landing.paying}
-                            payButtonLabel={(amount) =>
-                              `${landing.pay} ${amount}`
+                          <Suspense
+                            fallback={
+                              <p className="sc-small">{landing.paymentLoading}</p>
                             }
-                            onReady={() => {
-                              trackSantaFunnel(
-                                "payment_sheet_opened",
-                                `payment_sheet.${checkout.orderId}`,
-                                {
-                                  orderId: checkout.orderId,
-                                  amountCents: checkout.amountCents,
-                                },
-                              );
-                              if (!qaCheckout)
-                                trackSantaCallAnalytics(
-                                  "santa_checkout_loaded",
-                                  { market },
-                                  `loaded.${checkout.orderId}`,
+                          >
+                            <CustomStripeCheckout
+                              clientSecret={checkout.clientSecret}
+                              publishableKey={checkout.publishableKey}
+                              language={lang}
+                              dueDisplay={formatSantaCallMoney(
+                                checkout.amountCents,
+                                checkout.currency,
+                              )}
+                              email={form.email}
+                              walletCapabilityOnly
+                              loadingLabel={landing.paymentLoading}
+                              busyLabel={landing.paying}
+                              payButtonLabel={(amount) =>
+                                `${landing.pay} ${amount}`
+                              }
+                              onReady={() => {
+                                trackSantaFunnel(
+                                  "payment_sheet_opened",
+                                  `payment_sheet.${checkout.orderId}`,
+                                  {
+                                    orderId: checkout.orderId,
+                                    amountCents: checkout.amountCents,
+                                  },
                                 );
-                            }}
-                            onPaymentInteraction={() => {
-                              if (!qaCheckout)
-                                trackSantaCallAnalytics(
-                                  "santa_payment_interaction",
-                                  { market },
-                                  `interaction.${checkout.orderId}`,
-                                );
-                            }}
-                            onInitError={() => {
-                              if (!qaCheckout)
-                                trackSantaCallAnalytics(
-                                  "santa_payment_load_error",
-                                  { market },
-                                );
-                              void recoverHostedCheckout();
-                            }}
-                          />
+                                if (!qaCheckout)
+                                  trackSantaCallAnalytics(
+                                    "santa_checkout_loaded",
+                                    { market },
+                                    `loaded.${checkout.orderId}`,
+                                  );
+                              }}
+                              onPaymentInteraction={() => {
+                                if (!qaCheckout)
+                                  trackSantaCallAnalytics(
+                                    "santa_payment_interaction",
+                                    { market },
+                                    `interaction.${checkout.orderId}`,
+                                  );
+                              }}
+                              onInitError={() => {
+                                if (!qaCheckout)
+                                  trackSantaCallAnalytics(
+                                    "santa_payment_load_error",
+                                    { market },
+                                  );
+                                void recoverHostedCheckout();
+                              }}
+                            />
+                          </Suspense>
                         ) : checkout.checkoutUrl ? (
                           <a className="sc-cta" href={checkout.checkoutUrl}>
                             {copy.continueCheckout}

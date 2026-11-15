@@ -8,6 +8,11 @@ import { useEffect, useRef, useState } from "react";
 export const NORTH_POLE_STILL = "/assets/christmas/library-stills/santa_workshop_north_pole.jpg";
 /** HQ poster extracted from the 1080×1920 reel (not the soft 540p preview). */
 export const NORTH_POLE_POSTER = "/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg";
+/** Compressed WebP variants for landing/LCP-friendly stills. */
+export const NORTH_POLE_POSTER_WEBP =
+  "/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.webp";
+export const NORTH_POLE_POSTER_MOBILE_WEBP =
+  "/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_mobile.webp";
 /**
  * Mobile immersive loop: 1080×1920 H.264 ~4.1 Mbps from the authorized reel.
  * Native generation max is 1080×1920 (no 4K master). Do not use the 540p preview here —
