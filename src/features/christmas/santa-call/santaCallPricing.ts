@@ -135,3 +135,30 @@ export function assertSantaCallPriceMatch(input: {
   }
   return { ok: true };
 }
+
+/**
+ * Read Santa Call offer flags from raw `pricing_items` rows.
+ * Santa Call is intentionally outside the 3-key Christmas commercial catalog
+ * (`xmas_portrait` / `xmas_santa_video` / `xmas_magic_bundle`).
+ */
+export function readSantaCallOfferFromPricingRows(
+  rows: Array<Record<string, unknown>> | null | undefined,
+  commercialKey: string,
+): {
+  active: boolean;
+  webCheckoutEnabled: boolean;
+  webPriceMinor: number;
+} | null {
+  const row = (rows || []).find((item) => String(item?.key || "").trim() === commercialKey);
+  if (!row) return null;
+  const meta = (row.metadata || {}) as Record<string, unknown>;
+  const active =
+    row.active !== false && row.is_active !== false && meta.enabled !== false;
+  const webCheckoutEnabled = meta.web_checkout_enabled !== false;
+  const webPriceMinor = Number(meta.web_price_minor ?? row.price_cents ?? 0);
+  return {
+    active: Boolean(active),
+    webCheckoutEnabled: Boolean(webCheckoutEnabled),
+    webPriceMinor: Number.isFinite(webPriceMinor) ? webPriceMinor : 0,
+  };
+}

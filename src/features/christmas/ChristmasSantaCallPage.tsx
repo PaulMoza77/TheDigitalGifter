@@ -5,8 +5,8 @@ import { PageHead } from "@/components/PageHead";
 import { ChristmasPageHead } from "@/features/christmas/seo/ChristmasPageHead";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { fetchChristmasCommercialOffers, startChristmasCheckout } from "@/features/christmas/photoApi";
-import { catalogFromRows } from "@/features/christmas/commercialOffers";
 import { NorthPoleScene } from "@/features/christmas/santa-call/NorthPoleScene";
+import { readSantaCallOfferFromPricingRows } from "@/features/christmas/santa-call/santaCallPricing";
 import {
   trackSantaCallMetaInitiateCheckout,
   trackSantaCallMetaPurchase,
@@ -164,7 +164,10 @@ export default function ChristmasSantaCallPage() {
     void fetchChristmasCommercialOffers()
       .then((rows) => {
         if (cancelled) return;
-        const offer = catalogFromRows(rows as any).find((item) => item.key === SANTA_CALL_COMMERCIAL_KEY);
+        const offer = readSantaCallOfferFromPricingRows(
+          rows as Array<Record<string, unknown>>,
+          SANTA_CALL_COMMERCIAL_KEY,
+        );
         const checkoutUi =
           String(import.meta.env.VITE_SANTA_CALL_ENABLE_CHECKOUT || "")
             .trim()

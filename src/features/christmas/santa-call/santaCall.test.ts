@@ -24,6 +24,7 @@ import {
   assertSantaCallPriceMatch,
   formatSantaCallMoney,
   pricesForSantaCallMarket,
+  readSantaCallOfferFromPricingRows,
   suggestSantaCallMarket,
 } from "./santaCallPricing";
 import { SANTA_CALL_COPY } from "./santaCallTypes";
@@ -45,6 +46,26 @@ describe("Santa Call RO/US presentment pricing", () => {
       initialMinor: 1299,
       extensionMinor: 999,
     });
+  });
+
+  it("reads Santa Call offer flags from raw pricing rows without the 3-key catalog", () => {
+    const offer = readSantaCallOfferFromPricingRows(
+      [
+        {
+          key: SANTA_CALL_COMMERCIAL_KEY,
+          active: true,
+          price_cents: 5900,
+          metadata: { web_price_minor: 5900, web_checkout_enabled: true },
+        },
+      ],
+      SANTA_CALL_COMMERCIAL_KEY,
+    );
+    expect(offer).toMatchObject({
+      active: true,
+      webCheckoutEnabled: true,
+      webPriceMinor: 5900,
+    });
+    expect(readSantaCallOfferFromPricingRows([], SANTA_CALL_COMMERCIAL_KEY)).toBeNull();
   });
 
   it("rejects mismatched client amounts", () => {

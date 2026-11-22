@@ -54,7 +54,8 @@ export function trackStoryEvent(event: StoryFunnelEvent, meta?: Meta): void {
   if (typeof window !== "undefined") {
     const w = window as Window & { dataLayer?: unknown[] };
     w.dataLayer = w.dataLayer || [];
-    w.dataLayer.push({ event: `story_${event}`, ...payload });
+    // Keep GTM `event` as the story_* name; do not let payload.event overwrite it.
+    w.dataLayer.push({ ...payload, event: `story_${event}` });
   }
   if (import.meta.env.DEV) {
     console.info("[christmas-story]", payload);
