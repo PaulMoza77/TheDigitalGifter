@@ -19,6 +19,7 @@ export default function GiftRecipientPage() {
   const [content, setContent] = useState<StoryGiftContent | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [order, setOrder] = useState<StoryOrder | null>(null);
+  const [resolvedToken, setResolvedToken] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!document.querySelector(`link[href="${FONT_HREF}"]`)) {
@@ -40,13 +41,18 @@ export default function GiftRecipientPage() {
     // Strip open-graph style previews if present from shell.
     document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]').forEach((n) => n.remove());
 
+    setResolvedToken(token);
+    setOrder(null);
+    setIsDemo(false);
+    setContent(null);
     if (!token) return;
     if (token === DEMO_RECIPIENT_TOKEN) {
       setContent(DEMO_GIFT);
       setIsDemo(true);
       return;
     }
-    const found = getOrderByRecipientToken(token);
+    let found: StoryOrder | null = null;
+    try { found = getOrderByRecipientToken(token); } catch { /* Storage may be unavailable. */ }
     if (found?.content) {
       setOrder(found);
       setContent(found.content);
@@ -72,8 +78,9 @@ export default function GiftRecipientPage() {
 
   return (
     <div className="cs-root">
-      {content ? (
+      {resolvedToken !== token ? <main className="cs-gift" aria-busy="true"><p role="status">Preparing your gift…</p></main> : content ? (
         <RecipientExperience
+          key={token}
           content={content}
           isDemo={isDemo}
           onOpened={onOpened}
@@ -83,7 +90,7 @@ export default function GiftRecipientPage() {
           }}
         />
       ) : (
-        <div className="cs-gift">
+        <main className="cs-gift">
           <div className="cs-gift__stage">
             <h1>Gift unavailable</h1>
             <p>
@@ -94,7 +101,7 @@ export default function GiftRecipientPage() {
               Digital Gifter
             </Link>
           </div>
-        </div>
+        </main>
       )}
     </div>
   );

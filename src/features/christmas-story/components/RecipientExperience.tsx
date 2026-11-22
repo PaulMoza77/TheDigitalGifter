@@ -1,18 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StoryGiftContent } from "../types";
 import { ExampleAudioPlayer } from "./ExampleAudioPlayer";
-
-type Step =
-  | "welcome"
-  | "unwrap"
-  | "from"
-  | "dedication"
-  | "story"
-  | "song"
-  | "film"
-  | "surprise"
-  | "final"
-  | "keepsakes";
+import { MemoryFilm } from "./MemoryFilm";
 
 type Props = {
   content: StoryGiftContent;
@@ -23,227 +12,53 @@ type Props = {
   giftUrl?: string;
 };
 
-const STEPS: Step[] = [
-  "welcome",
-  "unwrap",
-  "from",
-  "dedication",
-  "story",
-  "song",
-  "film",
-  "surprise",
-  "final",
-  "keepsakes",
-];
-
-export function RecipientExperience({
-  content,
-  isDemo,
-  onOpened,
-  onDemoPlay,
-  onReaction,
-  giftUrl,
-}: Props) {
-  const [step, setStep] = useState<Step>("welcome");
-  const [filmIdx, setFilmIdx] = useState(0);
-  const [surpriseOpen, setSurpriseOpen] = useState(false);
-  const [reaction, setReaction] = useState("");
-  const [openedLogged, setOpenedLogged] = useState(false);
-  const reduceMotion = useMemo(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    [],
-  );
-
+export function RecipientExperience({ content, isDemo, onOpened, onDemoPlay }: Props) {
+  const [opened, setOpened] = useState(false);
+  const openedOnce = useRef(false);
+  const storyHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    if (step === "film") {
-      if (reduceMotion) return;
-      const id = window.setInterval(() => {
-        setFilmIdx((i) => (i + 1) % Math.max(1, content.film.frames.length));
-      }, 3200);
-      return () => window.clearInterval(id);
-    }
-  }, [step, content.film.frames.length, reduceMotion]);
+    if (opened) storyHeading.current?.focus();
+  }, [opened]);
 
-  function next() {
-    const i = STEPS.indexOf(step);
-    const n = STEPS[Math.min(i + 1, STEPS.length - 1)];
-    if (n === "from" && !openedLogged) {
-      setOpenedLogged(true);
-      onOpened?.();
-    }
-    setStep(n);
+  function openGift() {
+    if (openedOnce.current) return;
+    openedOnce.current = true;
+    setOpened(true);
+    onOpened?.();
   }
 
-  const frame = content.film.frames[filmIdx] ?? content.film.frames[0];
-
   return (
-    <div className="cs-gift">
-      <div className="cs-gift__stage">
-        {isDemo ? (
-          <p className="cs-preview-banner" role="note">
-            Sample experience · fictional demo data · not a real customer gift
-          </p>
-        ) : null}
-
-        {step === "welcome" ? (
-          <>
-            <p className="cs-kicker">A private Christmas gift</p>
-            <h1>{content.welcomeTitle}</h1>
-            <p>Something was made only for you. Take your time.</p>
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              Continue
-            </button>
-          </>
-        ) : null}
-
-        {step === "unwrap" ? (
-          <>
-            <button
-              type="button"
-              className="cs-envelope"
-              onClick={next}
-              aria-label="Tap to unwrap the gift"
-            >
-              <span>Tap to unwrap</span>
-            </button>
-            <p>No account needed. This page stays private.</p>
-          </>
-        ) : null}
-
-        {step === "from" ? (
-          <>
-            <p className="cs-kicker">From</p>
-            <h1>{content.fromName}</h1>
-            <p>They wanted you to feel this — not just read it.</p>
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              Read the dedication
-            </button>
-          </>
-        ) : null}
-
-        {step === "dedication" ? (
-          <>
-            <p className="cs-kicker">Dedication</p>
-            <h1 className="cs-display" style={{ fontSize: "1.85rem" }}>
-              {content.dedication}
-            </h1>
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              Continue the story
-            </button>
-          </>
-        ) : null}
-
-        {step === "story" ? (
-          <>
-            <p className="cs-kicker">Your story</p>
-            {content.storyParagraphs.map((p) => (
-              <p key={p.slice(0, 24)}>{p}</p>
-            ))}
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              Reveal the song
-            </button>
-          </>
-        ) : null}
-
-        {step === "song" ? (
-          <>
-            <p className="cs-kicker">The song</p>
-            <ExampleAudioPlayer song={content.song} onPlay={onDemoPlay} />
-            <button type="button" className="cs-btn cs-btn--ghost" onClick={next}>
-              Watch the memory film
-            </button>
-          </>
-        ) : null}
-
-        {step === "film" ? (
-          <>
-            <p className="cs-kicker">{content.film.title}</p>
-            <div className="cs-film" aria-live="polite">
-              {frame?.src ? (
-                <img className="cs-film__img" src={frame.src} alt="" />
-              ) : (
-                <p className="cs-film__frame">{frame?.caption}</p>
-              )}
-            </div>
-            {frame?.src && frame.caption ? <p>{frame.caption}</p> : null}
-            {content.film.isExample ? (
-              <p className="cs-preview-banner">Example memory sequence</p>
-            ) : null}
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              One more surprise
-            </button>
-          </>
-        ) : null}
-
-        {step === "surprise" ? (
-          <>
-            <p className="cs-kicker">A quiet surprise</p>
-            <button
-              type="button"
-              className={`cs-scratch ${surpriseOpen ? "is-open" : ""}`}
-              onClick={() => setSurpriseOpen(true)}
-            >
-              {surpriseOpen ? content.surpriseReveal : content.surpriseLabel}
-            </button>
-            <button
-              type="button"
-              className="cs-btn cs-btn--primary"
-              onClick={next}
-              disabled={!surpriseOpen}
-            >
-              Final message
-            </button>
-          </>
-        ) : null}
-
-        {step === "final" ? (
-          <>
-            <p className="cs-kicker">With love</p>
-            <h1 style={{ fontSize: "1.9rem" }}>{content.finalMessage}</h1>
-            <button type="button" className="cs-btn cs-btn--primary" onClick={next}>
-              Keepsakes
-            </button>
-          </>
-        ) : null}
-
-        {step === "keepsakes" ? (
-          <>
-            <p className="cs-kicker">Keepsakes</p>
-            <p>
-              In a completed gift you can download the song, film, and printable card. This{" "}
-              {isDemo ? "demo" : "preview"} shows the ritual end-to-end.
-            </p>
-            {giftUrl ? (
-              <p style={{ fontSize: "0.85rem", wordBreak: "break-all" }}>{giftUrl}</p>
-            ) : null}
-            <label className="cs-field" style={{ textAlign: "left" }}>
-              <span>Optional reaction</span>
-              <textarea
-                value={reaction}
-                onChange={(e) => setReaction(e.target.value)}
-                placeholder="A few words for the person who sent this…"
-                maxLength={280}
-              />
-            </label>
-            <button
-              type="button"
-              className="cs-btn cs-btn--ghost"
-              onClick={() => onReaction?.(reaction.trim())}
-              disabled={!reaction.trim()}
-            >
-              Send reaction
-            </button>
-            <p style={{ fontSize: "0.85rem", opacity: 0.75, marginTop: "1rem" }}>
-              Loved this?{" "}
-              <a href="/christmas-story" style={{ color: "var(--cs-gold-bright)" }}>
-                Create a gift for someone special
-              </a>
-            </p>
-          </>
-        ) : null}
-      </div>
-    </div>
+    <main className={`cs-gift ${opened ? "cs-gift--opened" : ""}`}>
+      {isDemo ? <p className="cs-preview-banner cs-gift__sample" role="note">Fictional sample gift · Media previews only</p> : null}
+      {!opened ? (
+        <div className="cs-gift__welcome">
+          <p className="cs-kicker">A Christmas gift, just for you</p>
+          <h1>{content.welcomeTitle}</h1>
+          <p className="cs-gift__intro">Some things are too special for an ordinary message.</p>
+          <button type="button" className="cs-envelope" onClick={openGift} aria-label="Open your gift">
+            <span className="cs-envelope__fold" aria-hidden="true" />
+            <span className="cs-seal" aria-hidden="true">{content.fromName.slice(0, 1)}</span>
+            <span className="cs-envelope__label">Open your gift <span aria-hidden="true">↗</span></span>
+          </button>
+          <p className="cs-gift__signature">With love, <span>{content.fromName}</span></p>
+          <p className="cs-microcopy">Take your time. Nothing plays until you choose.</p>
+        </div>
+      ) : (
+        <article className="cs-gift__story">
+          <header className="cs-gift__chapter cs-dedication">
+            <p className="cs-kicker">From {content.fromName}, with love</p>
+            <h1 ref={storyHeading} tabIndex={-1}>{content.welcomeTitle}</h1>
+            <blockquote>{content.dedication}</blockquote>
+            <span className="cs-ornament" aria-hidden="true">✧</span>
+            <nav className="cs-chapter-nav" aria-label="Your gift"><a href="#gift-memories">Memories</a><a href="#gift-song">Song</a><a href="#gift-film">Film</a><a href="#gift-surprise">Surprise</a></nav>
+          </header>
+          <section className="cs-gift__chapter" id="gift-memories" aria-labelledby="gift-memories-title"><p className="cs-kicker">The moments that matter</p><h2 id="gift-memories-title">A story only we could tell.</h2><div className="cs-story-prose">{content.storyParagraphs.map((p, i) => <p key={i}>{p}</p>)}</div></section>
+          <section className="cs-gift__chapter" id="gift-song" aria-labelledby="gift-song-title"><p className="cs-kicker">For the things words can’t quite say</p><h2 id="gift-song-title">This one is for you.</h2><ExampleAudioPlayer song={content.song} onPlay={onDemoPlay} /></section>
+          <section className="cs-gift__chapter" id="gift-film" aria-labelledby="gift-film-title"><p className="cs-kicker">Little moments. Everything.</p><h2 id="gift-film-title">{content.film.title}</h2><MemoryFilm film={content.film} /></section>
+          <section className="cs-gift__chapter" id="gift-surprise" aria-labelledby="gift-surprise-title"><p className="cs-kicker">One more thing</p><h2 id="gift-surprise-title">A secret to keep.</h2><details className="cs-surprise"><summary><span className="cs-seal" aria-hidden="true">✧</span><span>{content.surpriseLabel}</span><span className="cs-microcopy">Open your hidden message</span></summary><p>{content.surpriseReveal}</p></details></section>
+          <footer className="cs-gift__chapter cs-gift__closing"><span className="cs-ornament" aria-hidden="true">✧</span><p className="cs-kicker">Always, with love</p><h2>{content.finalMessage}</h2><p className="cs-gift__signature">{content.fromName}</p><a className="cs-text-link" href="#gift-memories">Return to your memories ↑</a></footer>
+        </article>
+      )}
+    </main>
   );
 }

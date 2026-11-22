@@ -29,11 +29,12 @@ export default function ChristmasStoryDemoPage() {
 
   return (
     <div className="cs-root">
-      <div style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }}>
+      <nav className="cs-demo-nav" aria-label="Sample gift navigation">
+        <Link className="cs-text-link" to="/christmas-story">← Back to the collection</Link>
         <Link className="cs-btn cs-btn--ghost" to="/christmas-story/create">
           Create Their Gift
         </Link>
-      </div>
+      </nav>
       <RecipientExperience
         content={DEMO_GIFT}
         isDemo
