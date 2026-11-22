@@ -187,6 +187,21 @@ const ChristmasPlannerWelcomePage = lazy(
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
+const ChristmasStoryLandingPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryLandingPage"),
+);
+const ChristmasStoryCreatePage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryCreatePage"),
+);
+const ChristmasStoryDemoPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryDemoPage"),
+);
+const ChristmasStoryOrderPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryOrderPage"),
+);
+const GiftRecipientPage = lazy(
+  () => import("@/features/christmas-story/pages/GiftRecipientPage"),
+);
 const ChristmasSeoClusterPage = lazy(
   () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
 );
@@ -439,12 +454,18 @@ function WebsiteLayout() {
   const hidePlannerChrome =
     location.pathname === "/christmas/planner" ||
     location.pathname.startsWith("/christmas/planner/");
+  const hideStoryChrome =
+    location.pathname === "/christmas-story" ||
+    location.pathname.startsWith("/christmas-story/") ||
+    location.pathname === "/christmas/our-story" ||
+    location.pathname.startsWith("/gift/");
+  const hideSiteChrome = hidePlannerChrome || hideStoryChrome;
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      {hidePlannerChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
+      {hideSiteChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
-      <main className={`flex-1 ${hideChromeExtras || hidePlannerChrome ? "min-h-0" : ""}`}>
+      <main className={`flex-1 ${hideChromeExtras || hideSiteChrome ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -453,7 +474,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      {hideChromeExtras || hidePlannerChrome ? null : <WebsiteFooter />}
+      {hideChromeExtras || hideSiteChrome ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -484,7 +505,10 @@ function PlannerAwareSupportWidget() {
     location.pathname.startsWith("/christmas/planner/") ||
     location.pathname === "/account/christmas" ||
     location.pathname.startsWith("/account/christmas/") ||
-    location.pathname.startsWith("/santa/call")
+    location.pathname.startsWith("/santa/call") ||
+    location.pathname === "/christmas-story" ||
+    location.pathname.startsWith("/christmas-story/") ||
+    location.pathname.startsWith("/gift/")
   ) {
     return null;
   }
@@ -709,6 +733,12 @@ function AppInner() {
             <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
+            <Route path="/christmas-story" element={<ChristmasStoryLandingPage />} />
+            <Route path="/christmas-story/create" element={<ChristmasStoryCreatePage />} />
+            <Route path="/christmas-story/demo" element={<ChristmasStoryDemoPage />} />
+            <Route path="/christmas-story/order/:orderId" element={<ChristmasStoryOrderPage />} />
+            <Route path="/christmas/our-story" element={<Navigate to="/christmas-story" replace />} />
+            <Route path="/gift/:token" element={<GiftRecipientPage />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
