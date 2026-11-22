@@ -1,9 +1,11 @@
 # Mission 01 baseline stabilization (Cursor)
 
 **Date:** 2026-11-22  
-**Branch:** `feature/christmas-story-mvp`  
+**Branch:** `feature/christmas-story-mvp` @ `9fb2bb0`  
 **Goal:** Unblock TypeScript/build so Draft PR #379 (Codex Mission 02A) can integrate cleanly.  
 **Constraints:** No deploy, no merge, no live payments. Do not overwrite Codex UI work.
+
+**Note:** An intermediate push (`454c76d`) briefly staged unrelated media deletions from the dirty recovery tree. That tip was replaced with a clean force-with-lease to `9fb2bb0` containing only the eight intentional stabilization files.
 
 ---
 
