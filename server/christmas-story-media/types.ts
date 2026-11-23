@@ -13,7 +13,7 @@ export type FilmRenderInput = {
   fps?: number;
   outDir: string;
   jobId: string;
-  template?: "warm_cinematic_v1";
+  template?: "warm_cinematic_v1" | "warm_cinematic_v2";
 };
 
 export type FilmRenderResult = {

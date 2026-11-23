@@ -9,8 +9,25 @@ export function MemoryFilm({ film }: { film: FilmAsset }) {
   const frame = film.frames[Math.min(index, Math.max(0, film.frames.length - 1))];
   return (
     <div className="cs-memory-film">
-      {film.isExample ? <p className="cs-media-note">Sample memory sequence · {film.videoUrl ? "example video" : "no finished film yet"}</p> : null}
-      {film.videoUrl && film.videoUrl !== failedVideo ? <video key={film.videoUrl} controls playsInline preload="none" aria-label={film.title} poster={frame?.src || undefined} onError={() => setFailedVideo(film.videoUrl)}><source src={film.videoUrl} /></video> : (
+      {film.isExample ? (
+        <p className="cs-media-note">
+          Fictional sample film · {film.videoUrl ? "licensed stock imagery, not customer photos" : "no finished film yet"}
+        </p>
+      ) : null}
+      {film.videoUrl && film.videoUrl !== failedVideo ? (
+        <video
+          key={film.videoUrl}
+          controls
+          playsInline
+          preload="metadata"
+          controlsList="nodownload"
+          aria-label={film.title}
+          poster={film.isExample ? "/assets/christmas-story-demo/emma-poster.jpg" : frame?.src || undefined}
+          onError={() => setFailedVideo(film.videoUrl)}
+        >
+          <source src={film.videoUrl} type="video/mp4" />
+        </video>
+      ) : (
         <>
           {failedVideo ? <p role="status" className="cs-media-note">The film could not load. You can still explore the memories below.</p> : null}
           <figure className="cs-film">
