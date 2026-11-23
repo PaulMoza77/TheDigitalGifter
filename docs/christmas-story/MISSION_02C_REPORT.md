@@ -2,7 +2,9 @@
 
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02c-staging-e2e`  
+**Tip:** `4d4e4ee8d691d4970e0db5bb6a1d852568a6f5c3`  
 **Baseline:** `integration/christmas-story-02a-02b` @ `addcfd60efabf925f0ad1b0dda0410f0f03bae3f` (Draft PR #381)  
+**Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/382  
 **Workspace:** `/Users/paul/tdg-christmas-story-02c` (sparse worktree; heavy media excluded)  
 **Deployment:** **Not deployed.** No production migration. LIVE payments **OFF**.
 
