@@ -5,8 +5,10 @@
 **Baseline (Mission 02E tip):** `faf274ac76bd5c9202ea75fb620b641ae5359651`  
 **Parent Draft PR:** #384  
 **Workspace:** `/Users/paul/tdg-christmas-story-02f`  
-**Draft PR:** pending create  
-**Deployment:** **Not deployed.** No production migrations. LIVE Stripe **OFF.** PRs #379–#384 untouched except new Draft PR.
+**Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/385  
+**Implementation tip:** `076120a999301bc904daa7e253324199826e78b5`  
+**Exact final SHA:** recorded in tip commit after this report-link update  
+**Deployment:** **Not deployed.** No production migrations. LIVE Stripe **OFF.** PRs #379–#384 untouched except new Draft PR #385.
 
 ---
 
