@@ -5,6 +5,7 @@ import { activePrintProvider } from "../generation/printProvider";
 import { saveOrder } from "../draftStore";
 import type { StoryOrder } from "../types";
 import { ExampleAudioPlayer } from "./ExampleAudioPlayer";
+import { MemoryFilm } from "./MemoryFilm";
 
 type Props = {
   order: StoryOrder;
@@ -93,34 +94,41 @@ export function BuyerDashboard({ order, onChange }: Props) {
         <span className="cs-status">{order.status.replaceAll("_", " ")}</span>
       </div>
 
-      <h1 className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
-        Buyer review
-      </h1>
+      <div><p className="cs-kicker">Made by you. Meant for them.</p><h1 className="cs-display" style={{ fontSize: "2.8rem", margin: 0 }}>
+        A gift for {order.draft.recipientName || "someone special"}.
+      </h1></div>
+      <p className="cs-section__lead">Take a moment to read their story and explore the recipient view. Approval is yours to give.</p>
+      {order.checkoutMode !== "live" ? <p className="cs-preview-banner" role="note">Local test gift · No payment taken. This link works only in this browser. Song, film and card generation are mocked; delivery to another device is not enabled.</p> : null}
+      <details className="cs-order-details"><summary>Order details</summary>
       <p style={{ color: "var(--cs-ivory-soft)", margin: 0 }}>
         Order {order.id} · {order.draft.recipientName || "Recipient"} · $
         {(order.priceCents / 100).toFixed(0)} · checkout mode: {order.checkoutMode}
       </p>
 
+      </details>
       {order.content ? (
         <>
           <div className="cs-panel">
-            <h3>Dedication</h3>
+            <p className="cs-kicker">01 · The dedication</p><h2>Your words, to keep.</h2>
             <p>{order.content.dedication}</p>
           </div>
           <ExampleAudioPlayer song={order.content.song} />
           <div className="cs-panel">
-            <h3>Memory film</h3>
+            <p className="cs-kicker">02 · The memories</p><h2>{order.content.film.title}</h2>
             <p>
               {order.content.film.frames.length} frame
               {order.content.film.frames.length === 1 ? "" : "s"} ·{" "}
-              {order.content.film.videoUrl ? "MP4 ready" : "slideshow preview (MP4 export mocked)"}
+              {order.content.film.videoUrl ? "Video available to review" : "Photo sequence only · finished film not available"}
             </p>
+            <MemoryFilm film={order.content.film} />
           </div>
         </>
       ) : (
         <p>Content still generating…</p>
       )}
 
+      <section className="cs-dashboard__actions" aria-labelledby="cs-review-actions"><p className="cs-kicker">03 · Your review</p><h2 id="cs-review-actions">Ready when you are.</h2>
+      <Link className="cs-btn cs-btn--ghost" to={giftPath} target="_blank" rel="noreferrer">Preview their complete gift ↗ <span className="cs-microcopy">(new tab)</span></Link>
       <div className="cs-cta-row">
         <button
           type="button"
@@ -128,21 +136,18 @@ export function BuyerDashboard({ order, onChange }: Props) {
           onClick={() => void approve()}
           disabled={order.status === "READY_TO_SEND" || order.status === "SENT" || order.status === "OPENED"}
         >
-          Approve final gift
+          {order.checkoutMode === "live" ? "Approve final gift" : "Approve test gift"}
         </button>
         <button type="button" className="cs-btn cs-btn--ghost" onClick={() => void copyLink()}>
           Copy private link
         </button>
-        <Link className="cs-btn cs-btn--ghost" to={giftPath} target="_blank" rel="noreferrer">
-          Open recipient view
-        </Link>
         <button
           type="button"
           className="cs-btn cs-btn--ghost"
           disabled={busy}
           onClick={() => void downloadCard()}
         >
-          Download QR gift card
+          {busy ? "Preparing card…" : "Download printable card (HTML)"}
         </button>
         <button
           type="button"
@@ -154,8 +159,10 @@ export function BuyerDashboard({ order, onChange }: Props) {
         </button>
       </div>
 
+      </section>
+      <details className="cs-customize"><summary>Plan a delivery time <span>Saved locally only · automatic sending is not enabled</span></summary><div className="cs-customize__fields">
       <label className="cs-field">
-        <span>Schedule delivery (timezone: {order.draft.scheduleTz})</span>
+        <span>Preferred delivery time (timezone: {order.draft.scheduleTz})</span>
         <input
           type="datetime-local"
           value={order.draft.scheduleAt?.slice(0, 16) ?? ""}
@@ -177,7 +184,8 @@ export function BuyerDashboard({ order, onChange }: Props) {
         We never email the recipient before your approval.
       </p>
 
-      {note ? <p className="cs-preview-banner">{note}</p> : null}
+      </div></details>
+      {note ? <p className="cs-preview-banner" role="status">{note}</p> : null}
     </div>
   );
 }

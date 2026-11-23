@@ -11,6 +11,7 @@ const FONT_HREF =
 export default function ChristmasStoryOrderPage() {
   const { orderId } = useParams();
   const [order, setOrder] = useState<StoryOrder | null>(null);
+  const [resolvedId, setResolvedId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!document.querySelector(`link[href="${FONT_HREF}"]`)) {
@@ -20,13 +21,15 @@ export default function ChristmasStoryOrderPage() {
       document.head.appendChild(link);
     }
     document.title = "Order · Digital Gifter";
-    if (orderId) setOrder(getOrder(orderId));
+    try { setOrder(orderId ? getOrder(orderId) : null); }
+    catch { setOrder(null); }
+    setResolvedId(orderId);
   }, [orderId]);
 
   return (
     <div className="cs-root">
-      <div className="cs-shell">
-        {order ? (
+      <main className="cs-shell">
+        {resolvedId !== orderId ? <p role="status" aria-busy="true">Opening your gift review…</p> : order ? (
           <BuyerDashboard order={order} onChange={setOrder} />
         ) : (
           <div className="cs-dashboard">
@@ -39,7 +42,7 @@ export default function ChristmasStoryOrderPage() {
             </Link>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
