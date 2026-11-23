@@ -112,12 +112,15 @@ vitest:
   christmasStory.test.ts          8 passed
   mission02b.test.ts              9 passed
   santa-call/santaCall.test.ts   14 passed
+  santa/santaVideo.test.ts       14 passed
   commercialOffers.test.ts       12 passed
-  TOTAL                            43 passed
+  TOTAL                            57 passed
 
 tsc -p tsconfig.app.json --noEmit → exit 0
-npm run build → success
+npm run build → success (exit 0)
 ```
+
+Santa Call commerce sources under `src/features/christmas/santa-call`, `christmas-santa-call`, and `santa-call-stripe-test-webhook` are **unchanged** vs baseline `396aef2`.
 
 Isolated DB E2E against a live Supabase project was **not** run in this mission (no production migration apply; no remote test DB credentials used). Contract/security tests cover hash-at-rest, transitions, Stripe TEST isolation, and Santa non-interference via source assertions.
 
