@@ -23,6 +23,7 @@ import {
   isStoryCheckoutEnabled,
   resolveStoryStripeTestCredentials,
   stripeTestFormPost,
+  stripeTestGet,
 } from "../_shared/christmas/storyStripe.ts";
 
 type Body = Record<string, unknown>;
@@ -280,12 +281,28 @@ Deno.serve(async (req) => {
           .eq("idempotency_key", idempotencyKey)
           .maybeSingle();
         if (existing?.stripe_checkout_session_id && existing.payment_status === "pending") {
+          // Re-fetch hosted URL when possible; never claim PAID from session reuse alone.
+          let checkoutUrl: string | null = null;
+          const reuseCreds = resolveStoryStripeTestCredentials();
+          if (reuseCreds.ok) {
+            const session = await stripeTestGet(
+              `checkout/sessions/${existing.stripe_checkout_session_id}`,
+              reuseCreds.creds.secretKey,
+            );
+            if (session.ok) checkoutUrl = asString(session.json.url) || null;
+          }
           return jsonResponse({
             ok: true,
             reused: true,
             orderId: existing.id,
+            sessionId: existing.stripe_checkout_session_id,
+            checkoutUrl,
             clientSecret: null,
-            message: "Existing checkout session — recover via getBuyerOrder",
+            amountCents: STORY_PRICE_CENTS,
+            checkoutMode: "test",
+            paymentStatus: existing.payment_status,
+            status: existing.status,
+            message: "Existing CHECKOUT_PENDING session — not marked paid",
           });
         }
       }
@@ -350,11 +367,12 @@ Deno.serve(async (req) => {
       const successUrl = `${siteUrl()}/christmas-story/order/${order.id}?checkout=success`;
       const cancelUrl = `${siteUrl()}/christmas-story/create?checkout=cancel`;
 
+      // Hosted Stripe Checkout (customer-facing). Server amount is authoritative.
+      // Never mark PAID here — only the isolated TEST webhook may fulfill payment.
       const params = new URLSearchParams();
       params.set("mode", "payment");
-      params.set("ui_mode", "custom");
       params.set("customer_email", email);
-      params.set("success_url", successUrl);
+      params.set("success_url", `${successUrl}&session_id={CHECKOUT_SESSION_ID}`);
       params.set("cancel_url", cancelUrl);
       params.set("client_reference_id", String(order.id));
       params.set("metadata[product_family]", "christmas_story");
@@ -365,6 +383,7 @@ Deno.serve(async (req) => {
       params.set("line_items[0][price_data][unit_amount]", String(STORY_PRICE_CENTS));
       params.set("line_items[0][price_data][product_data][name]", "Our Christmas Story");
       params.set("line_items[0][quantity]", "1");
+      params.set("expires_at", String(Math.floor(Date.now() / 1000) + 30 * 60));
 
       const stripe = await stripeTestFormPost(
         "checkout/sessions",
@@ -385,7 +404,16 @@ Deno.serve(async (req) => {
       }
 
       const sessionId = asString(stripe.json.id);
-      const clientSecret = asString(stripe.json.client_secret);
+      const checkoutUrl = asString(stripe.json.url);
+      const clientSecret = asString(stripe.json.client_secret) || null;
+      if (!checkoutUrl) {
+        await service
+          .from("christmas_story_orders")
+          .update({ payment_status: "failed", status: "FAILED", failed_reason: "stripe_url_missing" })
+          .eq("id", order.id);
+        return jsonResponse({ ok: false, code: "stripe_url_missing" }, 502);
+      }
+
       await service
         .from("christmas_story_orders")
         .update({ stripe_checkout_session_id: sessionId })
@@ -395,20 +423,222 @@ Deno.serve(async (req) => {
         orderId: String(order.id),
         event: "checkout_started",
         actor: "buyer",
-        metadata: { stripe_mode: "test" },
+        metadata: { stripe_mode: "test", ui: "hosted" },
       });
 
       return jsonResponse({
         ok: true,
         orderId: order.id,
         sessionId,
+        checkoutUrl,
         clientSecret,
         publishableKey: creds.creds.publishableKey,
         amountCents: STORY_PRICE_CENTS,
         currency: STORY_CURRENCY,
         recipientToken: recipientPlain,
         checkoutMode: "test",
+        paymentStatus: "pending",
+        status: "CHECKOUT_PENDING",
         killSwitch: !isStoryCheckoutEnabled() ? "on" : "off",
+      });
+    }
+
+    // Sync Stripe TEST session status — never fulfills payment from the browser.
+    if (action === "syncCheckoutStatus") {
+      const order = await loadOrderByIdForBuyer(
+        service,
+        asString(body.order_id),
+        asString(body.buyer_access_token),
+      );
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+
+      const sessionId = asString(order.stripe_checkout_session_id);
+      if (!sessionId) {
+        return jsonResponse({
+          ok: true,
+          order: buyerDto(order),
+          stripeStatus: null,
+          note: "no_session",
+        });
+      }
+
+      const creds = resolveStoryStripeTestCredentials();
+      if (!creds.ok) {
+        // Kill-switch / missing secrets: return durable DB truth only.
+        return jsonResponse({
+          ok: true,
+          order: buyerDto(order),
+          stripeStatus: null,
+          note: creds.code,
+        });
+      }
+
+      const session = await stripeTestGet(`checkout/sessions/${sessionId}`, creds.creds.secretKey);
+      if (!session.ok) {
+        return jsonResponse({
+          ok: false,
+          code: "stripe_session_retrieve_failed",
+          message: asString((session.json.error as { message?: string } | undefined)?.message),
+        }, 502);
+      }
+
+      const stripeStatus = asString(session.json.status); // open | complete | expired
+      const paymentStatus = asString(session.json.payment_status); // unpaid | paid | no_payment_required
+      let next = order;
+
+      if (stripeStatus === "expired" && order.payment_status === "pending") {
+        const { data } = await service
+          .from("christmas_story_orders")
+          .update({
+            payment_status: "expired",
+            status: "FAILED",
+            failed_reason: "checkout_expired",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", order.id)
+          .select("*")
+          .single();
+        if (data) next = data;
+        await audit(service, {
+          orderId: String(order.id),
+          event: "checkout_expired",
+          actor: "buyer",
+        });
+      } else if (
+        (stripeStatus === "open" || paymentStatus === "unpaid") &&
+        asString(body.mark_cancelled) === "true" &&
+        order.payment_status === "pending"
+      ) {
+        const { data } = await service
+          .from("christmas_story_orders")
+          .update({
+            payment_status: "failed",
+            status: "CANCELLED",
+            failed_reason: "checkout_cancelled",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", order.id)
+          .select("*")
+          .single();
+        if (data) next = data;
+        await audit(service, {
+          orderId: String(order.id),
+          event: "checkout_cancelled",
+          actor: "buyer",
+        });
+      }
+
+      // Stripe may report paid while DB is still pending — browser sync never fulfills.
+      // Only christmas-story-stripe-test-webhook fulfills payment.
+      return jsonResponse({
+        ok: true,
+        order: buyerDto(next),
+        stripeStatus,
+        stripePaymentStatus: paymentStatus,
+        paidLocally: next.payment_status === "paid",
+        awaitsWebhook: paymentStatus === "paid" && next.payment_status !== "paid",
+      });
+    }
+
+    // Guest email recovery — mint short-lived challenge (hash-at-rest).
+    if (action === "requestBuyerRecovery") {
+      const email = asString(body.buyer_email).toLowerCase();
+      if (!email || !email.includes("@")) {
+        return jsonResponse({ ok: false, code: "invalid_email" }, 400);
+      }
+      const { data: orders, error } = await service
+        .from("christmas_story_orders")
+        .select("id")
+        .eq("buyer_email", email)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      if (!orders?.length) {
+        // Do not leak whether email exists.
+        return jsonResponse({ ok: true, sent: true });
+      }
+
+      const plain = generatePublicToken();
+      const hash = await sha256Hex(plain);
+      const emailHash = await sha256Hex(email);
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      await service.from("christmas_story_recovery_challenges").insert(
+        orders.map((o) => ({
+          email_hash: emailHash,
+          token_hash: hash,
+          order_id: o.id,
+          expires_at: expiresAt,
+        })),
+      );
+      await audit(service, {
+        orderId: String(orders[0].id),
+        event: "buyer_recovery_requested",
+        actor: "buyer",
+      });
+
+      const returnToken =
+        asString(Deno.env.get("CHRISTMAS_STORY_RECOVERY_RETURN_TOKEN")).toLowerCase() === "true";
+      return jsonResponse({
+        ok: true,
+        sent: true,
+        // Staging-only: return token when email provider is not wired.
+        recoveryToken: returnToken ? plain : null,
+        expiresAt,
+      });
+    }
+
+    if (action === "redeemBuyerRecovery") {
+      const recoveryToken = asString(body.recovery_token);
+      if (!recoveryToken || recoveryToken.length < 32) {
+        return jsonResponse({ ok: false, code: "invalid_token" }, 400);
+      }
+      const hash = await sha256Hex(recoveryToken);
+      const { data: challenge, error } = await service
+        .from("christmas_story_recovery_challenges")
+        .select("*")
+        .eq("token_hash", hash)
+        .is("consumed_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!challenge) return jsonResponse({ ok: false, code: "invalid_token" }, 404);
+      if (new Date(String(challenge.expires_at)).getTime() < Date.now()) {
+        return jsonResponse({ ok: false, code: "access_expired" }, 403);
+      }
+
+      const { data: order } = await service
+        .from("christmas_story_orders")
+        .select("*")
+        .eq("id", challenge.order_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+
+      // Mint a fresh buyer access token and rotate hash (email-verified recovery).
+      const buyerPlain = generatePublicToken();
+      const buyerHash = await sha256Hex(buyerPlain);
+      await service
+        .from("christmas_story_orders")
+        .update({ buyer_access_token_hash: buyerHash, updated_at: new Date().toISOString() })
+        .eq("id", order.id);
+      await service
+        .from("christmas_story_recovery_challenges")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("token_hash", hash)
+        .is("consumed_at", null);
+
+      await audit(service, {
+        orderId: String(order.id),
+        event: "buyer_recovery_redeemed",
+        actor: "buyer",
+      });
+
+      return jsonResponse({
+        ok: true,
+        buyerAccessToken: buyerPlain,
+        order: buyerDto({ ...order, buyer_access_token_hash: buyerHash }),
       });
     }
 

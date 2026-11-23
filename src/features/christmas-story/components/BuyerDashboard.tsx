@@ -145,11 +145,27 @@ export function BuyerDashboard({ order, onChange }: Props) {
         A gift for {order.draft.recipientName || "someone special"}.
       </h1></div>
       <p className="cs-section__lead">Take a moment to read their story and explore the recipient view. Approval is yours to give.</p>
-      {order.checkoutMode !== "live" ? <p className="cs-preview-banner" role="note">Local test gift · No payment taken. This link works only in this browser. Song, film and card generation are mocked; delivery to another device is not enabled.</p> : null}
+      {order.status === "CHECKOUT_PENDING" ? (
+        <p className="cs-preview-banner" role="status">
+          Payment pending · Stripe TEST session created. This order is not marked paid until the
+          verified webhook confirms it.
+        </p>
+      ) : null}
+      {order.status === "FAILED" || order.status === "CANCELLED" ? (
+        <p className="cs-preview-banner" role="alert">
+          Checkout {order.status.toLowerCase()}. No charge was completed for this gift.
+        </p>
+      ) : null}
+      {order.checkoutMode === "disabled" ? (
+        <p className="cs-preview-banner" role="note">
+          Local test gift · No payment taken. Song, film and card generation are mocked.
+        </p>
+      ) : null}
       <details className="cs-order-details"><summary>Order details</summary>
       <p style={{ color: "var(--cs-ivory-soft)", margin: 0 }}>
         Order {order.id} · {order.draft.recipientName || "Recipient"} · $
-        {(order.priceCents / 100).toFixed(0)} · checkout mode: {order.checkoutMode}
+        {(order.priceCents / 100).toFixed(0)} · checkout mode: {order.checkoutMode} · status:{" "}
+        {order.status.replaceAll("_", " ")}
       </p>
 
       </details>
@@ -181,9 +197,16 @@ export function BuyerDashboard({ order, onChange }: Props) {
           type="button"
           className="cs-btn cs-btn--primary"
           onClick={() => void approve()}
-          disabled={order.status === "READY_TO_SEND" || order.status === "SENT" || order.status === "OPENED"}
+          disabled={
+            order.status === "CHECKOUT_PENDING" ||
+            order.status === "FAILED" ||
+            order.status === "CANCELLED" ||
+            order.status === "READY_TO_SEND" ||
+            order.status === "SENT" ||
+            order.status === "OPENED"
+          }
         >
-          {order.checkoutMode === "live" ? "Approve final gift" : "Approve test gift"}
+          {order.checkoutMode === "live" ? "Approve final gift" : "Approve gift"}
         </button>
         <button type="button" className="cs-btn cs-btn--ghost" onClick={() => void copyLink()}>
           Copy private link

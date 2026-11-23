@@ -1,10 +1,11 @@
 /**
- * Christmas Story durable API client.
- * Falls back gracefully when Edge is unavailable so UI contracts stay intact.
+ * Christmas Story durable API client (Mission 02C).
+ * When the durable API is enabled, server authorization is authoritative:
+ * denials and failures must never be papered over with fake local success.
  */
 
 import { supabase } from "@/lib/supabase";
-import type { StoryGiftContent, StoryGiftDraft } from "./types";
+import type { StoryGiftContent, StoryGiftDraft, StoryOrder } from "./types";
 import { STORY_PRICE_CENTS } from "./types";
 
 const BUYER_TOKEN_KEY = "tdg.christmas-story.buyer-access.v1";
@@ -82,12 +83,50 @@ async function storyAction<T>(
   return { ok: true, data: payload as T };
 }
 
+export function mapServerOrderToStoryOrder(
+  remote: Record<string, unknown>,
+  fallback?: Partial<StoryOrder>,
+): StoryOrder {
+  const status = String(remote.status || fallback?.status || "CHECKOUT_PENDING") as StoryOrder["status"];
+  return {
+    id: String(remote.id || fallback?.id || ""),
+    status,
+    productKey: "our_christmas_story",
+    priceCents: Number(remote.priceCents ?? remote.amount_cents ?? STORY_PRICE_CENTS),
+    currency: "usd",
+    draft: fallback?.draft || ({} as StoryOrder["draft"]),
+    content: (remote.content as StoryOrder["content"]) ?? fallback?.content ?? null,
+    recipientToken:
+      (remote.recipientToken as string) ||
+      fallback?.recipientToken ||
+      readRecipientToken(String(remote.id || "")) ||
+      "",
+    pin: fallback?.pin ?? null,
+    checkoutMode: (String(remote.checkoutMode || remote.stripe_mode || "test") as StoryOrder["checkoutMode"]),
+    costs: fallback?.costs || {
+      paymentProcessingCents: 0,
+      aiTextCents: 0,
+      songCents: 0,
+      videoCents: 0,
+      storageCents: 0,
+      retriesCents: 0,
+      supportCents: 0,
+    },
+    createdAt: String(remote.createdAt || remote.created_at || fallback?.createdAt || new Date().toISOString()),
+    updatedAt: String(remote.updatedAt || remote.updated_at || new Date().toISOString()),
+    approvedAt: (remote.approvedAt || remote.approved_at || fallback?.approvedAt || null) as string | null,
+    sentAt: (remote.sentAt || remote.sent_at || fallback?.sentAt || null) as string | null,
+    openedAt: (remote.openedAt || remote.opened_at || fallback?.openedAt || null) as string | null,
+  };
+}
+
 export async function syncDraftToServer(draft: StoryGiftDraft): Promise<{
   ok: boolean;
   draftId?: string;
   buyerAccessToken?: string;
+  code?: string;
 }> {
-  if (!isStoryApiEnabled()) return { ok: false };
+  if (!isStoryApiEnabled()) return { ok: false, code: "api_disabled" };
   const res = await storyAction<{
     draftId: string;
     buyerAccessToken: string;
@@ -98,10 +137,10 @@ export async function syncDraftToServer(draft: StoryGiftDraft): Promise<{
     photo_count: draft.photoDataUrls?.length || 0,
     payload: {
       ...draft,
-      photoDataUrls: undefined, // never send data URLs to server draft blob
+      photoDataUrls: undefined,
     },
   });
-  if (!res.ok) return { ok: false };
+  if (!res.ok) return { ok: false, code: res.code };
   writeDraftId(res.data.draftId);
   writeBuyerAccessToken(res.data.buyerAccessToken);
   return {
@@ -119,25 +158,34 @@ export async function createStoryCheckout(input: {
   | {
       ok: true;
       orderId: string;
+      checkoutUrl: string | null;
       clientSecret: string | null;
       publishableKey: string | null;
       recipientToken: string | null;
       amountCents: number;
       checkoutMode: string;
+      paymentStatus: string;
+      status: string;
     }
   | { ok: false; code: string; message?: string }
 > {
   if (!isStoryApiEnabled()) {
     return { ok: false, code: "api_disabled" };
   }
-  await syncDraftToServer(input.draft);
+  const synced = await syncDraftToServer(input.draft);
+  if (!synced.ok) {
+    return { ok: false, code: synced.code || "draft_sync_failed" };
+  }
   const res = await storyAction<{
     orderId: string;
+    checkoutUrl: string | null;
     clientSecret: string | null;
     publishableKey: string | null;
     recipientToken: string;
     amountCents: number;
     checkoutMode: string;
+    paymentStatus: string;
+    status: string;
   }>("createCheckout", {
     draft_id: readDraftId(),
     buyer_access_token: readBuyerAccessToken(),
@@ -156,11 +204,14 @@ export async function createStoryCheckout(input: {
   return {
     ok: true,
     orderId: res.data.orderId,
+    checkoutUrl: res.data.checkoutUrl || null,
     clientSecret: res.data.clientSecret,
     publishableKey: res.data.publishableKey,
     recipientToken: res.data.recipientToken,
     amountCents: res.data.amountCents,
     checkoutMode: res.data.checkoutMode,
+    paymentStatus: res.data.paymentStatus || "pending",
+    status: res.data.status || "CHECKOUT_PENDING",
   };
 }
 
@@ -171,6 +222,41 @@ export async function fetchBuyerOrder(orderId: string) {
     order_id: orderId,
     buyer_access_token: token,
   });
+}
+
+export async function syncCheckoutStatus(orderId: string, opts?: { markCancelled?: boolean }) {
+  const token = readBuyerAccessToken();
+  if (!token) return { ok: false as const, code: "no_buyer_token" };
+  return storyAction<{
+    order: Record<string, unknown>;
+    stripeStatus: string | null;
+    stripePaymentStatus?: string;
+    paidLocally: boolean;
+    awaitsWebhook?: boolean;
+  }>("syncCheckoutStatus", {
+    order_id: orderId,
+    buyer_access_token: token,
+    mark_cancelled: opts?.markCancelled === true ? "true" : undefined,
+  });
+}
+
+export async function requestBuyerRecovery(email: string) {
+  return storyAction<{
+    sent: true;
+    recoveryToken: string | null;
+    expiresAt?: string;
+  }>("requestBuyerRecovery", { buyer_email: email });
+}
+
+export async function redeemBuyerRecovery(recoveryToken: string) {
+  const res = await storyAction<{
+    buyerAccessToken: string;
+    order: Record<string, unknown>;
+  }>("redeemBuyerRecovery", { recovery_token: recoveryToken });
+  if (res.ok && res.data.buyerAccessToken) {
+    writeBuyerAccessToken(res.data.buyerAccessToken);
+  }
+  return res;
 }
 
 export async function buyerPreviewOrder(orderId: string) {

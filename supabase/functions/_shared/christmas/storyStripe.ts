@@ -99,6 +99,25 @@ export async function stripeTestFormPost(
   return { ok: res.ok, status: res.status, json };
 }
 
+/** GET helper for Stripe TEST (session retrieve). Never uses LIVE keys. */
+export async function stripeTestGet(
+  path: string,
+  secretKey: string,
+): Promise<{ ok: boolean; status: number; json: Record<string, unknown> }> {
+  if (!secretKey.startsWith("sk_test_")) {
+    return { ok: false, status: 0, json: { error: { message: "LIVE keys refused" } } };
+  }
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Stripe-Version": STORY_STRIPE_API_VERSION,
+    },
+  });
+  const json = (await res.json()) as Record<string, unknown>;
+  return { ok: res.ok, status: res.status, json };
+}
+
 export function isStoryStripeTestMeta(meta: Record<string, unknown> | null | undefined): boolean {
   const m = meta || {};
   return (

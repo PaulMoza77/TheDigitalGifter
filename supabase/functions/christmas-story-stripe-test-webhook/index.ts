@@ -103,12 +103,43 @@ Deno.serve(async (req) => {
     asString(metadata.christmas_story_order_id) || asString(metadata.christmas_order_id);
   if (!isUuid(orderId)) return json({ error: "christmas_story_order_id required" }, 400);
 
+  // Expired / failed async payments — never mark PAID.
+  if (
+    eventType === "checkout.session.expired" ||
+    eventType === "checkout.session.async_payment_failed"
+  ) {
+    const { data: alreadyExpire } = await service
+      .from("processed_stripe_events")
+      .select("event_id")
+      .eq("event_id", eventId)
+      .maybeSingle();
+    if (alreadyExpire) return json({ ok: true, status: "already_processed", event_id: eventId });
+
+    await service
+      .from("christmas_story_orders")
+      .update({
+        payment_status: eventType.endsWith("expired") ? "expired" : "failed",
+        status: "FAILED",
+        failed_reason: eventType,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId)
+      .eq("payment_status", "pending");
+
+    await service.from("processed_stripe_events").insert({
+      event_id: eventId,
+      event_type: eventType,
+      stripe_session_id: asString(obj.id) || null,
+      result: { status: "not_paid", product: "christmas_story", order_id: orderId },
+    });
+    return json({ ok: true, status: "not_paid", order_id: orderId, type: eventType });
+  }
+
   // Handle checkout completion + async payment success
   if (
     eventType !== "checkout.session.completed" &&
     eventType !== "checkout.session.async_payment_succeeded"
   ) {
-    // Still record ignored event types for idempotency on retries of unsupported types? No —
     // only mark processed after successful handling of payment events.
     return json({ ok: true, status: "ignored", type: eventType });
   }

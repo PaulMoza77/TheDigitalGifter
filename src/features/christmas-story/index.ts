@@ -19,6 +19,10 @@ export {
   isStoryApiEnabled,
   syncDraftToServer,
   createStoryCheckout,
+  fetchBuyerOrder,
+  syncCheckoutStatus,
+  requestBuyerRecovery,
+  redeemBuyerRecovery,
   fetchRecipientGift,
   buyerPreviewOrder,
 } from "./storyApi";
