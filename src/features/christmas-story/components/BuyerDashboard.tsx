@@ -9,6 +9,7 @@ import {
   isStoryApiEnabled,
   markBuyerOrderSent,
   readRecipientToken,
+  requestMediaRevision,
   scheduleBuyerOrder,
 } from "../storyApi";
 import type { StoryOrder } from "../types";
@@ -23,6 +24,18 @@ type Props = {
 export function BuyerDashboard({ order, onChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [revisionReason, setRevisionReason] = useState("");
+
+  const mediaReady =
+    Boolean(order.content?.song?.audioUrl) &&
+    order.content?.song?.status === "ready" &&
+    Boolean(order.content?.film?.videoUrl) &&
+    order.content?.film?.status === "ready";
+  const mediaPending =
+    order.content?.song?.status === "pending" ||
+    order.content?.film?.status === "pending" ||
+    (!order.content?.song?.audioUrl && !order.content?.song?.isExample) ||
+    (!order.content?.film?.videoUrl && !order.content?.film?.isExample);
 
   const recipientToken = useMemo(
     () => readRecipientToken(order.id) || order.recipientToken,
@@ -39,8 +52,29 @@ export function BuyerDashboard({ order, onChange }: Props) {
     onChange(next);
   }
 
+  async function requestRevision(kind: "song" | "film") {
+    if (!revisionReason.trim()) {
+      setNote("Please describe the revision you need.");
+      return;
+    }
+    if (isStoryApiEnabled()) {
+      const res = await requestMediaRevision(order.id, kind, revisionReason.trim());
+      if (!res.ok) {
+        setNote(res.message || `Revision request failed (${res.code}).`);
+        return;
+      }
+      setNote(`Revision requested for the ${kind}. Production will update this gift.`);
+      return;
+    }
+    setNote(`Revision noted locally for the ${kind}. Connect the durable API for server tracking.`);
+  }
+
   async function approve() {
     if (isStoryApiEnabled()) {
+      if (mediaPending && !mediaReady) {
+        setNote("Media is still in production. Approval stays blocked until song and film are ready.");
+        return;
+      }
       const res = await approveBuyerOrder(order.id);
       if (res.ok) {
         const next: StoryOrder = {
@@ -176,12 +210,19 @@ export function BuyerDashboard({ order, onChange }: Props) {
             <p>{order.content.dedication}</p>
           </div>
           <ExampleAudioPlayer song={order.content.song} />
+          {!order.content.song.audioUrl && !order.content.song.isExample ? (
+            <p className="cs-media-note" role="status">
+              Song status: {order.content.song.status}. A finished licensed master is not available yet.
+            </p>
+          ) : null}
           <div className="cs-panel">
             <p className="cs-kicker">02 · The memories</p><h2>{order.content.film.title}</h2>
             <p>
               {order.content.film.frames.length} frame
               {order.content.film.frames.length === 1 ? "" : "s"} ·{" "}
-              {order.content.film.videoUrl ? "Video available to review" : "Photo sequence only · finished film not available"}
+              {order.content.film.videoUrl
+                ? "Video available to review"
+                : "Finished memory film not available yet"}
             </p>
             <MemoryFilm film={order.content.film} />
           </div>
@@ -191,6 +232,11 @@ export function BuyerDashboard({ order, onChange }: Props) {
       )}
 
       <section className="cs-dashboard__actions" aria-labelledby="cs-review-actions"><p className="cs-kicker">03 · Your review</p><h2 id="cs-review-actions">Ready when you are.</h2>
+      {mediaPending && !order.content?.song?.isExample ? (
+        <p className="cs-preview-banner" role="status">
+          Production in progress — song and/or film are not ready. This gift will not be marked READY until both deliverables are available.
+        </p>
+      ) : null}
       <Link className="cs-btn cs-btn--ghost" to={giftPath} target="_blank" rel="noreferrer">Preview their complete gift ↗ <span className="cs-microcopy">(new tab)</span></Link>
       <div className="cs-cta-row">
         <button
@@ -226,6 +272,23 @@ export function BuyerDashboard({ order, onChange }: Props) {
           disabled={order.status !== "READY_TO_SEND" && order.status !== "APPROVED"}
         >
           Mark as sent
+        </button>
+      </div>
+      <label className="cs-field" style={{ marginTop: "1rem" }}>
+        <span>Request a limited revision</span>
+        <input
+          type="text"
+          value={revisionReason}
+          onChange={(e) => setRevisionReason(e.target.value)}
+          placeholder="e.g. Softer chorus / slower photo pacing"
+        />
+      </label>
+      <div className="cs-cta-row">
+        <button type="button" className="cs-btn cs-btn--ghost" onClick={() => void requestRevision("song")}>
+          Revise song
+        </button>
+        <button type="button" className="cs-btn cs-btn--ghost" onClick={() => void requestRevision("film")}>
+          Revise film
         </button>
       </div>
 

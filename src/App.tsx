@@ -88,6 +88,9 @@ const SantaCallAdminPage = lazy(
 const SantaVoiceBenchmarkPage = lazy(
   () => import("@/pages/admin/christmas/SantaVoiceBenchmarkPage"),
 );
+const ChristmasStoryMediaAdminPage = lazy(
+  () => import("@/pages/admin/christmas/ChristmasStoryMediaAdminPage"),
+);
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
@@ -1064,6 +1067,7 @@ function AppInner() {
               <Route index element={<ChristmasDashboardPage />} />
               <Route path="analytics" element={<ChristmasAnalyticsPage />} />
               <Route path="orders" element={<ChristmasOrdersPage />} />
+              <Route path="story-media" element={<ChristmasStoryMediaAdminPage />} />
               <Route path="monetization" element={<ChristmasMonetizationPage />} />
               <Route path="santa-call" element={<SantaCallAdminPage />} />
               <Route path="santa-voice-benchmark" element={<SantaVoiceBenchmarkPage />} />

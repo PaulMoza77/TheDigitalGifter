@@ -3,6 +3,7 @@
  * Guest drafts/orders, hash-at-rest tokens, Stripe TEST checkout only.
  * Does not modify Santa Call commerce.
  */
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
@@ -149,6 +150,25 @@ function siteUrl() {
     asString(Deno.env.get("PUBLIC_APP_URL")) ||
     "http://localhost:5173"
   ).replace(/\/$/, "");
+}
+
+
+async function requireStoryAdmin(req: Request): Promise<boolean> {
+  const auth = req.headers.get("Authorization") || "";
+  const jwt = auth.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) return false;
+  const url = Deno.env.get("SUPABASE_URL") || "";
+  const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const userClient = createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+    auth: { persistSession: false },
+  });
+  const { data: userData } = await userClient.auth.getUser();
+  const email = asString(userData.user?.email).toLowerCase();
+  if (!email) return false;
+  const service = getServiceClient();
+  const { data } = await service.from("admin_users").select("email").eq("email", email).maybeSingle();
+  return Boolean(data?.email);
 }
 
 Deno.serve(async (req) => {
@@ -1036,6 +1056,159 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, requestId: data.id });
     }
 
+    // -------- Mission 02D media admin + buyer review --------
+    function requireStoryAdmin(req: Request) {
+      const expected = asString(Deno.env.get("CHRISTMAS_STORY_ADMIN_TOKEN"));
+      if (!expected || expected.length < 24) {
+        return { ok: false as const, code: "admin_token_unconfigured" };
+      }
+      const got = asString(req.headers.get("x-christmas-story-admin-token"));
+      if (!got || got.length !== expected.length) {
+        return { ok: false as const, code: "unauthorized_admin" };
+      }
+      // Constant-time-ish compare
+      let diff = 0;
+      for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ got.charCodeAt(i);
+      if (diff !== 0) return { ok: false as const, code: "unauthorized_admin" };
+      return { ok: true as const };
+    }
+
+    if (action === "adminListSongQueue") {
+      const gate = requireStoryAdmin(req);
+      if (!gate.ok) return jsonResponse({ ok: false, code: gate.code }, 401);
+      const { data, error } = await service
+        .from("christmas_story_jobs")
+        .select("id,order_id,status,production_state,provider,metadata,created_at,updated_at,output_checksum")
+        .eq("job_type", "song")
+        .order("created_at", { ascending: true })
+        .limit(100);
+      if (error) throw error;
+      // Strip any accidental photo payloads from briefs
+      const jobs = (data || []).map((row) => {
+        const meta = (row.metadata || {}) as Record<string, unknown>;
+        const brief = (meta.brief || {}) as Record<string, unknown>;
+        delete brief.photos;
+        delete brief.photoDataUrls;
+        delete brief.buyerEmail;
+        return { ...row, metadata: { ...meta, brief } };
+      });
+      return jsonResponse({ ok: true, jobs });
+    }
+
+    if (action === "adminAdvanceSongState") {
+      const gate = requireStoryAdmin(req);
+      if (!gate.ok) return jsonResponse({ ok: false, code: gate.code }, 401);
+      const jobId = asString(body.job_id);
+      const to = asString(body.production_state);
+      if (!isUuid(jobId) || !to) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      const { data: job, error } = await service
+        .from("christmas_story_jobs")
+        .select("*")
+        .eq("id", jobId)
+        .eq("job_type", "song")
+        .maybeSingle();
+      if (error) throw error;
+      if (!job) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      const { data: updated, error: upErr } = await service
+        .from("christmas_story_jobs")
+        .update({
+          production_state: to,
+          status: to === "ready_for_buyer_review" || to === "approved" ? "ready" : job.status,
+          metadata: {
+            ...(job.metadata || {}),
+            adminNote: asString(body.note).slice(0, 500),
+            rightsDisclaimer:
+              "AI-assisted generation does not by itself confer copyright ownership or commercial license.",
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId)
+        .select("*")
+        .single();
+      if (upErr) throw upErr;
+      await audit(service, {
+        orderId: String(job.order_id),
+        event: "song_state_advanced",
+        actor: "admin",
+        metadata: { to },
+      });
+      return jsonResponse({ ok: true, job: updated });
+    }
+
+    if (action === "requestMediaRevision") {
+      const order = await loadOrderByIdForBuyer(
+        service,
+        asString(body.order_id),
+        asString(body.buyer_access_token),
+      );
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      if (!["REVIEW_REQUIRED", "APPROVED", "READY_TO_SEND"].includes(String(order.status))) {
+        return jsonResponse({ ok: false, code: "invalid_status" }, 409);
+      }
+      const mediaKind = asString(body.media_kind);
+      const reason = asString(body.reason).slice(0, 500);
+      if (!["song", "film"].includes(mediaKind) || reason.length < 4) {
+        return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      }
+      const { data, error } = await service
+        .from("christmas_story_media_revisions")
+        .insert({
+          order_id: order.id,
+          media_kind: mediaKind,
+          reason,
+          status: "open",
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      if (mediaKind === "song") {
+        await service
+          .from("christmas_story_jobs")
+          .update({
+            production_state: "revision_requested",
+            status: "awaiting_manual",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("order_id", order.id)
+          .eq("job_type", "song");
+      }
+      if (mediaKind === "film") {
+        await service
+          .from("christmas_story_jobs")
+          .update({
+            status: "queued",
+            error_code: null,
+            updated_at: new Date().toISOString(),
+            metadata: { revision_reason: reason },
+          })
+          .eq("order_id", order.id)
+          .eq("job_type", "film");
+      }
+      await audit(service, {
+        orderId: String(order.id),
+        event: "media_revision_requested",
+        actor: "buyer",
+        metadata: { media_kind: mediaKind },
+      });
+      return jsonResponse({ ok: true, revision: data });
+    }
+
+    if (action === "listOrderMediaJobs") {
+      const order = await loadOrderByIdForBuyer(
+        service,
+        asString(body.order_id),
+        asString(body.buyer_access_token),
+      );
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      const { data, error } = await service
+        .from("christmas_story_jobs")
+        .select("id,job_type,status,production_state,provider,output_checksum,updated_at,metadata")
+        .eq("order_id", order.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return jsonResponse({ ok: true, jobs: data || [] });
+    }
+
     if (action === "health") {
       return jsonResponse({
         ok: true,
@@ -1043,6 +1216,7 @@ Deno.serve(async (req) => {
         priceCents: STORY_PRICE_CENTS,
         checkoutEnabled: isStoryCheckoutEnabled(),
         stripeMode: isStoryCheckoutEnabled() ? "test_only" : "disabled",
+        mediaWorker: "external_vps_or_local",
       });
     }
 
