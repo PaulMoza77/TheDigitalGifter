@@ -126,31 +126,34 @@ export function GiftCreator() {
     trackStoryEvent("checkout_started", { price_cents: STORY_OFFER.priceCents });
     setBusy(true);
     try {
-      // Prefer durable Stripe TEST when API + server kill-switch allow it.
+      // Durable API path: server is authoritative. Never invent a PAID local order
+      // just because a checkout session was created.
       if (isStoryApiEnabled()) {
         const remote = await createStoryCheckout({
           draft,
           content: preview,
           fromName: "You",
         });
-        if (remote.ok) {
-          // Keep a local mirror for buyer dashboard until paid webhook lands.
-          const order = await createMockPaidOrder(draft, "You");
-          order.id = remote.orderId;
-          order.checkoutMode = "test";
-          order.status = "CHECKOUT_PENDING";
-          if (remote.recipientToken) order.recipientToken = remote.recipientToken;
-          saveOrder(order);
-          navigate(`/christmas-story/order/${remote.orderId}`);
-          return;
-        }
-        if (remote.code !== "api_disabled" && remote.code !== "checkout_kill_switch") {
+        if (!remote.ok) {
           setError(remote.message || `Checkout unavailable (${remote.code})`);
           return;
         }
+        const mirror = await createMockPaidOrder(draft, "You");
+        mirror.id = remote.orderId;
+        mirror.checkoutMode = "test";
+        mirror.status = "CHECKOUT_PENDING";
+        if (remote.recipientToken) mirror.recipientToken = remote.recipientToken;
+        saveOrder(mirror);
+        if (remote.checkoutUrl) {
+          window.location.assign(remote.checkoutUrl);
+          return;
+        }
+        // Session created but no hosted URL (misconfig) — show pending truthfully.
+        navigate(`/christmas-story/order/${remote.orderId}?checkout=pending`);
+        return;
       }
 
-      // Local mock path when durable checkout kill-switch is ON (default).
+      // Local mock path only when durable API is disabled (dev / Mission 01 UX).
       if (!STORY_OFFER.checkoutEnabled) {
         const order = await createMockPaidOrder(draft, "You");
         saveOrder(order);
