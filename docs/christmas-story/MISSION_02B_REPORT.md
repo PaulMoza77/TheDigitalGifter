@@ -3,7 +3,8 @@
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02b-backend`  
 **Baseline:** `feature/christmas-story-mvp` @ `396aef2`  
-**Final commit:** `4258e2d075361cf9f1d553921030ea4ab13bf07c` (implementation: `8ebeb800f81705ab65d61447e0560fefec86c4c1`)  
+**Implementation commit:** `8ebeb800f81705ab65d61447e0560fefec86c4c1`  
+**Branch tip:** `feature/christmas-story-02b-backend` (see Draft PR #380)  
 **Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/380 (base: `feature/christmas-story-mvp`)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02b`  
 **Deployment:** **Not deployed.** Migrations **not applied** to production.  
