@@ -3,6 +3,8 @@
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02c-staging-e2e`  
 **Baseline:** `integration/christmas-story-02a-02b` @ `addcfd60efabf925f0ad1b0dda0410f0f03bae3f` (Draft PR #381)  
+**Implementation tip:** `5c86fd51b2def2070e8af36041cd93a982af0242`  
+**Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/382 (base: `integration/christmas-story-02a-02b`)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02c` (isolated worktree; sparse checkout excludes heavy christmas/santa media)  
 **Deployment:** **Not deployed.** No production migration apply.  
 **Payments:** LIVE **disabled**. Client `STORY_OFFER.checkoutEnabled=false`. Server requires `CHRISTMAS_STORY_CHECKOUT_ENABLED=true` + `STRIPE_TEST_*`.
