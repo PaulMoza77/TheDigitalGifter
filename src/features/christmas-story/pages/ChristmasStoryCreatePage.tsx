@@ -18,9 +18,9 @@ export default function ChristmasStoryCreatePage() {
 
   return (
     <div className="cs-root">
-      <div className="cs-shell">
+      <main className="cs-shell">
         <GiftCreator />
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,11 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { STORY_OFFER } from "../catalog";
 import { trackStoryEvent } from "../analytics";
 import { composePreviewContent, createMockPaidOrder } from "../generation/compose";
 import { localImageHandler } from "../generation/videoProvider";
 import { loadDraft, saveDraft, saveOrder, clearDraft } from "../draftStore";
-import type { RelationshipKind, StoryGiftContent, StoryGiftDraft } from "../types";
+import { createEmptyDraft, type RelationshipKind, type StoryGiftContent, type StoryGiftDraft } from "../types";
+import {
+  createStoryCheckout,
+  isStoryApiEnabled,
+  syncDraftToServer,
+} from "../storyApi";
 import { ExampleAudioPlayer } from "./ExampleAudioPlayer";
 
 const RELATIONSHIPS: { id: RelationshipKind; label: string }[] = [
@@ -31,7 +36,16 @@ type Stage = 1 | 2 | 3;
 export function GiftCreator() {
   const navigate = useNavigate();
   const [stage, setStage] = useState<Stage>(1);
-  const [draft, setDraft] = useState<StoryGiftDraft>(() => loadDraft());
+  const [params] = useSearchParams();
+  const [draft, setDraft] = useState<StoryGiftDraft>(() => {
+    let saved: StoryGiftDraft;
+    try { saved = loadDraft(); } catch { saved = createEmptyDraft(); }
+    return params.get("v") === "song" ? { ...saved, copyVariant: "personalized_song" } : saved;
+  });
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const creatorRef = useRef<HTMLDivElement>(null);
+  const previousStage = useRef(stage);
   const [preview, setPreview] = useState<StoryGiftContent | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,8 +55,25 @@ export function GiftCreator() {
   }, []);
 
   useEffect(() => {
-    saveDraft(draft);
+    try { saveDraft(draft); setSaveFailed(false); }
+    catch { setSaveFailed(true); }
+    if (isStoryApiEnabled() && draft.recipientName.trim().length >= 2) {
+      // Debounce remote saves; local draft remains available when offline.
+      const timer = window.setTimeout(() => {
+        void syncDraftToServer(draft).catch(() => {
+          // No remote-save confirmation can be assumed from local persistence.
+        });
+      }, 800);
+      return () => window.clearTimeout(timer);
+    }
   }, [draft]);
+
+  useEffect(() => {
+    if (previousStage.current !== stage) {
+      creatorRef.current?.querySelector("h1")?.focus();
+      previousStage.current = stage;
+    }
+  }, [stage]);
 
   const stage1Valid = useMemo(
     () =>
@@ -68,21 +99,23 @@ export function GiftCreator() {
   }
 
   async function onPhotos(files: FileList | null) {
-    if (!files?.length) return;
-    const next: string[] = [...draft.photoDataUrls];
-    for (const file of Array.from(files).slice(0, 8 - next.length)) {
-      if (!file.type.startsWith("image/")) {
-        setError("Only image uploads are supported.");
-        continue;
+    if (!files?.length || uploading) return;
+    setUploading(true);
+    setError(null);
+    const next = [...draft.photoDataUrls];
+    const available = Math.max(0, 8 - next.length);
+    const issues: string[] = [];
+    if (files.length > available) issues.push("You can add up to 8 photos. Extra selections were skipped.");
+    try {
+      for (const file of Array.from(files).slice(0, available)) {
+        if (!file.type.startsWith("image/")) { issues.push(`${file.name}: choose an image file.`); continue; }
+        if (file.size > 8 * 1024 * 1024) { issues.push(`${file.name}: choose a photo under 8 MB.`); continue; }
+        try { next.push(await localImageHandler.normalize(await readFile(file))); }
+        catch { issues.push(`${file.name}: this photo could not be read. Try another image.`); }
       }
-      if (file.size > 8 * 1024 * 1024) {
-        setError("Each photo must be under 8MB.");
-        continue;
-      }
-      const dataUrl = await readFile(file);
-      next.push(await localImageHandler.normalize(dataUrl));
-    }
-    setDraft((d) => ({ ...d, photoDataUrls: next }));
+      setDraft(d => ({ ...d, photoDataUrls: next }));
+      if (issues.length) setError(issues.join(" "));
+    } finally { setUploading(false); }
   }
 
   async function startCheckout() {
@@ -91,27 +124,52 @@ export function GiftCreator() {
       return;
     }
     trackStoryEvent("checkout_started", { price_cents: STORY_OFFER.priceCents });
-    if (!STORY_OFFER.checkoutEnabled) {
-      setBusy(true);
-      try {
+    setBusy(true);
+    try {
+      // Prefer durable Stripe TEST when API + server kill-switch allow it.
+      if (isStoryApiEnabled()) {
+        const remote = await createStoryCheckout({
+          draft,
+          content: preview,
+          fromName: "You",
+        });
+        if (remote.ok) {
+          // Keep a local mirror for buyer dashboard until paid webhook lands.
+          const order = await createMockPaidOrder(draft, "You");
+          order.id = remote.orderId;
+          order.checkoutMode = "test";
+          order.status = "CHECKOUT_PENDING";
+          if (remote.recipientToken) order.recipientToken = remote.recipientToken;
+          saveOrder(order);
+          navigate(`/christmas-story/order/${remote.orderId}`);
+          return;
+        }
+        if (remote.code !== "api_disabled" && remote.code !== "checkout_kill_switch") {
+          setError(remote.message || `Checkout unavailable (${remote.code})`);
+          return;
+        }
+      }
+
+      // Local mock path when durable checkout kill-switch is ON (default).
+      if (!STORY_OFFER.checkoutEnabled) {
         const order = await createMockPaidOrder(draft, "You");
         saveOrder(order);
         clearDraft();
         trackStoryEvent("gift_generation_started", { order_status: order.status });
         trackStoryEvent("gift_ready", { order_status: order.status });
         navigate(`/christmas-story/order/${order.id}`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not create order");
-      } finally {
-        setBusy(false);
+        return;
       }
-      return;
+      setError("Live checkout is not authorized yet.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create order");
+    } finally {
+      setBusy(false);
     }
-    setError("Live checkout is not authorized yet.");
   }
 
   return (
-    <div className="cs-creator">
+    <div className="cs-creator" ref={creatorRef}>
       <div className="cs-brand">
         <Link to="/christmas-story" className="cs-brand__name" style={{ color: "inherit", textDecoration: "none" }}>
           Digital Gifter
@@ -119,6 +177,8 @@ export function GiftCreator() {
         <span className="cs-brand__meta">Create their gift</span>
       </div>
 
+      <div className="cs-step-label" role="status"><span>Step {stage} of 3 · {stage === 1 ? "Their story" : stage === 2 ? "Your preview" : "Review the gift"}</span><span>{saveFailed ? "Draft not saved" : "Draft saved on this device"}</span></div>
+      {saveFailed ? <p className="cs-preview-banner" role="alert">Your changes are here, but this browser could not save them. Keep this page open and try removing a photo to free up space.</p> : null}
       <div className="cs-progress" aria-hidden>
         <span className={stage >= 1 ? "is-on" : undefined} />
         <span className={stage >= 2 ? "is-on" : undefined} />
@@ -127,21 +187,22 @@ export function GiftCreator() {
 
       {stage === 1 ? (
         <>
-          <h1 className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
-            Who is this for?
+          <h1 tabIndex={-1} className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
+            Someone only you know like this.
           </h1>
           <p style={{ color: "var(--cs-ivory-soft)", margin: 0 }}>
-            Three answers. Then you will see a personalized preview — before any payment.
+            Start with three little things. The best gifts begin with what you already know.
           </p>
 
           <div className="cs-field">
-            <span>Relationship</span>
+            <span>1. Who is the gift for?</span>
             <div className="cs-chips" role="group" aria-label="Relationship">
               {RELATIONSHIPS.map((r) => (
                 <button
                   key={r.id}
                   type="button"
                   className={`cs-chip ${draft.relationship === r.id ? "is-on" : ""}`}
+                  aria-pressed={draft.relationship === r.id}
                   onClick={() => setDraft((d) => ({ ...d, relationship: r.id }))}
                 >
                   {r.label}
@@ -151,26 +212,33 @@ export function GiftCreator() {
           </div>
 
           <label className="cs-field">
-            <span>What is their first name?</span>
+            <span>2. What is their first name?</span>
             <input
               value={draft.recipientName}
               onChange={(e) => setDraft((d) => ({ ...d, recipientName: e.target.value }))}
               autoComplete="off"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              aria-describedby="cs-name-help"
               maxLength={40}
-              placeholder="Emma"
+              placeholder="e.g. Emma"
             />
+            <small id="cs-name-help" className="cs-field-hint">Use the name they love to hear. At least 2 characters.</small>
           </label>
 
           <label className="cs-field">
-            <span>What makes them special to you?</span>
+            <span>3. What makes them special to you?</span>
             <textarea
               value={draft.whatMakesThemSpecial}
               onChange={(e) => setDraft((d) => ({ ...d, whatMakesThemSpecial: e.target.value }))}
               maxLength={320}
-              placeholder="The way they…"
+              aria-describedby="cs-special-help"
+              placeholder="The way you always know when I need a little encouragement…"
             />
+            <small id="cs-special-help" className="cs-field-hint">A small detail is enough. At least 8 characters · {draft.whatMakesThemSpecial.length}/320</small>
           </label>
-          <div className="cs-chips">
+          <p className="cs-field-hint">Need a starting point? Choose one and make it your own.</p>
+          <div className="cs-chips" aria-label="Writing suggestions">
             {SPECIAL_CHIPS.map((c) => (
               <button
                 key={c}
@@ -183,6 +251,11 @@ export function GiftCreator() {
             ))}
           </div>
 
+          <aside className="cs-live-preview" aria-label="Personalized gift cover preview">
+            <span className="cs-seal" aria-hidden="true">{draft.recipientName.trim().slice(0, 1) || "✧"}</span>
+            <div><p className="cs-kicker">Their gift begins here · Preview</p><p className="cs-live-preview__name">For {draft.recipientName.trim() || "someone special"}</p><p>{draft.whatMakesThemSpecial.trim() || "Your words will make this theirs."}</p></div>
+          </aside>
+          {!stage1Valid ? <p className="cs-field-hint">Choose a relationship, add their name and share a little detail to see the full preview.</p> : null}
           <button
             type="button"
             className="cs-btn cs-btn--primary"
@@ -197,18 +270,17 @@ export function GiftCreator() {
       {stage === 2 && preview ? (
         <>
           <p className="cs-preview-banner" role="note">
-            Gift Preview — demonstration only. The custom song and final film are created after payment
-            and your approval.
+            Gift preview · Sample lyrics and draft story only. No finished song or film has been generated.
           </p>
-          <h1 className="cs-display" style={{ fontSize: "1.9rem", margin: 0 }}>
+          <h1 tabIndex={-1} className="cs-display" style={{ fontSize: "1.9rem", margin: 0 }}>
             {preview.welcomeTitle}
           </h1>
           <p>{preview.dedication}</p>
           <ExampleAudioPlayer song={preview.song} />
 
-          <h2 className="cs-display" style={{ fontSize: "1.45rem", margin: "0.5rem 0 0" }}>
-            Optional: enrich the gift
-          </h2>
+          <details className="cs-customize">
+            <summary>Make it even more personal <span>Optional memories, dedication &amp; photos</span></summary>
+            <div className="cs-customize__fields">
           <label className="cs-field">
             <span>A special memory (optional)</span>
             <textarea
@@ -234,9 +306,14 @@ export function GiftCreator() {
               type="file"
               accept="image/*"
               multiple
-              onChange={(e) => void onPhotos(e.target.files)}
+              disabled={uploading || draft.photoDataUrls.length >= 8}
+              aria-describedby="cs-photo-help"
+              onChange={(e) => { void onPhotos(e.target.files); e.target.value = ""; }}
             />
           </label>
+          <p id="cs-photo-help" className="cs-field-hint">Up to 8 images, under 8 MB each. Photos stay in this browser for this preview.</p>
+          <p role="status" className="cs-field-hint">{uploading ? "Preparing your photos…" : `${draft.photoDataUrls.length} of 8 photos added`}</p>
+          <div className="cs-photo-grid">{draft.photoDataUrls.map((src, i) => <figure key={`${i}-${src.slice(-20)}`}><img src={src} alt={`Selected memory ${i + 1}`} /><button type="button" disabled={uploading} className="cs-photo-remove" aria-label={`Remove photo ${i + 1}`} onClick={() => setDraft(d => ({ ...d, photoDataUrls: d.photoDataUrls.filter((_, n) => n !== i) }))}>×</button></figure>)}</div>
           {draft.photoDataUrls.length ? (
             <p style={{ margin: 0, fontSize: "0.9rem" }}>
               {draft.photoDataUrls.length} photo{draft.photoDataUrls.length === 1 ? "" : "s"} ready
@@ -244,16 +321,19 @@ export function GiftCreator() {
             </p>
           ) : null}
 
+            </div>
+          </details>
           <div className="cs-cta-row">
-            <button type="button" className="cs-btn cs-btn--ghost" onClick={() => setStage(1)}>
+            <button type="button" className="cs-btn cs-btn--ghost" disabled={busy || uploading} onClick={() => setStage(1)}>
               Back
             </button>
             <button
               type="button"
               className="cs-btn cs-btn--primary"
+              disabled={busy || uploading}
               onClick={() => void buildPreview(3)}
             >
-              Continue to offer
+              {busy ? "Updating preview…" : "Review the gift"}
             </button>
           </div>
         </>
@@ -261,7 +341,7 @@ export function GiftCreator() {
 
       {stage === 3 ? (
         <>
-          <h1 className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
+          <h1 tabIndex={-1} className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
             {STORY_OFFER.name}
           </h1>
           <p className="cs-price__amount">{STORY_OFFER.displayPrice}</p>
@@ -274,7 +354,7 @@ export function GiftCreator() {
           <p style={{ color: "var(--cs-ivory-soft)", fontSize: "0.9rem" }}>{STORY_OFFER.taxesNote}</p>
 
           <label className="cs-field">
-            <span>Email for order updates (guest checkout)</span>
+            <span>Email for order updates (test only; no email is sent)</span>
             <input
               type="email"
               value={draft.buyerEmail}
@@ -306,7 +386,7 @@ export function GiftCreator() {
           ) : null}
 
           <div className="cs-cta-row">
-            <button type="button" className="cs-btn cs-btn--ghost" onClick={() => setStage(2)}>
+            <button type="button" className="cs-btn cs-btn--ghost" disabled={busy} onClick={() => setStage(2)}>
               Back
             </button>
             <button
