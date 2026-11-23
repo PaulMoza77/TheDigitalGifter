@@ -4,7 +4,8 @@
 **Branch:** `feature/christmas-story-02e-demo`  
 **Baseline (Mission 02D tip):** `ea75639a3516ddb4b2a131d10a817c92ab1a0136`  
 **Workspace:** `/Users/paul/tdg-christmas-story-02e`  
-**Draft PR:** pending create  
+**Draft PR:** pending create
+**Branch tip:**   
 **Deployment:** **Not deployed.** LIVE payments **OFF.** PRs #379–#383 untouched.
 
 ---
