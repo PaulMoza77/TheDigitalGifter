@@ -2,7 +2,9 @@
 
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02c-staging-e2e`  
+**Implementation tip:** `a90744c151481207c812b4f401148e6039f74760`  
 **Baseline:** `integration/christmas-story-02a-02b` @ `addcfd60efabf925f0ad1b0dda0410f0f03bae3f` (Draft PR #381)  
+**Draft PR:** (created after push — see GitHub PR for this branch)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02c`  
 **Deployment:** **Not deployed.** No production migration. LIVE payments remain OFF.
 
