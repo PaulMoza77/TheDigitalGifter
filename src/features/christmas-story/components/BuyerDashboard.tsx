@@ -3,6 +3,14 @@ import { Link } from "react-router-dom";
 import { trackStoryEvent } from "../analytics";
 import { activePrintProvider } from "../generation/printProvider";
 import { saveOrder } from "../draftStore";
+import {
+  approveBuyerOrder,
+  buyerPreviewOrder,
+  isStoryApiEnabled,
+  markBuyerOrderSent,
+  readRecipientToken,
+  scheduleBuyerOrder,
+} from "../storyApi";
 import type { StoryOrder } from "../types";
 import { ExampleAudioPlayer } from "./ExampleAudioPlayer";
 
@@ -15,10 +23,11 @@ export function BuyerDashboard({ order, onChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
-  const giftPath = useMemo(
-    () => `/gift/${order.recipientToken}`,
-    [order.recipientToken],
+  const recipientToken = useMemo(
+    () => readRecipientToken(order.id) || order.recipientToken,
+    [order.id, order.recipientToken],
   );
+  const giftPath = useMemo(() => `/gift/${recipientToken}`, [recipientToken]);
   const giftUrl = useMemo(() => {
     if (typeof window === "undefined") return giftPath;
     return `${window.location.origin}${giftPath}`;
@@ -30,6 +39,23 @@ export function BuyerDashboard({ order, onChange }: Props) {
   }
 
   async function approve() {
+    if (isStoryApiEnabled()) {
+      const res = await approveBuyerOrder(order.id);
+      if (res.ok) {
+        const next: StoryOrder = {
+          ...order,
+          status: "READY_TO_SEND",
+          approvedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        persist(next);
+        trackStoryEvent("gift_approved", { order_status: next.status });
+        setNote("Gift approved on server. You can copy the link or download the QR card.");
+        // Buyer preview must never mark recipient OPENED
+        void buyerPreviewOrder(order.id);
+        return;
+      }
+    }
     const next: StoryOrder = {
       ...order,
       status: "READY_TO_SEND",
@@ -42,6 +68,21 @@ export function BuyerDashboard({ order, onChange }: Props) {
   }
 
   async function markSent() {
+    if (isStoryApiEnabled()) {
+      const res = await markBuyerOrderSent(order.id);
+      if (res.ok) {
+        const next: StoryOrder = {
+          ...order,
+          status: "SENT",
+          sentAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        persist(next);
+        trackStoryEvent("gift_sent", { order_status: next.status });
+        setNote("Marked as sent. Recipient access is now enabled server-side.");
+        return;
+      }
+    }
     const next: StoryOrder = {
       ...order,
       status: "SENT",
@@ -160,15 +201,19 @@ export function BuyerDashboard({ order, onChange }: Props) {
           type="datetime-local"
           value={order.draft.scheduleAt?.slice(0, 16) ?? ""}
           onChange={(e) => {
+            const scheduleAt = e.target.value ? new Date(e.target.value).toISOString() : null;
             const next = {
               ...order,
               draft: {
                 ...order.draft,
-                scheduleAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                scheduleAt,
               },
               updatedAt: new Date().toISOString(),
             };
             persist(next);
+            if (isStoryApiEnabled()) {
+              void scheduleBuyerOrder(order.id, scheduleAt, order.draft.scheduleTz);
+            }
           }}
         />
       </label>
