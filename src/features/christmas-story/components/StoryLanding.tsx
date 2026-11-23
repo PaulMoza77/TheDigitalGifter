@@ -46,15 +46,26 @@ export function StoryLanding() {
             </div>
             <Link to="/christmas-story/demo" className="cs-gift-preview" aria-label="Explore Emma’s fictional sample gift">
               <div className="cs-gift-preview__border">
+                <div className="cs-gift-preview__film">
+                  <img
+                    src="/assets/christmas-story-demo/emma-poster.jpg"
+                    alt=""
+                    width={640}
+                    height={360}
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <span className="cs-gift-preview__play" aria-hidden="true">▶</span>
+                </div>
                 <p className="cs-kicker">A little world, made for</p>
                 <p className="cs-gift-preview__name">Emma</p>
                 <span className="cs-gift-preview__rule" aria-hidden="true" />
                 <p className="cs-gift-preview__dedication">For all the ordinary moments<br />you made extraordinary.</p>
                 <div className="cs-seal" aria-hidden="true">E</div>
                 <p className="cs-gift-preview__from">With love, Jordan</p>
-                <div className="cs-gift-preview__footer"><span>Song · Film · A secret to keep</span><span aria-hidden="true">↗</span></div>
+                <div className="cs-gift-preview__footer"><span>Film ready · Song pending license</span><span aria-hidden="true">↗</span></div>
               </div>
-              <span className="cs-sample-label">Fictional sample · Explore the opening</span>
+              <span className="cs-sample-label">Fictional sample · Stock photos · Not a customer gift</span>
             </Link>
           </section>
           <div className="cs-trust-strip" aria-label="Gift details"><span>Made from your memories</span><span>Reviewed by you</span><span>No app needed</span></div>

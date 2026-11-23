@@ -28,3 +28,8 @@ artifacts/christmas-story-02d/e2e-out/
 artifacts/christmas-story-02d/e2e-queue/
 artifacts/christmas-story-02d/vitest-queue/
 artifacts/christmas-story-02d/*.tmp
+
+# Mission 02E local QA / scratch (commit selected evidence via report paths)
+artifacts/christmas-story-02e/after/*-work/
+artifacts/christmas-story-02e/licensed-song-inbox/
+artifacts/christmas-story-02e/qa-tmp/

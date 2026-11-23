@@ -1,9 +1,9 @@
 /**
- * Deterministic FFmpeg memory-film renderer (Mission 02D).
+ * Deterministic FFmpeg memory-film renderer (Mission 02D / 02E).
  * Secure argv-only spawn. No URL ingestion. No shell interpolation.
- * Typography plates are generated with Pillow when FFmpeg lacks drawtext.
+ * Typography plates via Pillow. warm_cinematic_v2 adds crossfades + Christmas grade.
  */
-import { mkdirSync, rmSync, statSync } from "node:fs";
+import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
 import type { FilmRenderInput, FilmRenderResult } from "./types.ts";
@@ -19,10 +19,13 @@ import { ffprobeJson, runCommand } from "./runCommand.ts";
 import { renderTextPlate } from "./textPlate.ts";
 
 const DEFAULT_FPS = 30;
-const DEFAULT_SEC_PER_PHOTO = 3.2;
-const TITLE_SEC = 2.4;
-const END_SEC = 3.2;
-const RENDER_TIMEOUT_MS = 180_000;
+const DEFAULT_SEC_PER_PHOTO = 3.6;
+const TITLE_SEC_V1 = 2.4;
+const END_SEC_V1 = 3.2;
+const TITLE_SEC_V2 = 3.4;
+const END_SEC_V2 = 4.6;
+const XFADE_SEC = 0.7;
+const RENDER_TIMEOUT_MS = 240_000;
 
 function dims(aspect: "landscape" | "portrait"): { w: number; h: number } {
   return aspect === "portrait" ? { w: 720, h: 1280 } : { w: 1280, h: 720 };
@@ -63,6 +66,11 @@ async function probeMedia(path: string): Promise<{
   };
 }
 
+const CHRISTMAS_GRADE =
+  "eq=contrast=1.06:brightness=0.015:saturation=1.12," +
+  "colorbalance=rs=0.05:gs=-0.02:bs=-0.06:rm=0.03:bm=-0.05," +
+  "vignette=PI/5";
+
 async function plateToClip(
   platePng: string,
   outMp4: string,
@@ -70,7 +78,11 @@ async function plateToClip(
   fps: number,
   w: number,
   h: number,
+  graded: boolean,
 ) {
+  const vf = graded
+    ? `scale=${w}:${h},fps=${fps},${CHRISTMAS_GRADE},format=yuv420p`
+    : `scale=${w}:${h},fps=${fps},format=yuv420p`;
   await runCommand(
     "ffmpeg",
     [
@@ -82,20 +94,114 @@ async function plateToClip(
       "-i",
       platePng,
       "-vf",
-      `scale=${w}:${h},fps=${fps},format=yuv420p`,
+      vf,
       "-c:v",
       "libx264",
       "-pix_fmt",
       "yuv420p",
       "-preset",
-      "veryfast",
+      "medium",
       "-crf",
-      "20",
+      "18",
       "-an",
       outMp4,
     ],
     RENDER_TIMEOUT_MS,
   );
+}
+
+async function concatHardCuts(clipPaths: string[], listFile: string, silentMp4: string) {
+  writeFileSync(
+    listFile,
+    clipPaths.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join("\n") + "\n",
+    "utf8",
+  );
+  await runCommand(
+    "ffmpeg",
+    [
+      "-y",
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      listFile,
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      "-preset",
+      "medium",
+      "-crf",
+      "18",
+      "-movflags",
+      "+faststart",
+      "-an",
+      silentMp4,
+    ],
+    RENDER_TIMEOUT_MS,
+  );
+}
+
+/** Soft crossfade chain for premium pacing (v2). */
+async function concatWithXfade(
+  clipPaths: string[],
+  clipDurations: number[],
+  silentMp4: string,
+  work: string,
+  fps: number,
+) {
+  if (clipPaths.length === 1) {
+    await runCommand(
+      "ffmpeg",
+      ["-y", "-i", clipPaths[0]!, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "medium", "-crf", "18", "-movflags", "+faststart", "-an", silentMp4],
+      RENDER_TIMEOUT_MS,
+    );
+    return;
+  }
+
+  const inputs: string[] = [];
+  for (const p of clipPaths) {
+    inputs.push("-i", p);
+  }
+
+  const xfade = Math.min(XFADE_SEC, Math.min(...clipDurations) * 0.35);
+  let filter = "";
+  let offset = clipDurations[0]! - xfade;
+  let lastLabel = "[0:v]";
+  for (let i = 1; i < clipPaths.length; i++) {
+    const out = i === clipPaths.length - 1 ? "[vout]" : `[v${i}]`;
+    filter += `${lastLabel}[${i}:v]xfade=transition=fade:duration=${xfade.toFixed(3)}:offset=${offset.toFixed(3)}${out};`;
+    lastLabel = out;
+    if (i < clipPaths.length - 1) {
+      offset += clipDurations[i]! - xfade;
+    }
+  }
+  filter += `[vout]fps=${fps},format=yuv420p[vfinal]`;
+
+  const args = [
+    "-y",
+    ...inputs,
+    "-filter_complex",
+    filter,
+    "-map",
+    "[vfinal]",
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-preset",
+    "medium",
+    "-crf",
+    "18",
+    "-movflags",
+    "+faststart",
+    "-an",
+    silentMp4,
+  ];
+  // Write filter for debugging without shell interpolation of media paths
+  writeFileSync(join(work, "xfade.filter.txt"), filter, "utf8");
+  await runCommand("ffmpeg", args, RENDER_TIMEOUT_MS);
 }
 
 /**
@@ -117,47 +223,62 @@ export async function renderMemoryFilm(
     validateAudioFile(audioPath);
   }
 
+  const template = input.template || "warm_cinematic_v1";
+  const v2 = template === "warm_cinematic_v2";
   const { w, h } = dims(input.aspect || "landscape");
   const fps = Math.min(30, Math.max(24, input.fps || DEFAULT_FPS));
-  const secPer = Math.min(5, Math.max(2.5, input.secondsPerPhoto || DEFAULT_SEC_PER_PHOTO));
+  const defaultSec = v2 ? 4.0 : DEFAULT_SEC_PER_PHOTO;
+  const secPer = Math.min(5.5, Math.max(2.5, input.secondsPerPhoto || defaultSec));
   const framesPer = Math.round(secPer * fps);
+  const titleSec = v2 ? TITLE_SEC_V2 : TITLE_SEC_V1;
+  const endSec = v2 ? END_SEC_V2 : END_SEC_V1;
 
   const work = join(outDir, safeJobFileName(input.jobId, "work"));
   mkdirSync(work, { recursive: true });
 
   const clipPaths: string[] = [];
+  const clipDurations: number[] = [];
   const recipient = String(input.recipientName || "you").slice(0, 48);
   const dedication = String(input.dedication || "With love").slice(0, 140);
 
-  // Title plate
+  // Title plate — warmer, layered copy for v2
   const titlePng = join(work, "title.png");
   renderTextPlate({
     outPath: titlePng,
     width: w,
     height: h,
-    background: "#1a120e",
-    lines: [
-      { text: `For ${recipient}`, size: Math.round(w * 0.05), color: "#f5e6d3", yRatio: 0.46 },
-      { text: "Our Christmas Story", size: Math.round(w * 0.028), color: "#d4b896", yRatio: 0.56 },
-    ],
+    background: v2 ? "#120c09" : "#1a120e",
+    lines: v2
+      ? [
+          { text: "Our Christmas Story", size: Math.round(w * 0.026), color: "#c9a66b", yRatio: 0.38 },
+          { text: `For ${recipient}`, size: Math.round(w * 0.062), color: "#f7ead7", yRatio: 0.5 },
+          { text: "a gift made from memory", size: Math.round(w * 0.022), color: "#b9a48a", yRatio: 0.62 },
+        ]
+      : [
+          { text: `For ${recipient}`, size: Math.round(w * 0.05), color: "#f5e6d3", yRatio: 0.46 },
+          { text: "Our Christmas Story", size: Math.round(w * 0.028), color: "#d4b896", yRatio: 0.56 },
+        ],
   });
   const titlePath = join(work, "title.mp4");
-  await plateToClip(titlePng, titlePath, TITLE_SEC, fps, w, h);
+  await plateToClip(titlePng, titlePath, titleSec, fps, w, h, v2);
   clipPaths.push(titlePath);
+  clipDurations.push(titleSec);
 
-  // Photo clips with restrained zoompan
+  // Photo clips with restrained zoompan (+ Christmas grade for v2)
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]!;
     const clip = join(work, `clip_${String(i).padStart(2, "0")}.mp4`);
     const caption = String(input.captions?.[i] || "").slice(0, 80);
-    // zoompan d=1 + -t/-frames:v keeps duration deterministic (avoids runaway frame counts).
+    const zoomSpeed = v2 ? 0.0007 : 0.0009;
     const vfParts = [
       `scale=${w * 2}:${h * 2}:force_original_aspect_ratio=increase`,
       `crop=${w * 2}:${h * 2}`,
       "setsar=1",
-      `zoompan=z='min(1.0+0.0009*on,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${w}x${h}:fps=${fps}`,
-      "format=yuv420p",
+      `zoompan=z='min(1.0+${zoomSpeed}*on,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${w}x${h}:fps=${fps}`,
     ];
+    if (v2) vfParts.push(CHRISTMAS_GRADE);
+    vfParts.push("format=yuv420p");
+
     await runCommand(
       "ffmpeg",
       [
@@ -177,9 +298,9 @@ export async function renderMemoryFilm(
         "-pix_fmt",
         "yuv420p",
         "-preset",
-        "veryfast",
+        "medium",
         "-crf",
-        "20",
+        "18",
         "-an",
         clip,
       ],
@@ -191,9 +312,9 @@ export async function renderMemoryFilm(
       renderTextPlate({
         outPath: capPng,
         width: w,
-        height: Math.max(80, Math.round(h * 0.12)),
+        height: Math.max(90, Math.round(h * 0.14)),
         background: "#000000",
-        lines: [{ text: caption, size: Math.round(w * 0.025), color: "#f5e6d3", yRatio: 0.5 }],
+        lines: [{ text: caption, size: Math.round(w * 0.028), color: "#f5e6d3", yRatio: 0.5 }],
       });
       const withCap = join(work, `clip_${String(i).padStart(2, "0")}_cap.mp4`);
       await runCommand(
@@ -205,15 +326,15 @@ export async function renderMemoryFilm(
           "-i",
           capPng,
           "-filter_complex",
-          `[1:v]format=rgba,colorchannelmixer=aa=0.72[c];[0:v][c]overlay=0:H-h-24`,
+          `[1:v]format=rgba,colorchannelmixer=aa=0.62[c];[0:v][c]overlay=0:H-h-20`,
           "-c:v",
           "libx264",
           "-pix_fmt",
           "yuv420p",
           "-preset",
-          "veryfast",
+          "medium",
           "-crf",
-          "20",
+          "18",
           "-an",
           "-shortest",
           withCap,
@@ -224,6 +345,7 @@ export async function renderMemoryFilm(
     } else {
       clipPaths.push(clip);
     }
+    clipDurations.push(secPer);
   }
 
   // Ending dedication plate
@@ -232,50 +354,25 @@ export async function renderMemoryFilm(
     outPath: endPng,
     width: w,
     height: h,
-    background: "#140e0a",
-    lines: [
-      { text: dedication, size: Math.round(w * 0.032), color: "#f5e6d3", yRatio: 0.5 },
-    ],
+    background: v2 ? "#0e0a08" : "#140e0a",
+    lines: v2
+      ? [
+          { text: dedication, size: Math.round(w * 0.034), color: "#f7ead7", yRatio: 0.46 },
+          { text: "Merry Christmas", size: Math.round(w * 0.024), color: "#c9a66b", yRatio: 0.6 },
+        ]
+      : [{ text: dedication, size: Math.round(w * 0.032), color: "#f5e6d3", yRatio: 0.5 }],
   });
   const endPath = join(work, "end.mp4");
-  await plateToClip(endPng, endPath, END_SEC, fps, w, h);
+  await plateToClip(endPng, endPath, endSec, fps, w, h, v2);
   clipPaths.push(endPath);
-
-  // Concat demuxer list
-  const listFile = join(work, "concat.txt");
-  const { writeFileSync } = await import("node:fs");
-  writeFileSync(
-    listFile,
-    clipPaths.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join("\n") + "\n",
-    "utf8",
-  );
+  clipDurations.push(endSec);
 
   const silentMp4 = join(work, "silent.mp4");
-  await runCommand(
-    "ffmpeg",
-    [
-      "-y",
-      "-f",
-      "concat",
-      "-safe",
-      "0",
-      "-i",
-      listFile,
-      "-c:v",
-      "libx264",
-      "-pix_fmt",
-      "yuv420p",
-      "-preset",
-      "veryfast",
-      "-crf",
-      "20",
-      "-movflags",
-      "+faststart",
-      "-an",
-      silentMp4,
-    ],
-    RENDER_TIMEOUT_MS,
-  );
+  if (v2 && clipPaths.length >= 2) {
+    await concatWithXfade(clipPaths, clipDurations, silentMp4, work, fps);
+  } else {
+    await concatHardCuts(clipPaths, join(work, "concat.txt"), silentMp4);
+  }
 
   const finalMp4 = join(outDir, safeJobFileName(input.jobId, "film.mp4"));
   if (audioPath) {
@@ -307,8 +404,24 @@ export async function renderMemoryFilm(
   } else {
     await runCommand(
       "ffmpeg",
-      ["-y", "-i", silentMp4, "-c", "copy", "-movflags", "+faststart", finalMp4],
-      60_000,
+      [
+        "-y",
+        "-i",
+        silentMp4,
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-preset",
+        "medium",
+        "-crf",
+        "18",
+        "-movflags",
+        "+faststart",
+        "-an",
+        finalMp4,
+      ],
+      RENDER_TIMEOUT_MS,
     );
   }
 
@@ -318,9 +431,11 @@ export async function renderMemoryFilm(
   }
 
   const posterPath = join(outDir, safeJobFileName(input.jobId, "poster.jpg"));
+  // Poster from a mid photo beat when possible (not title plate)
+  const posterSs = Math.min(titleSec + secPer * 0.45, Math.max(1.2, size > 0 ? titleSec + 1.2 : 0.8));
   await runCommand(
     "ffmpeg",
-    ["-y", "-ss", "0.8", "-i", finalMp4, "-frames:v", "1", "-q:v", "3", posterPath],
+    ["-y", "-ss", String(posterSs), "-i", finalMp4, "-frames:v", "1", "-q:v", "2", posterPath],
     60_000,
   );
 
@@ -329,6 +444,8 @@ export async function renderMemoryFilm(
     "-y",
     "-i",
     finalMp4,
+    "-t",
+    "12",
     "-vf",
     `scale=${Math.round(w / 2)}:${Math.round(h / 2)}`,
     "-c:v",
@@ -338,7 +455,7 @@ export async function renderMemoryFilm(
     "-preset",
     "veryfast",
     "-crf",
-    "28",
+    "26",
     "-movflags",
     "+faststart",
   ];
@@ -352,7 +469,7 @@ export async function renderMemoryFilm(
 
   const probe = await probeMedia(finalMp4);
   if (probe.videoCodec !== "h264") throw new Error("output_codec_invalid");
-  if (probe.pixFmt && probe.pixFmt !== "yuv420p") throw new Error("output_pix_fmt_invalid");
+  if (probe.pixFmt && !/^yuvj?420p$/.test(probe.pixFmt)) throw new Error(`output_pix_fmt_invalid:${probe.pixFmt}`);
   if (probe.width < 320 || probe.height < 320) throw new Error("output_dims_invalid");
 
   const checksum = sha256File(finalMp4);

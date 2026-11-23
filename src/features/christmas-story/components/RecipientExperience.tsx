@@ -29,7 +29,11 @@ export function RecipientExperience({ content, isDemo, onOpened, onDemoPlay }: P
 
   return (
     <main className={`cs-gift ${opened ? "cs-gift--opened" : ""}`}>
-      {isDemo ? <p className="cs-preview-banner cs-gift__sample" role="note">Fictional sample gift · Media previews only</p> : null}
+      {isDemo ? (
+        <p className="cs-preview-banner cs-gift__sample" role="note">
+          Fictional sample · Film uses licensed stock photos · Song not attached yet
+        </p>
+      ) : null}
       {!opened ? (
         <div className="cs-gift__welcome">
           <p className="cs-kicker">A Christmas gift, just for you</p>

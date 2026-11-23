@@ -24,7 +24,15 @@ export function ExampleAudioPlayer({ song, onPlay }: Props) {
             }} />
           {failed ? <p role="status" className="cs-media-note">This audio could not load. Please try again later.</p> : null}
         </>
-      ) : <p className="cs-media-note">{song.isExample ? "Lyrics preview only. No recorded song is available in this sample." : song.status === "failed" ? "The song is unavailable right now. Please check back later." : "Your song is not available yet. Your words are here to read."}</p>}
+      ) : (
+        <p className="cs-media-note" role="status">
+          {song.isExample
+            ? "Song not attached yet. Lyrics only — no playback until an authorized commercial master is uploaded."
+            : song.status === "failed"
+              ? "The song is unavailable right now. Please check back later."
+              : "Your song is not available yet. Your words are here to read."}
+        </p>
+      )}
       {song.lyrics.length ? <details className="cs-lyrics-details" open={!song.audioUrl}><summary>Read the lyrics</summary><ul className="cs-lyrics">{song.lyrics.map((line, i) => <li key={`${line.timeMs}-${i}`} className={i === activeLine ? "is-active" : undefined}>{line.text}</li>)}</ul></details> : null}
     </div>
   );
