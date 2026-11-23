@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02d-media`  
+**Implementation commit:** `a5c4c4241c63f82ef9bc941d0d1443fd681d554a`  
 **Baseline:** `f5fe78c515a23ea6b93eeba2d7db325bad72e8a9` (Mission 02C tip)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02d`  
 **Deployment:** **Not deployed.** LIVE payments **OFF.** PRs #379–#382 untouched.
