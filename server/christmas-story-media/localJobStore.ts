@@ -94,12 +94,19 @@ export class LocalJobStore {
     return job;
   }
 
-  /** Atomic claim: only one worker wins for queued/retryable failed jobs. */
-  claim(workerId: string, leaseSeconds = 120): MediaJobRecord | null {
+  /**
+   * Atomic claim: only one worker wins for queued/retryable failed jobs.
+   * Defaults to film (matches SQL christmas_story_claim_job). Pass jobType to scope.
+   */
+  claim(
+    workerId: string,
+    leaseSeconds = 120,
+    jobType: MediaJobRecord["jobType"] = "film",
+  ): MediaJobRecord | null {
     const now = Date.now();
     const candidates = this.list()
       .filter((j) => {
-        if (j.jobType !== "film" && j.jobType !== "song") return false;
+        if (j.jobType !== jobType) return false;
         if (j.status === "cancelled" || j.status === "ready") return false;
         if (j.status === "queued") return true;
         if (j.status === "failed" && j.attempts < j.maxAttempts) {
@@ -116,10 +123,14 @@ export class LocalJobStore {
     for (const job of candidates) {
       const fresh = this.get(job.id);
       if (!fresh) continue;
+      if (fresh.jobType !== jobType) continue;
       if (fresh.status === "generating" && fresh.leasedUntil) {
         if (new Date(fresh.leasedUntil).getTime() >= Date.now()) continue;
       }
       if (fresh.status === "ready" || fresh.status === "cancelled") continue;
+      if (fresh.status !== "queued" && fresh.status !== "failed" && fresh.status !== "generating") {
+        continue;
+      }
       fresh.status = "generating";
       fresh.workerId = workerId;
       fresh.attempts += 1;

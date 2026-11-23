@@ -37,7 +37,7 @@ describe("Mission 02D media pipeline", () => {
   });
 
   it("local job store claim is exclusive until lease expires", () => {
-    const dir = join(root, "artifacts/christmas-story-02d/vitest-queue");
+    const dir = join(root, "artifacts/christmas-story-02d/vitest-queue", `run-${Date.now()}`);
     const store = new LocalJobStore(dir);
     const job = store.create({
       orderId: "o1",
@@ -45,9 +45,9 @@ describe("Mission 02D media pipeline", () => {
       provider: "ffmpeg",
       metadata: {},
     });
-    const a = store.claim("wa", 60);
+    const a = store.claim("wa", 60, "film");
     expect(a?.id).toBe(job.id);
-    expect(store.claim("wb", 60)).toBeNull();
+    expect(store.claim("wb", 60, "film")).toBeNull();
   });
 
   it("cost model keeps currency estimates null without ops rates", () => {

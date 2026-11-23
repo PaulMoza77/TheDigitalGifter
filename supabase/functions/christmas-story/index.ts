@@ -3,7 +3,6 @@
  * Guest drafts/orders, hash-at-rest tokens, Stripe TEST checkout only.
  * Does not modify Santa Call commerce.
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { optionsResponse, jsonResponse } from "../_shared/cors.ts";
 import { getServiceClient, readJson } from "../_shared/supabase.ts";
 import { assertRateLimit, clientIp } from "../_shared/rateLimit.ts";
@@ -152,24 +151,6 @@ function siteUrl() {
   ).replace(/\/$/, "");
 }
 
-
-async function requireStoryAdmin(req: Request): Promise<boolean> {
-  const auth = req.headers.get("Authorization") || "";
-  const jwt = auth.replace(/^Bearer\s+/i, "").trim();
-  if (!jwt) return false;
-  const url = Deno.env.get("SUPABASE_URL") || "";
-  const anon = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  const userClient = createClient(url, anon, {
-    global: { headers: { Authorization: `Bearer ${jwt}` } },
-    auth: { persistSession: false },
-  });
-  const { data: userData } = await userClient.auth.getUser();
-  const email = asString(userData.user?.email).toLowerCase();
-  if (!email) return false;
-  const service = getServiceClient();
-  const { data } = await service.from("admin_users").select("email").eq("email", email).maybeSingle();
-  return Boolean(data?.email);
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
@@ -715,12 +696,44 @@ Deno.serve(async (req) => {
       if (!assertStoryTransition(String(order.status), "APPROVED")) {
         return jsonResponse({ ok: false, code: "invalid_transition" }, 409);
       }
+      // Mission 02D: when media jobs exist, song + film must be ready before approval.
+      const { data: mediaJobs } = await service
+        .from("christmas_story_jobs")
+        .select("job_type,status,production_state")
+        .eq("order_id", order.id);
+      const jobs = mediaJobs || [];
+      const hasSongJob = jobs.some((j) => j.job_type === "song");
+      const hasFilmJob = jobs.some((j) => j.job_type === "film");
+      if (hasSongJob || hasFilmJob) {
+        const songReady = !hasSongJob || jobs.some((j) =>
+          j.job_type === "song" &&
+          (j.status === "ready" ||
+            j.production_state === "ready_for_buyer_review" ||
+            j.production_state === "approved")
+        );
+        const filmReady = !hasFilmJob ||
+          jobs.some((j) => j.job_type === "film" && j.status === "ready");
+        if (!songReady || !filmReady) {
+          return jsonResponse({
+            ok: false,
+            code: "media_incomplete",
+            message: "Song and memory film must both be ready before approval.",
+            songReady,
+            filmReady,
+          }, 409);
+        }
+      }
       const updated = await transition(service, String(order.id), "APPROVED", "buyer");
       // Move to READY_TO_SEND automatically after approve
       let ready = updated;
       if (assertStoryTransition("APPROVED", "READY_TO_SEND")) {
         ready = await transition(service, String(order.id), "READY_TO_SEND", "buyer");
       }
+      await audit(service, {
+        orderId: String(order.id),
+        event: "media_approved",
+        actor: "buyer",
+      });
       return jsonResponse({ ok: true, order: buyerDto(ready) });
     }
 

@@ -3,7 +3,7 @@
  * Mission 02D local media E2E — real FFmpeg renders + job/song controls.
  * Run: node --experimental-strip-types scripts/christmas-story-02d/e2e-media.mjs
  */
-import { mkdirSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, existsSync, copyFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -24,7 +24,9 @@ const out = join(root, "artifacts/christmas-story-02d/e2e-out");
 const queue = join(root, "artifacts/christmas-story-02d/e2e-queue");
 mkdirSync(fixtures, { recursive: true });
 mkdirSync(out, { recursive: true });
-mkdirSync(queue, { recursive: true });
+// Isolate each E2E run — leftover queued jobs must not steal claims.
+rmSync(queue, { recursive: true, force: true });
+mkdirSync(join(queue, "jobs"), { recursive: true });
 
 function ensureFixture(name, args) {
   const path = join(fixtures, name);
@@ -194,18 +196,18 @@ const job = store.create({
     aspect: "landscape",
   },
 });
-const claimed = store.claim(workerA, 2);
+const claimed = store.claim(workerA, 2, "film");
 if (!claimed || claimed.id !== job.id) fail("claim job", "no claim");
 else pass("claim job");
 
-const stolen = store.claim(workerB, 2);
+const stolen = store.claim(workerB, 2, "film");
 if (stolen) fail("duplicate claim blocked", "second claim succeeded early");
 else pass("duplicate claim blocked");
 
 // Simulate crash: expire lease
 claimed.leasedUntil = new Date(Date.now() - 1000).toISOString();
 store.save(claimed);
-const recovered = store.claim(workerB, 60);
+const recovered = store.claim(workerB, 60, "film");
 if (!recovered || recovered.workerId !== workerB) fail("crash recovery reclaim", "no reclaim");
 else pass("crash recovery reclaim");
 
@@ -228,7 +230,7 @@ try {
   const again = store.get(recovered.id);
   if (again?.status !== "ready") throw new Error("not_ready");
   // Idempotent: claiming ready jobs returns null
-  if (store.claim(workerA, 30)) throw new Error("reclaimed_ready");
+  if (store.claim(workerA, 30, "film")) throw new Error("reclaimed_ready");
   pass("complete + idempotent ready jobs");
 } catch (e) {
   fail("complete + idempotent ready jobs", e instanceof Error ? e.message : String(e));

@@ -25,7 +25,7 @@ mkdirSync(outRoot, { recursive: true });
 const store = new LocalJobStore(storeRoot);
 
 async function processOne() {
-  const job = store.claim(workerId, 180);
+  const job = store.claim(workerId, 180, "film");
   if (!job) return false;
   console.log(JSON.stringify({ event: "claimed", jobId: job.id, orderId: job.orderId, attempt: job.attempts }));
   const beat = setInterval(() => {

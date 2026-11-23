@@ -72,12 +72,13 @@ FFmpeg runs only in the standalone worker. Supabase Edge never renders video.
 | Metric | Value |
 | --- | --- |
 | Output | `artifacts/.../e2e-out/multi/e2e-multi-film.mp4` (also copied to public demo) |
-| Duration | **15.2 s** |
+| Duration | **15.2 s** (ffprobe) |
 | Size | **42,013 bytes** (synthetic color plates; customer photos will be larger) |
 | Codec | H.264 / yuv420p / 1280×720 |
-| Render wall time | **3,547 ms** |
-| Peak RSS (reported) | **~90 MB** |
+| Render wall time | **2,419 ms** (latest local E2E) |
+| Peak RSS (reported) | **~92 MB** |
 | Checksum | `498998ff44d1feb82ab1eb25d7cc4d0add0d263419feb007fe18cef945a75392` |
+| Demo public path | `public/assets/christmas-story-demo/emma-memory-film.mp4` (same checksum) |
 
 Currency cost estimates intentionally **null** until VPS/labor rates are configured (`buildMediaCostModel`).
 
@@ -87,14 +88,20 @@ Currency cost estimates intentionally **null** until VPS/labor rates are configu
 
 ```text
 node --experimental-strip-types scripts/christmas-story-02d/e2e-media.mjs
-  → RESULT: all media E2E checks passed
+  → RESULT: all media E2E checks passed (15/15)
     (multi-photo, portrait, audio mux, corrupt/invalid input, claim/retry,
      unauthorized admin, license evidence, revision cycle)
 
-vitest: 62 passed (02D pipeline + 02B/02C + christmasStory + santa-call + commercialOffers)
+vitest (02D-focused): 36 passed
+  mission02d + mediaPipeline + mission02b/02c + christmasStory
 tsc -p tsconfig.app.json --noEmit → exit 0
 npm run build → success
 ```
+
+### Follow-up hardening in tip commit
+- `approveOrder` returns `media_incomplete` when song/film jobs exist but are not ready.
+- LocalJobStore `claim` scopes by job type (default `film`), matching SQL RPC.
+- E2E wipes queue dir each run so leftover jobs cannot steal claims.
 
 Remote Edge/storage E2E against hosted Supabase was **not** claimed (no isolated staging credentials in this session).
 
