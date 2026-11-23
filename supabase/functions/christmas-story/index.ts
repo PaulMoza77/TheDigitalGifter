@@ -365,7 +365,7 @@ Deno.serve(async (req) => {
       });
 
       const successUrl = `${siteUrl()}/christmas-story/order/${order.id}?checkout=success`;
-      const cancelUrl = `${siteUrl()}/christmas-story/create?checkout=cancel`;
+      const cancelUrl = `${siteUrl()}/christmas-story/order/${order.id}?checkout=cancel`;
 
       // Hosted Stripe Checkout (customer-facing). Server amount is authoritative.
       // Never mark PAID here — only the isolated TEST webhook may fulfill payment.

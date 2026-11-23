@@ -2,100 +2,154 @@
 
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02c-staging-e2e`  
-**Tip:** `4d4e4ee8d691d4970e0db5bb6a1d852568a6f5c3`  
 **Baseline:** `integration/christmas-story-02a-02b` @ `addcfd60efabf925f0ad1b0dda0410f0f03bae3f` (Draft PR #381)  
-**Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/382  
-**Workspace:** `/Users/paul/tdg-christmas-story-02c` (sparse worktree; heavy media excluded)  
-**Deployment:** **Not deployed.** No production migration. LIVE payments **OFF**.
+**Workspace:** `/Users/paul/tdg-christmas-story-02c` (isolated worktree; sparse checkout excludes heavy christmas/santa media)  
+**Deployment:** **Not deployed.** No production migration apply.  
+**Payments:** LIVE **disabled**. Client `STORY_OFFER.checkoutEnabled=false`. Server requires `CHRISTMAS_STORY_CHECKOUT_ENABLED=true` + `STRIPE_TEST_*`.
 
 ---
 
 ## Database isolation
 
-| Item | Value |
+| Environment | Result |
 | --- | --- |
-| Isolated DB | Docker `tdg-story-02c-db` · Postgres 16 · host port `54332` |
-| Remote Supabase | **Not used.** Org only lists unrelated project `ueqwvulubkauushhbely` (not TDG staging) |
-| Migrations applied (local only) | `20261123010000_christmas_story_durable_orders.sql` + `20261123120000_christmas_story_02c_hardening.sql` after bootstrap stubs |
-| Production | Untouched |
+| Remote Supabase org projects | Only `ueqwvulubkauushhbely` visible via CLI — **not** used (not a TDG story staging project). |
+| Full `supabase db reset` on project `kjlsocejpmnzhhduyumy` | **Blocked** mid-chain by unrelated `christmas_planner` / product slug conflicts after a local type-cast fix. |
+| Isolated Docker Postgres `tdg-story-02c-db` (`postgres:17-alpine`, host port **54332**) | **Used.** Bootstrap + Mission 02B + 02C hardening SQL applied. |
 
-Bootstrap: `scripts/christmas-story-02c/00_bootstrap_isolated.sql` (auth/storage/role stubs + `processed_stripe_events`).
+Isolation proof: E2E script targets only `docker://tdg-story-02c-db` and does not connect to production hosts.
 
-### Security audit (verified on isolated DB)
+### Migration audit (02B + 02C)
 
-- RLS enabled on all `christmas_story_*` tables; `anon` insert/select **denied**.
-- SECURITY DEFINER RPCs (`transition_order`, `fulfill_payment`, `expire_checkout`) **service_role only**; `assert_transition` execute revoked from anon/authenticated.
-- Private buckets `christmas-story-source` / `christmas-story-generated` with `public=false`; no public storage policies.
-- Buyer/recipient/recovery tokens stored as SHA-256 only.
-- `buyer_access_token_hash` select revoked from `authenticated`.
-
-### Isolated DB E2E
-
-```text
-node scripts/christmas-story-02c-db-e2e.mjs
-RESULT: all checks passed
-```
-
-Covers: unpaid after session-shaped insert, amount mismatch, fulfill idempotency, pre-send recipient denial, buyer preview ≠ OPENED, revoke/rotate, expiry, recovery hash-at-rest, invalid transitions, anon denial.
+- SECURITY DEFINER RPCs (`christmas_story_transition_order`, `christmas_story_fulfill_payment`, `christmas_story_expire_checkout`) require `auth.role() = service_role`; EXECUTE revoked from `anon`/`authenticated`/`public`.
+- RLS enabled; table privileges revoked from browser roles; private storage buckets `public=false` with no public object policies.
+- Recipient / recovery tokens stored as SHA-256 only (`token_hash` length 64).
+- 02C hardening: recovery challenges table; checkout expiry helper; reaffirm RPC grants.
 
 ---
 
-## Stripe TEST
+## Isolated DB E2E evidence
 
-| Gate | Status |
+Command: `node scripts/christmas-story-02c-db-e2e.mjs`
+
+```text
+PASS  draft created
+PASS  order CHECKOUT_PENDING
+PASS  anon cannot read orders
+PASS  session create leaves unpaid
+PASS  anon cannot fulfill payment
+PASS  fulfill payment ok
+PASS  order paid after webhook RPC
+PASS  duplicate fulfill is already_paid
+PASS  amount mismatch rejected
+PASS  recipient disabled pre-send
+PASS  recipient token hashed at rest
+PASS  wrong recipient token misses
+PASS  buyer preview does not OPEN
+PASS  recipient open marks OPENED
+PASS  revocation disables grant
+PASS  old recipient hash gone
+PASS  checkout expiry
+PASS  recovery stores hashes only
+PASS  invalid transition rejected
+RESULT: all checks passed
+```
+
+Unauthorized access attempts (anon SELECT / anon fulfill) denied. Payment stays `pending` until service-role fulfill RPC (webhook stand-in). Buyer preview audit does not set OPENED.
+
+---
+
+## Stripe TEST checkout
+
+### Implemented
+
+- Hosted Stripe Checkout session (`checkoutUrl`); server amount **5700** USD authoritative.
+- Browser sync (`syncCheckoutStatus`) may observe Stripe status / cancel / expire locally but **never** calls `christmas_story_fulfill_payment`.
+- Dedicated webhook handles `checkout.session.completed`, `async_payment_succeeded`, `checkout.session.expired`, `async_payment_failed`; rejects livemode; TEST secret only; idempotent via `processed_stripe_events`.
+- Frontend redirects to hosted Checkout; mirrors order as `CHECKOUT_PENDING` only (not PAID).
+- Cancel return lands on order page and marks cancelled without inventing success.
+
+### Verified vs blocked
+
+| Check | Status |
 | --- | --- |
-| Client `STORY_OFFER.checkoutEnabled` | `false` |
-| Server kill-switch | `CHRISTMAS_STORY_CHECKOUT_ENABLED` required |
-| Mode | TEST only; LIVE refused |
-| Hosted Checkout | `createCheckout` returns `checkoutUrl` (no `ui_mode=custom`) |
-| Server price | `5700` usd authoritative |
-| Browser sync | `syncCheckoutStatus` reports Stripe status; **never** calls fulfill RPC |
-| Webhook | `christmas-story-stripe-test-webhook` + expired/failed → not paid |
-| Live card charge this mission | **Blocked** — no `STRIPE_TEST_*` credentials in environment |
+| Kill-switch default ON | Verified (catalog + tests) |
+| LIVE key refusal | Verified in `storyStripe.ts` + tests |
+| Hosted session + webhook source-of-truth | Verified in code + unit tests |
+| Real Stripe TEST card charge | **Blocked** — no `STRIPE_TEST_SECRET_KEY` / `whsec` in this environment; Stripe CLI authorized to **Volocar LIVE** account only (not used). |
+
+Commercial switches left **OFF**.
 
 ---
 
 ## Buyer experience (02C)
 
-- Hosted Stripe redirect on durable API success; local mirror stays `CHECKOUT_PENDING` (not fake PAID).
-- Order page loads via `fetchBuyerOrder` / `syncCheckoutStatus`; cancel/success query handling.
-- Guest recovery: `requestBuyerRecovery` / `redeemBuyerRecovery` with `email_hash` + `token_hash`.
-- Approve / send remain server-authoritative when API enabled; denials do not invent local success.
-- Recipient page still refuses local fallback when API enabled.
-- Codex premium UI preserved (wiring only).
+- Order page loads via `getBuyerOrder` when API enabled; denied requests do **not** fall back to fake local success.
+- Guest email recovery: `requestBuyerRecovery` / `redeemBuyerRecovery` (hash-at-rest challenges; staging may return token when `CHRISTMAS_STORY_RECOVERY_RETURN_TOKEN=true`).
+- Approve / send are server-authoritative when API enabled; failures surface errors instead of optimistic local SENT/APPROVED.
+- Buyer preview remains separate from recipient OPENED.
+- Codex premium UI contracts preserved (additive wiring only).
 
 ---
 
-## Verification
+## Automated verification
 
 ```text
-vitest: 66 passed (mission02b/02c, christmasStory, santa-call, santaVideo, commercialOffers)
+vitest:
+  christmasStory.test.ts     8
+  mission02b.test.ts         9
+  mission02c.test.ts         9
+  santaCall.test.ts         14
+  santaVideo.test.ts        14
+  commercialOffers.test.ts  12
+  TOTAL                      66 passed
+
 tsc -p tsconfig.app.json --noEmit → exit 0
-npm run build → success (exit 0)
+npm run build → success
 isolated DB E2E → all checks passed
-Santa Call commerce sources → not modified for payment paths
 ```
+
+Santa Call commerce sources unchanged vs baseline `addcfd60`. PRs **#379** and **#380** were not modified.
+
+---
+
+## Security findings
+
+1. Anon cannot read story orders or execute fulfill/transition RPCs (E2E proven).
+2. Recipient grants disabled until send; wrong token hash misses; revocation rotates hash.
+3. Recovery stores email/token hashes only.
+4. Remaining: production email delivery for recovery not wired (staging token return flag only).
+5. Full local Supabase API stack (Kong/Edge serve) still fragile due to unrelated migration chain failures — DB isolation path used instead.
+6. Authenticated owner SELECT policy exists; token-hash column select revoked in hardening where applicable.
 
 ---
 
 ## Blockers
 
-1. **No TDG remote staging Supabase project** available via CLI — only an unrelated rentalcars project; therefore Edge Function live invoke E2E against hosted Supabase was not run.
-2. **No Stripe TEST secrets** (`STRIPE_TEST_SECRET_KEY` / webhook secret) in this environment — hosted Checkout session creation and card charge against Stripe API were not executed; kill-switches remain OFF.
-3. **Email provider** not wired — recovery returns token only when `CHRISTMAS_STORY_RECOVERY_RETURN_TOKEN=true` (staging).
-4. **Mobile Chrome device QA** / cross-device Stripe UI not run in this agent session (no secrets + no preview host).
-5. FFmpeg worker + manual licensed-song admin remain Mission **02D**.
+1. **No Stripe TEST credentials** in agent environment → cannot complete live TEST card + signed webhook E2E.
+2. **No dedicated remote TDG staging Supabase project** provisioned → used local Docker isolation.
+3. **FFmpeg worker / manual song admin** still out of scope (recommend Mission 02D).
+4. Mobile Chrome device farm QA not run in this session (build + unit/DB E2E only).
 
 ---
 
-## Compatibility
+## Exact files (high level)
 
-- PR #379 / #380 / #381: not merged; this branch forks from #381 tip only.
-- Santa Call payment functions untouched.
-- Dry-merge with Codex UI already integrated on baseline #381.
+- `supabase/migrations/20261123120000_christmas_story_02c_hardening.sql`
+- `supabase/functions/christmas-story/index.ts` (hosted checkout, sync, recovery)
+- `supabase/functions/christmas-story-stripe-test-webhook/index.ts` (expired/failed)
+- `supabase/functions/_shared/christmas/storyStripe.ts` (`stripeTestGet`)
+- `src/features/christmas-story/storyApi.ts`, `GiftCreator.tsx`, `BuyerDashboard.tsx`, `ChristmasStoryOrderPage.tsx`
+- `src/features/christmas-story/mission02c.test.ts`
+- `scripts/christmas-story-02c/*`, `scripts/christmas-story-02c-db-e2e.mjs`
+- Local-only boot assist: `supabase/migrations/20260917120000_christmas_planner.sql` (`null::integer` cast)
 
 ---
 
-## Next: Mission 02D
+## Next mission recommendation (02D)
 
-Recommend Mission 02D for the FFmpeg memory-film worker, manual licensed-song administration, and premium demonstration media — only after Stripe TEST credentials + isolated Supabase Edge deploy are available for a true card-paid loop.
+1. VPS FFmpeg memory-film worker consuming `christmas_story_jobs`.
+2. Admin UI for manual licensed-song attach + commercial rights checklist.
+3. Premium demonstration media pack.
+4. Provision dedicated remote staging Supabase + Stripe TEST keys; re-run full Edge + card E2E.
+5. Keep LIVE checkout OFF until authorized.
