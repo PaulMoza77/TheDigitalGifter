@@ -3,7 +3,7 @@
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02d-media`  
 **Implementation commit:** `a5c4c4241c63f82ef9bc941d0d1443fd681d554a`  
-**Branch tip:** `a73e9468f386870caba64939be79d2cd51e0066b`  
+**Branch tip:** `569725d05f0206e9fa8ca2fae8174b8808da3e0e`  
 **Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/383  
 **Baseline:** `f5fe78c515a23ea6b93eeba2d7db325bad72e8a9` (Mission 02C tip)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02d`  
