@@ -14,3 +14,11 @@ export type {
 } from "./types";
 export { composePreviewContent, createMockPaidOrder } from "./generation/compose";
 export { DEMO_GIFT, DEMO_RECIPIENT_TOKEN } from "./data/demoGift";
+export { assertStoryTransition, canMarkRecipientOpened } from "./lifecycle";
+export {
+  isStoryApiEnabled,
+  syncDraftToServer,
+  createStoryCheckout,
+  fetchRecipientGift,
+  buyerPreviewOrder,
+} from "./storyApi";

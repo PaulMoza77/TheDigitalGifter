@@ -6,6 +6,11 @@ import { composePreviewContent, createMockPaidOrder } from "../generation/compos
 import { localImageHandler } from "../generation/videoProvider";
 import { loadDraft, saveDraft, saveOrder, clearDraft } from "../draftStore";
 import { createEmptyDraft, type RelationshipKind, type StoryGiftContent, type StoryGiftDraft } from "../types";
+import {
+  createStoryCheckout,
+  isStoryApiEnabled,
+  syncDraftToServer,
+} from "../storyApi";
 import { ExampleAudioPlayer } from "./ExampleAudioPlayer";
 
 const RELATIONSHIPS: { id: RelationshipKind; label: string }[] = [
@@ -52,6 +57,15 @@ export function GiftCreator() {
   useEffect(() => {
     try { saveDraft(draft); setSaveFailed(false); }
     catch { setSaveFailed(true); }
+    if (isStoryApiEnabled() && draft.recipientName.trim().length >= 2) {
+      // Debounce remote saves; local draft remains available when offline.
+      const timer = window.setTimeout(() => {
+        void syncDraftToServer(draft).catch(() => {
+          // No remote-save confirmation can be assumed from local persistence.
+        });
+      }, 800);
+      return () => window.clearTimeout(timer);
+    }
   }, [draft]);
 
   useEffect(() => {
@@ -110,23 +124,48 @@ export function GiftCreator() {
       return;
     }
     trackStoryEvent("checkout_started", { price_cents: STORY_OFFER.priceCents });
-    if (!STORY_OFFER.checkoutEnabled) {
-      setBusy(true);
-      try {
+    setBusy(true);
+    try {
+      // Prefer durable Stripe TEST when API + server kill-switch allow it.
+      if (isStoryApiEnabled()) {
+        const remote = await createStoryCheckout({
+          draft,
+          content: preview,
+          fromName: "You",
+        });
+        if (remote.ok) {
+          // Keep a local mirror for buyer dashboard until paid webhook lands.
+          const order = await createMockPaidOrder(draft, "You");
+          order.id = remote.orderId;
+          order.checkoutMode = "test";
+          order.status = "CHECKOUT_PENDING";
+          if (remote.recipientToken) order.recipientToken = remote.recipientToken;
+          saveOrder(order);
+          navigate(`/christmas-story/order/${remote.orderId}`);
+          return;
+        }
+        if (remote.code !== "api_disabled" && remote.code !== "checkout_kill_switch") {
+          setError(remote.message || `Checkout unavailable (${remote.code})`);
+          return;
+        }
+      }
+
+      // Local mock path when durable checkout kill-switch is ON (default).
+      if (!STORY_OFFER.checkoutEnabled) {
         const order = await createMockPaidOrder(draft, "You");
         saveOrder(order);
         clearDraft();
         trackStoryEvent("gift_generation_started", { order_status: order.status });
         trackStoryEvent("gift_ready", { order_status: order.status });
         navigate(`/christmas-story/order/${order.id}`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not create order");
-      } finally {
-        setBusy(false);
+        return;
       }
-      return;
+      setError("Live checkout is not authorized yet.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create order");
+    } finally {
+      setBusy(false);
     }
-    setError("Live checkout is not authorized yet.");
   }
 
   return (
