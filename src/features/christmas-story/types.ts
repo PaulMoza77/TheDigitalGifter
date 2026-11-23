@@ -61,7 +61,7 @@ export type LyricLine = { timeMs: number; text: string };
 export type SongAsset = {
   id: string;
   title: string;
-  /** When null, player uses procedural example tone. */
+  /** Real audio URL only. Null means lyrics/status copy — never a synthesized tone. */
   audioUrl: string | null;
   coverLabel: string;
   lyrics: LyricLine[];

@@ -4,6 +4,7 @@ const TABS = [
   { to: "/admin/christmas", label: "Dashboard", end: true },
   { to: "/admin/christmas/analytics", label: "Analytics", end: false },
   { to: "/admin/christmas/orders", label: "Orders", end: false },
+  { to: "/admin/christmas/story-media", label: "Story media", end: false },
   { to: "/admin/christmas/monetization", label: "Monetization", end: false },
 ] as const;
 

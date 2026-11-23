@@ -151,6 +151,7 @@ function siteUrl() {
   ).replace(/\/$/, "");
 }
 
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return optionsResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -695,12 +696,44 @@ Deno.serve(async (req) => {
       if (!assertStoryTransition(String(order.status), "APPROVED")) {
         return jsonResponse({ ok: false, code: "invalid_transition" }, 409);
       }
+      // Mission 02D: when media jobs exist, song + film must be ready before approval.
+      const { data: mediaJobs } = await service
+        .from("christmas_story_jobs")
+        .select("job_type,status,production_state")
+        .eq("order_id", order.id);
+      const jobs = mediaJobs || [];
+      const hasSongJob = jobs.some((j) => j.job_type === "song");
+      const hasFilmJob = jobs.some((j) => j.job_type === "film");
+      if (hasSongJob || hasFilmJob) {
+        const songReady = !hasSongJob || jobs.some((j) =>
+          j.job_type === "song" &&
+          (j.status === "ready" ||
+            j.production_state === "ready_for_buyer_review" ||
+            j.production_state === "approved")
+        );
+        const filmReady = !hasFilmJob ||
+          jobs.some((j) => j.job_type === "film" && j.status === "ready");
+        if (!songReady || !filmReady) {
+          return jsonResponse({
+            ok: false,
+            code: "media_incomplete",
+            message: "Song and memory film must both be ready before approval.",
+            songReady,
+            filmReady,
+          }, 409);
+        }
+      }
       const updated = await transition(service, String(order.id), "APPROVED", "buyer");
       // Move to READY_TO_SEND automatically after approve
       let ready = updated;
       if (assertStoryTransition("APPROVED", "READY_TO_SEND")) {
         ready = await transition(service, String(order.id), "READY_TO_SEND", "buyer");
       }
+      await audit(service, {
+        orderId: String(order.id),
+        event: "media_approved",
+        actor: "buyer",
+      });
       return jsonResponse({ ok: true, order: buyerDto(ready) });
     }
 
@@ -1036,6 +1069,159 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, requestId: data.id });
     }
 
+    // -------- Mission 02D media admin + buyer review --------
+    function requireStoryAdmin(req: Request) {
+      const expected = asString(Deno.env.get("CHRISTMAS_STORY_ADMIN_TOKEN"));
+      if (!expected || expected.length < 24) {
+        return { ok: false as const, code: "admin_token_unconfigured" };
+      }
+      const got = asString(req.headers.get("x-christmas-story-admin-token"));
+      if (!got || got.length !== expected.length) {
+        return { ok: false as const, code: "unauthorized_admin" };
+      }
+      // Constant-time-ish compare
+      let diff = 0;
+      for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ got.charCodeAt(i);
+      if (diff !== 0) return { ok: false as const, code: "unauthorized_admin" };
+      return { ok: true as const };
+    }
+
+    if (action === "adminListSongQueue") {
+      const gate = requireStoryAdmin(req);
+      if (!gate.ok) return jsonResponse({ ok: false, code: gate.code }, 401);
+      const { data, error } = await service
+        .from("christmas_story_jobs")
+        .select("id,order_id,status,production_state,provider,metadata,created_at,updated_at,output_checksum")
+        .eq("job_type", "song")
+        .order("created_at", { ascending: true })
+        .limit(100);
+      if (error) throw error;
+      // Strip any accidental photo payloads from briefs
+      const jobs = (data || []).map((row) => {
+        const meta = (row.metadata || {}) as Record<string, unknown>;
+        const brief = (meta.brief || {}) as Record<string, unknown>;
+        delete brief.photos;
+        delete brief.photoDataUrls;
+        delete brief.buyerEmail;
+        return { ...row, metadata: { ...meta, brief } };
+      });
+      return jsonResponse({ ok: true, jobs });
+    }
+
+    if (action === "adminAdvanceSongState") {
+      const gate = requireStoryAdmin(req);
+      if (!gate.ok) return jsonResponse({ ok: false, code: gate.code }, 401);
+      const jobId = asString(body.job_id);
+      const to = asString(body.production_state);
+      if (!isUuid(jobId) || !to) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      const { data: job, error } = await service
+        .from("christmas_story_jobs")
+        .select("*")
+        .eq("id", jobId)
+        .eq("job_type", "song")
+        .maybeSingle();
+      if (error) throw error;
+      if (!job) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      const { data: updated, error: upErr } = await service
+        .from("christmas_story_jobs")
+        .update({
+          production_state: to,
+          status: to === "ready_for_buyer_review" || to === "approved" ? "ready" : job.status,
+          metadata: {
+            ...(job.metadata || {}),
+            adminNote: asString(body.note).slice(0, 500),
+            rightsDisclaimer:
+              "AI-assisted generation does not by itself confer copyright ownership or commercial license.",
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", jobId)
+        .select("*")
+        .single();
+      if (upErr) throw upErr;
+      await audit(service, {
+        orderId: String(job.order_id),
+        event: "song_state_advanced",
+        actor: "admin",
+        metadata: { to },
+      });
+      return jsonResponse({ ok: true, job: updated });
+    }
+
+    if (action === "requestMediaRevision") {
+      const order = await loadOrderByIdForBuyer(
+        service,
+        asString(body.order_id),
+        asString(body.buyer_access_token),
+      );
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      if (!["REVIEW_REQUIRED", "APPROVED", "READY_TO_SEND"].includes(String(order.status))) {
+        return jsonResponse({ ok: false, code: "invalid_status" }, 409);
+      }
+      const mediaKind = asString(body.media_kind);
+      const reason = asString(body.reason).slice(0, 500);
+      if (!["song", "film"].includes(mediaKind) || reason.length < 4) {
+        return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      }
+      const { data, error } = await service
+        .from("christmas_story_media_revisions")
+        .insert({
+          order_id: order.id,
+          media_kind: mediaKind,
+          reason,
+          status: "open",
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      if (mediaKind === "song") {
+        await service
+          .from("christmas_story_jobs")
+          .update({
+            production_state: "revision_requested",
+            status: "awaiting_manual",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("order_id", order.id)
+          .eq("job_type", "song");
+      }
+      if (mediaKind === "film") {
+        await service
+          .from("christmas_story_jobs")
+          .update({
+            status: "queued",
+            error_code: null,
+            updated_at: new Date().toISOString(),
+            metadata: { revision_reason: reason },
+          })
+          .eq("order_id", order.id)
+          .eq("job_type", "film");
+      }
+      await audit(service, {
+        orderId: String(order.id),
+        event: "media_revision_requested",
+        actor: "buyer",
+        metadata: { media_kind: mediaKind },
+      });
+      return jsonResponse({ ok: true, revision: data });
+    }
+
+    if (action === "listOrderMediaJobs") {
+      const order = await loadOrderByIdForBuyer(
+        service,
+        asString(body.order_id),
+        asString(body.buyer_access_token),
+      );
+      if (!order) return jsonResponse({ ok: false, code: "not_found" }, 404);
+      const { data, error } = await service
+        .from("christmas_story_jobs")
+        .select("id,job_type,status,production_state,provider,output_checksum,updated_at,metadata")
+        .eq("order_id", order.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return jsonResponse({ ok: true, jobs: data || [] });
+    }
+
     if (action === "health") {
       return jsonResponse({
         ok: true,
@@ -1043,6 +1229,7 @@ Deno.serve(async (req) => {
         priceCents: STORY_PRICE_CENTS,
         checkoutEnabled: isStoryCheckoutEnabled(),
         stripeMode: isStoryCheckoutEnabled() ? "test_only" : "disabled",
+        mediaWorker: "external_vps_or_local",
       });
     }
 

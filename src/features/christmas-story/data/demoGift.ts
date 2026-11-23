@@ -35,23 +35,23 @@ export const DEMO_GIFT: StoryGiftContent = {
     title: "Memories for Emma",
     frames: [
       {
-        src: "",
+        src: "/assets/christmas-story-demo/emma-poster.jpg",
         caption: "Soft morning light — the kitchen table where you always sit.",
       },
       {
-        src: "",
+        src: "/assets/christmas-story-demo/emma-poster.jpg",
         caption: "That train ride home when the city looked like gold.",
       },
       {
-        src: "",
+        src: "/assets/christmas-story-demo/emma-poster.jpg",
         caption: "Laughter we still hear when December gets quiet.",
       },
       {
-        src: "",
+        src: "/assets/christmas-story-demo/emma-poster.jpg",
         caption: "A promise kept: we show up for each other.",
       },
     ],
-    videoUrl: null,
+    videoUrl: "/assets/christmas-story-demo/emma-memory-film.mp4",
     isExample: true,
     status: "ready",
   },

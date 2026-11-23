@@ -328,3 +328,27 @@ export async function storyHealth() {
     priceCents: number;
   }>("health");
 }
+
+export async function listOrderMediaJobs(orderId: string) {
+  const token = readBuyerAccessToken();
+  if (!token) return { ok: false as const, code: "no_buyer_token" };
+  return storyAction<{ jobs: Array<Record<string, unknown>> }>("listOrderMediaJobs", {
+    order_id: orderId,
+    buyer_access_token: token,
+  });
+}
+
+export async function requestMediaRevision(
+  orderId: string,
+  mediaKind: "song" | "film",
+  reason: string,
+) {
+  const token = readBuyerAccessToken();
+  if (!token) return { ok: false as const, code: "no_buyer_token" };
+  return storyAction<{ revision: Record<string, unknown> }>("requestMediaRevision", {
+    order_id: orderId,
+    buyer_access_token: token,
+    media_kind: mediaKind,
+    reason,
+  });
+}

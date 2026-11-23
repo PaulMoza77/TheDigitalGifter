@@ -19,3 +19,12 @@ output/long-form/**/*.jpg
 output/long-form/state.json
 output/long-form/productions/
 public/assets/long-form/music/*.m4a
+---
+
+# Mission 02D local media worker artifacts
+artifacts/christmas-story-02d/queue/
+artifacts/christmas-story-02d/out/
+artifacts/christmas-story-02d/e2e-out/
+artifacts/christmas-story-02d/e2e-queue/
+artifacts/christmas-story-02d/vitest-queue/
+artifacts/christmas-story-02d/*.tmp
