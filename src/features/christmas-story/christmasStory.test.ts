@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STORY_OFFER } from "./catalog";
-import { STORY_FUNNEL_EVENTS } from "./analytics";
+import { STORY_FUNNEL_EVENTS, trackStoryEvent } from "./analytics";
 import { composePreviewContent, createMockPaidOrder } from "./generation/compose";
 import { mockStoryProvider } from "./generation/storyProvider";
 import { mockMusicProvider, manualMusicProvider } from "./generation/musicProvider";
@@ -20,6 +20,21 @@ describe("Our Christmas Story MVP", () => {
     expect(STORY_FUNNEL_EVENTS).toContain("landing_view");
     expect(STORY_FUNNEL_EVENTS).toContain("gift_opened");
     expect(STORY_FUNNEL_EVENTS).toContain("purchase_completed");
+  });
+
+  it("pushes story_* as the dataLayer event name without payload overwrite", () => {
+    const pushes: Array<Record<string, unknown>> = [];
+    (globalThis as { window?: unknown }).window = {
+      location: { pathname: "/christmas-story" },
+      dataLayer: {
+        push(payload: Record<string, unknown>) {
+          pushes.push(payload);
+        },
+      },
+    };
+    trackStoryEvent("landing_view", { copy_variant: "emotion_story" });
+    expect(pushes[0]?.event).toBe("story_landing_view");
+    expect(pushes[0]?.product_family).toBe("christmas_story");
   });
 
   it("builds a non-fabricating story from buyer inputs only", async () => {

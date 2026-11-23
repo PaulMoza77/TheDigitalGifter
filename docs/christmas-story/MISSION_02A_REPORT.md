@@ -1,5 +1,12 @@
 # Mission 02A — implementation and verification report
 
+> **Latest baseline-sync attempt:** `b0f27c7` is preserved. Integration of
+> `396aef2` was blocked by shared Git metadata permissions; remote verification
+> was blocked by GitHub DNS. Current-branch checks: 24 regression tests and 8 UI
+> render tests passed; one Santa suite, TypeScript and production build failed.
+> No new browser QA, merge, commit or push completed. See the final section for
+> exact outcomes; the earlier recovery run is historical, not post-sync QA.
+
 Date: 2026-11-22. **Implemented in the isolated worktree; not ready for integration.**
 The definition of done is not met: rendered baseline, before/after screenshots,
 mobile browser QA, full build/tests, Git commits and PR creation remain blocked.
@@ -261,3 +268,132 @@ current final state.
 - GitHub PR #378 is confirmed as open at SHA `15691da` and includes 155 changed files; suspected unrelated Santa and artifact changes require Cursor review before merge.
 
 See the recovery Git commit/PR metadata for the submitted UI branch; never merge until the upstream baseline build defects are resolved and reviewed.
+
+
+---
+
+## Baseline sync and final integration QA — blocked attempt
+
+This section records the requested integration of the preserved UI commit with
+Cursor's stabilization baseline. It supersedes earlier integration-readiness
+statements for this attempt; historical recovery results remain historical.
+
+### Repository state and preservation
+
+- Requested path `/Users/paul/Projects/TheDigitalGifter-Codex-UI` resolves physically
+  to `/Volumes/DevelopmentSSD/Projects/HomeProjects/TheDigitalGifter-Codex-UI`.
+- Branch: `codex/christmas-story-premium-ui`.
+- Initial worktree: clean, verified with porcelain status.
+- Initial and final HEAD: **`b0f27c7128ef903ae0da50b9c9f3ddd7c665b2f4`**.
+- Cached `origin/feature/christmas-story-mvp`:
+  **`396aef2233d53bcbebca7fb62dac1c3ddb062068`**.
+- Merge base: `15691da58a58629e12f4576f3e0834fa789bc786`.
+- No cached remote-tracking ref for the UI branch was present. Its remote SHA
+  cannot be inferred from local HEAD or the user-provided PR details.
+- The separate Cursor worktree was not edited or switched.
+
+`git ls-remote origin refs/heads/codex/christmas-story-premium-ui
+refs/heads/feature/christmas-story-mvp` failed with `Could not resolve host:
+github.com`. Neither live remote branch SHA is verified by this run.
+
+### Non-destructive merge attempt
+
+Attempted exactly:
+
+```sh
+git merge --no-ff --no-edit 396aef2233d53bcbebca7fb62dac1c3ddb062068
+```
+
+Git failed before starting the merge:
+
+```text
+fatal: update_ref failed for ref 'ORIG_HEAD': cannot lock ref 'ORIG_HEAD':
+Unable to create '.../TheDigitalGifter/.git/worktrees/TheDigitalGifter-Codex-UI/ORIG_HEAD.lock':
+Operation not permitted
+```
+
+HEAD and source files remained unchanged; `MERGE_HEAD` is absent. No abort,
+reset, rebase, force-push or history rewrite was needed or performed. The existing
+UI commit and its changes remain intact. This report is the only working-tree
+modification from this attempt and remains uncommitted because the metadata
+permission blocker also prevents committing it.
+
+The checkout is a partial clone. Although the baseline commit/tree metadata is
+cached, attempts to inspect the stabilization patch and its documentation required
+missing promisor blobs and failed fetching them from GitHub. Complete stabilization
+source inspection is therefore also blocked, independently of the merge lock.
+
+### Stabilization preservation assessment
+
+The cached baseline changes eight paths:
+
+- `docs/christmas-story/MISSION_01_BASELINE_STABILIZATION.md`
+- `src/features/christmas-story/analytics.ts`
+- `src/features/christmas-story/christmasStory.test.ts`
+- `src/features/christmas/ChristmasSantaCallPage.tsx`
+- `src/features/christmas/catalog.ts`
+- `src/features/christmas/santa-call/santaCall.test.ts`
+- `src/features/christmas/santa-call/santaCallPricing.ts`
+- `src/pages/admin/christmas/SantaVoiceBenchmarkPage.tsx`
+
+The changed-path intersection between `15691da..b0f27c7` and
+`15691da..396aef2` is empty. This is encouraging for merging, but it is not an
+executed merge/conflict check or semantic verification. The stabilization fixes
+are **not present in this UI checkout yet** and cannot be certified as preserved
+by an integration that has not occurred. No attempt was made to recreate or
+cherry-pick Cursor's fixes manually, especially the protected Santa pricing code.
+
+### Fresh command results — unchanged UI commit only
+
+| Check | Actual result |
+| --- | --- |
+| Full TypeScript via `npm run lint` | Failed, exit 2: `src/features/christmas/catalog.ts(449,31): TS1005: ':' expected`. Vite phase of lint did not run. |
+| Separate `npm run build` | Failed, exit 1: unresolved `src/pages/admin/christmas/SantaVoiceBenchmarkPage` imported by `src/App.tsx`; 84 modules transformed before failure. |
+| Story regression suite | 7/7 passed |
+| Santa Call regression suite | 13/13 passed |
+| Santa language detection suite | 4/4 passed |
+| Santa video regression suite | Failed during transform on catalog line 449; no tests in this suite executed |
+| Combined selected regression command | Exit 1: three suites passed, one failed; 24 tests passed |
+| UI render regression suite | 8/8 passed using this checkout's installed React and Vite-nested esbuild |
+| Local Vite at 127.0.0.1:4175 | Failed to start: `listen EPERM` |
+| Actual Chrome QA script launch | Failed before any route inspection: Chrome exited SIGABRT; zero new captures |
+| WebKit QA script launch | Unavailable: `/Users/paul/Library/Caches/ms-playwright/webkit-2203/pw_run.sh` is not installed |
+| PR #379 live inspection | `gh pr view` failed connecting to api.github.com; connected-app diagnostics also failed |
+
+The regression command selected all four Story/Santa test files discovered under
+`src` and `api`. Other unrelated suites were not part of this run. The existing
+UI render script was bundled with the executable
+`node_modules/vite/node_modules/esbuild/bin/esbuild` and run with `node --test`;
+the first invocation incorrectly passed the native binary to Node, was corrected,
+and the subsequent eight-test run passed.
+
+The known pre-sync baseline errors were left untouched. No temporary catalog
+correction, admin stub, environment placeholder or test bypass was used. These
+failures do not establish that Cursor's new baseline is broken; they show why the
+baseline must first be integrated before meaningful final QA.
+
+### Protected scope, PR and release status
+
+The existing UI commit's changed-path inventory has no modifications under
+`api/`, `supabase/`, `src/features/christmas/`, or Stripe-related paths, and no
+package/lockfile/Vite configuration changes. Its Christmas Story catalog, types,
+generation adapters and draft storage are unchanged from its original baseline.
+This attempt changed only this report: no Santa business logic, pricing, Stripe,
+migrations or production configuration was edited.
+
+The user identifies PR #379 as Draft. Its live state, base/head comparison and
+mergeability could not be reverified. No PR mutation was attempted, so the run
+did not mark it ready, close it or merge it. No push was attempted after the merge
+failed; pushing the unchanged pre-sync branch would not satisfy the request.
+No deployment occurred.
+
+**Integration safety: NOT VERIFIED; do not integrate based on this run.**
+Final SHA remains `b0f27c7128ef903ae0da50b9c9f3ddd7c665b2f4`, not a merge SHA.
+
+To complete: enable writes to the linked worktree's shared Git metadata and
+restore GitHub connectivity (including missing partial-clone blobs), local server
+binding and Chrome launch. Fetch/verify both remote heads, preserve/commit this
+report as appropriate, perform the requested merge, rerun full TypeScript/build,
+Story/Santa and UI tests, and execute actual Chrome mobile/desktop QA. Add WebKit
+when installed. Only then push normally and verify PR #379 against the current
+feature baseline, leaving it Draft. No force-push, merge to main or deployment.
