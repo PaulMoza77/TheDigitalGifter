@@ -3,6 +3,8 @@
 **Date:** 2026-11-23  
 **Branch:** `feature/christmas-story-02b-backend`  
 **Baseline:** `feature/christmas-story-mvp` @ `396aef2`  
+**Final commit:** `8ebeb800f81705ab65d61447e0560fefec86c4c1`  
+**Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/380 (base: `feature/christmas-story-mvp`)  
 **Workspace:** `/Users/paul/tdg-christmas-story-02b`  
 **Deployment:** **Not deployed.** Migrations **not applied** to production.  
 **Payments:** LIVE charges **disabled**. Checkout kill-switch default **ON**.
@@ -159,10 +161,14 @@ Isolated DB E2E against a live Supabase project was **not** run in this mission 
 
 ## Compatibility with PR #379
 
-- Codex UI branch `codex/christmas-story-premium-ui` was **not** modified or merged.  
+- Codex UI branch `codex/christmas-story-premium-ui` was **not** modified or merged. PR #379 remains **OPEN / Draft**.  
 - Mission 02B keeps UI component APIs (`GiftCreator`, `BuyerDashboard`, `RecipientExperience`) and adds optional durable API behind `VITE_CHRISTMAS_STORY_API_ENABLED`.  
 - Visual redesign from 02A remains Codex-owned; backend work is additive.  
-- Re-run merge-tree after both PRs are ready; expect low conflict risk outside shared creator/dashboard files if 02A landed first — document any glue for Codex.
+- **Dry merge-tree vs #379 tip:** expected conflicts in the three shared wiring files only:
+  - `src/features/christmas-story/components/BuyerDashboard.tsx`
+  - `src/features/christmas-story/components/GiftCreator.tsx`
+  - `src/features/christmas-story/pages/GiftRecipientPage.tsx`
+- Resolve by keeping Codex visuals + Mission 02B `storyApi` / lifecycle hooks when integrating.
 
 ---
 
