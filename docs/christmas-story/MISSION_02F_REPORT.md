@@ -6,8 +6,9 @@
 **Parent Draft PR:** #384  
 **Workspace:** `/Users/paul/tdg-christmas-story-02f`  
 **Draft PR:** https://github.com/PaulMoza77/TheDigitalGifter/pull/385  
-**Implementation tip:** `076120a999301bc904daa7e253324199826e78b5`  
-**Exact final SHA:** `2c33d769091144410b36a9c79f853cc26329175f`
+**Implementation commit:** `076120a999301bc904daa7e253324199826e78b5`  
+**Branch tip:** `c4d3165412cdaa3d15b9b5b07c538f78895da3e2`  
+**Exact final SHA:** `c4d3165412cdaa3d15b9b5b07c538f78895da3e2`  
 **Deployment:** **Not deployed.** No production migrations. LIVE Stripe **OFF.** PRs #379–#384 untouched except new Draft PR #385.
 
 ---
