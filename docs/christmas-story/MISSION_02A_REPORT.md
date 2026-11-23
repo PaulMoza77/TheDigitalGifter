@@ -1,5 +1,14 @@
 # Mission 02A — implementation and verification report
 
+> **CURRENT VERIFIED STATUS (22 Nov 2026, post-sync):** The UI commit `b0f27c7`
+> and stabilized Cursor baseline `396aef2` were integrated through the
+> non-destructive two-parent merge commit `3aa1594` on
+> `codex/christmas-story-premium-ui`. TypeScript and production Vite build PASS;
+> Story/Santa Vitest selected suites **67/67 PASS**, UI render **8/8 PASS**, and
+> Chrome responsive browser QA **60/60 PASS**. This branch remains Draft and
+> has **not** been merged into main or deployed. The historical blocked attempts
+> below are retained for audit; they no longer describe the current environment.
+
 > **Latest baseline-sync attempt:** `b0f27c7` is preserved. Integration of
 > `396aef2` was blocked by shared Git metadata permissions; remote verification
 > was blocked by GitHub DNS. Current-branch checks: 24 regression tests and 8 UI
@@ -397,3 +406,60 @@ report as appropriate, perform the requested merge, rerun full TypeScript/build,
 Story/Santa and UI tests, and execute actual Chrome mobile/desktop QA. Add WebKit
 when installed. Only then push normally and verify PR #379 against the current
 feature baseline, leaving it Draft. No force-push, merge to main or deployment.
+
+
+---
+
+## Post-sync recovery and integration — verified 2026-11-22
+
+### Git integration
+
+- Remote feature branch verified at `396aef2233d53bcbebca7fb62dac1c3ddb062068`.
+- Existing UI commit preserved: `b0f27c7128ef903ae0da50b9c9f3ddd7c665b2f4`.
+- Non-destructive `git merge --no-ff` completed with zero conflicts.
+- Merge commit: `3aa15943826a599668b5b0d0efcc8e63c17ef14d`,
+  with parents `b0f27c7` and `396aef2`.
+- No rebase, history rewrite, force-push, merge to main, deployment, or
+  production database/payment configuration modification.
+- The previous Codex report's 136 uncommitted added lines were backed up and
+  included in the merge commit, preserving its findings.
+
+### Post-sync verification (actual executions)
+
+| Verification | Result |
+| --- | --- |
+| `npm run lint` = TypeScript composite build + Vite production bundle | **PASS** (exit 0) |
+| Story, Santa Call and language suites | **26/26 PASS** |
+| Santa Video, Commercial Offers and Christmas Foundation | **41/41 PASS** |
+| React server-render UI regression | **8/8 PASS** |
+| Playwright browser: installed Chrome, five responsive widths | **60/60 PASS** |
+| UI QA widths | 375, 390, 430, 768, 1440 px |
+| QA interactions | Landing variants, demo reveal, creator draft, consent choice, test order, approval, private recipient, unavailable states |
+| Browser invariants | No unexpected autoplay, broken images, horizontal overflow or uncaught page exceptions in checked states |
+
+Evidence (local Mac SSD; not included in Git PR):
+`/Users/paul/Projects/TheDigitalGifter-UI-backup-20261122/qa-chrome-integrated-396aef2/`,
+which contains 60 PNG screenshots and `qa-results.json` with `status: passed`.
+
+For browser QA, the ignored local `.env.local` contained **only dummy**
+`VITE_SUPABASE_*` public values pointed at a nonexistent localhost service;
+it was never a real backend, secret, charge or production integration.
+There was **no temporary Santa code patch or admin stub** needed after
+baseline integration. The dummy file was removed after the browser QA.
+
+The production build emitted non-fatal warnings for missing historic
+media paths due to the intentionally sparse local asset checkout, as well
+as Vite chunking warnings. Those do not negate build success, but must be
+checked in release preview with licensed production demo media.
+
+### Remaining release gates
+
+- WebKit/Safari device/browser QA not executed.
+- Real licensed sample song, film and relevant photographic media absent
+  from this mock demo; browser QA verifies UI/flows, not artistic media quality.
+- Supabase durable persistence, Stripe TEST, approved/private cross-device
+  access, FFmpeg processing and music operations belong to Mission 02B/02C.
+- PR #378 still includes unrelated Santa lineage and artifact history vs main:
+  scope split/rebase must be decided before main integration.
+- This report covers **post-sync UI readiness only**; it is not a GO for
+  production or paid ads. PR #379 must remain **Draft**.
