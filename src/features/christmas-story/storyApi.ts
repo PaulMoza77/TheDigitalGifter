@@ -352,3 +352,60 @@ export async function requestMediaRevision(
     reason,
   });
 }
+
+/** Mission 02F: short-lived signed playback. Never invents a public URL on denial. */
+export async function signMediaAsset(input: {
+  assetId: string;
+  asRecipient?: boolean;
+  orderId?: string;
+  renew?: boolean;
+}) {
+  const buyer = readBuyerAccessToken();
+  const recipient =
+    input.asRecipient && input.orderId ? readRecipientToken(input.orderId) : null;
+  if (!buyer && !recipient) return { ok: false as const, code: "no_access_token" };
+  return storyAction<{
+    url: string;
+    expiresIn: number;
+    renewAt: number;
+    assetId: string;
+  }>(input.renew ? "renewMedia" : "signMedia", {
+    asset_id: input.assetId,
+    buyer_access_token: buyer || undefined,
+    recipient_token: recipient || undefined,
+  });
+}
+
+export async function listOrderAssets(orderId: string, asRecipient = false) {
+  const buyer = readBuyerAccessToken();
+  const recipient = asRecipient ? readRecipientToken(orderId) : null;
+  if (!buyer && !recipient) return { ok: false as const, code: "no_access_token" };
+  return storyAction<{ assets: Array<Record<string, unknown>> }>("listOrderAssets", {
+    order_id: orderId,
+    buyer_access_token: buyer || undefined,
+    recipient_token: recipient || undefined,
+  });
+}
+
+export async function createPhotoUploadUrl(input: {
+  orderId?: string;
+  draftId?: string;
+  contentType: string;
+  byteSize: number;
+}) {
+  const token = readBuyerAccessToken();
+  if (!token) return { ok: false as const, code: "no_buyer_token" };
+  return storyAction<{
+    bucket: string;
+    path: string;
+    token: string;
+    signedUrl: string;
+    maxBytes: number;
+  }>("createUploadUrl", {
+    buyer_access_token: token,
+    order_id: input.orderId,
+    draft_id: input.draftId,
+    content_type: input.contentType,
+    byte_size: input.byteSize,
+  });
+}

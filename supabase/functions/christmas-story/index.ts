@@ -29,9 +29,15 @@ import {
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
 
-const SIGNED_TTL_SEC = 60 * 15;
+/** Mission 02F: short-lived signed playback. Never return public object URLs. */
+const SIGNED_TTL_SEC = 60 * 2; // 2 minutes — clients must renew during playback
+const SIGNED_TTL_MAX_SEC = 60 * 15;
 const MAX_PHOTOS = 8;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+function assertOrderScopedPath(orderId: string, storagePath: string): boolean {
+  return Boolean(orderId) && storagePath.startsWith(`${orderId}/`) && !storagePath.includes("..");
+}
 
 function scrubMeta(meta: Record<string, unknown> | null | undefined) {
   const out: Record<string, unknown> = { ...(meta || {}) };
@@ -965,11 +971,25 @@ Deno.serve(async (req) => {
     if (action === "createUploadUrl") {
       const buyerToken = asString(body.buyer_access_token);
       const orderId = asString(body.order_id);
+      if (!buyerToken) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      // Mission 02F: never allow anonymous uploads. Buyer must own draft or order.
       const order = orderId
         ? await loadOrderByIdForBuyer(service, orderId, buyerToken)
         : await loadOrderByBuyerToken(service, buyerToken);
       const draftId = asString(body.draft_id);
-      if (!buyerToken) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
+      let draftOwner: string | null = null;
+      if (!order && draftId && isUuid(draftId)) {
+        const hash = await sha256Hex(buyerToken);
+        const { data: draft } = await service
+          .from("christmas_story_drafts")
+          .select("id")
+          .eq("id", draftId)
+          .eq("buyer_access_token_hash", hash)
+          .maybeSingle();
+        if (draft?.id) draftOwner = String(draft.id);
+      }
+      const owner = order?.id ? String(order.id) : draftOwner;
+      if (!owner) return jsonResponse({ ok: false, code: "forbidden" }, 403);
       const contentType = asString(body.content_type) || "image/jpeg";
       if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
         return jsonResponse({ ok: false, code: "invalid_content_type" }, 400);
@@ -979,23 +999,33 @@ Deno.serve(async (req) => {
         return jsonResponse({ ok: false, code: "file_too_large" }, 400);
       }
       const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
-      const owner = order?.id || draftId || "anonymous";
       const path = `${owner}/${generatePublicToken()}.${ext}`;
       const { data, error } = await service.storage
         .from("christmas-story-source")
         .createSignedUploadUrl(path);
       if (error) throw error;
+      if (!data?.signedUrl || !data?.token) {
+        return jsonResponse({ ok: false, code: "upload_url_unavailable" }, 503);
+      }
+      await audit(service, {
+        orderId: order?.id ? String(order.id) : null,
+        draftId: draftOwner,
+        event: "source_upload_url_issued",
+        actor: "buyer",
+        metadata: { path },
+      });
       return jsonResponse({
         ok: true,
         bucket: "christmas-story-source",
         path,
-        token: data?.token,
-        signedUrl: data?.signedUrl,
+        token: data.token,
+        signedUrl: data.signedUrl,
         maxBytes: MAX_PHOTO_BYTES,
+        expiresIn: SIGNED_TTL_SEC,
       });
     }
 
-    if (action === "signMedia") {
+    if (action === "signMedia" || action === "renewMedia") {
       const buyerToken = asString(body.buyer_access_token);
       const recipientToken = asString(body.recipient_token);
       const assetId = asString(body.asset_id);
@@ -1010,27 +1040,95 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (!asset) return jsonResponse({ ok: false, code: "not_found" }, 404);
 
+      const orderId = String(asset.order_id);
+      const storagePath = String(asset.storage_path || "");
+      const storageBucket = String(asset.storage_bucket || "");
+      if (!assertOrderScopedPath(orderId, storagePath)) {
+        return jsonResponse({ ok: false, code: "path_not_order_scoped" }, 403);
+      }
+      if (!["christmas-story-source", "christmas-story-generated"].includes(storageBucket)) {
+        return jsonResponse({ ok: false, code: "invalid_bucket" }, 403);
+      }
+
+      let actor: "buyer" | "recipient" | null = null;
+      if (buyerToken) {
+        const order = await loadOrderByIdForBuyer(service, orderId, buyerToken);
+        if (order) actor = "buyer";
+      } else if (recipientToken) {
+        const grant = await loadRecipientGrant(service, recipientToken);
+        if (
+          grant &&
+          grant.enabled &&
+          !grant.revoked_at &&
+          String(grant.order_id) === orderId
+        ) {
+          actor = "recipient";
+        }
+      }
+      if (!actor) {
+        // Fail closed — never return a public URL or stale signed URL.
+        return jsonResponse({ ok: false, code: "forbidden", url: null }, 403);
+      }
+
+      const requestedTtl = Number(body.expires_in) || SIGNED_TTL_SEC;
+      const ttl = Math.max(30, Math.min(SIGNED_TTL_MAX_SEC, requestedTtl));
+      const signed = await service.storage
+        .from(storageBucket)
+        .createSignedUrl(storagePath, ttl);
+      if (!signed.data?.signedUrl) {
+        return jsonResponse({ ok: false, code: "sign_failed", url: null }, 503);
+      }
+
+      await service.from("christmas_story_media_sign_events").insert({
+        order_id: orderId,
+        asset_id: assetId,
+        actor_kind: actor,
+        expires_in_sec: ttl,
+        storage_bucket: storageBucket,
+        storage_path: storagePath,
+      });
+      await audit(service, {
+        orderId,
+        event: action === "renewMedia" ? "media_signed_renewed" : "media_signed",
+        actor,
+        metadata: { asset_id: assetId, expires_in: ttl },
+      });
+
+      return jsonResponse({
+        ok: true,
+        url: signed.data.signedUrl,
+        expiresIn: ttl,
+        renewAt: Math.max(15, ttl - 30),
+        assetId,
+        // Explicitly no publicUrl field
+      });
+    }
+
+    if (action === "listOrderAssets") {
+      const buyerToken = asString(body.buyer_access_token);
+      const recipientToken = asString(body.recipient_token);
+      const orderId = asString(body.order_id);
+      if (!isUuid(orderId)) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
       let allowed = false;
       if (buyerToken) {
-        const order = await loadOrderByIdForBuyer(service, String(asset.order_id), buyerToken);
-        allowed = Boolean(order);
+        allowed = Boolean(await loadOrderByIdForBuyer(service, orderId, buyerToken));
       } else if (recipientToken) {
         const grant = await loadRecipientGrant(service, recipientToken);
         allowed =
           Boolean(grant?.enabled) &&
           !grant?.revoked_at &&
-          String(grant?.order_id) === String(asset.order_id);
+          String(grant?.order_id) === orderId;
       }
       if (!allowed) return jsonResponse({ ok: false, code: "forbidden" }, 403);
-
-      const signed = await service.storage
-        .from(String(asset.storage_bucket))
-        .createSignedUrl(String(asset.storage_path), SIGNED_TTL_SEC);
-      return jsonResponse({
-        ok: true,
-        url: signed.data?.signedUrl || null,
-        expiresIn: SIGNED_TTL_SEC,
-      });
+      const { data, error } = await service
+        .from("christmas_story_assets")
+        .select("id,asset_kind,content_type,byte_size,created_at,storage_bucket")
+        .eq("order_id", orderId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      // Never return storage_path to clients — use signMedia.
+      return jsonResponse({ ok: true, assets: data || [] });
     }
 
     if (action === "requestDeletion") {

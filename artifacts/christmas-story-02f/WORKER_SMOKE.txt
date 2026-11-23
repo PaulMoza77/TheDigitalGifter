@@ -1,0 +1,3 @@
+{"event":"enqueued","jobId":"d2249f70-77cc-473f-84fe-259e78bbbaed","orderId":"c18adc4b-4e9e-4289-950c-3b7b3da70fdb"}
+{"event":"claimed","jobId":"d2249f70-77cc-473f-84fe-259e78bbbaed","orderId":"c18adc4b-4e9e-4289-950c-3b7b3da70fdb","attempt":1}
+{"event":"completed","jobId":"d2249f70-77cc-473f-84fe-259e78bbbaed","checksum":"be0952f69d10aee67898567999ef3161ea26251f3619d8b8506b3ed47f665a65","remoteUploaded":false}
