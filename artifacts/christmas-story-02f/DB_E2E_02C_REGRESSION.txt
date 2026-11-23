@@ -1,0 +1,46 @@
+=== Mission 02C isolated DB E2E ===
+target: docker://tdg-story-02c-db:54332 (local only)
+NOTICE:  truncate cascades to table "christmas_story_jobs"
+NOTICE:  truncate cascades to table "christmas_story_media_sign_events"
+NOTICE:  truncate cascades to table "christmas_story_content_versions"
+NOTICE:  truncate cascades to table "christmas_story_assets"
+NOTICE:  truncate cascades to table "christmas_story_jobs"
+NOTICE:  truncate cascades to table "christmas_story_access_grants"
+NOTICE:  truncate cascades to table "christmas_story_audit_events"
+NOTICE:  truncate cascades to table "christmas_story_deletion_requests"
+NOTICE:  truncate cascades to table "christmas_story_recovery_challenges"
+NOTICE:  truncate cascades to table "christmas_story_media_sign_events"
+NOTICE:  truncate cascades to table "christmas_story_orders"
+NOTICE:  truncate cascades to table "christmas_story_assets"
+NOTICE:  truncate cascades to table "christmas_story_audit_events"
+NOTICE:  truncate cascades to table "christmas_story_deletion_requests"
+NOTICE:  truncate cascades to table "christmas_story_content_versions"
+NOTICE:  truncate cascades to table "christmas_story_jobs"
+NOTICE:  truncate cascades to table "christmas_story_access_grants"
+NOTICE:  truncate cascades to table "christmas_story_recovery_challenges"
+NOTICE:  truncate cascades to table "christmas_story_media_sign_events"
+PASS  draft created
+PASS  order CHECKOUT_PENDING
+ERROR:  permission denied for table christmas_story_orders
+PASS  anon cannot read orders
+PASS  session create leaves unpaid
+ERROR:  permission denied for function christmas_story_fulfill_payment
+PASS  anon cannot fulfill payment
+PASS  fulfill payment ok
+PASS  order paid after webhook RPC
+PASS  duplicate fulfill is already_paid
+PASS  amount mismatch rejected
+PASS  recipient disabled pre-send
+PASS  recipient token hashed at rest
+PASS  wrong recipient token misses
+PASS  buyer preview does not OPEN
+PASS  recipient open marks OPENED
+PASS  revocation disables grant
+PASS  old recipient hash gone
+PASS  checkout expiry
+PASS  recovery stores hashes only
+ERROR:  invalid_transition from OPENED to DRAFT
+CONTEXT:  PL/pgSQL function christmas_story_transition_order(uuid,text,text,jsonb) line 22 at RAISE
+PASS  invalid transition rejected
+---
+RESULT: all checks passed

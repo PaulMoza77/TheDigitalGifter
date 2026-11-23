@@ -37,14 +37,15 @@ export const DEMO_GIFT: StoryGiftContent = {
     id: "demo-film-emma",
     title: "Memories for Emma",
     frames: [
-      { src: `${STILL}/01-tree.jpg`, caption: "The tree, glowing for you" },
-      { src: `${STILL}/02-gifts.jpg`, caption: "Gifts waiting under the lights" },
-      { src: `${STILL}/03-ornaments.jpg`, caption: "Little ornaments, big memories" },
-      { src: `${STILL}/04-cocoa.jpg`, caption: "Cocoa and quiet evenings" },
-      { src: `${STILL}/05-lights.jpg`, caption: "Warm lights in the dark" },
-      { src: `${STILL}/06-snow.jpg`, caption: "Snow outside — us inside" },
-      { src: `${STILL}/07-fireplace.jpg`, caption: "By the fire together" },
-      { src: `${STILL}/08-table.jpg`, caption: "The table set for us" },
+      // Captions stay atmospheric and honest — stock stills, not Emma's private moments.
+      { src: `${STILL}/01-tree.jpg`, caption: "Evergreen light" },
+      { src: `${STILL}/02-gifts.jpg`, caption: "Wrapped and waiting" },
+      { src: `${STILL}/03-ornaments.jpg`, caption: "Glass and gold" },
+      { src: `${STILL}/04-cocoa.jpg`, caption: "Something warm" },
+      { src: `${STILL}/05-lights.jpg`, caption: "A glow in the dark" },
+      { src: `${STILL}/06-snow.jpg`, caption: "Winter outside" },
+      { src: `${STILL}/07-fireplace.jpg`, caption: "Firelight" },
+      // 08-table omitted from gallery: stock framing read as non-gift context in QA.
     ],
     videoUrl: "/assets/christmas-story-demo/emma-memory-film.mp4",
     isExample: true,

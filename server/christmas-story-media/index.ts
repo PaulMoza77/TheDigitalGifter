@@ -5,3 +5,4 @@ export * from "./ffmpegFilm.ts";
 export * from "./localJobStore.ts";
 export * from "./songProduction.ts";
 export * from "./costModel.ts";
+export * from "./privateStore.ts";

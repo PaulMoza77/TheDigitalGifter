@@ -1,0 +1,17 @@
+PASS  valid multi-photo render + ffprobe
+PASS  mixed portrait/landscape → portrait film
+PASS  authorized audio mux
+PASS  corrupt photo rejected
+PASS  photo count validation
+PASS  path escape rejected
+PASS  claim job
+PASS  duplicate claim blocked
+PASS  crash recovery reclaim
+PASS  complete + idempotent ready jobs
+PASS  unauthorized admin blocked
+PASS  song brief omits photos
+PASS  licensed song upload + provenance states
+PASS  buyer revision cycle
+PASS  reject free/trial license evidence
+
+RESULT: all media E2E checks passed
