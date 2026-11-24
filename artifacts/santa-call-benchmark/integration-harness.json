@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-10-24T13:02:46.167Z",
+  "checks": [
+    {
+      "name": "stripe_test_checkout_session",
+      "status": "PASS",
+      "session_id_prefix": "cs_test_",
+      "amount_total": 9900,
+      "currency": "ron",
+      "payment_status": "unpaid"
+    },
+    {
+      "name": "pricing_row",
+      "status": "BLOCKED",
+      "reason": "TypeError: fetch failed"
+    },
+    {
+      "name": "create_paid_order",
+      "status": "BLOCKED",
+      "reason": "TypeError: fetch failed"
+    },
+    {
+      "name": "resend_api_auth",
+      "status": "PASS",
+      "http": 200,
+      "from_configured": true
+    },
+    {
+      "name": "openai_realtime",
+      "status": "BLOCKED",
+      "reason": "OPENAI_API_KEY empty on Contabo and local"
+    },
+    {
+      "name": "db_pricing_row",
+      "status": "PASS",
+      "price_cents": 9900,
+      "currency": "ron"
+    },
+    {
+      "name": "db_activate_entitlement",
+      "status": "PASS",
+      "note": "fixed activate RPC columns"
+    },
+    {
+      "name": "db_resolve_token",
+      "status": "PASS"
+    },
+    {
+      "name": "db_concurrent_session",
+      "status": "PASS",
+      "code": "concurrent_session"
+    },
+    {
+      "name": "db_heartbeat_180_force_end",
+      "status": "PASS"
+    },
+    {
+      "name": "stripe_test_webhook_signed",
+      "status": "BLOCKED",
+      "reason": "no test webhook secret"
+    }
+  ],
+  "summary": {
+    "pass": 7,
+    "fail": 0,
+    "blocked": 4
+  }
+}

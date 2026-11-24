@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-10-24T14:20:12.972040+00:00",
+  "branch": "feature/santa-voice-call",
+  "sha": "21700d01",
+  "sha_full": "21700d016591a3a95d38cfaf499ff7763cad2b83",
+  "stripe_test": "PASS \u2014 checkout 9900 RON + PaymentIntent succeeded + TEST whsec signature verified (duplicate verify OK). Contabo stripe-webhook remains LIVE-secret; do not post TEST events there.",
+  "resend": "PASS \u2014 E2E email delivered (HTTP 200) with private /santa/call/<token> link",
+  "openai": "BLOCKED \u2014 OPENAI_API_KEY empty at Contabo /opt/supabase/tdg/.env (restart edge after set). No frontend key.",
+  "deploy": "BLOCKED / awaiting approval \u2014 christmas-santa-call ABSENT on Contabo; CHRISTMAS_LIVE_PRODUCTS EMPTY. Safest isolated next step: rsync only christmas-santa-call + _shared santa* files into volumes/functions, set OPENAI_API_KEY, restart edge-functions, keep LIVE_PRODUCTS empty.",
+  "call_ro": "BLOCKED \u2014 no OpenAI + no device/mic",
+  "call_en": "BLOCKED \u2014 no OpenAI + no device/mic",
+  "cost_real": "NOT MEASURED \u2014 no Realtime session. Prior estimate ~1.4 RON / 3 min on gpt-realtime",
+  "remaining": [
+    "Set OPENAI_API_KEY on Contabo .env and restart tdg-supabase-edge-functions",
+    "Approve controlled deploy of christmas-santa-call (keep LIVE_PRODUCTS empty)",
+    "Optional: stripe listen or TEST webhook path into main commerce webhook for full signed\u2192fulfill chain on Contabo",
+    "Real mic device test RO+EN 180s"
+  ],
+  "verdict": "NO-GO"
+}

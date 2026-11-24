@@ -270,6 +270,42 @@ export default function ChristmasDashboardPage() {
             </table>
           </div>
         </SectionCard>
+
+        <SectionCard
+          title="Growth & Conversion"
+          subtitle="Confirmed revenue from Stripe/DB orders. GA4/Clarity remain behavioral sources — N/A when not wired into this admin load."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Metric label="Paid orders (range)" value={paid.length} hint="christmas_orders · payment_status=paid" />
+            <Metric label="Confirmed revenue" value={incomeLabel} hint="Sum of paid amount_cents by currency" />
+            <Metric
+              label="AOV (paid)"
+              value={
+                paid.length
+                  ? formatUsd(
+                      paid.reduce((sum, row) => sum + Number(row.amount_cents || 0), 0) /
+                        paid.length /
+                        100,
+                    )
+                  : "N/A"
+              }
+              hint="Approximate USD display · multi-currency orders stay in Income"
+            />
+            <Metric
+              label="Conversion (checkout→paid)"
+              value={pct(paid.length, checkout)}
+              hint="Uses funnel checkout events vs paid orders"
+            />
+            <Metric label="GA4 visitors" value="N/A" hint="Wire GA4 Data API property credentials to populate" />
+            <Metric label="Organic visitors" value="N/A" hint="Requires GA4 channel grouping" />
+            <Metric label="Search impressions" value="N/A" hint="Requires Search Console API" />
+            <Metric label="Clarity rage clicks" value="N/A" hint="Requires Clarity export / cache job" />
+          </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Data freshness: admin refresh · Stripe/DB = confirmed commerce · GA4/GSC/Clarity cells show N/A until
+            their credentials are available to this dashboard (never invent zeros).
+          </p>
+        </SectionCard>
       </div>
     </div>
   );

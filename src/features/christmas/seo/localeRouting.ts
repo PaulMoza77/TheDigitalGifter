@@ -35,6 +35,8 @@ export const CHRISTMAS_UI_LOCALES: Array<{
 const PRODUCT_GATED_ROUTE_LOCALES: Record<string, ChristmasLocaleCode[]> = {
   // Santa: P3E live TTS QA PASS for all Wave 1 locales
   "/christmas/santa-video": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
+  // Santa Call commercial funnel: RO/EN only (UI language switcher on-page; not Wave 1 SEO locales)
+  "/christmas/santa-call": ["en", "ro"],
   // Messages + Gift Finder: all Wave 1 after P3C product-language enablement
   "/christmas/messages": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],
   "/christmas/gift-finder": ["en", "ro", "de", "fr", "es", "it", "pt", "nl", "pl"],

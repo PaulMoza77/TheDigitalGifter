@@ -1,0 +1,86 @@
+[
+  {
+    "name": "invalid_resolve",
+    "http": 400,
+    "body": {
+      "ok": false,
+      "code": "invalid_token"
+    }
+  },
+  {
+    "name": "valid_resolve",
+    "http": 200,
+    "body": {
+      "ok": true,
+      "status": "ready",
+      "language": "ro",
+      "order_id": "d27fc4a5-7482-4d02-8139-3b7f9d261198",
+      "expires_at": "2026-10-31T14:45:43.667605+00:00",
+      "active_session": false,
+      "entitlement_id": "a4ea9a42-6fb0-4fb9-aadd-ce1814d50bf8",
+      "child_first_name": "Ioana",
+      "remaining_seconds": 180,
+      "provider_preference": "openai_realtime",
+      "grace_period_seconds": 45,
+      "max_duration_seconds": 180
+    }
+  },
+  {
+    "name": "no_entitlement_start",
+    "http": 403,
+    "body": {
+      "ok": false,
+      "code": "invalid_token"
+    }
+  },
+  {
+    "name": "valid_start",
+    "http": 200,
+    "body": {
+      "ok": true,
+      "sessionId": "0f72dfb2-8480-47e6-9c9a-5d4d237f84e3",
+      "remainingSeconds": 180,
+      "resumed": false,
+      "provider": "openai_realtime",
+      "clientSecret": "ek_6a\u2026REDACTED",
+      "model": "gpt-realtime",
+      "bootstrap": {
+        "transport": "webrtc",
+        "realtimeUrl": "https://api.openai.com/v1/realtime/calls",
+        "voice": "cedar",
+        "openingLine": "Ho, ho, ho! Bun\u0103, Ioana! Ce bucurie s\u0103 te aud! Spiridu\u0219ii mi-au spus c\u0103 \u00ee\u021bi plac desenul. Este adev\u0103rat?",
+        "remainingSeconds": 180,
+        "instructionsHash": "server_bound"
+      },
+      "childFirstName": "Ioana",
+      "language": "ro",
+      "killSwitch": false
+    }
+  },
+  {
+    "name": "concurrent_start",
+    "http": 409,
+    "body": {
+      "ok": false,
+      "code": "concurrent_session"
+    }
+  },
+  {
+    "name": "resolve_after_end",
+    "http": 200,
+    "body": {
+      "ok": true,
+      "status": "in_progress",
+      "language": "ro",
+      "order_id": "d27fc4a5-7482-4d02-8139-3b7f9d261198",
+      "expires_at": "2026-10-31T14:45:43.667605+00:00",
+      "active_session": true,
+      "entitlement_id": "a4ea9a42-6fb0-4fb9-aadd-ce1814d50bf8",
+      "child_first_name": "Ioana",
+      "remaining_seconds": 180,
+      "provider_preference": "openai_realtime",
+      "grace_period_seconds": 45,
+      "max_duration_seconds": 180
+    }
+  }
+]

@@ -1,0 +1,171 @@
+{
+  "generated_at": "2026-10-24T18:02:23.818Z",
+  "base_sha": "363050c6",
+  "summary": {
+    "pass": 24,
+    "fail": 0,
+    "blocked": 2
+  },
+  "checks": [
+    {
+      "name": "preflight_secrets",
+      "status": "PASS"
+    },
+    {
+      "name": "stripe_test_isolation",
+      "live_secret": "live",
+      "test_secret": "test",
+      "mode": "test",
+      "keys_distinct": true,
+      "live_products": "''",
+      "status": "PASS"
+    },
+    {
+      "name": "stripe_test_webhook_secret",
+      "status": "PASS"
+    },
+    {
+      "name": "initial_qa_checkout_session",
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "checkoutMode": "hosted",
+      "amountCents": 5900,
+      "has_url": true,
+      "orderId_prefix": "87399f3c",
+      "status": "PASS"
+    },
+    {
+      "name": "initial_checkout_ui_session_id",
+      "session_prefix": "cs_test_a1Sj",
+      "status": "PASS"
+    },
+    {
+      "name": "initial_checkout_payment",
+      "reason": "session has no payment_intent yet",
+      "note": "Real cs_test_* session created; PI attach requires Safari/browser — covered by manual iPhone QA",
+      "status": "BLOCKED"
+    },
+    {
+      "name": "initial_payment_intent_fallback",
+      "note": "Separate TEST PI + signed checkout.session.completed webhook (same shape as Stripe Checkout)",
+      "status": "PASS"
+    },
+    {
+      "name": "signed_test_webhook_initial",
+      "http": 200,
+      "webhook_status": "fulfilled",
+      "fulfill_ok": true,
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate_webhook_initial",
+      "webhook_status": "already_processed",
+      "status": "PASS"
+    },
+    {
+      "name": "entitlement_180_after_payment",
+      "remaining": 180,
+      "entitlement_status": "ready",
+      "child": "Andrei",
+      "status": "PASS"
+    },
+    {
+      "name": "awaiting_extension_offer",
+      "code": "awaiting_extension",
+      "price": 4900,
+      "status": "PASS"
+    },
+    {
+      "name": "extension_checkout_ui_session",
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "checkoutMode": "hosted",
+      "amountCents": 4900,
+      "has_url": true,
+      "status": "PASS"
+    },
+    {
+      "name": "extension_checkout_session_id",
+      "session_prefix": "cs_test_a1Vl",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_checkout_payment",
+      "reason": "session has no payment_intent yet",
+      "note": "Real cs_test_* extension Checkout URL minted; browser required to attach PI",
+      "status": "BLOCKED"
+    },
+    {
+      "name": "extension_payment_intent_fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "signed_test_webhook_extension",
+      "webhook_status": "fulfilled",
+      "remaining_seconds": 300,
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate_webhook_extension",
+      "webhook_status": "already_processed",
+      "status": "PASS"
+    },
+    {
+      "name": "second_extension_blocked",
+      "code": "extension_unavailable",
+      "http": 403,
+      "status": "PASS"
+    },
+    {
+      "name": "extension_entitlement_300",
+      "remaining_seconds": 300,
+      "entitlement_status": "ready",
+      "status": "PASS"
+    },
+    {
+      "name": "resume_start",
+      "voice": "ash",
+      "resumeMode": true,
+      "opening_len": 0,
+      "remaining": 300,
+      "status": "PASS"
+    },
+    {
+      "name": "voice_ash",
+      "voice": "ash",
+      "status": "PASS"
+    },
+    {
+      "name": "no_regreet",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled_unpaid_checkout",
+      "payment_status": "unpaid",
+      "livemode": false,
+      "status": "PASS"
+    },
+    {
+      "name": "failed_payment",
+      "reason": "Your card was declined.",
+      "status": "PASS"
+    },
+    {
+      "name": "no_live_charges_in_run",
+      "note": "All sessions cs_test_* / livemode false; Contabo LIVE sk untouched",
+      "status": "PASS"
+    },
+    {
+      "name": "safari_link_files",
+      "url_file": "/tmp/tdg-santa-v2-qa-call-url",
+      "token_file": "/tmp/tdg-santa-v2-qa-token",
+      "status": "PASS"
+    }
+  ],
+  "checkout_urls": {
+    "initial_hosted": "https://checkout.stripe.com/c/pay/cs_test_a1Sj63teTST1f7ckpa…",
+    "extension_hosted": "https://checkout.stripe.com/c/pay/cs_test_a1VlClHpZW9mgWRzbg…"
+  }
+}

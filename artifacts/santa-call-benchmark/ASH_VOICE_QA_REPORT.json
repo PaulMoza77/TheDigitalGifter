@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-10-24T15:55:00Z",
+  "branch": "feature/santa-voice-call",
+  "sha_base": "15bc5edf878550cb335a4d5b93d462b3f5e22c36",
+  "sha_note": "Working tree includes uncommitted ash voice + multilingual personality changes on top of 15bc5edf (no commit requested).",
+  "voice": {
+    "configured": "ash",
+    "contabo_env_CHRISTMAS_SANTA_CALL_OPENAI_VOICE": "ash",
+    "code_default": "ash",
+    "mint_bootstrap_voice": "ash",
+    "model": "gpt-realtime",
+    "provider": "openai_realtime",
+    "same_voice_all_languages": true
+  },
+  "commercial_guards": {
+    "CHRISTMAS_LIVE_PRODUCTS": "EMPTY",
+    "stripe_live": "not modified",
+    "commercial_deploy": false,
+    "prod_route_/christmas/santa-call": "404"
+  },
+  "private_access": {
+    "preview_base": "https://www.thedigitalgifter.com/_qa/santa-private",
+    "call_path_shape": "https://www.thedigitalgifter.com/_qa/santa-private/santa/call/<token>",
+    "call_url_file": "/tmp/tdg-santa-qa-call-url",
+    "qr_png_file": "/tmp/tdg-santa-qa-call-qr.png",
+    "https_cert": "public www cert (no self-signed warning)",
+    "entitlement": {
+      "status": "ready",
+      "remaining_seconds": 179,
+      "child": "Andrei",
+      "language_fallback": "ro",
+      "isolated": true
+    }
+  },
+  "automated": {
+    "vitest_santa_call_and_languageDetect": "PASS (10 tests)",
+    "mint_ash_voice": "PASS",
+    "opening_romanian_andrei": "PASS (prefix Ho, ho, ho! Bună, Andrei!)",
+    "webrtc_ephemeral_ek_secret": "PASS",
+    "browser_call_room_loads": "PASS (Pentru Andrei, timer visible)",
+    "browser_mic_getUserMedia": "FAIL in automation (permission denied) — REQUIRES_HUMAN Safari/iPhone",
+    "browser_full_3min_conversation": "NOT_RUN — REQUIRES_HUMAN",
+    "language_switch_vocal_RO_EN_DE_FR_ES_IT_AR": "PROMPT_WIRED + heuristic unit PASS; vocal mid-call REQUIRES_HUMAN",
+    "timer_180_force_end_prior_server": "PASS (see realtime-180s.json from Contabo controlled deploy)",
+    "cost_real_3min": "NOT_MEASURED this session (entitlement reserved for human full call)"
+  },
+  "personality": {
+    "delivery": "ash-tuned: warm, cheerful, short sentences, Ho ho ho, pauses",
+    "language_policy": "start parent fallback; switch among RO/EN/DE/FR/ES/IT/AR; ask if uncertain; no world-language claims"
+  },
+  "remaining_for_user": [
+    "Open /tmp/tdg-santa-qa-call-qr.png on iPhone Safari (or cat /tmp/tdg-santa-qa-call-url on Mac)",
+    "Allow microphone; complete ~3 min call; verify ash character, barge-in, language switches, auto-end",
+    "Optional: approve git commit of ash config when ready"
+  ],
+  "verdict": "NO-GO commercial / CONDITIONAL for human Safari — ash configured & minted; mic+full conversation blocked in agent browser"
+}

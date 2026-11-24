@@ -1,0 +1,24 @@
+# Local packaging reference only — do not attach to production compose.
+services:
+  christmas-story-film-worker:
+    build:
+      context: ../../..
+      dockerfile: server/christmas-story-media/worker/Dockerfile
+    image: tdg-christmas-story-film-worker:02e
+    restart: "no"
+    environment:
+      CS_MEDIA_QUEUE_DIR: /data/queue
+      CS_MEDIA_OUT_DIR: /data/out
+      CS_MEDIA_TMP_DIR: /data/tmp
+      CS_STORAGE_MODE: local_private
+      CS_FILM_WORKER_ID: local-compose-01
+    volumes:
+      - cs_media_queue:/data/queue
+      - cs_media_out:/data/out
+    mem_limit: 1536m
+    cpus: 1.5
+    command: ["--once"]
+
+volumes:
+  cs_media_queue:
+  cs_media_out:

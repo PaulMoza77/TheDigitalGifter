@@ -44,11 +44,6 @@ const UnsubscribePage = lazy(() =>
     default: m.UnsubscribePage,
   }))
 );
-const DataDeletionPage = lazy(() =>
-  import("@/pages/website/DataDeletionPage").then((m) => ({
-    default: m.DataDeletionPage,
-  }))
-);
 
 // ================= WEBSITE UI =================
 import WebsiteHeader from "@/components/Header";
@@ -87,18 +82,23 @@ const ChristmasDashboardPage = lazy(
 const OrdersPage = lazy(() => import("@/pages/admin/Orders"));
 const PetOrdersPage = lazy(() => import("@/pages/admin/PetOrders"));
 const ChristmasOrdersPage = lazy(() => import("@/pages/admin/ChristmasOrders"));
+const SantaCallAdminPage = lazy(
+  () => import("@/pages/admin/christmas/SantaCallAdminPage"),
+);
+const SantaVoiceBenchmarkPage = lazy(
+  () => import("@/pages/admin/christmas/SantaVoiceBenchmarkPage"),
+);
+const ChristmasStoryMediaAdminPage = lazy(
+  () => import("@/pages/admin/christmas/ChristmasStoryMediaAdminPage"),
+);
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
-const ChristmasFactoryReviewPage = lazy(() => import("@/pages/admin/ChristmasFactoryReviewPage"));
 const AdminClipFactoryPage = lazy(() => import("@/pages/admin/AdminClipFactoryPage"));
 const AdminLongFormStudioPage = lazy(() => import("@/pages/admin/AdminLongFormStudioPage"));
 const AdminStudioPage = lazy(() => import("@/pages/admin/AdminStudioPage"));
 const AdminSocialAccountsPage = lazy(() => import("@/pages/admin/AdminSocialAccountsPage"));
 const AdminPublishingPage = lazy(() => import("@/pages/admin/AdminPublishingPage"));
-const AdminPublisherPage = lazy(() => import("@/pages/admin/AdminPublisherPage"));
-const AdminContentAutopilotPage = lazy(() => import("@/pages/admin/AdminContentAutopilotPage"));
-const AdminMusicLibraryPage = lazy(() => import("@/pages/admin/AdminMusicLibraryPage"));
 const CustomersPage = lazy(() => import("@/pages/admin/Customers"));
 const CreditsPage = lazy(() => import("@/pages/admin/Credits"));
 const SupportTicketsPage = lazy(
@@ -145,6 +145,12 @@ const ChristmasShellRoute = lazy(() =>
 const ChristmasSantaVideoPage = lazy(
   () => import("@/features/christmas/ChristmasSantaVideoPage"),
 );
+const ChristmasSantaCallPage = lazy(
+  () => import("@/features/christmas/ChristmasSantaCallPage"),
+);
+const SantaCallRoomPage = lazy(
+  () => import("@/features/christmas/SantaCallRoomPage"),
+);
 const ChristmasTreePage = lazy(
   () => import("@/features/christmas/ChristmasTreePage"),
 );
@@ -181,9 +187,23 @@ const ChristmasPlannerPage = lazy(
 const ChristmasPlannerWelcomePage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerWelcomePage"),
 );
-const PlannerVisualHarness = lazy(() => import("@/dev/PlannerVisualHarness"));
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
+);
+const ChristmasStoryLandingPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryLandingPage"),
+);
+const ChristmasStoryCreatePage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryCreatePage"),
+);
+const ChristmasStoryDemoPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryDemoPage"),
+);
+const ChristmasStoryOrderPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryOrderPage"),
+);
+const GiftRecipientPage = lazy(
+  () => import("@/features/christmas-story/pages/GiftRecipientPage"),
 );
 const ChristmasSeoClusterPage = lazy(
   () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
@@ -437,12 +457,18 @@ function WebsiteLayout() {
   const hidePlannerChrome =
     location.pathname === "/christmas/planner" ||
     location.pathname.startsWith("/christmas/planner/");
+  const hideStoryChrome =
+    location.pathname === "/christmas-story" ||
+    location.pathname.startsWith("/christmas-story/") ||
+    location.pathname === "/christmas/our-story" ||
+    location.pathname.startsWith("/gift/");
+  const hideSiteChrome = hidePlannerChrome || hideStoryChrome;
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      {hidePlannerChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
+      {hideSiteChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
 
-      <main className={`flex-1 ${hideChromeExtras || hidePlannerChrome ? "min-h-0" : ""}`}>
+      <main className={`flex-1 ${hideChromeExtras || hideSiteChrome ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
@@ -451,7 +477,7 @@ function WebsiteLayout() {
         onClose={() => setShowPricing(false)}
       />
 
-      {hideChromeExtras || hidePlannerChrome ? null : <WebsiteFooter />}
+      {hideChromeExtras || hideSiteChrome ? null : <WebsiteFooter />}
     </div>
   );
 }
@@ -482,7 +508,10 @@ function PlannerAwareSupportWidget() {
     location.pathname.startsWith("/christmas/planner/") ||
     location.pathname === "/account/christmas" ||
     location.pathname.startsWith("/account/christmas/") ||
-    location.pathname.startsWith("/dev/planner-visual")
+    location.pathname.startsWith("/santa/call") ||
+    location.pathname === "/christmas-story" ||
+    location.pathname.startsWith("/christmas-story/") ||
+    location.pathname.startsWith("/gift/")
   ) {
     return null;
   }
@@ -639,7 +668,14 @@ function AppInner() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      basename={
+        // Commercial Santa LIVE overlay: assets under /_qa/santa-live/, routes at site root.
+        String(import.meta.env.VITE_SANTA_LIVE_ROOT_ROUTES || "").trim() === "true"
+          ? undefined
+          : import.meta.env.BASE_URL.replace(/\/$/, "") || undefined
+      }
+    >
       <GtagPageViewTracker />
       <MetaSpaPageViewTracker />
       <FunnelAttributionCapture />
@@ -648,10 +684,7 @@ function AppInner() {
       <Suspense fallback={<ChristmasRouteFallback />}>
         <Routes>
           {import.meta.env.DEV ? (
-            <>
-              <Route path="/dev/library" element={<AdminLibraryPage />} />
-              <Route path="/dev/library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
-            </>
+            <Route path="/dev/library" element={<AdminLibraryPage />} />
           ) : null}
           <Route element={<WebsiteLayout />}>
             <Route path="/" element={<Index />} />
@@ -684,6 +717,8 @@ function AppInner() {
             <Route path="/christmas/dogs" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/cats" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
+            <Route path="/christmas/santa-call" element={<ChristmasSantaCallPage />} />
+            <Route path="/santa/call/:token" element={<SantaCallRoomPage />} />
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
             <Route path="/christmas/advent" element={<ChristmasAdventPage />} />
@@ -701,6 +736,12 @@ function AppInner() {
             <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
+            <Route path="/christmas-story" element={<ChristmasStoryLandingPage />} />
+            <Route path="/christmas-story/create" element={<ChristmasStoryCreatePage />} />
+            <Route path="/christmas-story/demo" element={<ChristmasStoryDemoPage />} />
+            <Route path="/christmas-story/order/:orderId" element={<ChristmasStoryOrderPage />} />
+            <Route path="/christmas/our-story" element={<Navigate to="/christmas-story" replace />} />
+            <Route path="/gift/:token" element={<GiftRecipientPage />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
@@ -728,6 +769,7 @@ function AppInner() {
                 { path: "/christmas/dogs", element: <ChristmasPortraitFunnelPage /> },
                 { path: "/christmas/cats", element: <ChristmasPortraitFunnelPage /> },
                 { path: "/christmas/santa-video", element: <ChristmasSantaVideoPage /> },
+                { path: "/christmas/santa-call", element: <ChristmasSantaCallPage /> },
                 { path: "/christmas/tree", element: <ChristmasTreePage /> },
                 { path: "/christmas/tree/:shareId", element: <ChristmasTreePage /> },
                 { path: "/christmas/advent", element: <ChristmasAdventPage /> },
@@ -792,7 +834,6 @@ function AppInner() {
             <Route path="/refunds" element={<RefundPolicyPage />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
-            <Route path="/data-deletion" element={<DataDeletionPage />} />
 
             <Route
               path="/new_years_eve"
@@ -823,17 +864,6 @@ function AppInner() {
               element={<Navigate to="/new-born" replace />}
             />
           </Route>
-
-          {import.meta.env.DEV ? (
-            <Route
-              path="/dev/planner-visual"
-              element={
-                <Suspense fallback={<div style={{ padding: 24 }}>Loading visual harness…</div>}>
-                  <PlannerVisualHarness />
-                </Suspense>
-              }
-            />
-          ) : null}
 
           <Route element={<ProtectedClientRoute />}>
             <Route path="/account/christmas/welcome" element={<PlannerPurchaseWelcomePage />} />
@@ -1037,7 +1067,10 @@ function AppInner() {
               <Route index element={<ChristmasDashboardPage />} />
               <Route path="analytics" element={<ChristmasAnalyticsPage />} />
               <Route path="orders" element={<ChristmasOrdersPage />} />
+              <Route path="story-media" element={<ChristmasStoryMediaAdminPage />} />
               <Route path="monetization" element={<ChristmasMonetizationPage />} />
+              <Route path="santa-call" element={<SantaCallAdminPage />} />
+              <Route path="santa-voice-benchmark" element={<SantaVoiceBenchmarkPage />} />
             </Route>
             <Route
               path="christmas-orders"
@@ -1052,16 +1085,12 @@ function AppInner() {
               element={<Navigate to="/admin/christmas/analytics" replace />}
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
-            <Route path="library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
             <Route path="long-form-studio" element={<AdminLongFormStudioPage />} />
-            <Route path="music-library" element={<AdminMusicLibraryPage />} />
             <Route path="clip-factory" element={<AdminClipFactoryPage />} />
-            <Route path="content-autopilot" element={<AdminContentAutopilotPage />} />
             <Route path="studio" element={<AdminStudioPage />} />
             <Route path="social-accounts" element={<AdminSocialAccountsPage />} />
             <Route path="publishing" element={<AdminPublishingPage />} />
-            <Route path="publisher" element={<AdminPublisherPage />} />
             <Route path="credits" element={<CreditsPage />} />
             <Route path="support-tickets" element={<SupportTicketsPage />} />
 

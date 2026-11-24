@@ -1,0 +1,30 @@
+{
+  "tokenHint": "ec8be3138b45",
+  "orderId": "577f3e8d-f610-426f-8440-f7375d77cac7",
+  "extOrder": "5044edd2-f9ba-4387-90e1-e94a0b2387d0",
+  "after": {
+    "ok": true,
+    "status": "already_ready",
+    "resolve": {
+      "ok": true,
+      "status": "ready",
+      "language": "ro",
+      "order_id": "577f3e8d-f610-426f-8440-f7375d77cac7",
+      "expires_at": "2026-11-27T15:35:00.441826+00:00",
+      "active_session": false,
+      "entitlement_id": "58fd7ed6-7cac-452f-bde9-83234c95761d",
+      "child_first_name": "Luca",
+      "remaining_seconds": 300,
+      "extension_purchased": true,
+      "provider_preference": "openai_realtime",
+      "grace_period_seconds": 45,
+      "is_extension_segment": true,
+      "max_duration_seconds": 480
+    }
+  },
+  "start2": {
+    "ok": true,
+    "remaining": 300,
+    "resume": true
+  }
+}

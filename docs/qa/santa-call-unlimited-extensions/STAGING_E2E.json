@@ -1,0 +1,330 @@
+{
+  "generated_at": "2026-11-14T21:07:14.847Z",
+  "environment": "contabo_edge_shared",
+  "stripe": "TEST_only",
+  "live_charges": false,
+  "email_sent": false,
+  "production_frontend_deployed": false,
+  "all_pass": true,
+  "access_token_hint": "c77a6309…",
+  "parent_order_id": "4d5042c0-64cd-4b0f-9587-0d8610701ce5",
+  "entitlement_id": "978de15c-944e-47da-910c-8b7e23503913",
+  "checks": [
+    {
+      "name": "contabo_stripe_mode_observed",
+      "ok": true,
+      "mode": "live",
+      "note": "left unchanged; TEST isolation via order metadata"
+    },
+    {
+      "name": "edge_basil_pin_deployed",
+      "ok": true,
+      "snippet": "109:export const SANTA_STRIPE_API_VERSION_CUSTOM = \"2025-03-31.basil\";\n"
+    },
+    {
+      "name": "migration_activate_unlimited",
+      "ok": true,
+      "has_order_id_idempotency": true
+    },
+    {
+      "name": "seed_test_parent",
+      "ok": true,
+      "orderId": "4d5042c0-64cd-4b0f-9587-0d8610701ce5",
+      "entitlementId": "978de15c-944e-47da-910c-8b7e23503913",
+      "child": "Matei"
+    },
+    {
+      "name": "initial_59_product_intact",
+      "ok": true,
+      "priceRow": "christmas_santa_voice_call|4900|true",
+      "note": "did not mutate Stripe Price IDs or initial amount"
+    },
+    {
+      "name": "resolve_awaiting_extension",
+      "ok": true,
+      "code": "awaiting_extension",
+      "extension_count": 0
+    },
+    {
+      "name": "ext_1_checkout_create",
+      "ok": true,
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "reused": false
+    },
+    {
+      "name": "double_click_reuses_open_session",
+      "ok": true,
+      "reused": true,
+      "orderId": "6f1e7fef-c821-4ecf-b2fe-16cc7a271494",
+      "firstOrderId": "6f1e7fef-c821-4ecf-b2fe-16cc7a271494"
+    },
+    {
+      "name": "ext_1_session_cs_test",
+      "ok": true,
+      "session_prefix": "cs_test_a0zMfE"
+    },
+    {
+      "name": "ext_1_stripe_session",
+      "ok": true,
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "ui_mode": "hosted"
+    },
+    {
+      "name": "ext_1_webhook_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true,
+      "fulfill_reason": "activated",
+      "remaining_seconds": 300,
+      "body": "{\"ok\":true,\"status\":\"fulfilled\",\"fulfill\":{\"ok\":true,\"reason\":\"activated\",\"remaining_seconds\":300},\"event_id\":\"evt_unlimited_1_8c5248e891\"}"
+    },
+    {
+      "name": "duplicate_webhook_once",
+      "ok": true,
+      "webhook": "already_processed",
+      "afterDup": "1|300"
+    },
+    {
+      "name": "ext_1_minutes_granted",
+      "ok": true,
+      "before": "0|180|0",
+      "after": "300|480|ready|1",
+      "remaining": 300,
+      "max": 480,
+      "status": "ready",
+      "count": 1
+    },
+    {
+      "name": "ext_2_checkout_create",
+      "ok": true,
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "reused": false
+    },
+    {
+      "name": "ext_2_session_cs_test",
+      "ok": true,
+      "session_prefix": "cs_test_a07Ske"
+    },
+    {
+      "name": "ext_2_stripe_session",
+      "ok": true,
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "ui_mode": "hosted"
+    },
+    {
+      "name": "ext_2_webhook_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true,
+      "fulfill_reason": "activated",
+      "remaining_seconds": 300,
+      "body": "{\"ok\":true,\"status\":\"fulfilled\",\"fulfill\":{\"ok\":true,\"reason\":\"activated\",\"remaining_seconds\":300},\"event_id\":\"evt_unlimited_2_9d1aea9cd6\"}"
+    },
+    {
+      "name": "ext_2_minutes_granted",
+      "ok": true,
+      "before": "0|480|1",
+      "after": "300|780|ready|2",
+      "remaining": 300,
+      "max": 780,
+      "status": "ready",
+      "count": 2
+    },
+    {
+      "name": "ext_3_checkout_create",
+      "ok": true,
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "reused": false
+    },
+    {
+      "name": "ext_3_session_cs_test",
+      "ok": true,
+      "session_prefix": "cs_test_a0gHoX"
+    },
+    {
+      "name": "ext_3_stripe_session",
+      "ok": true,
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "ui_mode": "hosted"
+    },
+    {
+      "name": "ext_3_webhook_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true,
+      "fulfill_reason": "activated",
+      "remaining_seconds": 300,
+      "body": "{\"ok\":true,\"status\":\"fulfilled\",\"fulfill\":{\"ok\":true,\"reason\":\"activated\",\"remaining_seconds\":300},\"event_id\":\"evt_unlimited_3_e7fe21b00a\"}"
+    },
+    {
+      "name": "ext_3_minutes_granted",
+      "ok": true,
+      "before": "0|780|2",
+      "after": "300|1080|ready|3",
+      "remaining": 300,
+      "max": 1080,
+      "status": "ready",
+      "count": 3
+    },
+    {
+      "name": "ext_4_checkout_create",
+      "ok": true,
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "reused": false
+    },
+    {
+      "name": "ext_4_session_cs_test",
+      "ok": true,
+      "session_prefix": "cs_test_a01IOs"
+    },
+    {
+      "name": "ext_4_stripe_session",
+      "ok": true,
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "ui_mode": "hosted"
+    },
+    {
+      "name": "ext_4_webhook_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true,
+      "fulfill_reason": "activated",
+      "remaining_seconds": 300,
+      "body": "{\"ok\":true,\"status\":\"fulfilled\",\"fulfill\":{\"ok\":true,\"reason\":\"activated\",\"remaining_seconds\":300},\"event_id\":\"evt_unlimited_4_1bfe1cf5e5\"}"
+    },
+    {
+      "name": "ext_4_minutes_granted",
+      "ok": true,
+      "before": "0|1080|3",
+      "after": "300|1380|ready|4",
+      "remaining": 300,
+      "max": 1380,
+      "status": "ready",
+      "count": 4
+    },
+    {
+      "name": "ext_5_checkout_create",
+      "ok": true,
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "reused": false
+    },
+    {
+      "name": "ext_5_session_cs_test",
+      "ok": true,
+      "session_prefix": "cs_test_a0G4Dd"
+    },
+    {
+      "name": "ext_5_stripe_session",
+      "ok": true,
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "ui_mode": "hosted"
+    },
+    {
+      "name": "ext_5_webhook_fulfill",
+      "ok": true,
+      "http": 200,
+      "status": "fulfilled",
+      "fulfill_ok": true,
+      "fulfill_reason": "activated",
+      "remaining_seconds": 300,
+      "body": "{\"ok\":true,\"status\":\"fulfilled\",\"fulfill\":{\"ok\":true,\"reason\":\"activated\",\"remaining_seconds\":300},\"event_id\":\"evt_unlimited_5_7a590d5d68\"}"
+    },
+    {
+      "name": "ext_5_minutes_granted",
+      "ok": true,
+      "before": "0|1380|4",
+      "after": "300|1680|ready|5",
+      "remaining": 300,
+      "max": 1680,
+      "status": "ready",
+      "count": 5
+    },
+    {
+      "name": "successive_1_2_3_5",
+      "ok": true,
+      "counts": {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "5": 5
+      },
+      "max": 1680
+    },
+    {
+      "name": "abandoned_checkout_zero_minutes",
+      "ok": true,
+      "failBefore": "0|5",
+      "failAfter": "0|5",
+      "orderId": "db0731ae-cd7a-40f0-9844-f9374611ba92"
+    },
+    {
+      "name": "failed_unpaid_activate_rejected",
+      "ok": true,
+      "act": "{\"ok\": false, \"reason\": \"payment_required\"}"
+    },
+    {
+      "name": "resume_after_expiry_context",
+      "ok": true,
+      "resumeMode": true,
+      "childKept": true,
+      "beginRpc": "{\"ok\": true, \"language\": \"ro\", \"order_id\": \"4d5042c0-64cd-4b0f-9587-0d8610701ce5\", \"session_id\": \"146eb36d-7390-447a-90e4-24cc81f9bae4\", \"resume_mode\": true, \"entitlement_id\": \"978de15c-944e-47da-910c-8b7e23503913\", \"extension_count\": 5, \"child_first_name\": \"Matei\", \"remaining_seconds\": 300}"
+    },
+    {
+      "name": "stripe_test_basil_custom_session",
+      "ok": true,
+      "id_prefix": "cs_test_a0eZHj",
+      "ui_mode": "custom"
+    },
+    {
+      "name": "stripe_test_missing_basil_rejected",
+      "ok": true,
+      "error": "Invalid Stripe API version: 2025-02-24.acacia. In order to use `ui_mode: custom`, you must upgrade to Stripe API version 2025-03-31.basil."
+    },
+    {
+      "name": "landing_http_200",
+      "ok": true,
+      "http": 200
+    },
+    {
+      "name": "landing_initial_checkout_unaffected_shell",
+      "ok": true,
+      "note": "SPA commercial path unchanged; Stripe initial Price IDs not modified; room UX pending frontend deploy"
+    },
+    {
+      "name": "frontend_screenshots_baseline",
+      "ok": true,
+      "desktop": true,
+      "mobile": true,
+      "note": "Playwright chromium not installed in agent; baseline LIVE captures from prior audit retained"
+    }
+  ]
+}

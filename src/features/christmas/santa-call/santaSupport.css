@@ -1,0 +1,125 @@
+.santa-support {
+  font-family: system-ui, sans-serif;
+  color: #263c32;
+}
+.santa-support-launch {
+  position: fixed;
+  right: 16px;
+  bottom: calc(86px + var(--tdg-cookie-offset, 0px));
+  z-index: 75;
+  border: 1px solid #b9c5b2;
+  background: #fffaf1;
+  border-radius: 24px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 20px #0002;
+  font-weight: 600;
+}
+.santa-support-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: #0006;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 16px;
+}
+.santa-support-panel {
+  background: #fcf8f0;
+  border-radius: 18px;
+  padding: 20px;
+  width: 420px;
+  max-width: 100%;
+  max-height: 90dvh;
+  overflow: auto;
+  box-shadow: 0 16px 60px #0005;
+}
+.santa-support-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.santa-support .santa-support-panel h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.santa-support-panel header button {
+  font-size: 28px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.santa-support-panel p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+.santa-support-panel label {
+  display: block;
+  font-size: 14px;
+  margin: 12px 0;
+}
+.santa-support-panel input,
+.santa-support-panel textarea {
+  display: block;
+  width: 100%;
+  background: white;
+  color: #263c32;
+  border: 1px solid #9ba998;
+  border-radius: 8px;
+  font-size: 16px;
+  padding: 10px;
+  margin-top: 6px;
+}
+.santa-support-panel button[type="submit"] {
+  display: block;
+  width: 100%;
+  background: #9e302b;
+  color: white;
+  padding: 12px;
+  border-radius: 10px;
+  margin: 14px 0;
+}
+.santa-support-panel button:disabled {
+  opacity: 0.6;
+}
+.santa-support-panel small {
+  font-size: 12px;
+}
+.santa-support-panel a {
+  text-decoration: underline;
+  font-size: 13px;
+}
+.santa-support-panel [role="alert"] {
+  color: #9b2626;
+}
+.santa-support-panel .santa-support-trap {
+  display: none;
+}
+.santa-support-messages {
+  max-height: 30dvh;
+  overflow: auto;
+}
+.santa-support-messages > div {
+  padding: 12px;
+  border-radius: 12px;
+  background: #e8edde;
+  margin: 8px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.santa-support-messages .from-client {
+  background: #f1e7d8;
+}
+.santa-support-messages strong {
+  font-size: 12px;
+}
+.santa-support :focus-visible {
+  outline: 3px solid #95632a;
+  outline-offset: 3px;
+}
+@media (min-width: 761px) {
+  .santa-support-launch {
+    bottom: calc(20px + var(--tdg-cookie-offset, 0px));
+  }
+}

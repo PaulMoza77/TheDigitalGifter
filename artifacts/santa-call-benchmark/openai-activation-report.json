@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-10-24T14:29:18.771014+00:00",
+  "branch": "feature/santa-voice-call",
+  "openai_key_locations": {
+    "contabo_dotenv": "/opt/supabase/tdg/.env \u2192 OPENAI_API_KEY",
+    "contabo_compose": "/opt/supabase/tdg/docker-compose.yml \u2192 functions.environment.OPENAI_API_KEY: ${OPENAI_API_KEY}",
+    "local_secure_file": "~/.config/tdg/openai.key (mode 600)",
+    "not_in_frontend": true,
+    "not_in_git": true
+  },
+  "connectivity": {
+    "models": "PASS",
+    "realtime_client_secrets": "PASS",
+    "santa_shaped_mint": "PASS",
+    "edge_container_has_key": "PASS"
+  },
+  "voice_ro_30s": {
+    "status": "PASS_SERVER_AUDIO",
+    "note": "Server WebSocket Realtime GA generated Romanian Santa audio; NOT a browser mic E2E",
+    "elapsed_ms": 6870,
+    "cost_ron": 0.0295,
+    "preview": "Hei Ioana, m\u0103 bucur s\u0103 te v\u0103d! \u0218tiu c\u0103 \u00ee\u021bi dore\u0219ti mult p\u0103pu\u0219a aceea."
+  },
+  "voice_ro_180s": {
+    "status": "PASS_SERVER_AUDIO",
+    "elapsed_ms": 182339,
+    "force_disconnect": true,
+    "cost_ron": 0.182,
+    "within_3_ron": true,
+    "turns": 4
+  },
+  "mic_browser_e2e": "BLOCKED \u2014 no device/mic in this agent; christmas-santa-call still ABSENT on Contabo (no LIVE product enable)",
+  "security_note": "API key was pasted in chat \u2014 rotate in OpenAI dashboard after controlled tests",
+  "live_deploy": "NOT DONE",
+  "live_products": "EMPTY"
+}

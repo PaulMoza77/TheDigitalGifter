@@ -1,0 +1,95 @@
+{
+  "kind": "fictional_demo_photographic_stills",
+  "license": "Unsplash License (https://unsplash.com/license) \u2014 free commercial use; attribution appreciated but not required",
+  "note": "Stock photography for fictional Emma product demo only. Not customer photos. Not a real gift.",
+  "stills": [
+    {
+      "file": "/assets/christmas-story-demo/stills/01-tree.jpg",
+      "caption": "The tree, glowing",
+      "source": "unsplash:1512389142860-9c449e58a543",
+      "source_url": "https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "c2340fc2dbcab01939300c7a294c3464252a12d1d4cf625bb7a44e6e33d59d74"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/02-gifts.jpg",
+      "caption": "Gifts waiting",
+      "source": "unsplash",
+      "source_url": "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=1600&h=900&q=80",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "092bdff890ef08adbe78f603dc4b9b11c729adcdce4b0a12ac31c2c0998ae425"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/03-ornaments.jpg",
+      "caption": "Glass ornaments",
+      "source": "unsplash:1576919228236-a097c32a5cd4",
+      "source_url": "https://images.unsplash.com/photo-1576919228236-a097c32a5cd4?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "519818f5f385e741c533f381d538ef44486d7c7e252a99f4c169eb22e82a8702"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/04-cocoa.jpg",
+      "caption": "Cocoa and quiet",
+      "source": "unsplash:1571115177098-24ec42ed204d",
+      "source_url": "https://images.unsplash.com/photo-1571115177098-24ec42ed204d?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "2e2e8152781cdd7199ada3a2c8c5dfd1e9c6047a41c1148dc8f705602c0adb9f"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/05-lights.jpg",
+      "caption": "Warm lights",
+      "source": "unsplash:1513885535751-8b9238bd345a",
+      "source_url": "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "3888d8418ba04c4b64bcbae4e103fda60d5df2273eb31ab1e56341eaf8b59f41"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/06-snow.jpg",
+      "caption": "Snow outside",
+      "source": "unsplash:1478144592103-25e218a04891",
+      "source_url": "https://images.unsplash.com/photo-1478144592103-25e218a04891?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "8f3511fc967bb13f82eabe20cc484f1e8c56377d37066b08998785455f3d1e3a"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/07-fireplace.jpg",
+      "caption": "By the fire",
+      "source": "unsplash:1513201099705-a9746e1e201f",
+      "source_url": "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "f95b0330065918116de6eccca2a4547531199fbd9c62e9a86911048d858b61d3"
+    },
+    {
+      "file": "/assets/christmas-story-demo/stills/08-table.jpg",
+      "caption": "The table set for us",
+      "source": "unsplash",
+      "source_url": "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?auto=format&fit=crop&w=1600&h=900&q=85",
+      "license": "Unsplash License",
+      "photographic": true,
+      "contains_real_people": "possible_background_stock",
+      "provenance": "third_party_unsplash_demo",
+      "sha256": "8300b5bbc9062f877820b786cb8deee53f14ab70b8ec2f9fb694a1d36a64343a"
+    }
+  ]
+}

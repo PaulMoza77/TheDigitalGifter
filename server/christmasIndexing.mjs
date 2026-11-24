@@ -35,6 +35,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas/dogs",
   "/christmas/cats",
   "/christmas/santa-video",
+  "/christmas/santa-call",
   "/christmas/tree",
   "/christmas/advent",
   "/christmas/cards",
@@ -52,6 +53,7 @@ export const CHRISTMAS_KNOWN_SPA_PATHS = [
   "/christmas/planner/welcome",
   "/christmas/tree-gifts",
   "/christmas/planner/welcome",
+  "/christmas/santa-call",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
 ];

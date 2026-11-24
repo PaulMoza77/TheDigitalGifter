@@ -1,3 +1,10 @@
+# TheDigitalGifter robots.txt
+# Canonical: https://www.thedigitalgifter.com
+#
+# Policy: allow indexing + AI Search citation crawlers.
+# Disallow foundation-model training crawlers (separate from AI Search).
+# Private routes remain Disallow here; auth/authorization still required server-side.
+
 User-agent: *
 Allow: /
 
@@ -6,6 +13,48 @@ Disallow: /account
 Disallow: /auth/callback
 Disallow: /funnel/payment
 Disallow: /funnel/result
+Disallow: /santa/call
+Disallow: /_qa
+Disallow: /christmas-story/create
+Disallow: /christmas-story/order
+
+# AI Search / answer citation — allow
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# Foundation-model training — disallow (does not block Search/AI Overviews via Googlebot)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
 
 # Christmas share / checkout noindex is via meta robots (noindex,follow),
 # not robots.txt Disallow — engines must crawl those URLs to see the directive.

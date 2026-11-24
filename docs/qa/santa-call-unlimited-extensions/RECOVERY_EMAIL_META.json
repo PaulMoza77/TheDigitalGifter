@@ -1,0 +1,15 @@
+{
+  "order_id": "6a84a13f-eb79-4e2e-b7cf-3144738fb20b",
+  "to": "iulianamoldovan44@gmail.com",
+  "guardian": "Iuliana Moldovan",
+  "subject": "Mai ai ceva să-i spui lui Moș Crăciun? 🎅",
+  "kind": "santa_call_extension_recovery",
+  "provider": "Resend",
+  "send_live_requested": false,
+  "status": "draft_only",
+  "notes": [
+    "Do not send until extension checkout is LIVE-verified and owner explicitly approves PRODUCTION GO.",
+    "At send time: reissue access token for the order, rewrite callUrl, check christmas_email_deliveries for kind already sent, then Resend once.",
+    "Does not mention Stripe errors or free extensions."
+  ]
+}

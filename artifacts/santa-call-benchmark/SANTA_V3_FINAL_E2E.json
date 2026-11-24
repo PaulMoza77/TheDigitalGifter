@@ -1,0 +1,103 @@
+{
+  "all_pass": true,
+  "checks": [
+    {
+      "name": "ro_create",
+      "ok": true,
+      "amount": 5900,
+      "currency": "ron"
+    },
+    {
+      "name": "ro_confirm_unpaid",
+      "ok": true,
+      "code": "payment_not_completed"
+    },
+    {
+      "name": "ro_webhook",
+      "ok": true,
+      "status": "fulfilled"
+    },
+    {
+      "name": "ro_ready",
+      "ok": true,
+      "remaining": 180
+    },
+    {
+      "name": "ro_confirm_ready",
+      "ok": true,
+      "status": "already_ready"
+    },
+    {
+      "name": "ro_start_ash",
+      "ok": true,
+      "provider": "openai_realtime",
+      "hasSecret": true
+    },
+    {
+      "name": "live_products_empty",
+      "ok": true,
+      "live": "(empty)"
+    },
+    {
+      "name": "stripe_mode_test",
+      "ok": true,
+      "mode": "test"
+    },
+    {
+      "name": "force_extension_gate",
+      "ok": true,
+      "detail": "qa_secret"
+    },
+    {
+      "name": "ext_checkout",
+      "ok": true,
+      "amount": 4900
+    },
+    {
+      "name": "ext_webhook",
+      "ok": true
+    },
+    {
+      "name": "ext_resume_seconds",
+      "ok": true,
+      "remaining": 300,
+      "resumeMode": true
+    },
+    {
+      "name": "grace_awaiting_extension",
+      "ok": true,
+      "note": "Grace paid initial; now awaiting_extension (0s) \u2014 can buy extension or use Luca recover"
+    }
+  ],
+  "ext": {
+    "tokenHint": "ec8be3138b45",
+    "orderId": "577f3e8d-f610-426f-8440-f7375d77cac7",
+    "extOrder": "5044edd2-f9ba-4387-90e1-e94a0b2387d0",
+    "after": {
+      "ok": true,
+      "status": "already_ready",
+      "resolve": {
+        "ok": true,
+        "status": "ready",
+        "language": "ro",
+        "order_id": "577f3e8d-f610-426f-8440-f7375d77cac7",
+        "expires_at": "2026-11-27T15:35:00.441826+00:00",
+        "active_session": false,
+        "entitlement_id": "58fd7ed6-7cac-452f-bde9-83234c95761d",
+        "child_first_name": "Luca",
+        "remaining_seconds": 300,
+        "extension_purchased": true,
+        "provider_preference": "openai_realtime",
+        "grace_period_seconds": 45,
+        "is_extension_segment": true,
+        "max_duration_seconds": 480
+      }
+    },
+    "start2": {
+      "ok": true,
+      "remaining": 300,
+      "resume": true
+    }
+  },
+  "luca_token_hint": "ec8be3138b45"
+}

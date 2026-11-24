@@ -1,0 +1,80 @@
+{
+  "generated_at": "2026-10-24T14:19:27.781Z",
+  "summary": {
+    "pass": 8,
+    "fail": 0,
+    "blocked": 3
+  },
+  "checks": [
+    {
+      "name": "stripe_test_key",
+      "status": "PASS",
+      "mode": "test"
+    },
+    {
+      "name": "stripe_test_webhook_secret",
+      "status": "PASS",
+      "source": "contabo:.env",
+      "len": 38
+    },
+    {
+      "name": "stripe_test_checkout",
+      "status": "PASS",
+      "session_prefix": "cs_test_",
+      "amount_total": 9900,
+      "currency": "ron",
+      "amount_means_99_ron": true
+    },
+    {
+      "name": "stripe_test_payment",
+      "status": "PASS",
+      "payment_status": "succeeded",
+      "amount": 9900,
+      "currency": "ron",
+      "amount_means_99_ron": true
+    },
+    {
+      "name": "stripe_signed_webhook_verify",
+      "status": "PASS",
+      "first": true,
+      "duplicate_verify": true,
+      "note": "Verified against Contabo STRIPE_TEST_WEBHOOK_SECRET. Contabo stripe-webhook uses LIVE STRIPE_WEBHOOK_SECRET (different) \u2014 TEST events must not be posted to LIVE endpoint."
+    },
+    {
+      "name": "db_entitlement",
+      "status": "PASS",
+      "idempotent_activate": true,
+      "resolve_contains_ok": true
+    },
+    {
+      "name": "private_link_token",
+      "status": "PASS",
+      "token_len": 64,
+      "hash_only_stored": true,
+      "path_shape": "/santa/call/<opaque_token>"
+    },
+    {
+      "name": "openai_realtime",
+      "status": "BLOCKED",
+      "reason": "OPENAI_API_KEY empty on Contabo /opt/supabase/tdg/.env \u2014 set there and restart tdg-supabase-edge-functions; never put key in frontend"
+    },
+    {
+      "name": "voice_call_ro_en",
+      "status": "BLOCKED",
+      "reason": "no OpenAI key + no device/mic in this agent run"
+    },
+    {
+      "name": "deploy_christmas_santa_call",
+      "status": "BLOCKED",
+      "reason": "function not on Contabo; no staging host; safest next step requires approval: rsync function only, keep CHRISTMAS_LIVE_PRODUCTS empty"
+    },
+    {
+      "name": "resend_send",
+      "status": "PASS",
+      "http": 200,
+      "to_domain": "gmail.com",
+      "note": "Sent E2E private-link email to operator inbox; opaque /santa/call/<token> URL"
+    }
+  ],
+  "updated_at": "2026-10-24T14:20:12.971775+00:00"
+}

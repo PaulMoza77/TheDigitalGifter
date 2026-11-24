@@ -55,11 +55,24 @@ export const CHRISTMAS_PRODUCT_LANGUAGE_READY = {
     nl: "ready",
     pl: "ready",
   },
+  /** Santa Call commercial UI + realtime voice: RO/EN only. */
+  santa_voice_call: {
+    en: "ready",
+    ro: "ready",
+    de: "not-ready",
+    fr: "not-ready",
+    es: "not-ready",
+    it: "not-ready",
+    pt: "not-ready",
+    nl: "not-ready",
+    pl: "not-ready",
+  },
 };
 
 /** Routes that require a product-language gate before SEO indexability. */
 export const CHRISTMAS_PRODUCT_GATED_ROUTES = {
   "/christmas/santa-video": "santa_script_tts",
+  "/christmas/santa-call": "santa_voice_call",
   "/christmas/messages": "messages_generator",
   "/christmas/gift-finder": "gift_finder_recommendations",
 };

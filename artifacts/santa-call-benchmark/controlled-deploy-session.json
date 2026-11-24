@@ -1,0 +1,39 @@
+{
+  "start": {
+    "ok": true,
+    "sessionId": "0f72dfb2-8480-47e6-9c9a-5d4d237f84e3",
+    "remainingSeconds": 180,
+    "resumed": true,
+    "provider": "openai_realtime",
+    "clientSecret": "ek_6a\u2026REDACTED",
+    "model": "gpt-realtime",
+    "bootstrap": {
+      "transport": "webrtc",
+      "realtimeUrl": "https://api.openai.com/v1/realtime/calls",
+      "voice": "cedar",
+      "openingLine": "Ho, ho, ho! Bun\u0103, Ioana! Ce bucurie s\u0103 te aud! Spune-mi, ce \u021bi-ar pl\u0103cea s\u0103 vorbim despre Cr\u0103ciun?",
+      "remainingSeconds": 180,
+      "instructionsHash": "server_bound"
+    },
+    "childFirstName": "Ioana",
+    "language": "ro",
+    "killSwitch": false
+  },
+  "concurrent_code": "concurrent_session",
+  "heartbeat": {
+    "ok": true,
+    "wrap_up": true,
+    "force_end": true,
+    "remaining_seconds": 0
+  },
+  "end": {
+    "ok": true,
+    "remaining_seconds": 0,
+    "entitlement_status": "completed"
+  },
+  "resolve_after": {
+    "ok": false,
+    "code": "completed",
+    "remaining_seconds": 0
+  }
+}

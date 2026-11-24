@@ -1,0 +1,41 @@
+{
+  "ok": true,
+  "elapsed_ms": 6870,
+  "max_ms": 30000,
+  "model": "gpt-realtime",
+  "session_id_prefix": "sess_EcWyX7D",
+  "audio_delta_events": 17,
+  "text_chars": 69,
+  "text_preview": "Hei Ioana, mă bucur să te văd! Știu că îți dorești mult păpușa aceea.",
+  "cost": {
+    "usage": {
+      "total_tokens": 165,
+      "input_tokens": 37,
+      "output_tokens": 128,
+      "input_token_details": {
+        "text_tokens": 37,
+        "audio_tokens": 0,
+        "image_tokens": 0,
+        "cached_tokens": 0,
+        "cached_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 40,
+        "audio_tokens": 88
+      }
+    },
+    "estimate_usd": 0.00642,
+    "estimate_ron": 0.0295,
+    "input_tokens": 37,
+    "output_tokens": 128,
+    "note": "estimated from token detail rates gpt-realtime"
+  },
+  "closed_by": "response_done",
+  "error": null,
+  "language": "ro",
+  "auto_disconnect": true
+}

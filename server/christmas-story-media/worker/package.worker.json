@@ -1,0 +1,10 @@
+{
+  "name": "@digitalgifter/christmas-story-film-worker",
+  "private": true,
+  "version": "0.2.0-02e",
+  "description": "Isolated FFmpeg memory-film worker package (not deployed).",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module"
+}

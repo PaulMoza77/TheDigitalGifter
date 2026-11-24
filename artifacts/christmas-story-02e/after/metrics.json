@@ -1,0 +1,23 @@
+{
+  "mp4Path": "/Users/paul/tdg-christmas-story-02e/artifacts/christmas-story-02e/after/emma-premium-demo-film.mp4",
+  "posterPath": "/Users/paul/tdg-christmas-story-02e/artifacts/christmas-story-02e/after/emma-premium-demo-poster.jpg",
+  "previewMp4Path": "/Users/paul/tdg-christmas-story-02e/artifacts/christmas-story-02e/after/emma-premium-demo-preview.mp4",
+  "checksumSha256": "e12495c68024841b24e88fda35a9a47dc131cb23f0c1fcb36c8999d1c8f6e0b6",
+  "durationSec": 33.7,
+  "width": 1280,
+  "height": 720,
+  "hasAudio": false,
+  "fileSizeBytes": 8840768,
+  "renderMs": 35838,
+  "peakRssMb": 91,
+  "cost": {
+    "note": "Measured render metrics only. Currency estimates intentionally null until ops rates are configured.",
+    "vpsComputeCentsEstimate": null,
+    "manualSongLaborCentsEstimate": null,
+    "storageCentsEstimate": null,
+    "measuredRenderMs": 35838,
+    "measuredOutputBytes": 8840768,
+    "measuredPeakRssMb": 91
+  },
+  "wallClockMs": 35841
+}

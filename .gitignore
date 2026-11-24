@@ -19,3 +19,24 @@ output/long-form/**/*.jpg
 output/long-form/state.json
 output/long-form/productions/
 public/assets/long-form/music/*.m4a
+---
+
+# Mission 02D local media worker artifacts
+artifacts/christmas-story-02d/queue/
+artifacts/christmas-story-02d/out/
+artifacts/christmas-story-02d/e2e-out/
+artifacts/christmas-story-02d/e2e-queue/
+artifacts/christmas-story-02d/vitest-queue/
+artifacts/christmas-story-02d/*.tmp
+
+# Mission 02E local QA / scratch (commit selected evidence via report paths)
+artifacts/christmas-story-02e/after/*-work/
+artifacts/christmas-story-02e/licensed-song-inbox/
+artifacts/christmas-story-02e/qa-tmp/
+
+# Mission 02F local private media / worker scratch (commit evidence txt + QA pngs)
+artifacts/christmas-story-02f/queue/
+artifacts/christmas-story-02f/out/
+artifacts/christmas-story-02f/private-store/
+artifacts/christmas-story-02f/*.tmp
+supabase/.temp/

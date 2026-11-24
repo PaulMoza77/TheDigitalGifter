@@ -7,11 +7,13 @@
 
     <!-- Analytics: default denied until cookie consent. Defer even after accept on /christmas. -->
     <script>
+      window.__TDG_CONSENT_KEY__ = "tdg.cookie-consent.v1";
+      window.__TDG_SANTA_LANDING__ = /^\/(?:ro\/)?christmas\/santa-call\/?$/.test(location.pathname);
       window.__TDG_DEFER_ANALYTICS__ = (function () {
         var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
-        return path === "/christmas";
+        return path === "/christmas" || window.__TDG_SANTA_LANDING__;
       })();
-      window.__TDG_CONSENT_KEY__ = "tdg.cookie-consent.v1";
+      window.__TDG_PRIVATE_ANALYTICS__ = /^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname);
     </script>
 
     <!-- Google tag (gtag.js) — Consent Mode v2: denied until the visitor accepts -->
@@ -38,7 +40,12 @@
         s.src = "https://www.googletagmanager.com/gtag/js?id=G-YF2GRM2TL4";
         document.head.appendChild(s);
         gtag("js", new Date());
-        gtag("config", "G-YF2GRM2TL4", { send_page_view: true });
+        gtag("config", "G-YF2GRM2TL4", window.__TDG_SANTA_LANDING__ ? {
+          send_page_view: false,
+          page_location: location.origin + "/christmas/santa-call",
+          page_referrer: "",
+          allow_google_signals: false
+        } : { send_page_view: true });
       }
 
       function __tdgLoadClarity() {
@@ -79,12 +86,13 @@
           s = b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t, s);
         })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-        fbq("init", "1581639566935542");
+        fbq("init", window.__TDG_SANTA_LANDING__ ? "1673980440653322" : "1581639566935542");
         fbq("track", "PageView");
       }
 
       function __tdgLoadMarketingScripts() {
         function boot() {
+          if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname)) return;
           __tdgLoadGtag();
           __tdgLoadClarity();
           __tdgLoadFbq();
@@ -115,6 +123,9 @@
         var granted = value === "granted";
         window.__tdgApplyConsentUpdate(granted);
         if (granted) __tdgLoadMarketingScripts();
+        if (!granted && window.fbq) window.fbq("consent", "revoke");
+        if (granted && window.fbq) window.fbq("consent", "grant");
+        window.dispatchEvent(new Event("tdg-consent-updated"));
       };
 
       (function bootConsent() {
@@ -188,6 +199,126 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- /christmas/santa-call: paint hero H1 before SPA JS so LCP is not blocked by the bundle -->
+    <script>
+      (function () {
+        if (!window.__TDG_SANTA_LANDING__) return;
+        window.__TDG_SANTA_BOOT__ = true;
+        try {
+          document.documentElement.classList.add("sc-santa-route");
+        } catch (e) {}
+        var params = new URLSearchParams(location.search || "");
+        var path = String(location.pathname || "/").toLowerCase();
+        var lang = String(params.get("lang") || "").toLowerCase();
+        // Path /ro/ wins over browser language so organic RO landings stay Romanian.
+        if (!lang) {
+          if (/^\/ro(\/|$)/.test(path)) lang = "ro";
+          else if (/^\/en(\/|$)/.test(path)) lang = "en";
+          else {
+            try {
+              lang = String(navigator.language || "ro").toLowerCase();
+            } catch (e) {
+              lang = "ro";
+            }
+          }
+        }
+        var ro = lang.indexOf("en") !== 0;
+        var market = params.get("market") === "us" ? "us" : "ro";
+        var copy = ro
+          ? {
+              kicker: "APEL CU MOȘ CRĂCIUN · ÎN ROMÂNĂ",
+              title: "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde.",
+              subtitle:
+                "O conversație de 3 minute cu un Moș Crăciun virtual, creat cu AI.",
+              price: market === "us" ? "$12.99 / 3 minute" : "59 lei / 3 minute",
+              cta: "Personalizează apelul",
+            }
+          : {
+              kicker: "A CALL WITH SANTA · MADE PERSONAL",
+              title: "He knows their name. Hears their wishes. Answers back.",
+              subtitle:
+                "A 3-minute conversation with an AI Santa in your browser.",
+              price: market === "us" ? "$12.99 / 3 minutes" : "59 lei / 3 minutes",
+              cta: "Personalize the call",
+            };
+
+        // First paint uses Georgia/system-ui; load webfonts after the first frame
+        // so Google Fonts CSS/woff2 do not contend with LCP text.
+        var fontHref =
+          "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Source+Sans+3:wght@400;600&display=swap";
+        function add(rel, attrs) {
+          var el = document.createElement("link");
+          el.rel = rel;
+          Object.keys(attrs).forEach(function (k) {
+            el.setAttribute(k, attrs[k]);
+          });
+          document.head.appendChild(el);
+          return el;
+        }
+        function loadSantaFonts() {
+          if (document.getElementById("tdg-santa-call-fonts")) return;
+          add("preload", { as: "style", href: fontHref, "data-sc-fonts-preload": "1" });
+          add("stylesheet", { href: fontHref, id: "tdg-santa-call-fonts" });
+        }
+        if ("requestAnimationFrame" in window) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(loadSantaFonts);
+          });
+        } else {
+          setTimeout(loadSantaFonts, 1);
+        }
+
+        // Critical first-screen CSS only (hero). Full santaLanding.css arrives with the route chunk.
+        // Overrides festive/Tailwind body styles so global CSS is not required for LCP.
+        var bootCss = document.createElement("style");
+        bootCss.id = "sc-boot-css";
+        bootCss.textContent =
+          "html.sc-santa-route,html.sc-santa-route body,html.sc-santa-route #root{margin:0;min-height:100%;background:#fcf8f0!important;background-image:none!important;color:#263c32!important}" +
+          "html.sc-santa-route body{background-blend-mode:normal!important;background-attachment:scroll!important}" +
+          ".sc-site-shell{min-height:100svh;background:#fcf8f0;color:#263c32}" +
+          "#sc-boot{position:fixed;inset:0 0 auto 0;z-index:5;background:#fcf8f0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:1160px;width:100%;margin:0 auto;padding:16px;box-sizing:border-box;pointer-events:none}" +
+          "#sc-boot .sc-boot-kicker{font-size:11px;font-weight:700;letter-spacing:.16em;color:#82633a;margin:18px 0 10px}" +
+          "#santa-title,#sc-boot h1{font-family:Georgia,'Times New Roman',serif;font-weight:600;font-size:clamp(34px,9vw,48px);line-height:1.05;letter-spacing:-.025em;margin:0 0 12px;max-width:36rem;color:#263c32;text-rendering:optimizeSpeed}" +
+          "#sc-boot .sc-boot-sub{font-size:15px;line-height:1.45;color:#5b675e;margin:0 0 12px;max-width:32rem}" +
+          "#sc-boot .sc-boot-price{font-weight:700;font-size:26px;margin:0 0 12px}" +
+          "#sc-boot .sc-boot-cta{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:14px 24px;border-radius:12px;background:#9e302b;color:#fff;font-weight:700;font-size:16px;width:100%;max-width:420px;box-sizing:border-box}" +
+          ".sc-cookie{position:fixed;inset:auto 0 0 0;z-index:60;border-top:1px solid rgba(255,255,255,.1);background:rgba(11,18,32,.96);color:#fff;padding:10px 12px max(10px,env(safe-area-inset-bottom));box-shadow:0 -8px 28px rgba(0,0,0,.4)}" +
+          ".sc-cookie-inner{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:10px}" +
+          ".sc-cookie-title{margin:0;font-size:12px;font-weight:600}.sc-cookie-copy{margin:2px 0 0;font-size:12px;line-height:1.45;color:rgba(255,255,255,.75)}.sc-cookie-copy a{color:inherit;text-decoration:underline}" +
+          ".sc-cookie-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}" +
+          ".sc-cookie-actions button{min-height:40px;border-radius:999px;font-size:14px;font-weight:600;cursor:pointer}" +
+          ".sc-cookie-reject{border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.9)}" +
+          ".sc-cookie-accept{border:0;background:#ffd976;color:#1a1a1a}";
+        document.head.appendChild(bootCss);
+
+        function paintBoot() {
+          if (document.getElementById("sc-boot")) return;
+          var boot = document.createElement("div");
+          boot.id = "sc-boot";
+          boot.setAttribute("data-sc-boot", "1");
+          boot.innerHTML =
+            '<p class="sc-boot-kicker">' +
+            copy.kicker +
+            "</p>" +
+            '<h1 id="santa-title">' +
+            copy.title +
+            "</h1>" +
+            '<p class="sc-boot-sub">' +
+            copy.subtitle +
+            "</p>" +
+            '<p class="sc-boot-price">' +
+            copy.price +
+            "</p>" +
+            '<div class="sc-boot-cta" aria-hidden="true">' +
+            copy.cta +
+            "</div>";
+          (document.body || document.documentElement).appendChild(boot);
+        }
+        if (document.body) paintBoot();
+        else document.addEventListener("DOMContentLoaded", paintBoot);
+      })();
+    </script>
 
     <!-- /christmas: paint cabin poster + start asset fetch before the SPA boots -->
     <script>
@@ -267,18 +398,26 @@
       })();
     </script>
 
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
+    <!-- Inter is skipped on Santa Call so Cormorant/Source Sans win the critical path. -->
+    <script>
+      (function () {
+        if (window.__TDG_SANTA_LANDING__) return;
+        var href =
+          "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap";
+        var link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "style";
+        link.href = href;
+        link.onload = function () {
+          this.onload = null;
+          this.rel = "stylesheet";
+        };
+        document.head.appendChild(link);
+        var noscript = document.createElement("noscript");
+        noscript.innerHTML = '<link href="' + href + '" rel="stylesheet" />';
+        document.head.appendChild(noscript);
+      })();
+    </script>
 
     <script type="application/ld+json">
       {
@@ -317,20 +456,43 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Service",
-        "name": "AI Holiday Card Generator",
-        "description": "Generate beautiful, personalized AI-powered holiday cards and videos from your photos",
-        "provider": {
-          "@type": "Organization",
-          "name": "TheDigitalGifter"
-        },
-        "areaServed": "Worldwide",
-        "priceRange": "$5 - $50",
-        "offers": {
-          "@type": "Offer",
-          "priceCurrency": "USD",
-          "price": "5.00"
-        }
+        "@type": "Organization",
+        "name": "TheDigitalGifter",
+        "url": "https://www.thedigitalgifter.com",
+        "logo": "https://www.thedigitalgifter.com/TheDigitalGifter.png",
+        "email": "support@thedigitalgifter.com",
+        "sameAs": []
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Personalized Santa Call",
+        "description": "A private 3-minute AI Santa voice conversation in the browser, personalized with a child's first name. Optional 5-minute paid extensions.",
+        "brand": { "@type": "Brand", "name": "TheDigitalGifter" },
+        "url": "https://www.thedigitalgifter.com/christmas/santa-call",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Santa Call — Romania",
+            "url": "https://www.thedigitalgifter.com/ro/christmas/santa-call",
+            "priceCurrency": "RON",
+            "price": "59.00",
+            "availability": "https://schema.org/InStock",
+            "category": "Digital gift"
+          },
+          {
+            "@type": "Offer",
+            "name": "Santa Call — United States",
+            "url": "https://www.thedigitalgifter.com/christmas/santa-call",
+            "priceCurrency": "USD",
+            "price": "12.99",
+            "availability": "https://schema.org/InStock",
+            "category": "Digital gift"
+          }
+        ]
       }
     </script>
 
@@ -372,7 +534,8 @@
     <meta name="robots" content="index,follow" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
-    <link rel="stylesheet" href="/src/index.css" />
+    <!-- Global CSS is loaded by main.tsx via loadAppCss() — omitted from HTML so
+         Santa Call can paint first-screen cream + H1 without the ~180KB Tailwind block. -->
   </head>
 
   <body>

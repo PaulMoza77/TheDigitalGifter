@@ -1,0 +1,155 @@
+{
+  "generated_at": "2026-11-14T20:55:46.800Z",
+  "all_pass": true,
+  "checks": [
+    {
+      "name": "ext_1",
+      "ok": true,
+      "reason": "activated",
+      "remaining": 300,
+      "count": 1
+    },
+    {
+      "name": "ext_2",
+      "ok": true,
+      "reason": "activated",
+      "remaining": 300,
+      "count": 2
+    },
+    {
+      "name": "expired_then_ext",
+      "ok": true,
+      "reason": "activated",
+      "remaining": 300,
+      "count": 1
+    },
+    {
+      "name": "five_successive",
+      "ok": true,
+      "totals": [
+        {
+          "i": 1,
+          "remaining": 300,
+          "max": 480,
+          "count": 1
+        },
+        {
+          "i": 2,
+          "remaining": 300,
+          "max": 780,
+          "count": 2
+        },
+        {
+          "i": 3,
+          "remaining": 300,
+          "max": 1080,
+          "count": 3
+        },
+        {
+          "i": 4,
+          "remaining": 300,
+          "max": 1380,
+          "count": 4
+        },
+        {
+          "i": 5,
+          "remaining": 300,
+          "max": 1680,
+          "count": 5
+        }
+      ]
+    },
+    {
+      "name": "failed_payment_zero",
+      "ok": true,
+      "reason": "payment_required",
+      "remaining": 0
+    },
+    {
+      "name": "abandoned_checkout_zero",
+      "ok": true,
+      "remaining": 180
+    },
+    {
+      "name": "duplicate_webhook_once",
+      "ok": true,
+      "a": {
+        "ok": true,
+        "reason": "activated",
+        "remaining": 300,
+        "count": 1
+      },
+      "b": {
+        "ok": true,
+        "reason": "already_extended",
+        "remaining": 300,
+        "count": 1
+      }
+    },
+    {
+      "name": "double_click_same_order",
+      "ok": true,
+      "a": {
+        "ok": true,
+        "reason": "activated",
+        "remaining": 300,
+        "count": 1
+      },
+      "b": {
+        "ok": true,
+        "reason": "already_extended",
+        "remaining": 300,
+        "count": 1
+      }
+    },
+    {
+      "name": "mid_call_preserves_unused",
+      "ok": true,
+      "reason": "activated",
+      "remaining": 340,
+      "count": 1
+    },
+    {
+      "name": "cumulative_minutes_table",
+      "ok": true,
+      "computed": [
+        {
+          "purchase": "initial",
+          "price": 59,
+          "add": 3,
+          "total": 3,
+          "ok": true
+        },
+        {
+          "purchase": "ext1",
+          "price": 49,
+          "add": 5,
+          "total": 8,
+          "ok": true
+        },
+        {
+          "purchase": "ext2",
+          "price": 49,
+          "add": 5,
+          "total": 13,
+          "ok": true
+        },
+        {
+          "purchase": "ext3",
+          "price": 49,
+          "add": 5,
+          "total": 18,
+          "ok": true
+        },
+        {
+          "purchase": "ext4",
+          "price": 49,
+          "add": 5,
+          "total": 23,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "note": "Mock only — no LIVE Stripe charges. Deploy migration + edge function before PRODUCTION GO."
+}

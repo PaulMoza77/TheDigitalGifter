@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-10-24T18:47:25.300Z",
+  "summary": {
+    "pass": 15,
+    "fail": 0,
+    "blocked": 1
+  },
+  "checks": [
+    {
+      "name": "heartbeat_sets_awaiting_extension",
+      "has_awaiting": true,
+      "has_next_ent": true,
+      "status": "PASS"
+    },
+    {
+      "name": "initial_fulfill",
+      "webhook_status": "fulfilled",
+      "status": "PASS"
+    },
+    {
+      "name": "qa_force_awaiting_extension",
+      "http": 200,
+      "resolve_code": "awaiting_extension",
+      "price": 4900,
+      "status": "PASS"
+    },
+    {
+      "name": "resolve_shows_upsell",
+      "code": "awaiting_extension",
+      "price": 4900,
+      "child": "Maya",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_checkout_ui",
+      "http": 200,
+      "stripeMode": "test",
+      "livemode": false,
+      "amountCents": 4900,
+      "has_url": true,
+      "status": "PASS"
+    },
+    {
+      "name": "extension_session_cs_test",
+      "session_prefix": "cs_test_a1Vo",
+      "status": "PASS"
+    },
+    {
+      "name": "stripe_session_livemode_false",
+      "livemode": false,
+      "amount_total": 4900,
+      "payment_status": "unpaid",
+      "status": "PASS"
+    },
+    {
+      "name": "private_call_shell_200",
+      "http": 200,
+      "status": "PASS"
+    },
+    {
+      "name": "shell_loads_v2_chunk",
+      "status": "PASS"
+    },
+    {
+      "name": "extension_modal_visible",
+      "reason": "browserType.launch: Executable doesn't exist at /Users/paul/Library/Caches/ms-playwright/chromium_headless_shell-1187/chrome-mac/headless_shell\n╔═══════════════════════════════════",
+      "note": "Playwright unavailable or SPA hydrate issue — checkout URL still proven",
+      "status": "BLOCKED"
+    },
+    {
+      "name": "signed_test_webhook_extension",
+      "webhook_status": "fulfilled",
+      "remaining_seconds": 300,
+      "status": "PASS"
+    },
+    {
+      "name": "entitlement_300",
+      "remaining_seconds": 300,
+      "child": "Maya",
+      "status": "PASS"
+    },
+    {
+      "name": "resume_ash_no_regreet",
+      "voice": "ash",
+      "resumeMode": true,
+      "opening_len": 0,
+      "remaining": 300,
+      "status": "PASS"
+    },
+    {
+      "name": "second_extension_blocked",
+      "code": "extension_unavailable",
+      "http": 403,
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled_unpaid",
+      "status": "PASS"
+    },
+    {
+      "name": "failed_payment",
+      "reason": "Your card was declined.",
+      "status": "PASS"
+    }
+  ],
+  "checkout_url_prefix": "https://checkout.stripe.com/c/pay/cs_test_a1VoSa…",
+  "screenshot": null,
+  "private_call_url_file": "/tmp/tdg-santa-upsell-qa-url"
+}

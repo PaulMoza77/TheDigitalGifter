@@ -10,6 +10,7 @@ export type ChristmasLocale = (typeof CHRISTMAS_LOCALES)[number];
 export const CHRISTMAS_PRODUCT_TYPES = [
   "photo_generator",
   "santa_video",
+  "santa_voice_call",
   "card",
   "tree",
   "advent",
@@ -408,6 +409,43 @@ export const CHRISTMAS_CATALOG_SEED: ChristmasProductDef[] = [
     ],
   },
   {
+    productKey: "christmas_santa_voice_call",
+    slug: "santa-call",
+    productType: "santa_voice_call",
+    name: "Call Santa Claus",
+    description:
+      "A magical 3-minute realtime voice conversation with AI Santa Claus.",
+    active: true,
+    publicDiscoverable: true,
+    sortOrder: 65,
+    routePath: "/christmas/santa-call",
+    localeDefault: "en",
+    metadata: {
+      foundation: true,
+      live_offer: false,
+      privacy_required: true,
+      santa_voice_call_v1: true,
+      ai_disclosure: true,
+      max_duration_seconds: 180,
+    },
+    packages: [
+      {
+        packageKey: "single",
+        packageName: "Call Santa — 3 minutes",
+        description: "One private AI Santa voice call (up to 180 seconds).",
+        currency: "ron",
+        priceCents: 9900,
+        compareAtCents: null,
+        active: true,
+        purchasable: false,
+        features: ["3-minute AI Santa voice call", "Romanian or English", "Private access link"],
+        sortOrder: 10,
+        localeDefault: "en",
+        metadata: { live_offer: false },
+      },
+    ],
+  },
+  {
     productKey: "christmas_santa_video",
     slug: "santa-video",
     productType: "santa_video",
@@ -689,6 +727,7 @@ const PORTRAIT_VERTICAL_KEYS = new Set([
 
 const EXPERIENCE_OPEN_KEYS = new Set([
   ...PORTRAIT_VERTICAL_KEYS,
+  "christmas_santa_voice_call",
   "christmas_tree",
   "christmas_gift_tree",
   "christmas_advent",

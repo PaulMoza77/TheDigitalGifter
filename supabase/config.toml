@@ -97,6 +97,12 @@ verify_jwt = false
 [functions.christmas-result-share]
 verify_jwt = false
 
+[functions.christmas-story]
+verify_jwt = false
+
+[functions.christmas-story-stripe-test-webhook]
+verify_jwt = false
+
 [functions.christmas-commerce-config]
 verify_jwt = false
 
