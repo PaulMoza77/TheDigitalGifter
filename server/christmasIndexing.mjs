@@ -35,6 +35,7 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas/dogs",
   "/christmas/cats",
   "/christmas/santa-video",
+  "/christmas/santa-call",
   "/christmas/tree",
   "/christmas/advent",
   "/christmas/cards",

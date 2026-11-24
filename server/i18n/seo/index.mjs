@@ -40,6 +40,26 @@ const CLOSEOUT = {
       h1: "Creează un Portret Magic de Crăciun pentru Copilul Tău",
       lede: "Încarcă doar o fotografie pe care ai dreptul să o folosești și creează un portret privat, fără galerie publică.",
     },
+    "/christmas/santa-call": {
+      title: "Apel Personalizat de la Moș Crăciun | 59 lei | TheDigitalGifter",
+      description:
+        "Apel privat de 3 minute cu Moș Crăciun AI, în browser. 59 lei · prelungire opțională 49 lei / 5 minute. Link pe email după plată. Supraveghere adult.",
+      h1: "Îi spune pe nume. Îi ascultă dorințele. Îi răspunde.",
+      lede:
+        "O conversație de 3 minute cu un Moș Crăciun virtual, creat cu AI — în browser, nu pe telefonul copilului. 59 lei / 3 minute.",
+      h2: "Cum funcționează apelul",
+      h2Body:
+        "Completezi câteva detalii, plătești securizat, primești linkul privat pe email și începi când ești gata. Prelungiri opționale de 5 minute.",
+      breadcrumbs: [
+        { href: "/ro/christmas", label: "Crăciun" },
+        { href: "/ro/christmas/santa-call", label: "Apel Moș Crăciun" },
+      ],
+      links: [
+        { href: "/ro/christmas/santa-video", label: "Video personalizat de la Moș" },
+        { href: "/ro/christmas/family", label: "Portrete de familie" },
+        { href: "/ro/christmas", label: "Crăciun" },
+      ],
+    },
   },
   de: {
     "/christmas/send-a-gift": {

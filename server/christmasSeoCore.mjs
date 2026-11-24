@@ -368,16 +368,16 @@ export const CHRISTMAS_SEO_ROUTES = [
   },
   {
     path: "/christmas/santa-call",
-    title: "A Magical Call with Santa | The Digital Gifter",
+    title: "Personalized Santa Call | Talk to Santa Online | TheDigitalGifter",
     description:
-      "Santa knows your child's name, listens to their Christmas wishes, and responds in real time in a personalized AI-powered browser call.",
+      "A private 3-minute AI Santa call in the browser. Romania 59 RON · US $12.99. Optional 5-minute extensions. Adult supervision. Instant email delivery.",
     canonicalPath: "/christmas/santa-call",
     h1: "A Magical Call with Santa. Made Just for Your Child.",
     lede:
-      "A private, AI-powered voice conversation with Santa in the browser — not a phone dial to your child.",
+      "A private, AI-powered voice conversation with Santa in the browser — not a phone dial to your child. 59 RON / 3 minutes in Romania · $12.99 in the US.",
     h2: "How the Santa call works",
     h2Body:
-      "Personalize a few parent details, pay securely, open the private link, and talk for three minutes with an optional five-minute extension.",
+      "Personalize a few parent details, pay securely, open the private link from email, and talk for three minutes. Optional paid five-minute extensions anytime.",
     links: [
       { href: "/christmas/santa-video", label: "Personalized Santa Video" },
       { href: "/christmas/family", label: "Family Christmas Portraits" },
@@ -389,8 +389,8 @@ export const CHRISTMAS_SEO_ROUTES = [
       { href: "/christmas/santa-call", label: "Santa Call" },
     ],
     ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
-    // Commercial funnel not public yet — keep noindex until launch approval.
-    noindex: true,
+    // Live commercial product (CHRISTMAS_LIVE_PRODUCTS includes christmas_santa_voice_call).
+    noindex: false,
   },
   {
     path: "/christmas/tree",

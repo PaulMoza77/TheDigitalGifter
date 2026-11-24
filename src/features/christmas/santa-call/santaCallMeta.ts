@@ -5,12 +5,16 @@
  */
 import { readCookieConsent } from "@/lib/cookieConsent";
 import { SANTA_CALL_PRODUCT_KEY } from "./santaCallTypes";
+import { isSantaCallQaCheckoutEnabled } from "./santaCallPublic";
 
 type Fbq = ((...args: unknown[]) => void) & { loaded?: boolean };
 
 function pixel(): Fbq | null {
   if (typeof window === "undefined") return null;
   if (readCookieConsent() !== "granted") return null;
+  if (isSantaCallQaCheckoutEnabled() || /^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(window.location?.pathname || "")) return null;
+  // Never send Santa conversions to a Pixel initialized by a different product page.
+  if ((window as Window & { __TDG_SANTA_LANDING__?: boolean }).__TDG_SANTA_LANDING__ === false) return null;
   const fbq = (window as Window & { fbq?: Fbq }).fbq;
   return typeof fbq === "function" ? fbq : null;
 }
@@ -67,6 +71,7 @@ export function trackSantaCallMetaPurchase(input: {
   orderId: string;
   amountCents: number;
   currency: string;
+  productKey?: string;
 }) {
   const fbq = pixel();
   if (!fbq || input.amountCents <= 0 || !input.orderId) return;
@@ -78,7 +83,7 @@ export function trackSantaCallMetaPurchase(input: {
     {
       currency: (input.currency || "ron").toUpperCase(),
       value: input.amountCents / 100,
-      content_ids: [SANTA_CALL_PRODUCT_KEY],
+      content_ids: [input.productKey || SANTA_CALL_PRODUCT_KEY],
       content_type: "product",
       order_id: input.orderId,
     },

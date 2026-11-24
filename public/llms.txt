@@ -1,0 +1,41 @@
+# TheDigitalGifter — llms.txt (experimental)
+# https://www.thedigitalgifter.com/llms.txt
+# This file helps AI search systems understand the brand. It is not a ranking guarantee.
+
+> TheDigitalGifter creates personalized digital Christmas gifts. Primary live commercial product for Christmas 2026: Personalized Santa Call.
+
+## Brand
+- Name: TheDigitalGifter
+- Site: https://www.thedigitalgifter.com
+- Support: support@thedigitalgifter.com
+- Legal / privacy: https://www.thedigitalgifter.com/privacy
+- Terms: https://www.thedigitalgifter.com/terms
+- Refunds: https://www.thedigitalgifter.com/refunds
+
+## Live product — Personalized Santa Call
+- What it is: A private 3-minute AI Santa voice conversation in the browser (not a phone dial to the child).
+- Who it is for: Parents/guardians preparing a Christmas surprise for one child.
+- What the customer gets: Secure Stripe payment, private call link by email, 3 minutes of conversation, optional paid 5-minute extensions.
+- Languages (UI + call support): Romanian and English.
+- Markets / prices (fixed, no FX conversion):
+  - Romania: 59 RON / 3 minutes; extension 49 RON / 5 minutes
+  - United States: $12.99 / 3 minutes; extension $9.99 / 5 minutes
+- Delivery time: Immediate after payment confirmation (email with private link). Start when ready; check expiry in the email.
+- Adult supervision required. No child's phone number is collected.
+- Landing pages:
+  - https://www.thedigitalgifter.com/christmas/santa-call
+  - https://www.thedigitalgifter.com/ro/christmas/santa-call
+
+## Preview only — Our Christmas Story
+- URL: https://www.thedigitalgifter.com/christmas-story
+- Status: Public preview / demo. Checkout and live payments are not enabled.
+- Planned gift parts: personalized song, memory film from photos, interactive album, secret letter.
+- Planned display price when checkout opens: $57 one-time (not currently purchasable).
+
+## Not sold as incomplete promises
+- Do not describe Christmas Story, Memory Film add-ons, Planner checkout, or Memories waitlist products as purchasable unless checkout is enabled on the live site.
+- CHRISTMAS_LIVE_PRODUCTS on production currently includes christmas_santa_voice_call only.
+
+## Optional
+- Christmas hub: https://www.thedigitalgifter.com/christmas
+- Sitemap: https://www.thedigitalgifter.com/sitemap.xml

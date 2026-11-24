@@ -10,7 +10,7 @@ const FAQ = [
   ["Can I review it first?", "Yes. The buyer review lets you check the dedication and media before approving the gift. In this preview, generation and approval are test-only."],
   ["Can I send a gift from this preview?", "This version saves test gifts in this browser only. Shared access on another device and scheduled delivery are not enabled yet."],
   ["When will the finished gift be ready?", STORY_OFFER.timeline],
-  ["Will I be charged here?", "Payments are currently disabled. You can create a preview and a local test order without a card charge. Final digital-content terms will be available before live checkout."],
+  ["Will I be charged here?", "Purchases are currently unavailable. You can personalize a preview and explore the fictional Emma sample. No payment or order is created."],
 ];
 
 function resolveVariant(raw: string | null): CopyVariant {
@@ -35,14 +35,14 @@ export function StoryLanding() {
           <section className="cs-hero" aria-labelledby="cs-hero-title">
             <div className="cs-hero__copy">
               <p className="cs-kicker">The Christmas collection · Made personal</p>
-              <h1 id="cs-hero-title">{variant === "personalized_song" ? "Imagine hearing their name in a song made just for them." : "Some people deserve more than an ordinary gift."}</h1>
-              <p className="cs-hero__lead">{variant === "personalized_song" ? "Your memories, their name, an original song. Give them a story they can hear, see, and return to." : "Turn your favorite memories into a personal song, a beautiful film, and a surprise made just for them."}</p>
+              <h1 id="cs-hero-title">Their name in a song.<br/><em>Your memories in a film.</em></h1>
+              <p className="cs-hero__lead">One unforgettable Christmas surprise: <strong>a song made with their name, a cinematic film from your photos, a private photo album and a secret letter.</strong> All wrapped in one beautiful gift they open on their phone.</p>
               <div className="cs-cta-row">
-                <Link className="cs-btn cs-btn--primary" to={createPath} onClick={() => trackStoryEvent("create_gift_click", { source: "hero" })}>Create Their Gift <span aria-hidden="true">↗</span></Link>
-                <Link className="cs-btn cs-btn--ghost" to="/christmas-story/demo" onClick={() => trackStoryEvent("demo_play", { source: "hero_secondary" })}>Explore a Sample Gift</Link>
+                <Link className="cs-btn cs-btn--primary" to="/christmas-story/demo" onClick={() => trackStoryEvent("demo_play", { source: "hero_primary" })}>Unwrap Emma’s sample gift <span aria-hidden="true">↗</span></Link>
+                <Link className="cs-btn cs-btn--ghost" to={createPath} onClick={() => trackStoryEvent("create_gift_click", { source: "hero" })}>Personalize yours for free</Link>
               </div>
-              <p className="cs-microcopy">For your partner, family, or someone who means everything.</p>
-              <p className="cs-hero__offer">{STORY_OFFER.displayPrice} <span>for the complete gift · Preview before you decide</span></p>
+              <p className="cs-microcopy">Try the whole fictional gift before deciding. Purchases are not open yet — this is a free preview.</p>
+              <p className="cs-hero__offer">{STORY_OFFER.displayPrice} <span>planned one-time price · checkout not enabled</span></p>
             </div>
             <Link to="/christmas-story/demo" className="cs-gift-preview" aria-label="Explore Emma’s fictional sample gift">
               <div className="cs-gift-preview__border">
@@ -68,8 +68,14 @@ export function StoryLanding() {
               <span className="cs-sample-label">Fictional sample · Stock photos · Not a customer gift</span>
             </Link>
           </section>
-          <div className="cs-trust-strip" aria-label="Gift details"><span>Made from your memories</span><span>Reviewed by you</span><span>No app needed</span></div>
-          <p className="cs-environment-note">You’re exploring a preview. Payments and cross-device delivery are not enabled.</p>
+          <div className="cs-trust-strip" aria-label="Gift details"><span>One personalized song</span><span>One cinematic film</span><span>Private photo album</span><span>Secret message</span></div>
+          <p className="cs-environment-note" role="note">Experience the complete fictional Emma example. Orders are not open yet; no payment will be taken on this preview.</p>
+          <section className="cs-v2-what" aria-labelledby="cs-v2-what-title"><div className="cs-v2-what__head"><p className="cs-kicker">Not a subscription. Not just a video.</p><h2 id="cs-v2-what-title">Four beautiful surprises. <em>One Christmas gift.</em></h2><p>This is exactly what your loved one opens from the private link.</p></div><div className="cs-v2-four">
+          <Link to="/christmas-story/demo" className="cs-v2-feature"><span className="cs-v2-feature__icon">♫</span><strong>01. A song with their name</strong><span>Custom original vocals and lyrics, built around what makes them special.</span></Link>
+          <Link to="/christmas-story/demo" className="cs-v2-feature"><span className="cs-v2-feature__icon">▶</span><strong>02. Your memories, on film</strong><span>A cinematic keepsake made from your own photographs.</span></Link>
+          <Link to="/christmas-story/demo" className="cs-v2-feature"><span className="cs-v2-feature__icon">▧</span><strong>03. An interactive photo album</strong><span>Tap through your memories, beautifully presented in a private gift page.</span></Link>
+          <Link to="/christmas-story/demo" className="cs-v2-feature"><span className="cs-v2-feature__icon">✉</span><strong>04. One secret Christmas letter</strong><span>A sealed message they open only when they are ready.</span></Link>
+          </div><div className="cs-v2-after"><Link className="cs-btn cs-btn--primary" to="/christmas-story/demo">See the entire Emma gift ↗</Link><span>No card required. This is a fictional example.</span></div></section>
 
           <section className="cs-section cs-editorial" id="cs-inside" aria-labelledby="cs-inside-title">
             <div><p className="cs-kicker">More than a message</p><h2 id="cs-inside-title">Something to hear.<br />Something to hold onto.</h2><p className="cs-section__lead">The small things you remember become the heart of their gift.</p><Link className="cs-text-link" to="/christmas-story/demo">Step inside the sample <span aria-hidden="true">↗</span></Link></div>
@@ -83,14 +89,14 @@ export function StoryLanding() {
           <section className="cs-section" aria-labelledby="cs-how-title">
             <p className="cs-kicker">From you, with love</p><h2 id="cs-how-title">You know them.<br />Start with that.</h2>
             <div className="cs-grid-3 cs-steps">
-              {[ ["01", "Tell us about them", "Their name, your relationship, and what makes them special. Three answers to begin."], ["02", "Make it feel like you", "See a personalized preview. Add a memory, dedication or photos if you like."], ["03", "Review every detail", "Check their story and media in your buyer review before you approve."] ].map(([n, title, body]) => <div key={n}><span className="cs-number">{n}</span><h3>{title}</h3><p>{body}</p></div>)}
+              {[ ["01", "Personalize in this preview", "Enter their name, choose your relationship and add the memories you share. Upload favorite photos — this preview does not charge you."], ["02", "Production after real checkout", "When checkout becomes available, $57 is planned to cover the song, film, album and personal letter. Production starts only after a verified payment."], ["03", "Approve, then send", "Review the finished song and film, approve the gift, and send a private link for them to unwrap."] ].map(([n, title, body]) => <div key={n}><span className="cs-number">{n}</span><h3>{title}</h3><p>{body}</p></div>)}
             </div>
           </section>
 
           <section className="cs-section" aria-labelledby="cs-price-title">
             <div className="cs-price">
-              <div><p className="cs-kicker">One thoughtful gift</p><h2 id="cs-price-title">{STORY_OFFER.name}</h2><p className="cs-price__amount">{STORY_OFFER.displayPrice}</p><p className="cs-section__lead">{STORY_OFFER.promise}</p><Link className="cs-btn cs-btn--primary" to={createPath} onClick={() => trackStoryEvent("create_gift_click", { source: "pricing" })}>Create Their Gift <span aria-hidden="true">↗</span></Link></div>
-              <div><ul className="cs-price__list">{STORY_OFFER.includes.map(item => <li key={item}>{item}</li>)}</ul><p className="cs-microcopy">{STORY_OFFER.timeline}</p><p className="cs-microcopy">{STORY_OFFER.taxesNote}</p><p className="cs-preview-banner">Preview mode · Song, film and printable card generation are mocked. No payment will be taken.</p></div>
+              <div><p className="cs-kicker">One thoughtful gift</p><h2 id="cs-price-title">{STORY_OFFER.name}</h2><p className="cs-price__amount">{STORY_OFFER.displayPrice}</p><p className="cs-section__lead">One personalized song, one memory film, your interactive photo album and a hidden letter. One payment, one extraordinary Christmas moment.</p><Link className="cs-btn cs-btn--primary" to={createPath} onClick={() => trackStoryEvent("create_gift_click", { source: "pricing" })}>Create Their Gift <span aria-hidden="true">↗</span></Link></div>
+              <div><ul className="cs-price__list">{STORY_OFFER.includes.map(item => <li key={item}>{item}</li>)}</ul><p className="cs-microcopy">{STORY_OFFER.timeline}</p><p className="cs-microcopy">{STORY_OFFER.taxesNote}</p><p className="cs-preview-banner">Public preview · Emma's sample film is playable. New songs and films are not yet generated. Purchases are unavailable.</p></div>
             </div>
           </section>
 
