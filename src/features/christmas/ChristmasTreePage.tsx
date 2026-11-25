@@ -27,6 +27,7 @@ import {
   ChristmasProductSeoDepth,
   TREE_SEO_DEPTH,
 } from "./seo/ChristmasProductSeoDepth";
+import { ChristmasCallCrossSell } from "./crossSell/ChristmasCallCrossSell";
 
 type Mode = "create" | "owner" | "shared" | "unavailable";
 
@@ -765,7 +766,12 @@ export default function ChristmasTreePage() {
             </Link>
           </p>
         ) : (
-          <ChristmasProductSeoDepth content={TREE_SEO_DEPTH} tone="dark" />
+          <>
+            <div className="mt-8">
+              <ChristmasCallCrossSell sourceTool="christmas_tree" className="border-amber-200/15 text-amber-50" />
+            </div>
+            <ChristmasProductSeoDepth content={TREE_SEO_DEPTH} tone="dark" />
+          </>
         )}
       </div>
 

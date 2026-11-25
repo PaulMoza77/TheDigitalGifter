@@ -43,15 +43,25 @@ export async function trackChristmasEvent(
   captureFunnelAttribution(window.location.search);
   const attr = attributionParamsForInternal();
   const firstTouch = getFunnelFirstTouchContext();
-  const eventId = newFunnelUuid();
+  // Purchase events: deterministic idempotency by order_id so React remounts /
+  // Stripe return retries / server+client dual writers cannot double-count revenue.
+  const orderId = extra?.orderId ?? null;
+  const purchaseLike =
+    (eventName === "purchase" || eventName === "upsell_purchase") &&
+    typeof orderId === "string" &&
+    orderId.length > 0;
+  const eventId = purchaseLike ? orderId : newFunnelUuid();
+  const idempotencyKey = purchaseLike
+    ? `${eventName}:${orderId}`
+    : `${getChristmasFunnelSessionId()}:${eventName}:${eventId}`;
   const body = {
     event_name: eventName,
     funnel_session_id: getChristmasFunnelSessionId(),
     event_id: eventId,
-    idempotency_key: `${getChristmasFunnelSessionId()}:${eventName}:${eventId}`,
+    idempotency_key: idempotencyKey,
     product_key: extra?.productKey ?? "christmas_photo",
     package_key: extra?.packageKey ?? null,
-    order_id: extra?.orderId ?? null,
+    order_id: orderId,
     locale: normalizeWave1GenerationLocale(extra?.locale),
     pathname: extra?.pathname ?? window.location.pathname,
     landing_path: `${window.location.pathname}${window.location.search}`.slice(0, 120),

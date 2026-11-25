@@ -87,4 +87,25 @@ describe("funnel attribution", () => {
       utm_medium: "paid_social",
     });
   });
+
+  it("infers facebook/paid_social from fbclid-only landings without storing fbclid", () => {
+    expect(captureFunnelAttribution("?fbclid=Abc123XYZ")).toEqual({
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+    });
+    expect(getFunnelAttribution()).toEqual({
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+    });
+    expect(JSON.stringify(getFunnelAttribution())).not.toContain("fbclid");
+  });
+
+  it("does not override explicit UTMs when fbclid is also present", () => {
+    expect(
+      captureFunnelAttribution("?utm_source=instagram&utm_medium=paid_social&fbclid=xyz"),
+    ).toEqual({
+      utm_source: "instagram",
+      utm_medium: "paid_social",
+    });
+  });
 });

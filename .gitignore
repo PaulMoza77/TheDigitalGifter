@@ -39,4 +39,10 @@ artifacts/christmas-story-02f/queue/
 artifacts/christmas-story-02f/out/
 artifacts/christmas-story-02f/private-store/
 artifacts/christmas-story-02f/*.tmp
+
+# Owner QA samples contain live preview tokens — never commit.
+artifacts/christmas-story-owner-qa/
+artifacts/christmas-story-prod/
+artifacts/christmas-story-owner-qa/owner-preview-report.json
+artifacts/christmas-story-owner-qa/run-*/
 supabase/.temp/

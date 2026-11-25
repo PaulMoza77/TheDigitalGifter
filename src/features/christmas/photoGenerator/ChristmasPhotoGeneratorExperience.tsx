@@ -18,6 +18,7 @@ import {
   type ExampleCategory,
 } from "./assets";
 import { trackPhotoGeneratorEvent } from "./analytics";
+import { ChristmasCallCrossSell } from "../crossSell/ChristmasCallCrossSell";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import {
   PHOTO_GEN_FAQS,
@@ -783,6 +784,9 @@ export default function ChristmasPhotoGeneratorExperience() {
                     {t("result.card")}
                   </Link>
                   <Link to="/christmas/tree">{t("result.tree")}</Link>
+                </div>
+                <div className="mt-4">
+                  <ChristmasCallCrossSell sourceTool="photo_generator_result" />
                 </div>
               </section>
             )}

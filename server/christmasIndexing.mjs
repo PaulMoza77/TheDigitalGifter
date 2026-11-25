@@ -36,6 +36,14 @@ export const CHRISTMAS_INDEXABLE_PATHS = [
   "/christmas/cats",
   "/christmas/santa-video",
   "/christmas/santa-call",
+  "/christmas/personalized-santa-call",
+  "/christmas/ai-santa-phone-call",
+  "/christmas/last-minute-digital-christmas-gifts",
+  "/christmas/apel-mos-craciun",
+  "/christmas/apel-personalizat-mos-craciun",
+  "/christmas/cadouri-digitale-de-craciun",
+  "/christmas/cadouri-de-ultim-moment",
+  "/christmas/personalized-christmas-story",
   "/christmas/tree",
   "/christmas/advent",
   "/christmas/cards",
@@ -56,6 +64,10 @@ export const CHRISTMAS_KNOWN_SPA_PATHS = [
   "/christmas/santa-call",
   "/christmas-ai-photos",
   "/christmas-ai-photos/order",
+  // Story product family (path prefix matches /christmas*)
+  "/christmas-story",
+  "/christmas-story/demo",
+  "/christmas-story/create",
 ];
 
 /** Permanent path redirects: source → target (query string preserved by caller). */

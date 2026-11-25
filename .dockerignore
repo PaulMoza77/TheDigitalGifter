@@ -6,12 +6,22 @@ dist
 docs
 generated
 output
+artifacts
 *.md
 .env
 .env.*
 !.env.example
 supabase/.temp
 supabase/backups
+# Heavy media is bind-mounted on Mozas — exclude from image build context.
+public/assets/christmas
+public/assets/christmas-story-demo
+public/assets/funnel
+public/assets/pet
+public/assets/library
+public/assets/music
+public/assets/volocar
+public/assets/flavours-bistro
 templates_raw.cjs
 templates_supabase.csv
 templates_supabase.json

@@ -18,7 +18,9 @@ export function GeoScene({ locale }: { locale: ChristmasLandingLocale }) {
           <Link to="/christmas/planner">Plan your entire Christmas in one place</Link>
           <Link to="/christmas/gift-finder">Find a Christmas gift they’ll actually love</Link>
           <Link to="/christmas/photo-generator">Turn your photo into Christmas magic</Link>
-          <Link to="/christmas/santa-video">Create a personalized Santa video</Link>
+          <Link to="/christmas/santa-call">Start a personalized Santa call</Link>
+          {" · "}
+          <Link to="/christmas/santa-video">Or create a Santa video</Link>
           <Link to="/christmas/wishlist">Create a Christmas wishlist</Link>
           <Link to="/christmas/cards">Create a Christmas card they’ll want to keep</Link>
         </nav>

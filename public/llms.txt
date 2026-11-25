@@ -30,7 +30,7 @@
 - URL: https://www.thedigitalgifter.com/christmas-story
 - Status: Public preview / demo. Checkout and live payments are not enabled.
 - Planned gift parts: personalized song, memory film from photos, interactive album, secret letter.
-- Planned display price when checkout opens: $57 one-time (not currently purchasable).
+- Planned display price when checkout opens: $34.99 USD / 149 RON one-time (not currently purchasable).
 
 ## Not sold as incomplete promises
 - Do not describe Christmas Story, Memory Film add-ons, Planner checkout, or Memories waitlist products as purchasable unless checkout is enabled on the live site.

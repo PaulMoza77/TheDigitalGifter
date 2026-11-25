@@ -1,8 +1,25 @@
 /** Our Christmas Story — domain types (occasion-agnostic gift core). */
 
 export const STORY_PRODUCT_KEY = "our_christmas_story" as const;
-export const STORY_PRICE_CENTS = 5700;
+/** Owner-approved prep prices — checkout remains disabled until launch confirm. */
+export const STORY_PRICE_USD_CENTS = 3499;
+export const STORY_PRICE_RON_CENTS = 14900;
+/** Default catalog / USD presentment (US market). */
+export const STORY_PRICE_CENTS = STORY_PRICE_USD_CENTS;
 export const STORY_CURRENCY = "usd" as const;
+
+export type StoryMarket = "us" | "ro";
+
+export function storyPriceForMarket(market: StoryMarket): {
+  priceCents: number;
+  currency: "usd" | "ron";
+  displayPrice: string;
+} {
+  if (market === "ro") {
+    return { priceCents: STORY_PRICE_RON_CENTS, currency: "ron", displayPrice: "149 RON" };
+  }
+  return { priceCents: STORY_PRICE_USD_CENTS, currency: "usd", displayPrice: "$34.99" };
+}
 
 export type GiftOccasion = "christmas" | "birthday" | "anniversary" | "valentine" | "other";
 

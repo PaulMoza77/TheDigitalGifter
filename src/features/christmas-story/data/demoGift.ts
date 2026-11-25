@@ -11,9 +11,8 @@ export const DEMO_GIFT: StoryGiftContent = {
   dedication:
     "Emma — for the way you turn ordinary evenings into something we both remember. This is our story, set to music.",
   storyParagraphs: [
-    "This sample gift was created with fictional details to show the experience. It is not a real customer order.",
-    "The memory film below uses licensed stock photography arranged as a fictional Christmas sequence — not Emma’s private photos.",
-    "In a real gift, every photograph comes from what the buyer actually uploads. We never invent biographical facts.",
+    "It was the small things: warm lights, a second cup of cocoa, and the quiet moments that felt like home.",
+    "This is a fictional Christmas story created to demonstrate the feeling of a personalized gift. Your real gift will use only memories and photos you choose.",
   ],
   song: {
     id: "demo-song-emma",
@@ -53,7 +52,7 @@ export const DEMO_GIFT: StoryGiftContent = {
   },
   surpriseLabel: "Open when you miss me",
   surpriseReveal:
-    "If you ever miss me this winter, play this song again. I am closer than the miles between us.",
+    "Emma, you are the best part of every season. On the coldest Christmas evenings, you will always be my favorite place to come home to. Love, Jordan.",
   finalMessage:
     "Merry Christmas, Emma. One story. One gift made only for you.",
 };

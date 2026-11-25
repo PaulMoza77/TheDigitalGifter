@@ -1235,6 +1235,12 @@ Deno.serve(async (req) => {
         resolve: resolved,
         stripe_session_id: sessionId,
         stripe_mode: stripeMode,
+        orderId,
+        amountCents: Number(session.amount_total) || Number(order.amount_cents) || 0,
+        currency: asString(session.currency) || asString(order.currency) || "ron",
+        productKey,
+        payment_type: productKey === EXTENSION_PRODUCT_KEY ? "extension" : "initial",
+        livemode: session.livemode === true,
       }, resolvedObj.ok === true || resolvedObj.code === "awaiting_extension" ? 200 : 409);
     }
 

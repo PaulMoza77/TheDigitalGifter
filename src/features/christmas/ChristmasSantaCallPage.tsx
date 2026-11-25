@@ -77,6 +77,7 @@ import {
   type SantaCallPersonalization,
 } from "@/features/christmas/santa-call/santaCallTypes";
 import { resolveSantaCallUiLanguage } from "@/features/christmas/santa-call/santaCallLocale";
+import { consumeSantaNameHandoff } from "@/features/christmas/landing/handoff";
 
 // Match boot subset — avoid a second Google Fonts CSS fetch for weight 700.
 const SANTA_FONT_HREF =
@@ -200,7 +201,9 @@ export default function ChristmasSantaCallPage() {
     void trackChristmasEvent(eventName, {
       productKey: SANTA_CALL_PRODUCT_KEY,
       packageKey: "single",
-      pathname: SANTA_CALL_ROUTE,
+      pathname:
+        (typeof window !== "undefined" ? window.location.pathname : "") ||
+        SANTA_CALL_ROUTE,
       locale: lang,
       ...extra,
     });
@@ -243,6 +246,18 @@ export default function ChristmasSantaCallPage() {
     return () => {
       document.documentElement.classList.remove("sc-santa-route");
     };
+  }, []);
+
+  useEffect(() => {
+    const handedOff = consumeSantaNameHandoff();
+    if (handedOff) {
+      setForm((current) =>
+        current.childFirstName.trim()
+          ? current
+          : { ...current, childFirstName: handedOff },
+      );
+      setShowForm(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -414,6 +429,13 @@ export default function ChristmasSantaCallPage() {
     [prices.currency, prices.extensionMinor],
   );
 
+  function trackHeroDemoPreview() {
+    if (qaCheckout) return;
+    trackSantaFunnel("preview_seen", "hero_demo", {
+      metadata: { surface: "grace_demo" },
+    });
+  }
+
   function openForm() {
     if (!purchasable) return;
     trackSantaFunnel("product_selected", "cta", {
@@ -469,11 +491,11 @@ export default function ChristmasSantaCallPage() {
         positive_detail: form.positiveDetail.trim() || null,
         guardian_consent: true,
         consent_version: SANTA_CALL_CONSENT_VERSION,
-        landing_path: SANTA_CALL_ROUTE,
-        source_route: SANTA_CALL_ROUTE,
+        landing_path: `${window.location.pathname}`.slice(0, 120) || SANTA_CALL_ROUTE,
+        source_route: `${window.location.pathname}`.slice(0, 120) || SANTA_CALL_ROUTE,
         funnel_session_id: getChristmasFunnelSessionId(),
         ...attribution,
-        success_url: `${window.location.origin}${SANTA_CALL_ROUTE}?checkout=success&lang=${lang}&market=${market}`,
+        success_url: `${window.location.origin}${window.location.pathname || SANTA_CALL_ROUTE}?checkout=success&lang=${lang}&market=${market}`,
         locale: lang,
         market,
         currency: prices.currency,
@@ -486,6 +508,12 @@ export default function ChristmasSantaCallPage() {
     } catch {
       hostedRecoveryStarted.current = false;
       setError("checkout_failed");
+      if (!qaCheckout) {
+        trackSantaFunnel("santa_checkout_error", "checkout_error.hosted_recovery", {
+          metadata: { error_code: "hosted_recovery_failed" },
+        });
+        trackSantaCallAnalytics("santa_checkout_error", { market });
+      }
     }
   }
 
@@ -583,11 +611,11 @@ export default function ChristmasSantaCallPage() {
         positive_detail: form.positiveDetail.trim() || null,
         guardian_consent: true,
         consent_version: SANTA_CALL_CONSENT_VERSION,
-        landing_path: SANTA_CALL_ROUTE,
-        source_route: SANTA_CALL_ROUTE,
+        landing_path: `${window.location.pathname}`.slice(0, 120) || SANTA_CALL_ROUTE,
+        source_route: `${window.location.pathname}`.slice(0, 120) || SANTA_CALL_ROUTE,
         funnel_session_id: getChristmasFunnelSessionId(),
         ...attribution,
-        success_url: `${window.location.origin}${SANTA_CALL_ROUTE}?checkout=success&lang=${lang}&market=${market}`,
+        success_url: `${window.location.origin}${window.location.pathname || SANTA_CALL_ROUTE}?checkout=success&lang=${lang}&market=${market}`,
         locale: lang,
         market,
         currency: prices.currency,
@@ -633,8 +661,12 @@ export default function ChristmasSantaCallPage() {
     } catch (err) {
       const code = (err as { code?: string })?.code || "checkout_failed";
       setError(code);
-      if (!qaCheckout)
+      if (!qaCheckout) {
+        trackSantaFunnel("santa_checkout_error", `checkout_error.${code}`, {
+          metadata: { error_code: String(code).slice(0, 40) },
+        });
         trackSantaCallAnalytics("santa_checkout_error", { market });
+      }
     } finally {
       submitting.current = false;
       setBusy(false);
@@ -809,14 +841,28 @@ export default function ChristmasSantaCallPage() {
                   {qaCheckout && (
                     <p className="sc-availability">QA TEST · Stripe TEST</p>
                   )}
-                  <a href="#conversation" className="sc-demo-link">
+                  <a
+                    href="#conversation"
+                    className="sc-demo-link"
+                    onClick={() => {
+                      if (!qaCheckout) {
+                        trackSantaFunnel("preview_seen", "conversation_anchor", {
+                          metadata: { surface: "see_example_link" },
+                        });
+                      }
+                    }}
+                  >
                     {landing.seeExample} <span aria-hidden>↓</span>
                   </a>
                   <p className="sc-ai">{copy.legalSummary}</p>
                 </div>
                 <figure className="sc-portrait">
                   <div className="sc-portrait-media">
-                    {lang === "ro" ? <GraceLandingDemo /> : <SantaLandingVideo alt={landing.imageAlt} />}
+                    {lang === "ro" ? (
+                      <GraceLandingDemo onPreviewStart={trackHeroDemoPreview} />
+                    ) : (
+                      <SantaLandingVideo alt={landing.imageAlt} />
+                    )}
                   </div>
                   <figcaption>
                     <span className="sc-kicker">{lang === "ro" ? "Ascultă conversația cu Grace" : landing.sceneLabel}</span>
@@ -1043,11 +1089,17 @@ export default function ChristmasSantaCallPage() {
                                   );
                               }}
                               onInitError={() => {
-                                if (!qaCheckout)
+                                if (!qaCheckout) {
+                                  trackSantaFunnel(
+                                    "santa_payment_load_error",
+                                    `payment_load_error.${checkout.orderId}`,
+                                    { orderId: checkout.orderId, metadata: { surface: "embedded_checkout" } },
+                                  );
                                   trackSantaCallAnalytics(
                                     "santa_payment_load_error",
                                     { market },
                                   );
+                                }
                                 void recoverHostedCheckout();
                               }}
                             />

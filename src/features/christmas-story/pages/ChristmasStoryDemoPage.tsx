@@ -4,6 +4,7 @@ import { trackStoryEvent } from "../analytics";
 import { RecipientExperience } from "../components/RecipientExperience";
 import { DEMO_GIFT } from "../data/demoGift";
 import "../styles/christmasStory.css";
+import "../styles/christmasStoryV2.css";
 
 const FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
@@ -28,7 +29,7 @@ export default function ChristmasStoryDemoPage() {
   }, []);
 
   return (
-    <div className="cs-root">
+    <div className="cs-root cs-v2">
       <nav className="cs-demo-nav" aria-label="Sample gift navigation">
         <Link className="cs-text-link" to="/christmas-story">← Back to the collection</Link>
         <Link className="cs-btn cs-btn--ghost" to="/christmas-story/create">

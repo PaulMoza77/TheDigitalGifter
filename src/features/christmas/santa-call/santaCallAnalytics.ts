@@ -70,11 +70,13 @@ export function trackSantaCallAnalytics(
     isSantaCallQaCheckoutEnabled()
   )
     return false;
-  // Private call rooms are measured by the runtime ledger. Never expose access URLs to third parties.
-  if (
-    /^\/(?:_qa|admin|santa\/call)(?:\/|$)/.test(window.location?.pathname || "")
-  )
-    return false;
+  // Private call rooms: block general analytics (tokens in URL). Allow purchase-only
+  // with transaction_id so paid extensions are not invisible in GA4.
+  const onPrivateCall = /^\/(?:_qa|admin|santa\/call)(?:\/|$)/.test(
+    window.location?.pathname || "",
+  );
+  const isPurchase = SANTA_EVENTS[eventName] === "purchase";
+  if (onPrivateCall && !isPurchase) return false;
   const gtag = (window as Window & { gtag?: (...args: unknown[]) => void })
     .gtag;
   if (typeof gtag !== "function") return false;

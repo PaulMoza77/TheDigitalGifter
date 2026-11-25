@@ -89,7 +89,7 @@ export function StoryLanding() {
           <section className="cs-section" aria-labelledby="cs-how-title">
             <p className="cs-kicker">From you, with love</p><h2 id="cs-how-title">You know them.<br />Start with that.</h2>
             <div className="cs-grid-3 cs-steps">
-              {[ ["01", "Personalize in this preview", "Enter their name, choose your relationship and add the memories you share. Upload favorite photos — this preview does not charge you."], ["02", "Production after real checkout", "When checkout becomes available, $57 is planned to cover the song, film, album and personal letter. Production starts only after a verified payment."], ["03", "Approve, then send", "Review the finished song and film, approve the gift, and send a private link for them to unwrap."] ].map(([n, title, body]) => <div key={n}><span className="cs-number">{n}</span><h3>{title}</h3><p>{body}</p></div>)}
+              {[ ["01", "Personalize in this preview", "Enter their name, choose your relationship and add the memories you share. Upload favorite photos — this preview does not charge you."], ["02", "Production after real checkout", `When checkout becomes available, ${STORY_OFFER.displayPrice} (149 RON) is planned to cover the song, film, album and personal letter. Production starts only after a verified payment.`], ["03", "Approve, then send", "Review the finished song and film, approve the gift, and send a private link for them to unwrap."] ].map(([n, title, body]) => <div key={n}><span className="cs-number">{n}</span><h3>{title}</h3><p>{body}</p></div>)}
             </div>
           </section>
 

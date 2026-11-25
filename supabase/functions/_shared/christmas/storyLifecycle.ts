@@ -47,5 +47,18 @@ export function canMarkRecipientOpened(status: string): boolean {
 }
 
 export const STORY_PRODUCT_KEY = "our_christmas_story";
-export const STORY_PRICE_CENTS = 5700;
+/** Owner-approved prep prices — LIVE checkout stays off until launch confirm. */
+export const STORY_PRICE_USD_CENTS = 3499;
+export const STORY_PRICE_RON_CENTS = 14900;
+export const STORY_PRICE_CENTS = STORY_PRICE_USD_CENTS;
 export const STORY_CURRENCY = "usd";
+
+export function storyServerPrice(market: "us" | "ro" | string | null | undefined): {
+  priceCents: number;
+  currency: "usd" | "ron";
+} {
+  if (String(market || "").toLowerCase() === "ro") {
+    return { priceCents: STORY_PRICE_RON_CENTS, currency: "ron" };
+  }
+  return { priceCents: STORY_PRICE_USD_CENTS, currency: "usd" };
+}

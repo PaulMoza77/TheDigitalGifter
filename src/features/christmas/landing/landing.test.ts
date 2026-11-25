@@ -118,7 +118,7 @@ describe("christmas landing copy + seo", () => {
 
 describe("christmas landing handoff", () => {
   it("builds santa URL without leaking the child's name", () => {
-    expect(santaExperienceUrl("Emma")).toBe("/christmas/santa-video");
+    expect(santaExperienceUrl("Emma")).toBe("/christmas/santa-call");
     expect(isLikelyKidName("Emma")).toBe(true);
     expect(isLikelyKidName("José")).toBe(true);
     expect(isLikelyKidName("Łukasz")).toBe(true);

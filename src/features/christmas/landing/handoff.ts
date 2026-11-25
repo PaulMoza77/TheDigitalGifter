@@ -1,7 +1,8 @@
 /** Cross-page handoff from the Christmas landing into product flows. */
 
 export const SANTA_HANDOFF_KEY = "tdg.christmas.santa.handoff.v1";
-export const SANTA_ROUTE = "/christmas/santa-video";
+/** Live commercial Santa product (voice call). Video remains at /christmas/santa-video. */
+export const SANTA_ROUTE = "/christmas/santa-call";
 
 export const GIFT_FINDER_RECIPIENTS = [
   "mom",

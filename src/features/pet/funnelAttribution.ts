@@ -98,6 +98,19 @@ export function getFunnelAttribution(): FunnelAttribution {
   }
 }
 
+/**
+ * Meta ads often land with fbclid only (no utm_*). Persist a confirmed paid_social
+ * source for internal DB attribution without storing the raw click id.
+ */
+function inferAttributionFromClickIds(incoming: FunnelAttribution): FunnelAttribution {
+  if (!incoming.fbclid) return {};
+  if (incoming.utm_source || incoming.utm_medium) return {};
+  return {
+    utm_source: "facebook",
+    utm_medium: "paid_social",
+  };
+}
+
 export function captureFunnelAttribution(search?: string): FunnelAttribution {
   try {
     const hrefSearch = search ?? (typeof window !== "undefined" ? window.location.search : "");
@@ -112,7 +125,8 @@ export function captureFunnelAttribution(search?: string): FunnelAttribution {
     }
 
     const incoming = parseFunnelAttributionSearch(hrefSearch || "");
-    const { fbclid: _fbclid, ...rest } = incoming;
+    const { fbclid: _fbclid, ...parsed } = incoming;
+    const rest = { ...inferAttributionFromClickIds(incoming), ...parsed };
     if (Object.keys(rest).length === 0) return {};
 
     const { session, local } = storages();
@@ -164,10 +178,13 @@ function readFirstTouch(): FunnelFirstTouchContext | null {
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const row = parsed as Record<string, unknown>;
+    const landingRaw = sanitizeAttributionValue(row.landingPathname);
+    const landingPath =
+      landingRaw && isTrackableLandingPath(landingRaw.startsWith("/") ? landingRaw : `/${landingRaw}`)
+        ? (landingRaw.startsWith("/") ? landingRaw : `/${landingRaw}`).slice(0, 120)
+        : null;
     return {
-      landingPathname: sanitizeAttributionValue(row.landingPathname)?.startsWith("/pet")
-        ? String(row.landingPathname).slice(0, 64)
-        : null,
+      landingPathname: landingPath,
       referrerHost: sanitizeAttributionValue(row.referrerHost),
       hasFbclid: row.hasFbclid === true,
     };
@@ -201,13 +218,22 @@ export function getFunnelFirstTouchContext(): FunnelFirstTouchContext {
   );
 }
 
+function isTrackableLandingPath(pathname: string | null): pathname is string {
+  if (!pathname) return false;
+  if (pathname === "/pet" || pathname.startsWith("/pet/")) return true;
+  if (pathname === "/christmas" || pathname.startsWith("/christmas/")) return true;
+  if (pathname === "/christmas-story" || pathname.startsWith("/christmas-story/")) return true;
+  if (pathname === "/ro" || pathname.startsWith("/ro/")) return true;
+  return false;
+}
+
 function persistFirstTouchFromLocation(search: string) {
   if (readFirstTouch()) return;
   const incoming = parseFunnelAttributionSearch(search || "");
   const pathname =
-    typeof window !== "undefined" ? String(window.location.pathname || "").split("?")[0].slice(0, 64) : null;
+    typeof window !== "undefined" ? String(window.location.pathname || "").split("?")[0].slice(0, 120) : null;
   writeFirstTouch({
-    landingPathname: pathname && (pathname === "/pet" || pathname.startsWith("/pet/")) ? pathname : null,
+    landingPathname: isTrackableLandingPath(pathname) ? pathname.slice(0, 120) : null,
     referrerHost: referrerHostFromDocument(),
     hasFbclid: Boolean(incoming.fbclid),
   });

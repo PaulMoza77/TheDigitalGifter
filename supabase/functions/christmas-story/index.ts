@@ -18,6 +18,7 @@ import {
   STORY_PRODUCT_KEY,
   assertStoryTransition,
   canMarkRecipientOpened,
+  storyServerPrice,
 } from "../_shared/christmas/storyLifecycle.ts";
 import {
   isStoryCheckoutEnabled,
@@ -25,6 +26,7 @@ import {
   stripeTestFormPost,
   stripeTestGet,
 } from "../_shared/christmas/storyStripe.ts";
+import { sendChristmasStoryGiftEmail } from "../_shared/christmas/storyEmail.ts";
 
 type Body = Record<string, unknown>;
 type Service = ReturnType<typeof getServiceClient>;
@@ -272,7 +274,11 @@ Deno.serve(async (req) => {
       if (!buyerToken || buyerToken.length < 32 || !email || !digitalConsent) {
         return jsonResponse({ ok: false, code: "invalid_request" }, 400);
       }
-      if (asString(body.client_amount_cents) && Number(body.client_amount_cents) !== STORY_PRICE_CENTS) {
+      const priced = storyServerPrice(asString(body.market) || asString(body.locale));
+      if (
+        asString(body.client_amount_cents) &&
+        Number(body.client_amount_cents) !== priced.priceCents
+      ) {
         return jsonResponse({ ok: false, code: "client_amount_rejected" }, 400);
       }
 
@@ -305,7 +311,8 @@ Deno.serve(async (req) => {
             sessionId: existing.stripe_checkout_session_id,
             checkoutUrl,
             clientSecret: null,
-            amountCents: STORY_PRICE_CENTS,
+            amountCents: Number(existing.amount_cents) || priced.priceCents,
+            currency: asString(existing.currency) || priced.currency,
             checkoutMode: "test",
             paymentStatus: existing.payment_status,
             status: existing.status,
@@ -341,8 +348,8 @@ Deno.serve(async (req) => {
           product_key: STORY_PRODUCT_KEY,
           status: "CHECKOUT_PENDING",
           payment_status: "pending",
-          amount_cents: STORY_PRICE_CENTS,
-          currency: STORY_CURRENCY,
+          amount_cents: priced.priceCents,
+          currency: priced.currency,
           buyer_email: email,
           buyer_access_token_hash: tokenHash,
           stripe_mode: "test",
@@ -386,8 +393,8 @@ Deno.serve(async (req) => {
       params.set("metadata[product_key]", STORY_PRODUCT_KEY);
       params.set("metadata[christmas_story_order_id]", String(order.id));
       params.set("metadata[stripe_mode]", "test");
-      params.set("line_items[0][price_data][currency]", STORY_CURRENCY);
-      params.set("line_items[0][price_data][unit_amount]", String(STORY_PRICE_CENTS));
+      params.set("line_items[0][price_data][currency]", priced.currency);
+      params.set("line_items[0][price_data][unit_amount]", String(priced.priceCents));
       params.set("line_items[0][price_data][product_data][name]", "Our Christmas Story");
       params.set("line_items[0][quantity]", "1");
       params.set("expires_at", String(Math.floor(Date.now() / 1000) + 30 * 60));
@@ -440,8 +447,8 @@ Deno.serve(async (req) => {
         checkoutUrl,
         clientSecret,
         publishableKey: creds.creds.publishableKey,
-        amountCents: STORY_PRICE_CENTS,
-        currency: STORY_CURRENCY,
+        amountCents: priced.priceCents,
+        currency: priced.currency,
         recipientToken: recipientPlain,
         checkoutMode: "test",
         paymentStatus: "pending",
@@ -761,7 +768,49 @@ Deno.serve(async (req) => {
         .eq("grant_kind", "recipient")
         .is("revoked_at", null);
       const updated = await transition(service, String(order.id), "SENT", "buyer");
-      return jsonResponse({ ok: true, order: buyerDto(updated) });
+
+      let deliveryEmail: { sent: boolean; reason?: string; providerMessageId?: string } | null = null;
+      const recipientPlain = asString(body.recipient_token);
+      const deliveryTo =
+        asString(body.delivery_email) ||
+        asString(order.buyer_email) ||
+        "";
+      if (recipientPlain.length >= 32 && deliveryTo) {
+        const grantHash = await sha256Hex(recipientPlain);
+        const { data: grant } = await service
+          .from("christmas_story_access_grants")
+          .select("id,token_hash")
+          .eq("order_id", order.id)
+          .eq("grant_kind", "recipient")
+          .maybeSingle();
+        if (grant && asString(grant.token_hash) === grantHash) {
+          try {
+            deliveryEmail = await sendChristmasStoryGiftEmail({
+              service,
+              orderId: String(order.id),
+              email: deliveryTo,
+              recipientToken: recipientPlain,
+              recipientName: asString(order.recipient_name),
+              fromName: asString(order.from_name),
+              resend: body.resend === true,
+            });
+          } catch (emailErr) {
+            console.error(
+              "[christmas-story] markSent email",
+              emailErr instanceof Error ? emailErr.message : "error",
+            );
+            deliveryEmail = { sent: false, reason: "send_failed" };
+          }
+        } else {
+          deliveryEmail = { sent: false, reason: "recipient_token_mismatch" };
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        order: buyerDto(updated),
+        deliveryEmail,
+      });
     }
 
     if (action === "scheduleDelivery") {
@@ -919,9 +968,18 @@ Deno.serve(async (req) => {
         await transition(service, String(order.id), "GENERATING", "system");
       }
 
+      const songAutomated = asString(Deno.env.get("CHRISTMAS_STORY_AUTOMATE_SONG")) === "true";
       const jobs = [
         { job_type: "story", provider: "mock", status: "ready" },
-        { job_type: "song", provider: "manual", status: "awaiting_manual" },
+        songAutomated
+          ? {
+              job_type: "song",
+              provider: "licensed_fma",
+              status: "queued",
+              production_state: "awaiting_song_production",
+              metadata: { automate: "licensed_cc0_instrumental" },
+            }
+          : { job_type: "song", provider: "manual", status: "awaiting_manual" },
         { job_type: "film", provider: "ffmpeg", status: "queued" },
       ];
       const { data, error } = await service
@@ -1321,10 +1379,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "health") {
+      const us = storyServerPrice("us");
+      const ro = storyServerPrice("ro");
       return jsonResponse({
         ok: true,
         product: STORY_PRODUCT_KEY,
         priceCents: STORY_PRICE_CENTS,
+        currency: STORY_CURRENCY,
+        prices: { us, ro },
         checkoutEnabled: isStoryCheckoutEnabled(),
         stripeMode: isStoryCheckoutEnabled() ? "test_only" : "disabled",
         mediaWorker: "external_vps_or_local",

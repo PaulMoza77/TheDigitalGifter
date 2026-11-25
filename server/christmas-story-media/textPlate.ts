@@ -24,6 +24,8 @@ font_paths = [
   "/System/Library/Fonts/Supplemental/Georgia.ttf",
   "/Library/Fonts/Arial Unicode.ttf",
   "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+  "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+  "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
 ]
 def font(size):
   for p in font_paths:

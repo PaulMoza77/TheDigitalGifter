@@ -8,10 +8,10 @@ import { createEmptyDraft, STORY_PRICE_CENTS, STORY_PRODUCT_KEY } from "./types"
 import { DEMO_GIFT, DEMO_RECIPIENT_TOKEN } from "./data/demoGift";
 
 describe("Our Christmas Story MVP", () => {
-  it("prices the primary offer at $57 with checkout kill-switched", () => {
+  it("prices the primary offer at $34.99 with checkout kill-switched", () => {
     expect(STORY_OFFER.productKey).toBe(STORY_PRODUCT_KEY);
     expect(STORY_OFFER.priceCents).toBe(STORY_PRICE_CENTS);
-    expect(STORY_OFFER.displayPrice).toBe("$57");
+    expect(STORY_OFFER.displayPrice).toBe("$34.99");
     expect(STORY_OFFER.checkoutEnabled).toBe(false);
     expect(STORY_OFFER.addOns.extraSong.enabled).toBe(false);
   });
@@ -74,7 +74,7 @@ describe("Our Christmas Story MVP", () => {
     expect(order.checkoutMode).toBe("disabled");
     expect(order.recipientToken.length).toBeGreaterThan(20);
     expect(order.content?.fromName).toBe("Sam");
-    expect(order.priceCents).toBe(5700);
+    expect(order.priceCents).toBe(3499);
   });
 
   it("supports mock and manual music providers without external calls", async () => {

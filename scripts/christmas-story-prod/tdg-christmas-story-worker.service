@@ -1,0 +1,16 @@
+[Unit]
+Description=TDG Christmas Story media workers (song + film)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/tdg-christmas-story-worker
+Environment=CS_WORKER_ENV_FILE=/opt/supabase/tdg/.env
+Environment=NODE_OPTIONS=--experimental-strip-types
+ExecStart=/usr/bin/node /opt/tdg-christmas-story-worker/scripts/christmas-story-prod/run-workers.mjs
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

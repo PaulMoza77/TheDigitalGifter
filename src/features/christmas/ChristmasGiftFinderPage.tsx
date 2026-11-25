@@ -9,6 +9,7 @@ import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
 import { ChristmasSnowfall } from "@/features/christmas-v2/ChristmasSnowfall";
 import { supabase } from "@/lib/supabase";
 import { trackChristmasEvent } from "./analytics";
+import { ChristmasCallCrossSell } from "./crossSell/ChristmasCallCrossSell";
 import { parseGiftRecipient } from "./landing/handoff";
 import {
   OrnamentSvg,
@@ -90,12 +91,13 @@ const TDG_ROUTES: Record<string, { path: string; labelKey: string }> = {
   christmas_couple: { path: "/christmas/couples", labelKey: "crossSell.portrait" },
   christmas_pet: { path: "/christmas/pets", labelKey: "crossSell.portrait" },
   christmas_santa_video: { path: "/christmas/santa-video", labelKey: "crossSell.santa" },
+  christmas_santa_voice_call: { path: "/christmas/santa-call", labelKey: "crossSell.santa" },
   christmas_tree: { path: "/christmas/tree", labelKey: "crossSell.portrait" },
 };
 
 const CROSS_SELL = [
+  { path: "/christmas/santa-call", labelKey: "crossSell.santa" as const },
   { path: "/christmas/photo-generator", labelKey: "crossSell.portrait" as const },
-  { path: "/christmas/santa-video", labelKey: "crossSell.santa" as const },
   { path: "/christmas/cards", labelKey: "crossSell.card" as const },
 ];
 
@@ -834,6 +836,13 @@ export default function ChristmasGiftFinderPage() {
               </p>
             ) : null}
             {savedMsg ? <p className="gf-ok">{savedMsg}</p> : null}
+
+            <div className="mb-4">
+              <ChristmasCallCrossSell
+                sourceTool="gift_finder_results"
+                className="border-[color:var(--gf-line,rgba(255,255,255,0.12))]"
+              />
+            </div>
 
             {visibleIdeas.length === 0 ? (
               <div className="gf-alert" role="status">

@@ -14,6 +14,54 @@ function waitUntil(promise: Promise<unknown>) {
 }
 
 /**
+ * Authoritative first-party purchase row. Idempotent by order_id so client
+ * Stripe-return events and webhook retries never double revenue in Admin.
+ * Extensions use product_key christmas_santa_voice_call_extension — commerce
+ * metrics treat DB paid orders as SoT; funnel rows are attribution only.
+ */
+export async function recordSantaPurchaseFunnel(input: {
+  service: SupabaseClient;
+  orderId: string;
+  productKey: "christmas_santa_voice_call" | "christmas_santa_voice_call_extension";
+  amountCents?: number | null;
+  currency?: string | null;
+  locale?: string | null;
+  funnelSessionId?: string | null;
+  paymentType: "initial" | "extension";
+}): Promise<void> {
+  const orderId = asString(input.orderId);
+  if (!orderId) return;
+  const funnelSessionId = asString(input.funnelSessionId) || orderId;
+  const idempotencyKey = `purchase:${orderId}`;
+  const { error } = await input.service.from("christmas_funnel_events").insert({
+    event_name: "purchase",
+    funnel_session_id: funnelSessionId,
+    idempotency_key: idempotencyKey,
+    product_key: input.productKey,
+    package_key: input.paymentType === "extension" ? "extension" : "single",
+    order_id: orderId,
+    locale: asString(input.locale) || null,
+    pathname:
+      input.paymentType === "extension" ? "/santa/call" : "/christmas/santa-call",
+    amount_cents: Number.isFinite(Number(input.amountCents))
+      ? Math.round(Number(input.amountCents))
+      : null,
+    client_event_id: orderId,
+    is_test: false,
+    environment: "production",
+    metadata: {
+      payment_type: input.paymentType,
+      currency: asString(input.currency) || null,
+      source: "santa_fulfill",
+    },
+  });
+  // Unique idempotency_key → ignore duplicate; never fail fulfill on analytics.
+  if (error && !/duplicate|unique|23505/i.test(error.message || "")) {
+    console.error("recordSantaPurchaseFunnel", error.message);
+  }
+}
+
+/**
  * After Stripe payment: activate entitlement, mint opaque access token (hash stored), email link.
  * Idempotent across webhook retries — reuses existing ready entitlement token only via email resend path.
  */
@@ -153,6 +201,17 @@ export async function fulfillSantaVoiceCallOrder(input: {
     event_payload: { expires_at: expiresAt },
   });
 
+  await recordSantaPurchaseFunnel({
+    service: input.service,
+    orderId: input.orderId,
+    productKey: "christmas_santa_voice_call",
+    amountCents: Number(order.amount_cents) || null,
+    currency: asString(order.currency) || null,
+    locale: asString(order.locale) || language,
+    funnelSessionId: asString(meta.funnel_session_id) || null,
+    paymentType: "initial",
+  });
+
   return {
     ok: true,
     accessToken,
@@ -179,7 +238,7 @@ export async function fulfillSantaVoiceCallExtensionOrder(input: {
 }): Promise<{ ok: boolean; reason?: string; remaining_seconds?: number }> {
   const { data: order } = await input.service
     .from("christmas_orders")
-    .select("id,payment_status,product_key,metadata")
+    .select("id,payment_status,product_key,metadata,amount_cents,currency,locale")
     .eq("id", input.orderId)
     .maybeSingle();
 
@@ -219,6 +278,17 @@ export async function fulfillSantaVoiceCallExtensionOrder(input: {
       remaining_seconds: result.remaining_seconds,
       reason: result.reason || "activated",
     },
+  });
+
+  await recordSantaPurchaseFunnel({
+    service: input.service,
+    orderId: input.orderId,
+    productKey: "christmas_santa_voice_call_extension",
+    amountCents: Number(order.amount_cents) || null,
+    currency: asString(order.currency) || null,
+    locale: asString(order.locale) || null,
+    funnelSessionId: asString(meta.funnel_session_id) || null,
+    paymentType: "extension",
   });
 
   return {

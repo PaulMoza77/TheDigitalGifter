@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-11-24T23:08:58.039Z",
+  "drafts": [
+    {
+      "locale": "ro",
+      "cadence": "1h",
+      "subject": "Apelul cu Moș Crăciun te așteaptă",
+      "kind": "santa_call_abandoned_checkout_1h",
+      "files": [
+        "abandoned_ro_1h.html",
+        "abandoned_ro_1h.txt"
+      ]
+    },
+    {
+      "locale": "ro",
+      "cadence": "24h",
+      "subject": "Mai ai timp să finalizezi apelul cu Moș Crăciun",
+      "kind": "santa_call_abandoned_checkout_24h",
+      "files": [
+        "abandoned_ro_24h.html",
+        "abandoned_ro_24h.txt"
+      ]
+    },
+    {
+      "locale": "en",
+      "cadence": "1h",
+      "subject": "Your Santa call checkout is waiting",
+      "kind": "santa_call_abandoned_checkout_1h",
+      "files": [
+        "abandoned_en_1h.html",
+        "abandoned_en_1h.txt"
+      ]
+    },
+    {
+      "locale": "en",
+      "cadence": "24h",
+      "subject": "Still time to finish your Santa call",
+      "kind": "santa_call_abandoned_checkout_24h",
+      "files": [
+        "abandoned_en_24h.html",
+        "abandoned_en_24h.txt"
+      ]
+    }
+  ],
+  "eligibility": {
+    "revalidated_at": "2026-11-24T22:25:37Z",
+    "pending_payment_entitlements": 51,
+    "unique_profiles": 51,
+    "unique_orders": 51,
+    "unique_emails_pending": 30,
+    "eligible_unique_emails": 28,
+    "eligible_ron": 24,
+    "eligible_usd": 4,
+    "excluded_later_paid_same_email": 2,
+    "all_older_than_7d": true,
+    "later_paid_from_same_profile": 0,
+    "locale_rule": "Send RO templates when order currency=ron; EN when currency=usd (2 ron rows have locale=en in DB — use currency)",
+    "recoverable_estimate_note": "Live Contabo revalidation 2026-11-24: 28 eligible after dedupe; 2 unique emails excluded (later paid order).",
+    "suppression_rules": [
+      "Skip if entitlement status became ready/completed/in_progress/awaiting_extension/refunded",
+      "Skip if matching profile has any paid christmas_orders for santa call",
+      "Skip duplicates by email/profile (one sequence per identity)",
+      "Stop sequence automatically after purchase webhook",
+      "Do not send without marketing/transactional consent classification approved by owner"
+    ],
+    "activation": "BLOCKED until owner approval — drafts only",
+    "send_live_attempted": false
+  },
+  "send_live": false
+}

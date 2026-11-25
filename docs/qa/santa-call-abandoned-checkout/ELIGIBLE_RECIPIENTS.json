@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-11-24T23:12:00Z",
+  "source": "live_contabo_postgres",
+  "definitions": {
+    "pending": "christmas_santa_call_entitlements.status = pending_payment",
+    "eligible_draft": "unique email, pending order not paid, created within 45d, no later paid/ready entitlement for same profile or email; one sequence per email (newest pending order)"
+  },
+  "counts": {
+    "pending_entitlements": 51,
+    "unique_orders": 51,
+    "unique_profiles": 51,
+    "unique_emails_pending": 30,
+    "eligible_unique_emails_45d": 28,
+    "eligible_ron": 24,
+    "eligible_usd": 4,
+    "eligible_locale_ro_by_currency": 24,
+    "eligible_locale_en_by_currency": 4,
+    "recoverable_face_value_ron_cents": 141600,
+    "recoverable_face_value_usd_cents": 5196,
+    "profiles_later_paid_entitlement": 0,
+    "excluded_later_paid_same_email": 2,
+    "excluded_outside_45d": 0,
+    "all_eligible_older_than_7d": true,
+    "product_key_santa_call": 28
+  },
+  "validation": {
+    "legal_basis": "started_checkout — christmas_orders + pending_payment entitlement",
+    "dedupe": "DISTINCT ON (lower(email)), newest created_at",
+    "suppression": [
+      "Skip later entitlement ready/completed/in_progress/awaiting_extension",
+      "Skip if any paid order same email",
+      "unsubscribe_marketing RPC exists for marketing; classify transactional vs marketing before bulk send"
+    ],
+    "recovery_links": {
+      "ro": "https://www.thedigitalgifter.com/ro/christmas/santa-call HTTP 200",
+      "en": "https://www.thedigitalgifter.com/christmas/santa-call HTTP 200"
+    },
+    "locale_note": "2 RON orders have locale=en in DB; template routing uses currency (24 RO / 4 EN)"
+  },
+  "legal": {
+    "send_allowed": false,
+    "reason": "Owner approval required; authorized test only to thedigitalgifter@gmail.com",
+    "notes": [
+      "No raw emails stored in git",
+      "Commercial send blocked until owner approves subjects/body",
+      "No discount language in drafts"
+    ]
+  },
+  "qa_test_send": {
+    "at": "2026-11-24T22:27:00Z",
+    "resend_id": "01a20faa-cb45-765e-b745-ea067e09cd4a",
+    "last_event": "delivered",
+    "to": "thedigitalgifter@gmail.com",
+    "template": "abandoned_en_1h",
+    "commercial": false
+  }
+}

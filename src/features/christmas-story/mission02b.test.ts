@@ -122,12 +122,14 @@ describe("Mission 02B — durable orders + Stripe TEST policy", () => {
     expect(migration).toContain("christmas_story_fulfill_payment");
   });
 
-  it("authoritative price remains $57 server-side", () => {
+  it("authoritative prep prices are $34.99 / 149 RON server-side", () => {
     const life = readSrc("supabase/functions/_shared/christmas/storyLifecycle.ts");
-    expect(life).toContain("5700");
+    expect(life).toContain("3499");
+    expect(life).toContain("14900");
     expect(life).toContain("our_christmas_story");
+    expect(life).toContain("storyServerPrice");
     const api = readSrc("supabase/functions/christmas-story/index.ts");
     expect(api).toContain("client_amount_rejected");
-    expect(api).toContain("STORY_PRICE_CENTS");
+    expect(api).toContain("storyServerPrice");
   });
 });

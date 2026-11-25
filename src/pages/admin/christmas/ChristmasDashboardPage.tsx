@@ -18,6 +18,15 @@ import {
   type RangeDays,
 } from "./christmasAdminTypes";
 import { computePlannerNorthStar } from "./plannerNorthStar";
+import {
+  buildAttributionBuckets,
+  buildDailyTraffic,
+  checkoutAbandonStats,
+  organicProxyLabel,
+  productPerformance,
+  resendDeliverySummary,
+} from "./growthMetrics";
+import { computeCommerceSnapshot, formatRevenueMap } from "./commerceMetrics";
 import { useChristmasAdminData } from "./useChristmasAdminData";
 
 function Metric({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
@@ -104,6 +113,20 @@ export default function ChristmasDashboardPage() {
   const plannerKpis = useMemo(() => computePlannerNorthStar({ events, orders }), [events, orders]);
   const incomeLabel = moneyByCurrency(paid);
   const clubEmails = data.clubSignups.length;
+  const dailyTraffic = useMemo(() => buildDailyTraffic(events), [events]);
+  const attribution = useMemo(() => buildAttributionBuckets(events), [events]);
+  const products = useMemo(() => productPerformance(orders), [orders]);
+  const resend = useMemo(
+    () => resendDeliverySummary(data.emails, data.legacyEmails),
+    [data.emails, data.legacyEmails],
+  );
+  const abandon = useMemo(() => checkoutAbandonStats(orders, events), [orders, events]);
+  const unattributed = useMemo(() => organicProxyLabel(events), [events]);
+  const todayTraffic = dailyTraffic[0];
+  const commerce = useMemo(
+    () => computeCommerceSnapshot(orders, events, { includeTests }),
+    [orders, events, includeTests],
+  );
 
   return (
     <div className="px-4 py-5 text-white sm:px-6 lg:px-8">
@@ -273,11 +296,24 @@ export default function ChristmasDashboardPage() {
 
         <SectionCard
           title="Growth & Conversion"
-          subtitle="Confirmed revenue from Stripe/DB orders. GA4/Clarity remain behavioral sources — N/A when not wired into this admin load."
+          subtitle="Stripe/DB and christmas_funnel_events are confirmed. GA4/GSC/Clarity stay unavailable until service credentials exist — never invent zeros."
         >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric label="Paid orders (range)" value={paid.length} hint="christmas_orders · payment_status=paid" />
-            <Metric label="Confirmed revenue" value={incomeLabel} hint="Sum of paid amount_cents by currency" />
+            <Metric
+              label="Paid orders (confirmed)"
+              value={commerce.paidOrders}
+              hint={`DB orders · base ${commerce.paidBaseCalls} · ext ${commerce.paidExtensions} · other ${commerce.paidOther}`}
+            />
+            <Metric
+              label="Confirmed revenue"
+              value={formatRevenueMap(commerce.revenueByCurrency)}
+              hint="DB paid amount_cents · not funnel events · not entitlements"
+            />
+            <Metric
+              label="Funnel purchase events"
+              value={`${commerce.funnelPurchaseEvents} raw / ${commerce.funnelPurchaseUniqueOrders} orders`}
+              hint={`Do not equal paid orders · missing ${commerce.paidWithoutFunnelPurchase} · extensions often lack purchase events`}
+            />
             <Metric
               label="AOV (paid)"
               value={
@@ -287,23 +323,93 @@ export default function ChristmasDashboardPage() {
                         paid.length /
                         100,
                     )
-                  : "N/A"
+                  : "—"
               }
-              hint="Approximate USD display · multi-currency orders stay in Income"
+              hint="Confirmed · approximate USD display for mixed currencies"
             />
             <Metric
               label="Conversion (checkout→paid)"
               value={pct(paid.length, checkout)}
-              hint="Uses funnel checkout events vs paid orders"
+              hint="Confirmed · funnel checkout sessions vs paid orders"
             />
-            <Metric label="GA4 visitors" value="N/A" hint="Wire GA4 Data API property credentials to populate" />
-            <Metric label="Organic visitors" value="N/A" hint="Requires GA4 channel grouping" />
-            <Metric label="Search impressions" value="N/A" hint="Requires Search Console API" />
-            <Metric label="Clarity rage clicks" value="N/A" hint="Requires Clarity export / cache job" />
+            <Metric
+              label="Daily sessions (latest)"
+              value={todayTraffic ? todayTraffic.sessions : 0}
+              hint={todayTraffic ? `Confirmed · ${todayTraffic.day} · ${todayTraffic.views} views` : "Confirmed · no events"}
+            />
+            <Metric
+              label={unattributed.label}
+              value={unattributed.value}
+              hint={unattributed.hint}
+            />
+            <Metric
+              label="Checkout abandon"
+              value={abandon.abandonRate}
+              hint={`Confirmed · ${abandon.checkoutSessions} starts · ${abandon.purchaseSessions} purchases · ${abandon.pendingOrders} pending orders`}
+            />
+            <Metric
+              label="Resend deliveries"
+              value={resend.total}
+              hint={
+                resend.byStatus.length
+                  ? `Confirmed · ${resend.byStatus.map(([s, n]) => `${s}:${n}`).join(" · ")}`
+                  : "Confirmed · no rows in range"
+              }
+            />
+            <Metric label="GA4 visitors" value="Unavailable" hint="Missing GA4_PROPERTY_ID + service account on Contabo" />
+            <Metric label="Organic (GA4)" value="Unavailable" hint="Do not treat unknown UTM as organic" />
+            <Metric label="Search impressions" value="Unavailable" hint="Requires Search Console API + owner auth" />
+            <Metric label="Clarity rage clicks" value="Unavailable" hint="Requires Clarity export / cache job" />
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <p className="mb-2 text-xs uppercase text-slate-500">Daily traffic (confirmed · funnel events)</p>
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="p-2">Day</th>
+                  <th className="p-2">Sessions</th>
+                  <th className="p-2">Views</th>
+                  <th className="p-2">Checkouts</th>
+                  <th className="p-2">Purchases</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyTraffic.slice(0, 14).map((row) => (
+                  <tr key={row.day} className="border-t border-slate-800">
+                    <td className="p-2 font-mono text-xs">{row.day}</td>
+                    <td className="p-2">{row.sessions}</td>
+                    <td className="p-2">{row.views}</td>
+                    <td className="p-2">{row.checkouts}</td>
+                    <td className="p-2">{row.purchases}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2 text-sm">
+            <div>
+              <p className="text-xs uppercase text-slate-500">Attribution (confirmed UTM vs unknown)</p>
+              {attribution.map((row) => (
+                <p key={row.key}>
+                  {row.label}: {row.sessions}
+                  {row.kind === "unknown" ? " · unknown" : " · confirmed"}
+                </p>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs uppercase text-slate-500">Product performance (confirmed orders)</p>
+              {products.map((row) => (
+                <p key={row.product}>
+                  {row.product}: paid {row.paid} · pending {row.pending} · {row.revenueLabel}
+                </p>
+              ))}
+            </div>
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            Data freshness: admin refresh · Stripe/DB = confirmed commerce · GA4/GSC/Clarity cells show N/A until
-            their credentials are available to this dashboard (never invent zeros).
+            Owner action for GA4/GSC/Clarity: add read-only Google service account (Analytics Viewer +
+            Search Console) as GA4_PROPERTY_ID + GA4_SERVICE_ACCOUNT_JSON on Contabo only — never in the browser.
           </p>
         </SectionCard>
       </div>

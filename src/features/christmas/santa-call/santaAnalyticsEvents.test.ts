@@ -79,12 +79,12 @@ it("dispatches checkout analytics before the hosted redirect and only confirms p
     new URL("../ChristmasSantaCallPage.tsx", import.meta.url),
     "utf8",
   );
-  const commercial = page.slice(
-    page.indexOf("const data = await startChristmasCheckout"),
+  const checkoutFn = page.slice(page.indexOf("async function onCheckout()"));
+  expect(checkoutFn.indexOf('"santa_checkout_started"')).toBeLessThan(
+    checkoutFn.indexOf("window.location.assign"),
   );
-  expect(commercial.indexOf('"santa_checkout_started"')).toBeLessThan(
-    commercial.indexOf("window.location.assign"),
-  );
+  expect(page).toMatch(/trackSantaFunnel\(\s*"santa_checkout_error"/);
+  expect(page).toMatch(/trackSantaFunnel\(\s*"santa_payment_load_error"/);
   expect(page).toMatch(
     /data\.livemode === true\s*&&\s*data\.stripe_mode === "live"/,
   );

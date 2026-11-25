@@ -20,7 +20,7 @@ export const LANDING_INTERNAL_LINKS = [
   { href: "/christmas/planner", labelKey: "nav.planner" },
   { href: "/christmas/gift-finder", labelKey: "nav.finder" },
   { href: "/christmas/family", labelKey: "nav.portraits" },
-  { href: "/christmas/santa-video", labelKey: "nav.santa" },
+  { href: "/christmas/santa-call", labelKey: "nav.santa" },
   { href: "/christmas/wishlist", labelKey: "nav.wishlist" },
   { href: "/christmas/tree", labelKey: "nav.tree" },
   { href: "/christmas/advent", labelKey: "nav.advent" },

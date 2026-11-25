@@ -14,7 +14,10 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
     VITE_APP_URL=$VITE_APP_URL
 RUN test -n "$VITE_SUPABASE_URL" && test -n "$VITE_SUPABASE_ANON_KEY"
-RUN npm run build
+RUN npm run build \
+  && rm -rf dist/assets/christmas dist/assets/christmas-story-demo \
+            dist/assets/funnel dist/assets/pet dist/assets/library \
+            dist/assets/music dist/assets/volocar dist/assets/flavours-bistro
 
 FROM node:22-alpine
 WORKDIR /app

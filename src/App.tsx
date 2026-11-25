@@ -11,13 +11,19 @@ import {
 import { Toaster } from "sonner";
 
 // ================= WEBSITE CORE =================
-import Index from "@/pages/website/HomePage";
-import AuthCallback from "@/pages/AuthCallback";
-import {
-  PetCreateRoute,
-  PetLandingRoute,
-  PetOrderRoute,
-} from "@/features/pet/PetRoutes";
+// Eager home/pet/auth modules were pulling ~vendor-motion + heavy pet graph into
+// the Santa Call critical path. Keep them route-lazy.
+const Index = lazy(() => import("@/pages/website/HomePage"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
+const PetLandingRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetLandingRoute })),
+);
+const PetCreateRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetCreateRoute })),
+);
+const PetOrderRoute = lazy(() =>
+  import("@/features/pet/PetRoutes").then((m) => ({ default: m.PetOrderRoute })),
+);
 import { christmasLocalePrefixedRoutes } from "@/features/christmas/seo/christmasLocaleRoutes";
 import { petLocalePrefixedRoutes } from "@/features/pet/i18n";
 
@@ -46,25 +52,36 @@ const UnsubscribePage = lazy(() =>
 );
 
 // ================= WEBSITE UI =================
-import WebsiteHeader from "@/components/Header";
-import WebsiteFooter from "@/components/Footer";
-import { PricingModal, CreditsFunnelModal } from "@/components/PricingModal";
+const WebsiteHeader = lazy(() => import("@/components/Header"));
+const WebsiteFooter = lazy(() => import("@/components/Footer"));
+const PricingModal = lazy(() =>
+  import("@/components/PricingModal").then((m) => ({ default: m.PricingModal })),
+);
+const CreditsFunnelModal = lazy(() =>
+  import("@/components/PricingModal").then((m) => ({
+    default: m.CreditsFunnelModal,
+  })),
+);
 const SupportTicketWidget = lazy(
   () => import("@/components/SupportTicketWidget")
 );
 
 // ================= AUTH =================
 import { useAuthStateMonitor } from "@/hooks/useAuthStateMonitor";
-import { AdminRoute } from "@/components/AdminRoute";
-import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedClientRoute from "@/routes/ProtectedClientRoute";
+const AdminRoute = lazy(() =>
+  import("@/components/AdminRoute").then((m) => ({ default: m.AdminRoute })),
+);
+const ProtectedClientRoute = lazy(() => import("@/routes/ProtectedClientRoute"));
 import { CreditsFunnelProvider } from "@/contexts/CreditsFunnelContext";
+import { SantaDeferredAuthProvider } from "@/lib/auth/SantaDeferredAuthProvider";
 
 // ================= LAYOUTS =================
 const AdminLayout = lazy(() => import("@/layouts/AdminLayout"));
 const ClientLayout = lazy(() => import("@/layouts/ClientLayout"));
 
 // ================= ADMIN CORE =================
+const AdminOperationsPage = lazy(() => import("@/pages/admin/AdminOperationsPage"));
+const AdminPublisherPage = lazy(() => import("@/pages/admin/AdminPublisherPage"));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const Templates = lazy(() => import("@/pages/admin/Templates"));
 const AdminBlogPage = lazy(() => import("@/pages/admin/AdminBlogPage"));
@@ -88,11 +105,11 @@ const SantaCallAdminPage = lazy(
 const SantaVoiceBenchmarkPage = lazy(
   () => import("@/pages/admin/christmas/SantaVoiceBenchmarkPage"),
 );
-const ChristmasStoryMediaAdminPage = lazy(
-  () => import("@/pages/admin/christmas/ChristmasStoryMediaAdminPage"),
-);
 const PetFunnelAnalyticsPage = lazy(() => import("@/pages/admin/PetFunnelAnalyticsPage"));
 const ChristmasAnalyticsPage = lazy(() => import("@/pages/admin/ChristmasAnalyticsPage"));
+const ChristmasFactoryReviewPage = lazy(() => import("@/pages/admin/ChristmasFactoryReviewPage"));
+const AdminContentAutopilotPage = lazy(() => import("@/pages/admin/AdminContentAutopilotPage"));
+const AdminMusicLibraryPage = lazy(() => import("@/pages/admin/AdminMusicLibraryPage"));
 const AdminLibraryPage = lazy(() => import("@/pages/admin/AdminLibraryPage"));
 const AdminClipFactoryPage = lazy(() => import("@/pages/admin/AdminClipFactoryPage"));
 const AdminLongFormStudioPage = lazy(() => import("@/pages/admin/AdminLongFormStudioPage"));
@@ -111,9 +128,6 @@ const AdminEmailTemplatesPage = lazy(
   () => import("@/pages/admin/email/Templates")
 );
 const AdminEmailOffersPage = lazy(() => import("@/pages/admin/email/Offers"));
-const AdminEmailCampaignsPage = lazy(
-  () => import("@/pages/admin/email/Campaigns")
-);
 
 // ================= ADMIN FUNNEL =================
 const AdminFunnelPage = lazy(
@@ -181,6 +195,19 @@ const ChristmasCardsPage = lazy(
 const ChristmasMessagesPage = lazy(
   () => import("@/features/christmas/ChristmasMessagesPage"),
 );
+// Christmas Story P0 frontend: selectively integrated, no Santa Call source changes.
+const ChristmasStoryLandingPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryLandingPage"),
+);
+const ChristmasStoryDemoPage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryDemoPage"),
+);
+const ChristmasStoryCreatePage = lazy(
+  () => import("@/features/christmas-story/pages/ChristmasStoryCreatePage"),
+);
+const GiftRecipientPage = lazy(
+  () => import("@/features/christmas-story/pages/GiftRecipientPage"),
+);
 const ChristmasPlannerPage = lazy(
   () => import("@/features/christmas/planner/ChristmasPlannerPage"),
 );
@@ -190,23 +217,11 @@ const ChristmasPlannerWelcomePage = lazy(
 const ChristmasSendGiftPage = lazy(
   () => import("@/features/christmas/ChristmasSendGiftPage"),
 );
-const ChristmasStoryLandingPage = lazy(
-  () => import("@/features/christmas-story/pages/ChristmasStoryLandingPage"),
-);
-const ChristmasStoryCreatePage = lazy(
-  () => import("@/features/christmas-story/pages/ChristmasStoryCreatePage"),
-);
-const ChristmasStoryDemoPage = lazy(
-  () => import("@/features/christmas-story/pages/ChristmasStoryDemoPage"),
-);
-const ChristmasStoryOrderPage = lazy(
-  () => import("@/features/christmas-story/pages/ChristmasStoryOrderPage"),
-);
-const GiftRecipientPage = lazy(
-  () => import("@/features/christmas-story/pages/GiftRecipientPage"),
-);
 const ChristmasSeoClusterPage = lazy(
   () => import("@/features/christmas/seo/ChristmasSeoClusterPage"),
+);
+const ChristmasCommercialGuidePage = lazy(
+  () => import("@/features/christmas/seo/ChristmasCommercialGuidePage"),
 );
 const BirthdayPage = lazy(() => import("@/pages/website/BirthdayPage"));
 const NewYearsEvePage = lazy(() => import("@/pages/website/NewYearsEvePage"));
@@ -390,12 +405,15 @@ const FunnelResultPage = lazy(
   () => import("@/components/funnelVersion/ResultPage")
 );
 
-// ================= SUPABASE =================
-import { supabase } from "@/lib/supabase";
+// ================= ANALYTICS / CONSENT =================
 import { trackMetaSpaPageView } from "@/lib/metaPixel";
 import { trackPageView } from "@/lib/analytics";
 import { captureFunnelAttribution } from "@/features/pet/funnelAttribution";
-import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+const CookieConsentBanner = lazy(() =>
+  import("@/components/CookieConsentBanner").then((m) => ({
+    default: m.CookieConsentBanner,
+  })),
+);
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -412,6 +430,10 @@ function GtagPageViewTracker() {
   const skipInitialHtmlPageView = useRef(true);
 
   useEffect(() => {
+    if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname) || /^\/(?:ro\/)?christmas\/santa-call\/?$/.test(location.pathname)) {
+      skipInitialHtmlPageView.current = false;
+      return;
+    }
     if (skipInitialHtmlPageView.current) {
       skipInitialHtmlPageView.current = false;
       return;
@@ -428,6 +450,7 @@ function MetaSpaPageViewTracker() {
   const skipInitialHtmlPageView = useRef(true);
 
   useEffect(() => {
+    if (/^\/(?:admin|_qa|santa\/call)(?:\/|$)/.test(location.pathname)) return;
     if (skipInitialHtmlPageView.current) {
       skipInitialHtmlPageView.current = false;
       return;
@@ -454,30 +477,55 @@ function WebsiteLayout() {
   const hideChromeExtras =
     location.pathname === "/christmas/tree-gifts" ||
     location.pathname.startsWith("/christmas/tree-gifts/");
+  const hideSantaChrome = /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(location.pathname);
   const hidePlannerChrome =
     location.pathname === "/christmas/planner" ||
     location.pathname.startsWith("/christmas/planner/");
   const hideStoryChrome =
     location.pathname === "/christmas-story" ||
     location.pathname.startsWith("/christmas-story/") ||
-    location.pathname === "/christmas/our-story" ||
     location.pathname.startsWith("/gift/");
-  const hideSiteChrome = hidePlannerChrome || hideStoryChrome;
+  const hidePromoChrome = hidePlannerChrome || hideStoryChrome;
+
+  // Santa uses boot/santaLanding CSS — avoid Tailwind `bg-black` shell that
+  // depends on the deferred global stylesheet and fights the cream hero.
+  if (hideSantaChrome) {
+    return (
+      <div className="sc-site-shell">
+        <main>
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
-      {hideSiteChrome ? null : <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />}
+      {hidePromoChrome ? null : (
+        <Suspense fallback={null}>
+          <WebsiteHeader onBuyCredits={() => setShowPricing(true)} />
+        </Suspense>
+      )}
 
-      <main className={`flex-1 ${hideChromeExtras || hideSiteChrome ? "min-h-0" : ""}`}>
+      <main className={`flex-1 ${hideChromeExtras || hidePromoChrome ? "min-h-0" : ""}`}>
         <Outlet />
       </main>
 
-      <PricingModal
-        isOpen={showPricing}
-        onClose={() => setShowPricing(false)}
-      />
+      {/* PricingModal pulls framer-motion — mount only when opened (never on Santa). */}
+      {showPricing ? (
+        <Suspense fallback={null}>
+          <PricingModal
+            isOpen={showPricing}
+            onClose={() => setShowPricing(false)}
+          />
+        </Suspense>
+      ) : null}
 
-      {hideChromeExtras || hideSiteChrome ? null : <WebsiteFooter />}
+      {hideChromeExtras || hidePromoChrome ? null : (
+        <Suspense fallback={null}>
+          <WebsiteFooter />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -508,6 +556,7 @@ function PlannerAwareSupportWidget() {
     location.pathname.startsWith("/christmas/planner/") ||
     location.pathname === "/account/christmas" ||
     location.pathname.startsWith("/account/christmas/") ||
+    /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(location.pathname) ||
     location.pathname.startsWith("/santa/call") ||
     location.pathname === "/christmas-story" ||
     location.pathname.startsWith("/christmas-story/") ||
@@ -584,6 +633,7 @@ function AppInner() {
 
         if (shouldSkip) return;
 
+        const { supabase } = await import("@/lib/supabase");
         const { error } = await supabase.from("affiliate_clicks").insert({
           code: cleanRef,
           visitor_id: visitorId,
@@ -618,6 +668,7 @@ function AppInner() {
         const savedRef = localStorage.getItem("affiliate_ref");
         if (!savedRef) return;
 
+        const { supabase } = await import("@/lib/supabase");
         const {
           data: { user },
           error: userError,
@@ -718,6 +769,134 @@ function AppInner() {
             <Route path="/christmas/cats" element={<ChristmasPortraitFunnelPage />} />
             <Route path="/christmas/santa-video" element={<ChristmasSantaVideoPage />} />
             <Route path="/christmas/santa-call" element={<ChristmasSantaCallPage />} />
+            <Route
+              path="/christmas/personalized-santa-call"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/personalized-santa-call"
+                  ctaHref="/christmas/santa-call"
+                  ctaLabel="Start personalized Santa Call"
+                  bullets={[
+                    "Uses the child’s name and details you provide",
+                    "Private browser session — not a PSTN dialer",
+                    "Romania 59 RON / 3 minutes · US $12.99",
+                    "Optional paid 5-minute extensions after the first call",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/ai-santa-phone-call"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/ai-santa-phone-call"
+                  ctaHref="/christmas/santa-call"
+                  ctaLabel="Open the AI Santa call"
+                  bullets={[
+                    "Voice AI Santa in a private browser room",
+                    "Adult supervision required",
+                    "Email delivery of the private link after payment",
+                    "No phone number is dialed to the child",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/last-minute-digital-christmas-gifts"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/last-minute-digital-christmas-gifts"
+                  ctaHref="/christmas/santa-call"
+                  ctaLabel="Buy a Santa Call tonight"
+                  bullets={[
+                    "Santa Call — live interactive moment",
+                    "Santa Video — keepable asynchronous clip",
+                    "Cards and portraits — quieter last-minute options",
+                    "Christmas Story — preview only until price approval",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/apel-mos-craciun"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/apel-mos-craciun"
+                  ctaHref="/ro/christmas/santa-call"
+                  ctaLabel="Începe apelul cu Moș Crăciun"
+                  bullets={[
+                    "3 minute în browser, 59 lei în România",
+                    "Link privat pe email după plată",
+                    "Supraveghere adult obligatorie",
+                    "Prelungire opțională 49 lei / 5 minute",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/apel-personalizat-mos-craciun"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/apel-personalizat-mos-craciun"
+                  ctaHref="/ro/christmas/santa-call"
+                  ctaLabel="Către apelul personalizat"
+                  bullets={[
+                    "Moșul folosește numele și detaliile pe care le trimiți",
+                    "Conversație AI în browser, nu pe telefonul copilului",
+                    "Poți prelungi conversația după primele 3 minute",
+                    "Ideal pentru o surpriză de ultim moment",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/cadouri-digitale-de-craciun"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/cadouri-digitale-de-craciun"
+                  ctaHref="/ro/christmas/santa-call"
+                  ctaLabel="Alege Apel Moș Crăciun"
+                  bullets={[
+                    "Cadouri pe link — fără curier",
+                    "Apel live, video, felicitări și portrete",
+                    "Prețurile apar pe pagina produsului",
+                    "Christmas Story rămâne preview până la aprobarea prețului",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/cadouri-de-ultim-moment"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/cadouri-de-ultim-moment"
+                  ctaHref="/ro/christmas/santa-call"
+                  ctaLabel="Cadou de ultim moment: Apel Moș"
+                  bullets={[
+                    "Finalizezi în câteva minute",
+                    "Livrare pe email, nu pe drum",
+                    "Începe cu Apel Moș dacă vrei o surpriză live",
+                    "Verifică prețul pe pagina produsului înainte de plată",
+                  ]}
+                />
+              }
+            />
+            <Route
+              path="/christmas/personalized-christmas-story"
+              element={
+                <ChristmasCommercialGuidePage
+                  path="/christmas/personalized-christmas-story"
+                  ctaHref="/christmas-story"
+                  ctaLabel="Open Christmas Story preview"
+                  bullets={[
+                    "Song, memory film, album, hidden letter when live",
+                    "Checkout stays disabled until owner price approval",
+                    "Emma sample is fictional — not a customer gift",
+                    "Planned $34.99 / 149 RON — checkout not enabled",
+                  ]}
+                />
+              }
+            />
             <Route path="/santa/call/:token" element={<SantaCallRoomPage />} />
             <Route path="/christmas/tree" element={<ChristmasTreePage />} />
             <Route path="/christmas/tree/:shareId" element={<ChristmasTreePage />} />
@@ -733,15 +912,13 @@ function AppInner() {
             <Route path="/christmas/cards" element={<ChristmasCardsPage />} />
             <Route path="/christmas/messages" element={<ChristmasMessagesPage />} />
             <Route path="/christmas/planner" element={<ChristmasPlannerPage />} />
+            <Route path="/christmas-story" element={<ChristmasStoryLandingPage />} />
+            <Route path="/christmas-story/demo" element={<ChristmasStoryDemoPage />} />
+            <Route path="/christmas-story/create" element={<ChristmasStoryCreatePage />} />
+            <Route path="/gift/:token" element={<GiftRecipientPage />} />
             <Route path="/christmas/planner/welcome" element={<ChristmasPlannerWelcomePage />} />
             <Route path="/christmas/send-a-gift" element={<ChristmasSendGiftPage />} />
             <Route path="/send-a-gift" element={<Navigate to="/christmas/send-a-gift" replace />} />
-            <Route path="/christmas-story" element={<ChristmasStoryLandingPage />} />
-            <Route path="/christmas-story/create" element={<ChristmasStoryCreatePage />} />
-            <Route path="/christmas-story/demo" element={<ChristmasStoryDemoPage />} />
-            <Route path="/christmas-story/order/:orderId" element={<ChristmasStoryOrderPage />} />
-            <Route path="/christmas/our-story" element={<Navigate to="/christmas-story" replace />} />
-            <Route path="/gift/:token" element={<GiftRecipientPage />} />
             <Route path="/christmas/gifts-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/messages-for-:slug" element={<ChristmasSeoClusterPage />} />
             <Route path="/christmas/funny-christmas-messages" element={<ChristmasSeoClusterPage />} />
@@ -1055,7 +1232,9 @@ function AppInner() {
               </AdminRoute>
             }
           >
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<AdminOperationsPage />} />
+            <Route path="legacy-overview" element={<AdminDashboard />} />
+            <Route path="publisher" element={<AdminPublisherPage />} />
             <Route path="funnel" element={<AdminFunnelPage />} />
             <Route path="templates" element={<Templates />} />
             <Route path="blog" element={<AdminBlogPage />} />
@@ -1067,7 +1246,6 @@ function AppInner() {
               <Route index element={<ChristmasDashboardPage />} />
               <Route path="analytics" element={<ChristmasAnalyticsPage />} />
               <Route path="orders" element={<ChristmasOrdersPage />} />
-              <Route path="story-media" element={<ChristmasStoryMediaAdminPage />} />
               <Route path="monetization" element={<ChristmasMonetizationPage />} />
               <Route path="santa-call" element={<SantaCallAdminPage />} />
               <Route path="santa-voice-benchmark" element={<SantaVoiceBenchmarkPage />} />
@@ -1086,6 +1264,9 @@ function AppInner() {
             />
             <Route path="pet-funnel-analytics" element={<PetFunnelAnalyticsPage />} />
             <Route path="library" element={<AdminLibraryPage />} />
+            <Route path="library/christmas-factory" element={<ChristmasFactoryReviewPage />} />
+            <Route path="content-autopilot" element={<AdminContentAutopilotPage />} />
+            <Route path="music-library" element={<AdminMusicLibraryPage />} />
             <Route path="long-form-studio" element={<AdminLongFormStudioPage />} />
             <Route path="clip-factory" element={<AdminClipFactoryPage />} />
             <Route path="studio" element={<AdminStudioPage />} />
@@ -1101,7 +1282,7 @@ function AppInner() {
               />
               <Route path="templates" element={<AdminEmailTemplatesPage />} />
               <Route path="offers" element={<AdminEmailOffersPage />} />
-              <Route path="campaigns" element={<AdminEmailCampaignsPage />} />
+              <Route path="campaigns" element={<Navigate to="/admin/email/offers" replace />} />
             </Route>
           </Route>
 
@@ -1113,18 +1294,76 @@ function AppInner() {
         <PlannerAwareSupportWidget />
       </Suspense>
       <Toaster position="top-right" />
-      <CreditsFunnelModal />
-      <CookieConsentBanner />
+      <AppCreditsFunnelHost />
+      <DeferredCookieConsentBanner />
     </BrowserRouter>
+  );
+}
+
+function DeferredCookieConsentBanner() {
+  const location = useLocation();
+  const onSanta =
+    /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(
+      location.pathname,
+    ) || location.pathname.startsWith("/santa/call");
+  const [ready, setReady] = useState(!onSanta);
+
+  useEffect(() => {
+    if (!onSanta) {
+      setReady(true);
+      return;
+    }
+    setReady(false);
+    let cancelled = false;
+    // Santa consent uses .sc-cookie styles in santaLanding.css — do not pull
+    // the ~177KB global Tailwind/festive sheet onto the LCP/TBT path.
+    let idleId: number | undefined;
+    let timeoutId: number | undefined;
+    const arm = () => {
+      if (!cancelled) setReady(true);
+    };
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(arm, { timeout: 3500 });
+    } else {
+      timeoutId = window.setTimeout(arm, 1800);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [onSanta]);
+
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <CookieConsentBanner />
+    </Suspense>
+  );
+}
+
+function AppCreditsFunnelHost() {
+  const location = useLocation();
+  const hideOnSanta =
+    /^(?:\/(?:ro|de|fr|es|it|pt|nl|pl))?\/christmas\/santa-call\/?$/.test(
+      location.pathname,
+    ) || location.pathname.startsWith("/santa/call");
+  if (hideOnSanta) return null;
+  return (
+    <Suspense fallback={null}>
+      <CreditsFunnelModal />
+    </Suspense>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
+    <SantaDeferredAuthProvider>
       <CreditsFunnelProvider>
         <AppInner />
       </CreditsFunnelProvider>
-    </AuthProvider>
+    </SantaDeferredAuthProvider>
   );
 }

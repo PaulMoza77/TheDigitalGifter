@@ -41,6 +41,7 @@ import {
   writePortraitToCardHandoff,
 } from "./cards/portraitHandoff";
 import { PortraitVerticalSeoSections } from "./seo/PortraitVerticalSeoSections";
+import { ChristmasCallCrossSell } from "./crossSell/ChristmasCallCrossSell";
 
 const CROSS_LABEL_KEY: Record<string, string> = {
   "Family Christmas": "cross.familyChristmas",
@@ -387,19 +388,6 @@ export default function ChristmasPortraitFunnelPage() {
                   >
                     {t("funnel.card")}
                   </Link>
-                  <Link
-                    to={pathFor("/christmas/santa-video")}
-                    className="xmas-btn xmas-btn--ghost"
-                    style={{ textAlign: "center" }}
-                    onClick={() => {
-                      void trackChristmasEvent("christmas_upsell_view", {
-                        productKey: "xmas_santa_video",
-                        metadata: { placement: "portrait_result" },
-                      });
-                    }}
-                  >
-                    Add a Santa video
-                  </Link>
                   <button
                     type="button"
                     className="xmas-btn xmas-btn--ghost"
@@ -407,6 +395,9 @@ export default function ChristmasPortraitFunnelPage() {
                   >
                     {t("funnel.another")}
                   </button>
+                </div>
+                <div style={{ marginTop: "0.75rem" }}>
+                  <ChristmasCallCrossSell sourceTool={`portrait_${vertical.id}_result`} />
                 </div>
                 <div className="pg-nav" style={{ border: 0, marginTop: "0.5rem", paddingTop: 0 }}>
 <span>{t("funnel.tryAnother")}</span>

@@ -7,6 +7,7 @@ import { getOrderByRecipientToken, saveOrder } from "../draftStore";
 import { fetchRecipientGift, isStoryApiEnabled } from "../storyApi";
 import type { StoryGiftContent, StoryOrder } from "../types";
 import "../styles/christmasStory.css";
+import "../styles/christmasStoryV2.css";
 
 const FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
@@ -60,6 +61,16 @@ export default function GiftRecipientPage() {
         if (!cancelled) {
           setContent(DEMO_GIFT);
           setIsDemo(true);
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Public PAGE LIVE phase: only the explicitly fictional demo token can render.
+      // This prevents browser-local fake orders and private recipient disclosures.
+      if (true) {
+        if (!cancelled) {
+          setErrorCode("gift_unavailable");
           setLoading(false);
         }
         return;
@@ -128,7 +139,7 @@ export default function GiftRecipientPage() {
   }
 
   return (
-    <div className="cs-root">
+    <div className="cs-root cs-v2">
       {resolvedToken !== token || loading ? (
         <main className="cs-gift" aria-busy="true"><p role="status">Preparing your gift…</p></main>
       ) : content ? (

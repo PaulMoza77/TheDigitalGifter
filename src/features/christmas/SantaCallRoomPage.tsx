@@ -22,6 +22,9 @@ import {
   type SantaCallUiState,
 } from "@/features/christmas/santa-call/santaCallTypes";
 import { pricesForSantaCallMarket, readStoredSantaCallMarket } from "@/features/christmas/santa-call/santaCallPricing";
+import { trackSantaCallAnalytics } from "@/features/christmas/santa-call/santaCallAnalytics";
+import { trackChristmasEvent } from "@/features/christmas/analytics";
+import { trackSantaCallMetaPurchase } from "@/features/christmas/santa-call/santaCallMeta";
 
 function ensureFonts() {
   const id = "tdg-santa-call-fonts";
@@ -226,8 +229,41 @@ export default function SantaCallRoomPage() {
     const sessionId = params.get("session_id");
     const tick = async () => {
       // Prefer server reconcile (handles delayed webhook), then resolve.
-      await confirmSantaCallCheckout({ accessToken: token, sessionId });
+      const confirmed = await confirmSantaCallCheckout({ accessToken: token, sessionId });
       if (cancelled) return;
+      const confirmObj = (confirmed?.data || {}) as Record<string, unknown>;
+      const extOrderId = String(confirmObj.orderId || "");
+      const amountCents = Number(confirmObj.amountCents);
+      const currency = String(confirmObj.currency || "");
+      // GA4/Meta/funnel: transaction_id only — never tokens. Server also writes funnel purchase.
+      if (
+        confirmObj.payment_type === "extension" &&
+        confirmObj.livemode === true &&
+        extOrderId &&
+        Number.isFinite(amountCents) &&
+        amountCents > 0 &&
+        /^(ron|usd)$/i.test(currency)
+      ) {
+        void trackChristmasEvent("purchase", {
+          productKey: "christmas_santa_voice_call_extension",
+          packageKey: "extension",
+          orderId: extOrderId,
+          amountCents,
+          pathname: "/santa/call",
+        });
+        trackSantaCallAnalytics("santa_extension_purchased", {
+          transaction_id: extOrderId,
+          value: amountCents / 100,
+          currency: currency.toUpperCase(),
+          payment_type: "extension",
+        });
+        trackSantaCallMetaPurchase({
+          orderId: extOrderId,
+          amountCents,
+          currency,
+          productKey: "christmas_santa_voice_call_extension",
+        });
+      }
       const { data } = await pollSantaCallExtension(token);
       if (cancelled) return;
       const obj = (data || {}) as Record<string, unknown>;

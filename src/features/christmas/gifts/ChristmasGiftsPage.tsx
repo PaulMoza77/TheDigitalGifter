@@ -12,6 +12,7 @@ import { GiftOpenCeremony } from "./GiftOpenCeremony";
 import { GIFT_TREE_SCENE } from "./giftTreeMedia";
 import { MoreChancesModal } from "./MoreChancesModal";
 import { PrizeRail } from "./PrizeRail";
+import { ChristmasCallCrossSell } from "@/features/christmas/crossSell/ChristmasCallCrossSell";
 import {
   canOpenGift,
   getOrCreateGiftTreeGuestToken,
@@ -669,6 +670,8 @@ export function ChristmasGiftsExperience({
               <Link className="hover:text-white/80" to="/christmas">
                 Christmas Hub
               </Link>
+              <span aria-hidden>|</span>
+              <ChristmasCallCrossSell sourceTool="tree_gifts" variant="inline" className="text-amber-100/80" />
             </div>
           </div>
         </div>

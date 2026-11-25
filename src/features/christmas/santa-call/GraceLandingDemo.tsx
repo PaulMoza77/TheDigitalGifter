@@ -9,7 +9,11 @@ const POSTER_WEBP = "/assets/christmas/grace/grace-poster.webp";
 const POSTER_WEBP_480 = "/assets/christmas/grace/grace-poster-480.webp";
 const DEMO_SRC = "/assets/christmas/grace/grace-demo.mp4";
 
-export function GraceLandingDemo() {
+export function GraceLandingDemo({
+  onPreviewStart,
+}: {
+  onPreviewStart?: () => void;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [revealStill, setRevealStill] = useState(false);
   const [started, setStarted] = useState(false);
@@ -54,6 +58,7 @@ export function GraceLandingDemo() {
           onClick={() => {
             setRevealStill(true);
             setStarted(true);
+            onPreviewStart?.();
           }}
           aria-label="Redă conversația cu Grace"
         >

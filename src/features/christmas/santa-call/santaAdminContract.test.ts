@@ -49,17 +49,18 @@ it("links Santa landing, checkout, Stripe and purchase with the same anonymous s
   );
   const webhook = readFileSync(
     new URL(
-      "../../../../supabase/functions/_shared/christmas/stripeFulfill.ts",
+      "../../../../supabase/functions/_shared/christmas/santaCallFulfill.ts",
       import.meta.url,
     ),
     "utf8",
   );
   expect(page).toContain("funnel_session_id: getChristmasFunnelSessionId()");
   expect(page).toContain("...attribution");
-  expect(page).toContain("source_route: SANTA_CALL_ROUTE");
+  expect(page).toMatch(/source_route: .*SANTA_CALL_ROUTE|source_route: `\$\{window\.location\.pathname\}/);
   expect(checkout).toContain('params.set("metadata[funnel_session_id]"');
   expect(webhook).toContain("recordSantaPurchaseFunnel");
   expect(webhook).toContain('event_name: "purchase"');
+  expect(webhook).toContain("christmas_santa_voice_call_extension");
 });
 it("wires the dashboard action behind admin authorization and keeps reporting available during shutdown", () => {
   const code = readFileSync(

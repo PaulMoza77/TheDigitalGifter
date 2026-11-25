@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { StoryLanding } from "../components/StoryLanding";
 import "../styles/christmasStory.css";
+import "../styles/christmasStoryV2.css";
 
 const FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap";
@@ -29,7 +30,7 @@ export default function ChristmasStoryLandingPage() {
   }, []);
 
   return (
-    <div className="cs-root">
+    <div className="cs-root cs-v2">
       <StoryLanding />
     </div>
   );

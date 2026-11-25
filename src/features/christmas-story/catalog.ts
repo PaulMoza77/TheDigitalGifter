@@ -1,7 +1,10 @@
 import {
   STORY_CURRENCY,
   STORY_PRICE_CENTS,
+  STORY_PRICE_RON_CENTS,
+  STORY_PRICE_USD_CENTS,
   STORY_PRODUCT_KEY,
+  storyPriceForMarket,
 } from "./types";
 
 /** Primary offer — add-ons behind flags until delivery is validated. */
@@ -10,7 +13,14 @@ export const STORY_OFFER = {
   name: "Our Christmas Story",
   priceCents: STORY_PRICE_CENTS,
   currency: STORY_CURRENCY,
-  displayPrice: "$57",
+  displayPrice: "$34.99",
+  markets: {
+    us: storyPriceForMarket("us"),
+    ro: storyPriceForMarket("ro"),
+  },
+  /** Explicit approved prep amounts (cents). */
+  approvedPriceUsdCents: STORY_PRICE_USD_CENTS,
+  approvedPriceRonCents: STORY_PRICE_RON_CENTS,
   promise:
     "Turn your favorite memories into a personal song, a beautiful film, and a surprise made just for them.",
   includes: [

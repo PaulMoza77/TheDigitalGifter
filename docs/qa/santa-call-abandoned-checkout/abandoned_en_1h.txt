@@ -1,0 +1,9 @@
+Your Santa call checkout is waiting
+
+Hi,
+You started personalizing a Santa call but payment was not completed. You can reopen checkout from the link below.
+
+Complete payment:
+https://www.thedigitalgifter.com/christmas/santa-call
+
+If you already paid, ignore this — reminders stop after payment confirmation.

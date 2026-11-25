@@ -379,8 +379,10 @@ export const CHRISTMAS_SEO_ROUTES = [
     h2Body:
       "Personalize a few parent details, pay securely, open the private link from email, and talk for three minutes. Optional paid five-minute extensions anytime.",
     links: [
+      { href: "/christmas/personalized-santa-call", label: "Personalized Santa Call guide" },
+      { href: "/christmas/ai-santa-phone-call", label: "AI Santa phone call explained" },
+      { href: "/christmas/last-minute-digital-christmas-gifts", label: "Last-minute digital gifts" },
       { href: "/christmas/santa-video", label: "Personalized Santa Video" },
-      { href: "/christmas/family", label: "Family Christmas Portraits" },
       { href: "/christmas", label: "Christmas home" },
     ],
     breadcrumbs: [
@@ -390,6 +392,207 @@ export const CHRISTMAS_SEO_ROUTES = [
     ],
     ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
     // Live commercial product (CHRISTMAS_LIVE_PRODUCTS includes christmas_santa_voice_call).
+    noindex: false,
+  },
+  {
+    path: "/christmas/personalized-santa-call",
+    title: "Personalized Santa Call for Kids | Live AI Voice | TheDigitalGifter",
+    description:
+      "Book a personalized AI Santa call that uses your child’s name and details. Private browser session, adult supervision, Romania 59 RON · US $12.99.",
+    canonicalPath: "/christmas/personalized-santa-call",
+    h1: "Personalized Santa calls that use your child’s name",
+    lede:
+      "Parents personalize a few details, pay securely, then open a private browser link for a 3-minute AI Santa conversation — not a cold phone dial.",
+    h2: "Who this is for",
+    h2Body:
+      "Families who want a last-minute magical moment without shipping delays. Best for ages that can talk with an adult nearby. Extensions available after the first call.",
+    links: [
+      { href: "/christmas/santa-call", label: "Start Santa Call checkout" },
+      { href: "/christmas/santa-video", label: "Prefer a Santa video instead" },
+      { href: "/christmas/last-minute-digital-christmas-gifts", label: "More last-minute digital gifts" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/personalized-santa-call", label: "Personalized Santa Call" },
+    ],
+    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
+    noindex: false,
+  },
+  {
+    path: "/christmas/ai-santa-phone-call",
+    title: "AI Santa Phone Call in the Browser | Not a Dialer | TheDigitalGifter",
+    description:
+      "Clarify the difference: our AI Santa call runs in a private browser room with voice AI — not a PSTN phone call to your child. Pricing and supervision explained.",
+    canonicalPath: "/christmas/ai-santa-phone-call",
+    h1: "AI Santa “phone call” — what you actually get",
+    lede:
+      "Searchers looking for an AI Santa phone call usually want a live voice moment. Ours is a secure browser session with Santa voice AI, email delivery of the private link, and adult control.",
+    h2: "Browser call vs traditional phone",
+    h2Body:
+      "No phone number is dialed to the child. You open the private link, stay present, and Santa responds with personalized details you provided. Romania 59 RON / 3 minutes · US $12.99.",
+    links: [
+      { href: "/christmas/santa-call", label: "Open Santa Call" },
+      { href: "/christmas/personalized-santa-call", label: "Personalized Santa Call guide" },
+      { href: "/christmas", label: "Christmas home" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/ai-santa-phone-call", label: "AI Santa Phone Call" },
+    ],
+    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
+    noindex: false,
+  },
+  {
+    path: "/christmas/last-minute-digital-christmas-gifts",
+    title: "Last-Minute Digital Christmas Gifts | Deliver Tonight | TheDigitalGifter",
+    description:
+      "Digital Christmas gifts you can finish tonight: personalized Santa call, Santa video, cards, photo portraits, and a Christmas story preview — no shipping wait.",
+    canonicalPath: "/christmas/last-minute-digital-christmas-gifts",
+    h1: "Last-minute digital Christmas gifts that still feel personal",
+    lede:
+      "When there is no time for shipping, choose a gift that arrives by link: a Santa call, a personalized video, a card, or a portrait. Prices shown on each product page.",
+    h2: "Fast options that stay thoughtful",
+    h2Body:
+      "Start with Santa Call for a live moment, Santa Video for an asynchronous keepable clip, or cards/photos when you need something quieter. Christmas Story remains preview-only until owner price approval.",
+    links: [
+      { href: "/christmas/santa-call", label: "Santa Call (live)" },
+      { href: "/christmas/santa-video", label: "Santa Video" },
+      { href: "/christmas-story", label: "Christmas Story preview" },
+      { href: "/christmas/cards", label: "Christmas cards" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/last-minute-digital-christmas-gifts", label: "Last-minute digital gifts" },
+    ],
+    noindex: false,
+  },
+  {
+    path: "/christmas/apel-mos-craciun",
+    contentLang: "ro",
+    title: "Apel de la Moș Crăciun | 59 lei | TheDigitalGifter",
+    description:
+      "Apel personalizat de la Moș Crăciun AI pentru copilul tău. 3 minute în browser, 59 lei în România. Link privat pe email. Supraveghere adult.",
+    canonicalPath: "/christmas/apel-mos-craciun",
+    h1: "Apel de la Moș Crăciun — personalizat, în browser",
+    lede:
+      "Completezi câteva detalii, plătești securizat și primești linkul privat pe email. Copilul vorbește cu Moșul 3 minute, cu un adult alături.",
+    h2: "De ce e diferit de un telefon clasic",
+    h2Body:
+      "Nu formăm numărul copilului. Sesiunea rulează într-o cameră privată din browser, cu voce AI. Prelungire opțională 49 lei / 5 minute.",
+    links: [
+      { href: "/ro/christmas/santa-call", label: "Începe apelul cu Moșul" },
+      { href: "/christmas/cadouri-digitale-de-craciun", label: "Cadouri digitale de Crăciun" },
+      { href: "/ro/christmas", label: "Crăciun" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/apel-mos-craciun", label: "Apel Moș Crăciun" },
+    ],
+    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
+    noindex: false,
+  },
+  {
+    path: "/christmas/apel-personalizat-mos-craciun",
+    contentLang: "ro",
+    title: "Apel Personalizat Moș Crăciun | Vorbește cu Moșul | TheDigitalGifter",
+    description:
+      "Vorbește cu Moș Crăciun într-un apel personalizat AI: numele copilului, dorințe și detalii pe care le-ai scris tu. 59 lei / 3 minute.",
+    canonicalPath: "/christmas/apel-personalizat-mos-craciun",
+    h1: "Apel personalizat cu Moș Crăciun",
+    lede:
+      "Moșul folosește numele și detaliile pe care le-ai trimis. Ideal când vrei o surpriză rapidă, fără livrare fizică.",
+    h2: "Pașii simpli",
+    h2Body:
+      "Personalizare → plată → email cu link → apel de 3 minute. Poți prelungi conversația dacă vrem să continue magia.",
+    links: [
+      { href: "/ro/christmas/santa-call", label: "Către checkout Apel Moș" },
+      { href: "/christmas/apel-mos-craciun", label: "Ghid Apel de la Moș" },
+      { href: "/christmas/cadouri-de-ultim-moment", label: "Cadouri de ultim moment" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/apel-personalizat-mos-craciun", label: "Apel personalizat" },
+    ],
+    ogImage: `${SITE_ORIGIN}/assets/christmas/north-pole-santa/posters/north_pole_santa_reel_hq.jpg`,
+    noindex: false,
+  },
+  {
+    path: "/christmas/cadouri-digitale-de-craciun",
+    contentLang: "ro",
+    title: "Cadouri Digitale de Crăciun | Livrare pe Link | TheDigitalGifter",
+    description:
+      "Cadouri digitale de Crăciun gata în câteva minute: apel Moș Crăciun, video personalizat, felicitări și portrete. Fără așteptat curierul.",
+    canonicalPath: "/christmas/cadouri-digitale-de-craciun",
+    h1: "Cadouri digitale de Crăciun pe care le poți trimite azi",
+    lede:
+      "Alege un cadou care ajunge pe link: apel live cu Moșul, video, felicitare sau portret. Prețurile apar pe pagina produsului.",
+    h2: "Ce merită când timpul e scurt",
+    h2Body:
+      "Apelul cu Moșul e cel mai interactiv. Video-ul rămâne amintire. Felicitările și portretele sunt mai liniștite. Christmas Story e încă în preview — fără plată live.",
+    links: [
+      { href: "/ro/christmas/santa-call", label: "Apel Moș Crăciun" },
+      { href: "/ro/christmas/santa-video", label: "Video Moș Crăciun" },
+      { href: "/christmas-story", label: "Christmas Story (preview)" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/cadouri-digitale-de-craciun", label: "Cadouri digitale" },
+    ],
+    noindex: false,
+  },
+  {
+    path: "/christmas/cadouri-de-ultim-moment",
+    contentLang: "ro",
+    title: "Cadouri de Ultim Moment de Crăciun | Digitale | TheDigitalGifter",
+    description:
+      "Cadouri de ultim moment fără curier: apel personalizat cu Moș Crăciun, video, carduri și portrete digitale. Livrare pe email.",
+    canonicalPath: "/christmas/cadouri-de-ultim-moment",
+    h1: "Cadouri de ultim moment care totuși par gândite",
+    lede:
+      "Când magazinul e închis și curierul e plin, un cadou digital personalizat încă poate ajunge diseară.",
+    h2: "Ordinea recomandată",
+    h2Body:
+      "1) Apel Moș dacă vrei o surpriză live. 2) Video dacă vrei ceva de păstrat. 3) Card sau portret pentru un gest mai scurt. Verifică prețul pe pagina produsului înainte de plată.",
+    links: [
+      { href: "/ro/christmas/santa-call", label: "Apel Moș — live" },
+      { href: "/christmas/last-minute-digital-christmas-gifts", label: "EN last-minute guide" },
+      { href: "/christmas/cadouri-digitale-de-craciun", label: "Cadouri digitale" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/cadouri-de-ultim-moment", label: "Cadouri de ultim moment" },
+    ],
+    noindex: false,
+  },
+  {
+    path: "/christmas/personalized-christmas-story",
+    title: "Personalized Christmas Story Gift | Preview | TheDigitalGifter",
+    description:
+      "Preview Our Christmas Story: personal song, memory film, private album and hidden letter. Checkout is not enabled until price and launch are owner-approved.",
+    canonicalPath: "/christmas/personalized-christmas-story",
+    h1: "A personalized Christmas story gift — preview first",
+    lede:
+      "Explore the Emma sample and personalize a free preview. Purchases stay off until the commercial price is approved. Planned display price is not an approved live offer.",
+    h2: "What is included when live",
+    h2Body:
+      "Song, memory film, interactive album, and a hidden letter on a private recipient page. Until then: demo + draft personalization only.",
+    links: [
+      { href: "/christmas-story", label: "Open Christmas Story preview" },
+      { href: "/christmas/santa-call", label: "Buy a live Santa Call instead" },
+      { href: "/christmas/last-minute-digital-christmas-gifts", label: "Other digital gifts" },
+    ],
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/christmas", label: "Christmas" },
+      { href: "/christmas/personalized-christmas-story", label: "Personalized Christmas Story" },
+    ],
     noindex: false,
   },
   {
@@ -568,15 +771,17 @@ export function resolveChristmasSeoRequest(pathname) {
   }
 
   if (localeCode === "en" || !parsed.isPrefixed) {
+    // Romanian-primary commercial guides live on unprefixed paths with RO copy.
+    const contentLang = baseEntry.contentLang === "ro" ? "ro" : "en";
     return {
-      locale: "en",
+      locale: contentLang === "ro" ? "ro" : "en",
       basePath: parsed.basePath,
       publicPath: parsed.basePath,
       entry: baseEntry,
       depthOverride: null,
       indexable: !baseEntry.noindex && isChristmasLocaleSeoIndexable("en", parsed.basePath),
       incomplete: false,
-      htmlLang: "en",
+      htmlLang: contentLang,
       dir: "ltr",
     };
   }

@@ -37,6 +37,7 @@ import { SANTA_DEMO_EXAMPLES } from "./santa/santaExamples";
 import { SantaWorkshopScene } from "./santa/SantaWorkshopScene";
 import { SantaDemoPlayer } from "./santa/SantaDemoPlayer";
 import { SantaLandingSections } from "./santa/SantaLandingSections";
+import { ChristmasCallCrossSell } from "./crossSell/ChristmasCallCrossSell";
 
 const FUNNEL_URL = `${String(import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "")}/functions/v1/christmas-santa-funnel`;
 
@@ -1055,7 +1056,8 @@ export default function ChristmasSantaVideoPage() {
                   </SecondaryButton>
                 </div>
                 <SecondaryButton onClick={resetAll}>{SANTA_COPY.steps.result.another}</SecondaryButton>
-                <div className="mt-8 space-y-2 border-t border-[#F5EDE0]/10 pt-6 text-sm">
+                <div className="mt-8 space-y-3 border-t border-[#F5EDE0]/10 pt-6 text-sm">
+                  <ChristmasCallCrossSell sourceTool="santa_video_result" className="border-[#F5EDE0]/15 bg-[#0c1814]/50 text-[#F5EDE0]" />
                   <p className="text-[#F5EDE0]/55">More Christmas magic</p>
                   <Link className="block text-[#d4af37] hover:underline" to="/christmas/cards">
                     {SANTA_COPY.steps.result.crossSellCard}

@@ -119,6 +119,9 @@ export function GiftCreator() {
   }
 
   async function startCheckout() {
+    // Hard P0 gate: do not create fake or paid orders on the public preview.
+    setError("Purchasing is not available yet. Your draft preview stays on this device.");
+    return;
     if (!draft.digitalConsent) {
       setError("Please confirm the digital content terms to continue.");
       return;
@@ -180,7 +183,7 @@ export function GiftCreator() {
         <span className="cs-brand__meta">Create their gift</span>
       </div>
 
-      <div className="cs-step-label" role="status"><span>Step {stage} of 3 · {stage === 1 ? "Their story" : stage === 2 ? "Your preview" : "Review the gift"}</span><span>{saveFailed ? "Draft not saved" : "Draft saved on this device"}</span></div>
+      <div className="cs-step-label" role="status"><span>Step {stage} of 3 · {stage === 1 ? "Personalize BEFORE paying" : stage === 2 ? "Preview + upload photos" : `Review the full ${STORY_OFFER.displayPrice} gift`}</span><span>{saveFailed ? "Draft not saved" : "Draft saved on this device"}</span></div>
       {saveFailed ? <p className="cs-preview-banner" role="alert">Your changes are here, but this browser could not save them. Keep this page open and try removing a photo to free up space.</p> : null}
       <div className="cs-progress" aria-hidden>
         <span className={stage >= 1 ? "is-on" : undefined} />
@@ -191,10 +194,10 @@ export function GiftCreator() {
       {stage === 1 ? (
         <>
           <h1 tabIndex={-1} className="cs-display" style={{ fontSize: "2rem", margin: 0 }}>
-            Someone only you know like this.
+            Make this Christmas about them.
           </h1>
           <p style={{ color: "var(--cs-ivory-soft)", margin: 0 }}>
-            Start with three little things. The best gifts begin with what you already know.
+            Start with three personal details. You see your free preview before any payment, and can add photos in step 2.
           </p>
 
           <div className="cs-field">
@@ -356,37 +359,10 @@ export function GiftCreator() {
           <p style={{ color: "var(--cs-ivory-soft)" }}>{STORY_OFFER.timeline}</p>
           <p style={{ color: "var(--cs-ivory-soft)", fontSize: "0.9rem" }}>{STORY_OFFER.taxesNote}</p>
 
-          <label className="cs-field">
-            <span>Email for order updates (test only; no email is sent)</span>
-            <input
-              type="email"
-              value={draft.buyerEmail}
-              onChange={(e) => setDraft((d) => ({ ...d, buyerEmail: e.target.value }))}
-              placeholder="you@email.com"
-              autoComplete="email"
-            />
-          </label>
-
-          <label style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start" }}>
-            <input
-              type="checkbox"
-              checked={draft.digitalConsent}
-              onChange={(e) => setDraft((d) => ({ ...d, digitalConsent: e.target.checked }))}
-            />
-            <span style={{ fontSize: "0.9rem", color: "var(--cs-ivory-soft)" }}>
-              I understand this is digital content produced after purchase. Legal withdrawal wording
-              for immediate supply will be finalized with counsel before LIVE checkout. Defective
-              products remain eligible for support under applicable law.{" "}
-              <em>(Pending legal approval.)</em>
-            </span>
-          </label>
-
-          {!STORY_OFFER.checkoutEnabled ? (
-            <p className="cs-preview-banner">
-              Payments are disabled in this environment. Continuing creates a local test order with
-              mock generation — no card charge.
-            </p>
-          ) : null}
+          <p className="cs-preview-banner" role="status">
+            Preview only. You can explore the completed fictional Emma sample now.
+            No purchase, production job, or delivery has been started.
+          </p>
 
           <div className="cs-cta-row">
             <button type="button" className="cs-btn cs-btn--ghost" disabled={busy} onClick={() => setStage(2)}>
@@ -395,11 +371,15 @@ export function GiftCreator() {
             <button
               type="button"
               className="cs-btn cs-btn--primary"
-              disabled={busy}
+              disabled={true}
+              aria-disabled="true"
               onClick={() => void startCheckout()}
             >
-              {busy ? "Preparing…" : STORY_OFFER.checkoutEnabled ? "Pay securely" : "Continue (test order)"}
+              Checkout unavailable
             </button>
+            <Link to="/christmas-story/demo" className="cs-btn cs-btn--ghost">
+              Explore Emma's sample gift
+            </Link>
           </div>
         </>
       ) : null}
