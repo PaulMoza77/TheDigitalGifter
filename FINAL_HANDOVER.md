@@ -22,7 +22,7 @@ Do not run general audits or ship new product features without a new owner missi
 | --- | --- |
 | Live image tag | `mozas/thedigitalgifter:purchase-tracking-20261124T234104Z` |
 | Image digest | `sha256:566034c8edf2e427c77629899049c0c1c1e74f98fd85bc88ae55283808d21216` |
-| Git commit (source of truth after freeze commit) | See `git rev-parse HEAD` on `release/christmas-2026-organic-closeout` |
+| Git commit (source of truth after freeze commit) | `4b68225e22171f639b3f0e9ef797e72b08fa33e9` on `release/christmas-2026-organic-closeout` |
 | Rollback image | `mozas/thedigitalgifter:previous` → prior verified `organic-closeout-phase2b-20261124` (`sha256:22d06744…`) |
 | Health | Container **healthy**; public site `https://www.thedigitalgifter.com/` |
 | Contabo edge | `tdg-supabase-edge-functions` healthy |
