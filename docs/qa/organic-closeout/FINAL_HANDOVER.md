@@ -20,10 +20,10 @@ Do not run general audits or ship new product features without a new owner missi
 
 | Field | Value |
 | --- | --- |
-| Live image tag | `mozas/thedigitalgifter:purchase-tracking-20261124T234104Z` |
-| Image digest | `sha256:566034c8edf2e427c77629899049c0c1c1e74f98fd85bc88ae55283808d21216` |
-| Git commit (source of truth after freeze commit) | `afb95b9a33a6294d5a7b821780fcdf58b174f1a1` on `release/christmas-2026-organic-closeout` |
-| Rollback image | `mozas/thedigitalgifter:previous` → prior verified `organic-closeout-phase2b-20261124` (`sha256:22d06744…`) |
+| Live image tag | `mozas/thedigitalgifter:freeze-20261125T075200Z` (accepts prior `purchase-tracking-20261124T234104Z` lineage) |
+| Image digest | `sha256:78199ad8e1e1062fc93fdfe126f10a6164586afd35226b114a28aaeeadd6287d` |
+| Git commit (source of truth) | `25e34084f4a438679a50cf9190427b7274c6d317` on `release/christmas-2026-organic-closeout` (pushed) |
+| Rollback image | `mozas/thedigitalgifter:previous` → `purchase-tracking-20261124T234104Z` |
 | Health | Container **healthy**; public site `https://www.thedigitalgifter.com/` |
 | Contabo edge | `tdg-supabase-edge-functions` healthy |
 | Story worker | `tdg-christmas-story-worker.service` **active** (song + film) |
